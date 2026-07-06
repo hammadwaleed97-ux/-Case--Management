@@ -144,7 +144,6 @@ st.markdown("<div class='logo'>إدارة القضايا</div>", unsafe_allow_ht
 st.markdown("""
 <div style='text-align:center;color:#ffffff;'>
 مع تحيات / وليد شعبان حماد<br>
-الإدارة العامة للشئون القانونية ـ ديوان عام منطقة البحيرة ـ الهيئة القومية للتأمين الاجتماعى
 </div>
 """, unsafe_allow_html=True)
 
