@@ -479,3 +479,283 @@ def backup_database():
 # ====================================================
 # نهاية الجزء 1-ب
 # ====================================================
+# ============================================================
+# CSS الحكومى الفخم
+# ============================================================
+
+st.markdown("""
+<style>
+
+html,body,.stApp{
+
+    background:#082B52;
+
+}
+
+.block-container{
+
+    padding-top:10px;
+
+    padding-bottom:20px;
+
+}
+
+.main-title{
+
+    text-align:center;
+
+    color:#FFD700;
+
+    font-size:42px;
+
+    font-weight:bold;
+
+}
+
+.second-title{
+
+    text-align:center;
+
+    color:white;
+
+    font-size:18px;
+
+}
+
+.case-card{
+
+    background:#103C73;
+
+    border:2px solid #D4AF37;
+
+    border-radius:12px;
+
+    padding:15px;
+
+    margin-bottom:12px;
+
+}
+
+table{
+
+    width:100%;
+
+}
+
+thead tr{
+
+    background:#0B4A86;
+
+    color:white;
+
+}
+
+tbody tr{
+
+    background:white;
+
+    color:black;
+
+}
+
+.stButton>button{
+
+    width:100%;
+
+    border-radius:8px;
+
+    background:#0F5EA8;
+
+    color:white;
+
+    font-weight:bold;
+
+    border:none;
+
+    height:45px;
+
+}
+
+.stButton>button:hover{
+
+    background:#D4AF37;
+
+    color:black;
+
+}
+
+div[data-testid="stSidebar"]{
+
+    display:none;
+
+}
+
+footer{
+
+    visibility:hidden;
+
+}
+
+header{
+
+    visibility:hidden;
+
+}
+
+</style>
+
+""",unsafe_allow_html=True)
+
+# ============================================================
+# إنشاء الصفحات
+# ============================================================
+
+if "page" not in st.session_state:
+
+    st.session_state.page="home"
+
+if "selected_case" not in st.session_state:
+
+    st.session_state.selected_case=None
+
+# ============================================================
+# الصفحة الرئيسية
+# ============================================================
+
+def home_page():
+
+    st.markdown("""
+
+    <div class='main-title'>
+
+    ⚖️ إدارة القضايا
+
+    </div>
+
+    """,unsafe_allow_html=True)
+
+    st.markdown("""
+
+    <div class='second-title'>
+
+    الهيئة القومية للتأمين الاجتماعى
+
+    <br>
+
+    الإدارة المركزية للشئون القانونية
+
+    <br>
+
+    الإدارة العامة للقضايا
+
+    </div>
+
+    """,unsafe_allow_html=True)
+
+    st.write("")
+
+    a,b,c=st.columns(3)
+
+    with a:
+
+        if st.button("📑 تسجيل القضايا"):
+
+            st.session_state.page="register"
+
+            st.rerun()
+
+    with b:
+
+        if st.button("📂 الحصر العام"):
+
+            st.session_state.page="general"
+
+            st.rerun()
+
+    with c:
+
+        if st.button("🔔 التنبيهات"):
+
+            st.session_state.page="notifications"
+
+            st.rerun()
+
+    d,e,f=st.columns(3)
+
+    with d:
+
+        if st.button("📊 التقارير"):
+
+            st.session_state.page="reports"
+
+            st.rerun()
+
+    with e:
+
+        if st.button("🗄️ الأرشيف"):
+
+            st.session_state.page="archive"
+
+            st.rerun()
+
+    with f:
+
+        if st.button("📚 المكتبة القانونية"):
+
+            st.session_state.page="library"
+
+            st.rerun()
+
+    g,h=st.columns(2)
+
+    with g:
+
+        if st.button("🔍 البحث عن دعوى"):
+
+            st.session_state.page="search"
+
+            st.rerun()
+
+    with h:
+
+        if st.button("📈 الإحصائيات"):
+
+            st.session_state.page="statistics"
+
+            st.rerun()
+
+    st.write("")
+
+    st.markdown("""
+
+    <h5 style='text-align:center;color:gold'>
+
+    مع تحيات / وليد شعبان حماد
+
+    <br>
+
+    الإدارة العامة للشئون القانونية
+
+    <br>
+
+    ديوان عام منطقة البحيرة
+
+    <br>
+
+    الهيئة القومية للتأمين الاجتماعى
+
+    </h5>
+
+    """,unsafe_allow_html=True)
+
+# ============================================================
+# تشغيل الصفحة الرئيسية
+# ============================================================
+
+if st.session_state.page=="home":
+
+    home_page()
+
+# ============================================================
+# نهاية الجزء 1-ج
+# ============================================================
