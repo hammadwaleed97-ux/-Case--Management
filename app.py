@@ -1,553 +1,234 @@
-# ==================================================
-# ⚖️ GOVERNMENT CASE MANAGEMENT SYSTEM
-# 🏛️ PART 1 - CORE FOUNDATION
-# ==================================================
+# ============================================================
+# ⚖️ نظام إدارة القضايا
+# إعداد وتطوير : وليد شعبان حماد
+# الهيئة القومية للتأمين الاجتماعى
+# الإدارة المركزية للشئون القانونية
+# الإدارة العامة للقضايا
+# ============================================================
+
+# ============================================================
+# IMPORTS
+# ============================================================
 
 import streamlit as st
 import sqlite3
-from datetime import datetime
+import pandas as pd
 import os
+import shutil
+from datetime import datetime, timedelta
+from pathlib import Path
 
-# ==================================================
-# ⚖️ APP CONFIG
-# ==================================================
-st.set_page_config(
-    page_title="نظام إدارة القضايا الحكومي",
-    page_icon="⚖️",
-    layout="wide"
+# =====================================
+# تصدير Word
+# =====================================
+
+from docx import Document
+from docx.shared import Pt,Cm
+from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
+from docx.oxml.ns import qn
+
+# =====================================
+# تصدير PDF
+# =====================================
+
+from reportlab.platypus import (
+    SimpleDocTemplate,
+    Table,
+    TableStyle,
+    Paragraph,
+    Spacer
 )
 
-# ==================================================
-# ⚖️ DATABASE CONNECTION
-# ==================================================
-conn = sqlite3.connect("gov_cases.db", check_same_thread=False)
-c = conn.cursor()
+from reportlab.lib.styles import getSampleStyleSheet
 
-# ==================================================
-# ⚖️ INIT DATABASE (GOV STRUCTURE)
-# ==================================================
-def init_db():
+from reportlab.lib.enums import TA_CENTER
 
-    # ---------------- CASES ----------------
-    c.execute("""
-    CREATE TABLE IF NOT EXISTS cases (
+from reportlab.lib import colors
+
+# =====================================
+# APP CONFIG
+# =====================================
+
+st.set_page_config(
+
+    page_title="إدارة القضايا",
+
+    page_icon="⚖️",
+
+    layout="wide",
+
+    initial_sidebar_state="collapsed"
+
+)
+
+# ============================================================
+# إنشاء المجلدات
+# ============================================================
+
+BASE_DIR = Path(".")
+
+DATABASE = BASE_DIR / "government_cases.db"
+
+UPLOAD_DIR = BASE_DIR / "uploads"
+
+LIBRARY_DIR = BASE_DIR / "legal_library"
+
+REPORT_DIR = BASE_DIR / "reports"
+
+BACKUP_DIR = BASE_DIR / "backup"
+
+UPLOAD_DIR.mkdir(exist_ok=True)
+
+LIBRARY_DIR.mkdir(exist_ok=True)
+
+REPORT_DIR.mkdir(exist_ok=True)
+
+BACKUP_DIR.mkdir(exist_ok=True)
+
+# ============================================================
+# DATABASE CONNECTION
+# ============================================================
+
+conn = sqlite3.connect(
+
+    DATABASE,
+
+    check_same_thread=False
+
+)
+
+conn.row_factory = sqlite3.Row
+
+cur = conn.cursor()
+
+# ============================================================
+# إنشاء الجداول
+# ============================================================
+
+def create_tables():
+
+    # ====================================================
+    # جدول القضايا
+    # ====================================================
+
+    cur.execute("""
+
+    CREATE TABLE IF NOT EXISTS cases(
+
         id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+        case_type TEXT,
+
+        court_level TEXT,
+
+        court_name TEXT,
+
+        mission TEXT,
+
         case_number TEXT,
-        year TEXT,
-        court TEXT,
+
+        judicial_year TEXT,
+
+        circuit TEXT,
+
+        case_category TEXT,
+
         plaintiff TEXT,
+
         defendant TEXT,
+
         subject TEXT,
-        status TEXT,
-        last_session TEXT,
-        created_at TEXT
-    )
-    """)
 
-    # ---------------- SESSIONS ----------------
-    c.execute("""
-    CREATE TABLE IF NOT EXISTS sessions (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        case_id INTEGER,
-        session_date TEXT,
+        first_session_date TEXT,
+
         roll TEXT,
-        decision TEXT,
-        created_at TEXT
-    )
-    """)
 
-    # ---------------- DOCUMENTS ----------------
-    c.execute("""
-    CREATE TABLE IF NOT EXISTS documents (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        case_id INTEGER,
-        doc_type TEXT,
-        file_path TEXT,
-        created_at TEXT
-    )
-    """)
+        required_action TEXT,
 
-    # ---------------- ARCHIVE ----------------
-    c.execute("""
-    CREATE TABLE IF NOT EXISTS archive (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        case_id INTEGER,
-        judgment TEXT,
-        result TEXT,
+        notes TEXT,
+
+        whatsapp_enabled INTEGER DEFAULT 0,
+
+        whatsapp_number TEXT,
+
+        last_session_date TEXT,
+
+        last_session_reason TEXT,
+
         judgment_date TEXT,
-        created_at TEXT
+
+        judgment_text TEXT,
+
+        judgment_result TEXT,
+
+        appeal_number TEXT,
+
+        archive_note TEXT,
+
+        status TEXT,
+
+        created_at TEXT,
+
+        updated_at TEXT
+
     )
+
     """)
 
-    # ---------------- AUDIT LOG ----------------
-    c.execute("""
-    CREATE TABLE IF NOT EXISTS audit_log (
+    # ====================================================
+    # جدول الجلسات
+    # ====================================================
+
+    cur.execute("""
+
+    CREATE TABLE IF NOT EXISTS sessions(
+
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        action TEXT,
-        details TEXT,
-        created_at TEXT
+
+        case_id INTEGER,
+
+        session_date TEXT,
+
+        roll TEXT,
+
+        procedure_text TEXT,
+
+        created_at TEXT,
+
+        FOREIGN KEY(case_id)
+
+        REFERENCES cases(id)
+
     )
+
     """)
 
-    conn.commit()
+    # ====================================================
+    # جدول المستندات
+    # ====================================================
 
-init_db()
+    cur.execute("""
 
-# ==================================================
-# ⚖️ AUDIT SYSTEM
-# ==================================================
-def log_action(action, details):
+    CREATE TABLE IF NOT EXISTS case_documents(
 
-    c.execute("""
-        INSERT INTO audit_log VALUES (NULL,?,?,?)
-    """, (
-        action,
-        details,
-        str(datetime.now())
-    ))
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
 
-    conn.commit()
+        case_id INTEGER,
 
-# ==================================================
-# ⚖️ FILE STORAGE
-# ==================================================
-UPLOAD_FOLDER = "uploads"
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+        document_type TEXT,
 
-# ==================================================
-# ⚖️ END PART 1
-# ==================================================
-# ==================================================
-# ⚖️ PART 2-A-1
-# GOVERNMENT CASE MANAGEMENT SYSTEM
-# تسجيل القضايا - الواجهة الرئيسية
-# ==================================================
+        document_title TEXT,
 
-# ==================================================
-# SESSION STATE
-# ==================================================
-if "page" not in st.session_state:
-    st.session_state.page = "home"
+        file_name TEXT,
 
-if "selected_case" not in st.session_state:
-    st.session_state.selected_case = None
+        file_path TEXT,
 
-# ==================================================
-# COURT THEME
-# ==================================================
-st.markdown("""
-<style>
+        upload_date TEXT,
 
-.stApp{
-    background:#08284d;
-}
+        FOREIGN KEY(case_id)
 
-h1,h2,h3,label{
-    color:white!important;
-}
+        REFERENCES cases(id)
 
-.block-container{
-    padding-top:1rem;
-}
+    )
 
-.main-title{
-    text-align:center;
-    color:gold;
-    font-size:38px;
-    font-weight:bold;
-}
-
-.sub-title{
-    text-align:center;
-    color:white;
-    font-size:18px;
-}
-
-div[data-testid="stForm"]{
-    background:#103b6d;
-    padding:20px;
-    border-radius:15px;
-    border:2px solid gold;
-}
-
-.stButton>button{
-    background:#1d5da8;
-    color:white;
-    border-radius:8px;
-    border:none;
-    font-weight:bold;
-}
-
-.stButton>button:hover{
-    background:#2f7bd6;
-}
-
-.footer{
-    text-align:center;
-    color:gold;
-    font-size:14px;
-    margin-top:30px;
-}
-
-</style>
-""", unsafe_allow_html=True)
-
-# ==================================================
-# HEADER
-# ==================================================
-
-st.markdown("""
-<div class='main-title'>
-⚖️ إدارة القضايا
-</div>
-
-<div class='sub-title'>
-الهيئة القومية للتأمين الاجتماعى
-</div>
-
-<div class='sub-title'>
-الإدارة المركزية للشئون القانونية
-</div>
-
-<div class='sub-title'>
-الإدارة العامة للقضايا
-</div>
-""", unsafe_allow_html=True)
-
-# ==================================================
-# HOME PAGE
-# ==================================================
-
-def home_page():
-
-    st.markdown("## الصفحة الرئيسية")
-
-    c1,c2,c3=st.columns(3)
-
-    with c1:
-        if st.button("📌 تسجيل القضايا",use_container_width=True):
-            st.session_state.page="register"
-
-    with c2:
-        if st.button("📂 الحصر العام",use_container_width=True):
-            st.session_state.page="registry"
-
-    with c3:
-        if st.button("🔔 التنبيهات",use_container_width=True):
-            st.session_state.page="alerts"
-
-    c4,c5,c6=st.columns(3)
-
-    with c4:
-        if st.button("📊 التقارير",use_container_width=True):
-            st.session_state.page="reports"
-
-    with c5:
-        if st.button("🗃 الأرشيف",use_container_width=True):
-            st.session_state.page="archive"
-
-    with c6:
-        if st.button("📚 المكتبة القانونية",use_container_width=True):
-            st.session_state.page="library"
-
-    c7,c8=st.columns(2)
-
-    with c7:
-        if st.button("🔎 البحث عن دعوى",use_container_width=True):
-            st.session_state.page="search"
-
-    with c8:
-        if st.button("📈 الإحصائيات",use_container_width=True):
-            st.session_state.page="statistics"
-
-# ==================================================
-# REGISTER PAGE
-# ==================================================
-
-def register_case():
-
-    st.markdown("## ⚖️ تسجيل القضايا")
-
-    with st.form("register_case"):
-
-        case_kind=st.selectbox(
-            "نوع الدعوى",
-            ["دعوى","استئناف","طعن"]
-        )
-
-        court_type=st.selectbox(
-            "المحكمة",
-            [
-                "الابتدائية",
-                "الاستئناف",
-                "النقض",
-                "الإدارية",
-                "القضاء الإدارى",
-                "الإدارية العليا"
-            ]
-        )
-
-        court_name=st.text_input("اسم المحكمة")
-
-        mission=""
-
-        if court_type=="الاستئناف":
-            mission=st.text_input("المأمورية")
-
-        case_number=st.text_input("رقم الدعوى / الاستئناف / الطعن")
-
-        judicial_year=st.text_input("السنة القضائية")
-
-        circuit=st.text_input("الدائرة")
-
-        case_type=st.text_input("النوع")
-
-        plaintiff=st.text_input(
-            "اسم المدعى / المستأنف / الطاعن"
-        )
-
-        defendant=st.text_input(
-            "اسم المدعى عليه / المستأنف ضده / المطعون ضده"
-        )
-
-        subject=st.text_area("موضوع الدعوى")
-
-        first_session=st.date_input("تاريخ أول جلسة")
-
-        roll=st.text_input("الرول")
-
-        required_action=st.text_area("الإجراء المطلوب")
-
-        notes=st.text_area("ملاحظات")
-                whatsapp_enabled = st.checkbox(
-            "تفعيل التنبيهات عبر واتساب"
-        )
-
-        whatsapp_number = ""
-
-        if whatsapp_enabled:
-
-            whatsapp_number = st.text_input(
-                "رقم واتساب"
-            )
-
-        uploaded_file = st.file_uploader(
-            "تحميل المستند",
-            type=[
-                "pdf",
-                "doc",
-                "docx"
-            ]
-        )
-
-        document_type = st.selectbox(
-
-            "نوع المستند",
-
-            [
-
-                "صحيفة دعوى",
-
-                "صحيفة استئناف",
-
-                "صحيفة طعن"
-
-            ]
-
-        )
-
-        save = st.form_submit_button("💾 حفظ القضية")
-
-        delete = st.form_submit_button("🗑 حذف البيانات")
-
-    # =====================================
-    # DELETE
-    # =====================================
-
-    if delete:
-
-        st.rerun()
-
-    # =====================================
-    # SAVE
-    # =====================================
-
-    if save:
-
-        document_path = ""
-
-        if uploaded_file is not None:
-
-            document_path = os.path.join(
-
-                UPLOAD_FOLDER,
-
-                uploaded_file.name
-
-            )
-
-            with open(document_path, "wb") as f:
-
-                f.write(uploaded_file.getbuffer())
-
-        c.execute("""
-
-        INSERT INTO cases(
-
-        case_number,
-
-        year,
-
-        court,
-
-        plaintiff,
-
-        defendant,
-
-        subject,
-
-        status,
-
-        last_session,
-
-        created_at
-
-        )
-
-        VALUES(
-
-        ?,?,?,?,?,?,?,?,?
-
-        )
-
-        """,(
-
-        case_number,
-
-        judicial_year,
-
-        court_name,
-
-        plaintiff,
-
-        defendant,
-
-        subject,
-
-        "متداولة",
-
-        str(first_session),
-
-        str(datetime.now())
-
-        ))
-
-        conn.commit()
-
-        case_id = c.lastrowid
-
-        # =======================================
-        # أول جلسة
-        # =======================================
-
-        c.execute("""
-
-        INSERT INTO sessions(
-
-        case_id,
-
-        session_date,
-
-        roll,
-
-        decision,
-
-        created_at
-
-        )
-
-        VALUES(
-
-        ?,?,?,?,?
-
-        )
-
-        """,(
-
-        case_id,
-
-        str(first_session),
-
-        roll,
-
-        required_action,
-
-        str(datetime.now())
-
-        ))
-
-        conn.commit()
-
-        # =======================================
-        # المستند
-        # =======================================
-
-        if document_path != "":
-
-            c.execute("""
-
-            INSERT INTO documents(
-
-            case_id,
-
-            doc_type,
-
-            file_path,
-
-            created_at
-
-            )
-
-            VALUES(
-
-            ?,?,?,?
-
-            )
-
-            """,(
-
-            case_id,
-
-            document_type,
-
-            document_path,
-
-            str(datetime.now())
-
-            ))
-
-            conn.commit()
-
-        # =======================================
-        # AUDIT
-        # =======================================
-
-        log_action(
-
-            "ADD_CASE",
-
-            f"تم إضافة القضية رقم {case_number}"
-
-        )
-
-        st.success("✅ تم حفظ القضية بنجاح")
-
-        st.session_state.selected_case = case_id
-
-        st.session_state.page = "registry"
-
-        st.rerun()
-
-# ==================================================
-# نهاية الجزء 2-أ-2
-# ==================================================
+    """)
