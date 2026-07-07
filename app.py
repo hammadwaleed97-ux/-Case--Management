@@ -1,181 +1,119 @@
-# ==========================================================
-# الجزء 1 - الأساس والتصميم العام (Core + UI Shell)
-# ==========================================================
+# ==================================================
+# ⚖️ GOVERNMENT CASE MANAGEMENT SYSTEM
+# 🏛️ PART 1 - CORE FOUNDATION
+# ==================================================
 
 import streamlit as st
 import sqlite3
 from datetime import datetime
+import os
 
-# ===================== إعداد الصفحة =====================
+# ==================================================
+# ⚖️ APP CONFIG
+# ==================================================
 st.set_page_config(
-    page_title="إدارة القضايا",
+    page_title="نظام إدارة القضايا الحكومي",
     page_icon="⚖️",
-    layout="wide",
-    initial_sidebar_state="expanded"
+    layout="wide"
 )
 
-# ===================== قاعدة البيانات =====================
-conn = sqlite3.connect("cases.db", check_same_thread=False)
-cursor = conn.cursor()
+# ==================================================
+# ⚖️ DATABASE CONNECTION
+# ==================================================
+conn = sqlite3.connect("gov_cases.db", check_same_thread=False)
+c = conn.cursor()
 
-cursor.execute("""
-CREATE TABLE IF NOT EXISTS cases (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    case_type TEXT,
-    court TEXT,
-    court_name TEXT,
-    mission TEXT,
-    case_number TEXT,
-    year TEXT,
-    circle TEXT,
-    case_kind TEXT,
-    plaintiff TEXT,
-    defendant TEXT,
-    subject TEXT,
-    first_session_date TEXT,
-    roll TEXT,
-    action TEXT,
-    notes TEXT,
-    whatsapp_enabled INTEGER,
-    whatsapp_number TEXT,
-    doc_type TEXT,
-    created_at TEXT
-)
-""")
+# ==================================================
+# ⚖️ INIT DATABASE (GOV STRUCTURE)
+# ==================================================
+def init_db():
 
-conn.commit()
+    # ---------------- CASES ----------------
+    c.execute("""
+    CREATE TABLE IF NOT EXISTS cases (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        case_number TEXT,
+        year TEXT,
+        court TEXT,
+        plaintiff TEXT,
+        defendant TEXT,
+        subject TEXT,
+        status TEXT,
+        last_session TEXT,
+        created_at TEXT
+    )
+    """)
 
-# ===================== CSS تصميم فخم =====================
-st.markdown("""
-<style>
+    # ---------------- SESSIONS ----------------
+    c.execute("""
+    CREATE TABLE IF NOT EXISTS sessions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        case_id INTEGER,
+        session_date TEXT,
+        roll TEXT,
+        decision TEXT,
+        created_at TEXT
+    )
+    """)
 
-@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;700&display=swap');
+    # ---------------- DOCUMENTS ----------------
+    c.execute("""
+    CREATE TABLE IF NOT EXISTS documents (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        case_id INTEGER,
+        doc_type TEXT,
+        file_path TEXT,
+        created_at TEXT
+    )
+    """)
 
-html, body, [class*="css"]  {
-    font-family: 'Cairo', sans-serif;
-    background-color: #0b1f3a;
-    color: #ffffff;
-}
+    # ---------------- ARCHIVE ----------------
+    c.execute("""
+    CREATE TABLE IF NOT EXISTS archive (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        case_id INTEGER,
+        judgment TEXT,
+        result TEXT,
+        judgment_date TEXT,
+        created_at TEXT
+    )
+    """)
 
-.main {
-    background: linear-gradient(180deg, #071427, #0b1f3a);
-}
+    # ---------------- AUDIT LOG ----------------
+    c.execute("""
+    CREATE TABLE IF NOT EXISTS audit_log (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        action TEXT,
+        details TEXT,
+        created_at TEXT
+    )
+    """)
 
-.block-container {
-    padding: 2rem;
-}
+    conn.commit()
 
-h1, h2, h3 {
-    color: #00d4ff;
-}
+init_db()
 
-.stButton>button {
-    background: linear-gradient(90deg, #00d4ff, #005eff);
-    color: white;
-    border-radius: 10px;
-    border: none;
-    padding: 10px 20px;
-    font-weight: bold;
-}
+# ==================================================
+# ⚖️ AUDIT SYSTEM
+# ==================================================
+def log_action(action, details):
 
-.stTextInput>div>div>input {
-    background-color: #112b4a;
-    color: white;
-    border-radius: 8px;
-}
+    c.execute("""
+        INSERT INTO audit_log VALUES (NULL,?,?,?)
+    """, (
+        action,
+        details,
+        str(datetime.now())
+    ))
 
-.sidebar .sidebar-content {
-    background-color: #071427;
-}
+    conn.commit()
 
-.card {
-    background-color: #112b4a;
-    padding: 15px;
-    border-radius: 15px;
-    margin-bottom: 10px;
-    border: 1px solid #1f3b5c;
-}
+# ==================================================
+# ⚖️ FILE STORAGE
+# ==================================================
+UPLOAD_FOLDER = "uploads"
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-.logo {
-    text-align: center;
-    font-size: 28px;
-    font-weight: bold;
-    color: #00d4ff;
-    margin-bottom: 5px;
-}
-
-.scale {
-    text-align: center;
-    font-size: 35px;
-    color: gold;
-    animation: glow 2s infinite;
-}
-
-@keyframes glow {
-    0% {opacity: 0.4;}
-    50% {opacity: 1;}
-    100% {opacity: 0.4;}
-}
-
-.footer {
-    position: fixed;
-    bottom: 0;
-    width: 100%;
-    text-align: center;
-    color: #00d4ff;
-    background-color: rgba(0,0,0,0.3);
-    padding: 5px;
-    animation: fade 3s infinite;
-}
-
-@keyframes fade {
-    0% {opacity: 0.2;}
-    50% {opacity: 1;}
-    100% {opacity: 0.2;}
-}
-
-</style>
-""", unsafe_allow_html=True)
-
-# ===================== الهيدر =====================
-st.markdown("<div class='scale'>⚖️</div>", unsafe_allow_html=True)
-st.markdown("<div class='logo'>إدارة القضايا</div>", unsafe_allow_html=True)
-
-st.markdown("""
-<div style='text-align:center;color:#ffffff;'>
-مع تحيات / وليد شعبان حماد<br>
-</div>
-""", unsafe_allow_html=True)
-
-# ===================== حالة التطبيق =====================
-if "page" not in st.session_state:
-    st.session_state.page = "home"
-
-# ===================== القائمة الجانبية =====================
-st.sidebar.title("القائمة")
-
-menu = st.sidebar.radio("اختر القسم", [
-    "تسجيل القضايا",
-    "الحصر العام",
-    "التنبيهات",
-    "التقارير",
-    "الأرشيف",
-    "المكتبة القانونية",
-    "البحث عن دعوى"
-])
-
-st.session_state.page = menu
-
-# ===================== الصفحة الرئيسية =====================
-if st.session_state.page == "home":
-    st.markdown("## مرحباً بك في نظام إدارة القضايا")
-    st.markdown("<div class='card'>نظام احترافي لإدارة القضايا والتقارير والتنبيهات</div>", unsafe_allow_html=True)
-
-# ===================== فوتر =====================
-st.markdown("""
-<div class='footer'>
-مع تحيات / وليد شعبان حماد - الإدارة العامة للقضايا
-</div>
-""", unsafe_allow_html=True)
-
-# ================= نهاية الجزء 1 =================
+# ==================================================
+# ⚖️ END PART 1
+# ==================================================
