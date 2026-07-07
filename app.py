@@ -3,12 +3,6 @@
 # Streamlit Professional Edition
 # الجزء الأول : الأساس + التصميم + قاعدة البيانات
 # ==========================================================
-import streamlit as st
-import sqlite3
-import os
-import pandas as pd
-import io
-from datetime import datetime
 # ============================================================
 # إعداد الصفحة
 # ============================================================
