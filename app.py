@@ -232,3 +232,250 @@ def create_tables():
     )
 
     """)
+        # ====================================================
+    # جدول الأحكام
+    # ====================================================
+
+    cur.execute("""
+
+    CREATE TABLE IF NOT EXISTS judgments(
+
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+        case_id INTEGER,
+
+        judgment_date TEXT,
+
+        judgment_text TEXT,
+
+        judgment_result TEXT,
+
+        judgment_type TEXT,
+
+        created_at TEXT,
+
+        FOREIGN KEY(case_id)
+
+        REFERENCES cases(id)
+
+    )
+
+    """)
+
+    # ====================================================
+    # جدول الأرشيف
+    # ====================================================
+
+    cur.execute("""
+
+    CREATE TABLE IF NOT EXISTS archive(
+
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+        case_id INTEGER,
+
+        archive_date TEXT,
+
+        appeal_number TEXT,
+
+        archive_note TEXT,
+
+        created_at TEXT,
+
+        FOREIGN KEY(case_id)
+
+        REFERENCES cases(id)
+
+    )
+
+    """)
+
+    # ====================================================
+    # جدول التنبيهات
+    # ====================================================
+
+    cur.execute("""
+
+    CREATE TABLE IF NOT EXISTS notifications(
+
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+        case_id INTEGER,
+
+        notification_type TEXT,
+
+        notification_date TEXT,
+
+        whatsapp_enabled INTEGER DEFAULT 0,
+
+        whatsapp_number TEXT,
+
+        sent INTEGER DEFAULT 0,
+
+        created_at TEXT,
+
+        FOREIGN KEY(case_id)
+
+        REFERENCES cases(id)
+
+    )
+
+    """)
+
+    # ====================================================
+    # جدول المكتبة القانونية
+    # ====================================================
+
+    cur.execute("""
+
+    CREATE TABLE IF NOT EXISTS legal_library(
+
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+        category TEXT,
+
+        document_name TEXT,
+
+        document_number TEXT,
+
+        document_year TEXT,
+
+        description TEXT,
+
+        file_name TEXT,
+
+        file_path TEXT,
+
+        created_at TEXT
+
+    )
+
+    """)
+
+    # ====================================================
+    # جدول المستخدمين
+    # ====================================================
+
+    cur.execute("""
+
+    CREATE TABLE IF NOT EXISTS users(
+
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+        full_name TEXT,
+
+        username TEXT UNIQUE,
+
+        password TEXT,
+
+        role TEXT,
+
+        active INTEGER DEFAULT 1,
+
+        created_at TEXT
+
+    )
+
+    """)
+
+    # ====================================================
+    # جدول سجل الحركات
+    # ====================================================
+
+    cur.execute("""
+
+    CREATE TABLE IF NOT EXISTS audit_log(
+
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+        username TEXT,
+
+        action TEXT,
+
+        details TEXT,
+
+        action_date TEXT
+
+    )
+
+    """)
+
+    conn.commit()
+
+create_tables()
+
+# ====================================================
+# دوال قاعدة البيانات العامة
+# ====================================================
+
+def execute(query, params=()):
+
+    cur.execute(query, params)
+
+    conn.commit()
+
+    return cur
+
+def fetch_all(query, params=()):
+
+    cur.execute(query, params)
+
+    return cur.fetchall()
+
+def fetch_one(query, params=()):
+
+    cur.execute(query, params)
+
+    return cur.fetchone()
+
+# ====================================================
+# تسجيل العمليات
+# ====================================================
+
+def log_action(username, action, details):
+
+    execute("""
+
+    INSERT INTO audit_log(
+
+    username,
+
+    action,
+
+    details,
+
+    action_date
+
+    )
+
+    VALUES(
+
+    ?,?,?,?
+
+    )
+
+    """,(
+
+    username,
+
+    action,
+
+    details,
+
+    datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    ))
+
+# ====================================================
+# إنشاء نسخة احتياطية
+# ====================================================
+
+def backup_database():
+
+    backup_name = BACKUP_DIR / f"backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.db"
+
+    shutil.copy(DATABASE, backup_name)
+
+# ====================================================
+# نهاية الجزء 1-ب
+# ====================================================
