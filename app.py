@@ -3724,6 +3724,21 @@ if st.session_state.page=="الإعدادات":
 elif st.session_state.page=="عن البرنامج":
 
     about_page()
+    # ============================================================
+# تشغيل صفحات البرنامج
+# ============================================================
+
+if st.session_state.page=="تسجيل القضايا":
+    registration_page()
+
+elif st.session_state.page=="الحصر العام":
+    general_archive_page()
+
+elif st.session_state.page=="الأرشيف":
+    archive_page()
+
+elif st.session_state.page=="البحث عن دعوى":
+    search_case_page()
 
 
 
