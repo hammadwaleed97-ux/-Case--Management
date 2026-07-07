@@ -2212,3 +2212,500 @@ if st.session_state.page=="الأرشيف":
 if st.session_state.page=="البحث عن دعوى":
 
     search_case_page()
+    # ============================================================
+# إدارة القضايا
+# الجزء الخامس : التنبيهات + المكتبة القانونية
+# ============================================================
+
+from datetime import timedelta
+
+
+# ============================================================
+# التنبيهات
+# ============================================================
+
+
+def notifications_page():
+
+
+    st.markdown(
+
+    """
+
+    <h1 style="text-align:center">
+
+    🔔 التنبيهات
+
+    </h1>
+
+    """,
+
+    unsafe_allow_html=True
+
+    )
+
+
+
+    today=datetime.now().date()
+
+
+
+    week_date=today + timedelta(days=7)
+
+
+
+    conn=db()
+
+
+
+    sessions=pd.read_sql_query(
+
+    """
+
+    SELECT
+
+
+    cases.id,
+
+    cases.case_number AS رقم_القضية,
+
+    cases.case_year AS السنة,
+
+    cases.plaintiff AS المدعي,
+
+    cases.defendant AS المدعى_عليه,
+
+    cases.subject AS الموضوع,
+
+    sessions.session_date AS تاريخ_الجلسة,
+
+    sessions.action AS الإجراء
+
+
+
+    FROM sessions
+
+
+    JOIN cases
+
+
+    ON sessions.case_id=cases.id
+
+
+    WHERE sessions.session_date BETWEEN ? AND ?
+
+
+
+    ORDER BY sessions.session_date
+
+
+    """,
+
+    conn,
+
+    params=(
+
+    str(today),
+
+    str(week_date)
+
+    )
+
+    )
+
+
+
+    conn.close()
+
+
+
+    st.subheader(
+
+    "📅 جلسات خلال أسبوع"
+
+    )
+
+
+
+    if sessions.empty:
+
+
+        st.success(
+
+        "لا توجد جلسات قريبة"
+
+        )
+
+
+    else:
+
+
+        st.dataframe(
+
+        sessions,
+
+        use_container_width=True,
+
+        hide_index=True
+
+        )
+
+
+
+    st.divider()
+
+
+
+    st.subheader(
+
+    "⚠️ تنبيهات الطعون"
+
+    )
+
+
+
+    st.info(
+
+    """
+
+    يتم حساب مواعيد الطعن تلقائيا:
+
+    - الاستئناف 40 يوم
+
+    - النقض والإدارية العليا والقضاء الإداري 60 يوم
+
+    """
+
+    )
+
+
+
+
+# ============================================================
+# المكتبة القانونية
+# ============================================================
+
+
+
+library_sections=[
+
+
+"القوانين",
+
+"القرارات الوزارية",
+
+"قرارات الهيئة",
+
+"المنشورات الوزارية",
+
+"منشورات الهيئة",
+
+"الكتب الدورية",
+
+"تعليمات الهيئة",
+
+"رسائل الهيئة",
+
+"المرصد الفني",
+
+"فتاوى لجنة الشئون القانونية بالوزارة",
+
+"فتاوى الإدارة المركزية للشئون القانونية",
+
+"أحكام المحكمة الدستورية العليا",
+
+"أحكام محكمة النقض",
+
+"أحكام المحكمة الإدارية العليا",
+
+"أحكام المحاكم الاستئنافية",
+
+"أحكام محاكم القضاء الإداري",
+
+"أحكام المحاكم الابتدائية",
+
+"أحكام المحكمة الإدارية",
+
+"منشورات القضاء العادي",
+
+"منشورات مجلس الدولة",
+
+"فتاوى الجمعية العمومية",
+
+"صحف طعون",
+
+"صحف استئنافات",
+
+"صحف دعاوى",
+
+"مذكرات دفاع",
+
+"أخرى"
+
+]
+
+
+
+def add_library_file():
+
+
+
+    st.subheader(
+
+    "📚 إضافة مادة قانونية"
+
+    )
+
+
+    section=st.selectbox(
+
+    "القسم",
+
+    library_sections
+
+    )
+
+
+
+    title=st.text_input(
+
+    "بيان المستند"
+
+    )
+
+
+
+    file=st.file_uploader(
+
+    "رفع الملف"
+
+    )
+
+
+
+    if st.button(
+
+    "حفظ بالمكتبة"
+
+    ):
+
+
+
+        if file:
+
+
+
+            path=os.path.join(
+
+            LIB_FOLDER,
+
+            file.name
+
+            )
+
+
+
+            with open(path,"wb") as f:
+
+                f.write(
+
+                file.getbuffer()
+
+                )
+
+
+
+            conn=db()
+
+            cur=conn.cursor()
+
+
+
+            cur.execute(
+
+            """
+
+            INSERT INTO library
+
+            (
+
+            section,
+
+            title,
+
+            file_path,
+
+            created
+
+            )
+
+            VALUES(?,?,?,?)
+
+            """,
+
+            (
+
+            section,
+
+            title,
+
+            path,
+
+            str(datetime.now())
+
+            )
+
+            )
+
+
+
+            conn.commit()
+
+            conn.close()
+
+
+
+            st.success(
+
+            "تم حفظ المادة القانونية"
+
+            )
+
+
+
+
+
+def library_page():
+
+
+    st.markdown(
+
+    """
+
+    <h1 style="text-align:center">
+
+    ⚖️ المكتبة القانونية
+
+    </h1>
+
+    """,
+
+    unsafe_allow_html=True
+
+    )
+
+
+
+    add_library_file()
+
+
+
+    st.divider()
+
+
+
+    search=st.text_input(
+
+    "🔎 البحث في المكتبة"
+
+    )
+
+
+
+    conn=db()
+
+
+
+    if search:
+
+
+        df=pd.read_sql_query(
+
+        """
+
+        SELECT
+
+        section AS القسم,
+
+        title AS البيان
+
+
+        FROM library
+
+
+        WHERE title LIKE ?
+
+
+        """,
+
+        conn,
+
+        params=(
+
+        "%"+search+"%",
+
+        )
+
+        )
+
+
+
+    else:
+
+
+        df=pd.read_sql_query(
+
+        """
+
+        SELECT
+
+        section AS القسم,
+
+        title AS البيان
+
+
+        FROM library
+
+
+        ORDER BY id DESC
+
+
+        """,
+
+        conn
+
+        )
+
+
+
+    conn.close()
+
+
+
+    st.dataframe(
+
+    df,
+
+    use_container_width=True,
+
+    hide_index=True
+
+    )
+
+
+
+
+# ============================================================
+# تشغيل الأقسام
+# ============================================================
+
+
+if st.session_state.page=="التنبيهات":
+
+    notifications_page()
+
+
+
+if st.session_state.page=="المكتبة القانونية":
+
+    library_page()
