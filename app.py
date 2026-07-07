@@ -593,3 +593,451 @@ st.markdown(
 unsafe_allow_html=True
 
             )
+# ============================================================
+# إدارة القضايا
+# الجزء الثاني : تسجيل القضايا
+# ============================================================
+
+
+def save_case_record(data):
+
+    conn=db()
+
+    cur=conn.cursor()
+
+
+    cur.execute("""
+
+    INSERT INTO cases(
+
+    case_type,
+    court_type,
+    court_name,
+    department,
+    case_number,
+    case_year,
+    circle,
+    category,
+    plaintiff,
+    defendant,
+    subject,
+    first_session,
+    roll,
+    required_action,
+    notes,
+    whatsapp,
+    whatsapp_number,
+    created_at
+
+    )
+
+    VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+
+    """,data)
+
+
+    case_id=cur.lastrowid
+
+
+
+    # إضافة أول جلسة تلقائيا
+
+    cur.execute("""
+
+    INSERT INTO sessions
+
+    (
+
+    case_id,
+
+    session_date,
+
+    roll,
+
+    action
+
+    )
+
+    VALUES(?,?,?,?)
+
+    """,
+
+    (
+
+    case_id,
+
+    data[11],
+
+    data[12],
+
+    data[13]
+
+    ))
+
+
+
+    conn.commit()
+
+    conn.close()
+
+
+
+
+def registration_page():
+
+
+    st.markdown(
+
+    """
+
+    <h1 style="text-align:center">
+
+    📝 تسجيل القضايا
+
+    </h1>
+
+    """,
+
+    unsafe_allow_html=True
+
+    )
+
+
+    st.divider()
+
+
+
+    c1,c2,c3=st.columns(3)
+
+
+
+    with c1:
+
+        case_type=st.selectbox(
+
+        "نوع الدعوى",
+
+        [
+
+        "دعوى",
+
+        "استئناف",
+
+        "طعن"
+
+        ]
+
+        )
+
+
+
+    with c2:
+
+        court_type=st.selectbox(
+
+        "المحكمة",
+
+        [
+
+        "الابتدائية",
+
+        "الاستئناف",
+
+        "النقض",
+
+        "الإدارية",
+
+        "القضاء الإداري",
+
+        "الإدارية العليا"
+
+        ]
+
+        )
+
+
+
+    with c3:
+
+        court_name=st.text_input(
+
+        "اسم المحكمة"
+
+        )
+
+
+
+    department=""
+
+
+
+    if case_type=="استئناف":
+
+        department=st.text_input(
+
+        "المأمورية"
+
+        )
+
+
+
+    c1,c2,c3=st.columns(3)
+
+
+
+    with c1:
+
+        case_number=st.text_input(
+
+        "رقم الدعوى / الاستئناف / الطعن"
+
+        )
+
+
+
+    with c2:
+
+        case_year=st.text_input(
+
+        "السنة القضائية"
+
+        )
+
+
+
+    with c3:
+
+        circle=st.text_input(
+
+        "الدائرة"
+
+        )
+
+
+
+    c1,c2=st.columns(2)
+
+
+
+    with c1:
+
+        category=st.text_input(
+
+        "النوع"
+
+        )
+
+
+    with c2:
+
+        first_session=st.date_input(
+
+        "تاريخ أول جلسة"
+
+        )
+
+
+
+    plaintiff=st.text_input(
+
+    "اسم المدعي / المستأنف / الطاعن"
+
+    )
+
+
+
+    defendant=st.text_input(
+
+    "اسم المدعى عليه / المستأنف ضده / المطعون ضده"
+
+    )
+
+
+
+    subject=st.text_area(
+
+    "موضوع الدعوى"
+
+    )
+
+
+
+    roll=st.text_input(
+
+    "الرول"
+
+    )
+
+
+
+    required_action=st.text_area(
+
+    "الإجراء المطلوب"
+
+    )
+
+
+
+    notes=st.text_area(
+
+    "ملاحظات"
+
+    )
+
+
+
+    st.subheader(
+
+    "🔔 تنبيهات الواتس اب"
+
+    )
+
+
+
+    whatsapp=st.checkbox(
+
+    "تفعيل التنبيهات"
+
+    )
+
+
+    whatsapp_number=st.text_input(
+
+    "رقم واتس اب"
+
+    )
+
+
+
+    st.subheader(
+
+    "📂 تحميل المستندات"
+
+    )
+
+
+
+    document_type=st.selectbox(
+
+    "نوع المستند",
+
+    [
+
+    "صحيفة الدعوى",
+
+    "صحيفة الاستئناف",
+
+    "صحيفة الطعن"
+
+    ]
+
+    )
+
+
+
+    uploaded=st.file_uploader(
+
+    "اختيار الملف"
+
+    )
+
+
+
+
+    col1,col2=st.columns(2)
+
+
+
+    with col1:
+
+
+        if st.button(
+
+        "💾 حفظ القضية",
+
+        use_container_width=True
+
+        ):
+
+
+            save_case_record(
+
+            (
+
+            case_type,
+
+            court_type,
+
+            court_name,
+
+            department,
+
+            case_number,
+
+            case_year,
+
+            circle,
+
+            category,
+
+            plaintiff,
+
+            defendant,
+
+            subject,
+
+            str(first_session),
+
+            roll,
+
+            required_action,
+
+            notes,
+
+            1 if whatsapp else 0,
+
+            whatsapp_number,
+
+            str(datetime.now())
+
+            )
+
+            )
+
+
+            st.success(
+
+            "تم حفظ القضية ونقلها إلى الحصر العام"
+
+            )
+
+
+
+    with col2:
+
+
+        if st.button(
+
+        "🗑 حذف القضية",
+
+        use_container_width=True
+
+        ):
+
+
+            st.warning(
+
+            "الحذف يتم من إدارة القضايا"
+
+            )
+
+
+
+# ============================================================
+# تشغيل صفحة تسجيل القضايا
+# ============================================================
+
+
+if st.session_state.page=="تسجيل القضايا":
+
+    registration_page()
