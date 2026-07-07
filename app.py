@@ -1041,3 +1041,602 @@ def registration_page():
 if st.session_state.page=="تسجيل القضايا":
 
     registration_page()
+    # ============================================================
+# إدارة القضايا
+# الجزء الثالث : الحصر العام + فتح القضية + الجلسات
+# ============================================================
+
+
+def get_all_cases():
+
+    conn=db()
+
+
+    df=pd.read_sql_query(
+
+    """
+
+    SELECT
+
+    id,
+
+    case_number AS رقم_القضية,
+
+    case_year AS السنة_القضائية,
+
+    circle AS الدائرة,
+
+    category AS النوع,
+
+    court_name AS المحكمة,
+
+    department AS المأمورية,
+
+    plaintiff AS المدعي,
+
+    defendant AS المدعى_عليه,
+
+    subject AS موضوع_الدعوى,
+
+    first_session AS آخر_جلسة,
+
+    required_action AS السبب
+
+
+    FROM cases
+
+
+    WHERE status='متداولة'
+
+
+    ORDER BY first_session ASC
+
+
+    """,
+
+    conn
+
+    )
+
+
+    conn.close()
+
+
+    return df
+
+
+
+
+def add_new_session(case_id):
+
+
+    st.subheader(
+
+    "📅 متابعة الجلسات والإجراءات"
+
+    )
+
+
+
+    session_date=st.date_input(
+
+    "تاريخ الجلسة القادمة"
+
+    )
+
+
+    roll=st.text_input(
+
+    "الرول"
+
+    )
+
+
+    action=st.text_area(
+
+    "سبب التأجيل / الإجراء"
+
+    )
+
+
+
+    if st.button(
+
+    "حفظ الجلسة",
+
+    key=f"session_{case_id}"
+
+    ):
+
+
+        conn=db()
+
+        cur=conn.cursor()
+
+
+
+        cur.execute(
+
+        """
+
+        INSERT INTO sessions
+
+        (
+
+        case_id,
+
+        session_date,
+
+        roll,
+
+        action
+
+        )
+
+        VALUES(?,?,?,?)
+
+        """,
+
+        (
+
+        case_id,
+
+        str(session_date),
+
+        roll,
+
+        action
+
+        )
+
+        )
+
+
+
+        cur.execute(
+
+        """
+
+        UPDATE cases
+
+        SET
+
+        first_session=?,
+
+        required_action=?
+
+        WHERE id=?
+
+        """,
+
+        (
+
+        str(session_date),
+
+        action,
+
+        case_id
+
+        )
+
+        )
+
+
+
+        conn.commit()
+
+        conn.close()
+
+
+
+        st.success(
+
+        "تم تحديث الحصر العام"
+
+        )
+
+
+
+
+
+def show_case(case_id):
+
+
+    conn=db()
+
+
+
+    case=pd.read_sql_query(
+
+    """
+
+    SELECT *
+
+    FROM cases
+
+    WHERE id=?
+
+    """,
+
+    conn,
+
+    params=(case_id,)
+
+    )
+
+
+
+    sessions=pd.read_sql_query(
+
+    """
+
+    SELECT
+
+    roll AS الرول,
+
+    session_date AS تاريخ_الجلسة,
+
+    action AS الإجراءات
+
+
+    FROM sessions
+
+
+    WHERE case_id=?
+
+
+    ORDER BY session_date ASC
+
+
+    """,
+
+    conn,
+
+    params=(case_id,)
+
+    )
+
+
+    conn.close()
+
+
+
+    st.markdown(
+
+    """
+
+    <h2 style="text-align:center">
+
+    ⚖️ ملف القضية
+
+    </h2>
+
+    """,
+
+    unsafe_allow_html=True
+
+    )
+
+
+
+    st.dataframe(
+
+    case,
+
+    use_container_width=True,
+
+    hide_index=True
+
+    )
+
+
+
+    st.markdown(
+
+    """
+
+    <h3>
+
+    📅 جدول الجلسات والإجراءات
+
+    </h3>
+
+    """,
+
+    unsafe_allow_html=True
+
+    )
+
+
+    st.dataframe(
+
+    sessions,
+
+    use_container_width=True,
+
+    hide_index=True
+
+    )
+
+
+
+    add_new_session(case_id)
+
+
+
+    st.divider()
+
+
+
+    # المستندات
+
+    st.subheader(
+
+    "📂 مستندات القضية"
+
+    )
+
+
+    docs=pd.read_sql_query(
+
+    """
+
+    SELECT
+
+    doc_type AS النوع,
+
+    doc_name AS البيان
+
+
+    FROM documents
+
+
+    WHERE case_id=?
+
+
+    """,
+
+    sqlite3.connect(DB),
+
+    params=(case_id,)
+
+    )
+
+
+
+    st.dataframe(
+
+    docs,
+
+    use_container_width=True,
+
+    hide_index=True
+
+    )
+
+
+
+    # الحكم
+
+    st.subheader(
+
+    "⚖️ بيانات الحكم"
+
+    )
+
+
+    judgment_date=st.date_input(
+
+    "تاريخ جلسة الحكم",
+
+    key=f"jd{case_id}"
+
+    )
+
+
+    judgment_text=st.text_area(
+
+    "منطوق الحكم",
+
+    key=f"jt{case_id}"
+
+    )
+
+
+    result=st.selectbox(
+
+    "النتيجة",
+
+    [
+
+    "للصالح",
+
+    "للضد"
+
+    ],
+
+    key=f"jr{case_id}"
+
+    )
+
+
+
+    if st.button(
+
+    "تسجيل الحكم ونقل للأرشيف",
+
+    key=f"jud{case_id}"
+
+    ):
+
+
+        conn=db()
+
+        cur=conn.cursor()
+
+
+
+        cur.execute(
+
+        """
+
+        UPDATE cases
+
+        SET
+
+        status='منتهي',
+
+        judgment_date=?,
+
+        judgment_text=?,
+
+        judgment_result=?
+
+
+        WHERE id=?
+
+        """,
+
+        (
+
+        str(judgment_date),
+
+        judgment_text,
+
+        result,
+
+        case_id
+
+        )
+
+        )
+
+
+
+        cur.execute(
+
+        """
+
+        INSERT INTO archive
+
+        (
+
+        case_id,
+
+        judgment_date,
+
+        judgment_text,
+
+        result
+
+        )
+
+        VALUES(?,?,?,?)
+
+        """,
+
+        (
+
+        case_id,
+
+        str(judgment_date),
+
+        judgment_text,
+
+        result
+
+        )
+
+        )
+
+
+
+        conn.commit()
+
+        conn.close()
+
+
+
+        st.success(
+
+        "تم أرشفة الحكم"
+
+        )
+
+
+
+
+
+def general_archive_page():
+
+
+    st.markdown(
+
+    """
+
+    <h1 style="text-align:center">
+
+    📚 الحصر العام
+
+    </h1>
+
+    """,
+
+    unsafe_allow_html=True
+
+    )
+
+
+    df=get_all_cases()
+
+
+
+    if df.empty:
+
+        st.info(
+
+        "لا توجد قضايا مسجلة"
+
+        )
+
+        return
+
+
+
+    st.dataframe(
+
+    df,
+
+    use_container_width=True,
+
+    hide_index=True
+
+    )
+
+
+
+    selected=st.selectbox(
+
+    "فتح القضية",
+
+    df["رقم_القضية"].astype(str)
+
+    )
+
+
+
+    case_id=int(
+
+    df[df["رقم_القضية"].astype(str)==selected]["id"].iloc[0]
+
+    )
+
+
+    show_case(case_id)
+
+
+
+
+if st.session_state.page=="الحصر العام":
+
+    general_archive_page()
