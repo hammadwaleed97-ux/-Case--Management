@@ -1640,3 +1640,575 @@ def general_archive_page():
 if st.session_state.page=="الحصر العام":
 
     general_archive_page()
+    # ============================================================
+# إدارة القضايا
+# الجزء الرابع : المستندات + الأرشيف + البحث
+# ============================================================
+
+
+# ============================================================
+# رفع وحفظ مستندات القضايا
+# ============================================================
+
+
+def upload_case_document(case_id):
+
+
+    st.subheader(
+
+    "📂 رفع مستندات القضية"
+
+    )
+
+
+
+    doc_type=st.selectbox(
+
+    "نوع المستند",
+
+    [
+
+    "صحيفة دعوى",
+
+    "صحيفة استئناف",
+
+    "صحيفة طعن",
+
+    "مذكرة دفاع",
+
+    "حافظة مستندات",
+
+    "تقرير خبير",
+
+    "تقرير طب شرعي",
+
+    "تقرير لجنة طبية",
+
+    "صحيفة تجديد من الشطب",
+
+    "صحيفة تعجيل من الوقف",
+
+    "صورة حكم تمهيدي",
+
+    "أخرى"
+
+    ],
+
+    key=f"dtype{case_id}"
+
+    )
+
+
+
+    doc_name=st.text_input(
+
+    "بيان المستند",
+
+    key=f"dname{case_id}"
+
+    )
+
+
+
+    file=st.file_uploader(
+
+    "اختيار الملف",
+
+    key=f"file{case_id}"
+
+    )
+
+
+
+    if st.button(
+
+    "حفظ المستند",
+
+    key=f"save_doc{case_id}"
+
+    ):
+
+
+
+        if file:
+
+
+            path=os.path.join(
+
+            DOC_FOLDER,
+
+            f"{case_id}_{file.name}"
+
+            )
+
+
+
+            with open(path,"wb") as f:
+
+                f.write(
+
+                file.getbuffer()
+
+                )
+
+
+
+            conn=db()
+
+            cur=conn.cursor()
+
+
+
+            cur.execute(
+
+            """
+
+            INSERT INTO documents
+
+            (
+
+            case_id,
+
+            doc_type,
+
+            doc_name,
+
+            file_path
+
+            )
+
+            VALUES(?,?,?,?)
+
+            """,
+
+            (
+
+            case_id,
+
+            doc_type,
+
+            doc_name,
+
+            path
+
+            )
+
+            )
+
+
+
+            conn.commit()
+
+            conn.close()
+
+
+
+            st.success(
+
+            "تم حفظ المستند"
+
+            )
+
+
+
+# ============================================================
+# عرض المستندات
+# ============================================================
+
+
+def display_documents(case_id):
+
+
+    conn=db()
+
+
+
+    docs=pd.read_sql_query(
+
+    """
+
+    SELECT
+
+    id,
+
+    doc_type AS النوع,
+
+    doc_name AS البيان,
+
+    file_path
+
+
+    FROM documents
+
+
+    WHERE case_id=?
+
+
+    """,
+
+    conn,
+
+    params=(case_id,)
+
+    )
+
+
+    conn.close()
+
+
+
+    if not docs.empty:
+
+
+        st.markdown(
+
+        """
+
+        <h3>
+
+        📁 مستندات القضية
+
+        </h3>
+
+        """,
+
+        unsafe_allow_html=True
+
+        )
+
+
+
+        for _,row in docs.iterrows():
+
+
+            c1,c2=st.columns([4,1])
+
+
+
+            with c1:
+
+                st.info(
+
+                f"{row['النوع']} - {row['البيان']}"
+
+                )
+
+
+
+            with c2:
+
+
+                if os.path.exists(row["file_path"]):
+
+
+                    with open(
+
+                    row["file_path"],
+
+                    "rb"
+
+                    ) as f:
+
+
+                        st.download_button(
+
+                        "فتح",
+
+                        f,
+
+                        file_name=os.path.basename(
+
+                        row["file_path"]
+
+                        ),
+
+                        key=f"open{row['id']}"
+
+                        )
+
+
+
+
+# ============================================================
+# صفحة الأرشيف
+# ============================================================
+
+
+def archive_page():
+
+
+    st.markdown(
+
+    """
+
+    <h1 style="text-align:center">
+
+    🗄️ الأرشيف
+
+    </h1>
+
+    """,
+
+    unsafe_allow_html=True
+
+    )
+
+
+
+    conn=db()
+
+
+
+    df=pd.read_sql_query(
+
+    """
+
+    SELECT
+
+
+    archive.id,
+
+    cases.case_number AS رقم_القضية,
+
+    cases.case_year AS السنة,
+
+    cases.subject AS الموضوع,
+
+    archive.judgment_date AS تاريخ_الحكم,
+
+    archive.judgment_text AS المنطوق,
+
+    archive.result AS النتيجة
+
+
+    FROM archive
+
+
+    JOIN cases
+
+
+    ON archive.case_id=cases.id
+
+
+    ORDER BY archive.judgment_date DESC
+
+
+    """,
+
+    conn
+
+    )
+
+
+    conn.close()
+
+
+
+    if df.empty:
+
+
+        st.warning(
+
+        "لا توجد أحكام بالأرشيف"
+
+        )
+
+
+    else:
+
+
+        st.dataframe(
+
+        df,
+
+        use_container_width=True,
+
+        hide_index=True
+
+        )
+
+
+
+
+
+# ============================================================
+# البحث عن دعوى
+# ============================================================
+
+
+def search_case_page():
+
+
+    st.markdown(
+
+    """
+
+    <h1 style="text-align:center">
+
+    🔎 البحث عن دعوى
+
+    </h1>
+
+    """,
+
+    unsafe_allow_html=True
+
+    )
+
+
+
+    c1,c2,c3=st.columns(3)
+
+
+
+    with c1:
+
+        name=st.text_input(
+
+        "اسم المدعي"
+
+        )
+
+
+
+    with c2:
+
+        number=st.text_input(
+
+        "رقم القضية"
+
+        )
+
+
+
+    with c3:
+
+        year=st.text_input(
+
+        "السنة القضائية"
+
+        )
+
+
+
+    if st.button(
+
+    "🔍 بحث",
+
+    use_container_width=True
+
+    ):
+
+
+
+        conn=db()
+
+
+
+        query="""
+
+        SELECT *
+
+        FROM cases
+
+        WHERE 1=1
+
+        """
+
+
+
+        params=[]
+
+
+
+        if name:
+
+            query+=" AND plaintiff LIKE ?"
+
+            params.append(
+
+            "%"+name+"%"
+
+            )
+
+
+
+        if number:
+
+            query+=" AND case_number=?"
+
+            params.append(number)
+
+
+
+        if year:
+
+            query+=" AND case_year=?"
+
+            params.append(year)
+
+
+
+        result=pd.read_sql_query(
+
+        query,
+
+        conn,
+
+        params=params
+
+        )
+
+
+
+        conn.close()
+
+
+
+        if result.empty:
+
+
+            st.error(
+
+            "لا توجد قضية - تأكد من بيانات البحث"
+
+            )
+
+
+        else:
+
+
+            st.success(
+
+            "تم العثور على القضية"
+
+            )
+
+
+            st.dataframe(
+
+            result,
+
+            use_container_width=True,
+
+            hide_index=True
+
+            )
+
+
+
+
+# ============================================================
+# تشغيل الصفحات
+# ============================================================
+
+
+if st.session_state.page=="الأرشيف":
+
+    archive_page()
+
+
+
+if st.session_state.page=="البحث عن دعوى":
+
+    search_case_page()
