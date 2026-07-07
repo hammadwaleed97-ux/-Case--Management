@@ -319,3 +319,235 @@ def register_case():
         required_action=st.text_area("الإجراء المطلوب")
 
         notes=st.text_area("ملاحظات")
+                whatsapp_enabled = st.checkbox(
+            "تفعيل التنبيهات عبر واتساب"
+        )
+
+        whatsapp_number = ""
+
+        if whatsapp_enabled:
+
+            whatsapp_number = st.text_input(
+                "رقم واتساب"
+            )
+
+        uploaded_file = st.file_uploader(
+            "تحميل المستند",
+            type=[
+                "pdf",
+                "doc",
+                "docx"
+            ]
+        )
+
+        document_type = st.selectbox(
+
+            "نوع المستند",
+
+            [
+
+                "صحيفة دعوى",
+
+                "صحيفة استئناف",
+
+                "صحيفة طعن"
+
+            ]
+
+        )
+
+        save = st.form_submit_button("💾 حفظ القضية")
+
+        delete = st.form_submit_button("🗑 حذف البيانات")
+
+    # =====================================
+    # DELETE
+    # =====================================
+
+    if delete:
+
+        st.rerun()
+
+    # =====================================
+    # SAVE
+    # =====================================
+
+    if save:
+
+        document_path = ""
+
+        if uploaded_file is not None:
+
+            document_path = os.path.join(
+
+                UPLOAD_FOLDER,
+
+                uploaded_file.name
+
+            )
+
+            with open(document_path, "wb") as f:
+
+                f.write(uploaded_file.getbuffer())
+
+        c.execute("""
+
+        INSERT INTO cases(
+
+        case_number,
+
+        year,
+
+        court,
+
+        plaintiff,
+
+        defendant,
+
+        subject,
+
+        status,
+
+        last_session,
+
+        created_at
+
+        )
+
+        VALUES(
+
+        ?,?,?,?,?,?,?,?,?
+
+        )
+
+        """,(
+
+        case_number,
+
+        judicial_year,
+
+        court_name,
+
+        plaintiff,
+
+        defendant,
+
+        subject,
+
+        "متداولة",
+
+        str(first_session),
+
+        str(datetime.now())
+
+        ))
+
+        conn.commit()
+
+        case_id = c.lastrowid
+
+        # =======================================
+        # أول جلسة
+        # =======================================
+
+        c.execute("""
+
+        INSERT INTO sessions(
+
+        case_id,
+
+        session_date,
+
+        roll,
+
+        decision,
+
+        created_at
+
+        )
+
+        VALUES(
+
+        ?,?,?,?,?
+
+        )
+
+        """,(
+
+        case_id,
+
+        str(first_session),
+
+        roll,
+
+        required_action,
+
+        str(datetime.now())
+
+        ))
+
+        conn.commit()
+
+        # =======================================
+        # المستند
+        # =======================================
+
+        if document_path != "":
+
+            c.execute("""
+
+            INSERT INTO documents(
+
+            case_id,
+
+            doc_type,
+
+            file_path,
+
+            created_at
+
+            )
+
+            VALUES(
+
+            ?,?,?,?
+
+            )
+
+            """,(
+
+            case_id,
+
+            document_type,
+
+            document_path,
+
+            str(datetime.now())
+
+            ))
+
+            conn.commit()
+
+        # =======================================
+        # AUDIT
+        # =======================================
+
+        log_action(
+
+            "ADD_CASE",
+
+            f"تم إضافة القضية رقم {case_number}"
+
+        )
+
+        st.success("✅ تم حفظ القضية بنجاح")
+
+        st.session_state.selected_case = case_id
+
+        st.session_state.page = "registry"
+
+        st.rerun()
+
+# ==================================================
+# نهاية الجزء 2-أ-2
+# ==================================================
