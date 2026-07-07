@@ -2709,3 +2709,685 @@ if st.session_state.page=="التنبيهات":
 if st.session_state.page=="المكتبة القانونية":
 
     library_page()
+    # ============================================================
+# إدارة القضايا
+# الجزء السادس : التقارير الاحترافية + الإحصائيات
+# ============================================================
+
+
+# ============================================================
+# بيانات الدعاوى المتداولة
+# ============================================================
+
+
+def ongoing_cases_report():
+
+
+    conn=db()
+
+
+    df=pd.read_sql_query(
+
+    """
+
+    SELECT
+
+
+    case_number AS م,
+
+    case_year AS السنة_القضائية,
+
+    circle AS الدائرة,
+
+    category AS النوع,
+
+    court_name AS المحكمة,
+
+    department AS المأمورية,
+
+    plaintiff || ' ضد ' || defendant AS الخصوم,
+
+    subject AS موضوع_الدعوى,
+
+    first_session AS آخر_جلسة,
+
+    required_action AS السبب,
+
+    notes AS ملاحظات
+
+
+
+    FROM cases
+
+
+    WHERE status='متداولة'
+
+
+    ORDER BY first_session DESC
+
+
+
+    """,
+
+    conn
+
+    )
+
+
+
+    conn.close()
+
+
+    return df
+
+
+
+
+# ============================================================
+# بيانات الأحكام
+# ============================================================
+
+
+def judgments_report(result=None):
+
+
+    conn=db()
+
+
+
+    query="""
+
+    SELECT
+
+
+    cases.case_number AS م,
+
+    cases.case_year AS السنة_القضائية,
+
+    cases.circle AS الدائرة,
+
+    cases.category AS النوع,
+
+    cases.court_name AS المحكمة,
+
+    cases.department AS المأمورية,
+
+    cases.plaintiff || ' ضد ' ||
+
+    cases.defendant AS الخصوم,
+
+    cases.subject AS موضوع_الدعوى,
+
+    archive.judgment_date AS تاريخ_الحكم,
+
+    archive.judgment_text AS منطوق_الحكم,
+
+    archive.result AS النتيجة
+
+
+
+    FROM archive
+
+
+
+    JOIN cases
+
+
+    ON archive.case_id=cases.id
+
+
+
+    """
+
+
+
+    params=[]
+
+
+
+    if result:
+
+
+        query+=" WHERE archive.result=? "
+
+        params.append(result)
+
+
+
+    query+=" ORDER BY archive.judgment_date DESC "
+
+
+
+    df=pd.read_sql_query(
+
+    query,
+
+    conn,
+
+    params=params
+
+    )
+
+
+    conn.close()
+
+
+    return df
+
+
+
+
+# ============================================================
+# تصدير Word
+# ============================================================
+
+
+def export_word(df,title):
+
+
+    from docx import Document
+
+
+    file=io.BytesIO()
+
+
+    doc=Document()
+
+
+
+    doc.add_heading(
+
+    "الهيئة القومية للتأمين الاجتماعى",
+
+    level=1
+
+    )
+
+
+    doc.add_paragraph(
+
+    "الإدارة المركزية للإدارات القانونية\n"
+
+    "الإدارة العامة للقضايا\n"
+
+    "ديوان عام منطقة البحيرة"
+
+    )
+
+
+
+    doc.add_heading(
+
+    title,
+
+    level=2
+
+    )
+
+
+
+    table=doc.add_table(
+
+    rows=1,
+
+    cols=len(df.columns)
+
+    )
+
+
+    table.style="Table Grid"
+
+
+
+    for i,col in enumerate(df.columns):
+
+        table.rows[0].cells[i].text=str(col)
+
+
+
+    for _,row in df.iterrows():
+
+        cells=table.add_row().cells
+
+        for i,v in enumerate(row):
+
+            cells[i].text=str(v)
+
+
+
+    doc.save(file)
+
+
+    file.seek(0)
+
+
+    return file
+
+
+
+
+# ============================================================
+# تصدير PDF
+# ============================================================
+
+
+def export_pdf(df,title):
+
+
+    from reportlab.platypus import (
+
+    SimpleDocTemplate,
+
+    Table,
+
+    TableStyle,
+
+    Paragraph
+
+    )
+
+    from reportlab.lib.styles import getSampleStyleSheet
+
+
+
+    file=io.BytesIO()
+
+
+
+    pdf=SimpleDocTemplate(file)
+
+
+
+    styles=getSampleStyleSheet()
+
+
+
+    content=[]
+
+
+
+    content.append(
+
+    Paragraph(
+
+    "الهيئة القومية للتأمين الاجتماعى",
+
+    styles["Title"]
+
+    )
+
+    )
+
+
+
+    content.append(
+
+    Paragraph(
+
+    title,
+
+    styles["Heading2"]
+
+    )
+
+    )
+
+
+
+    data=[list(df.columns)]
+
+
+
+    for _,row in df.iterrows():
+
+        data.append(
+
+        list(map(str,row))
+
+        )
+
+
+
+    table=Table(
+
+    data,
+
+    repeatRows=1
+
+    )
+
+
+    table.setStyle(
+
+    TableStyle(
+
+    [
+
+    ("GRID",
+
+    (0,0),
+
+    (-1,-1),
+
+    1,
+
+    None)
+
+    ]
+
+    )
+
+    )
+
+
+
+    content.append(table)
+
+
+
+    pdf.build(content)
+
+
+    file.seek(0)
+
+
+
+    return file
+
+
+
+
+# ============================================================
+# صفحة التقارير
+# ============================================================
+
+
+def reports_page():
+
+
+    st.markdown(
+
+    """
+
+    <h1 style="text-align:center">
+
+    📊 التقارير
+
+    </h1>
+
+    """,
+
+    unsafe_allow_html=True
+
+    )
+
+
+
+    report=st.selectbox(
+
+    "نوع التقرير",
+
+    [
+
+    "الدعاوى المتداولة",
+
+    "جميع الأحكام",
+
+    "الأحكام للصالح",
+
+    "الأحكام للضد"
+
+    ]
+
+    )
+
+
+
+    if report=="الدعاوى المتداولة":
+
+
+        df=ongoing_cases_report()
+
+        title="بيان بالدعاوى المتداولة"
+
+
+
+    elif report=="جميع الأحكام":
+
+
+        df=judgments_report()
+
+        title="بيان الأحكام"
+
+
+
+    elif report=="الأحكام للصالح":
+
+
+        df=judgments_report("للصالح")
+
+        title="الأحكام الصادرة للصالح"
+
+
+
+    else:
+
+
+        df=judgments_report("للضد")
+
+        title="الأحكام الصادرة للضد"
+
+
+
+
+    st.dataframe(
+
+    df,
+
+    use_container_width=True,
+
+    hide_index=True
+
+    )
+
+
+
+    if not df.empty:
+
+
+        c1,c2=st.columns(2)
+
+
+
+        with c1:
+
+
+            st.download_button(
+
+            "⬇️ تحميل Word",
+
+            export_word(df,title),
+
+            file_name="report.docx"
+
+            )
+
+
+
+        with c2:
+
+
+            st.download_button(
+
+            "⬇️ تحميل PDF",
+
+            export_pdf(df,title),
+
+            file_name="report.pdf"
+
+            )
+
+
+
+
+
+# ============================================================
+# الإحصائيات
+# ============================================================
+
+
+def statistics_page():
+
+
+    st.markdown(
+
+    """
+
+    <h1 style="text-align:center">
+
+    📈 الإحصائيات
+
+    </h1>
+
+    """,
+
+    unsafe_allow_html=True
+
+    )
+
+
+
+    conn=db()
+
+
+
+    cases=pd.read_sql_query(
+
+    """
+
+    SELECT COUNT(*) عدد
+
+    FROM cases
+
+    WHERE status='متداولة'
+
+    """,
+
+    conn
+
+    )
+
+
+
+    judgments=pd.read_sql_query(
+
+    """
+
+    SELECT COUNT(*) عدد
+
+    FROM archive
+
+    """,
+
+    conn
+
+    )
+
+
+
+    good=pd.read_sql_query(
+
+    """
+
+    SELECT COUNT(*) عدد
+
+    FROM archive
+
+    WHERE result='للصالح'
+
+    """,
+
+    conn
+
+    )
+
+
+
+    bad=pd.read_sql_query(
+
+    """
+
+    SELECT COUNT(*) عدد
+
+    FROM archive
+
+    WHERE result='للضد'
+
+    """,
+
+    conn
+
+    )
+
+
+
+    conn.close()
+
+
+
+    c1,c2,c3,c4=st.columns(4)
+
+
+
+    c1.metric(
+
+    "القضايا المتداولة",
+
+    cases.iloc[0,0]
+
+    )
+
+
+    c2.metric(
+
+    "الأحكام",
+
+    judgments.iloc[0,0]
+
+    )
+
+
+    c3.metric(
+
+    "للصالح",
+
+    good.iloc[0,0]
+
+    )
+
+
+    c4.metric(
+
+    "للضد",
+
+    bad.iloc[0,0]
+
+    )
+
+
+
+
+# ============================================================
+# تشغيل التقارير والإحصائيات
+# ============================================================
+
+
+if st.session_state.page=="التقارير":
+
+    reports_page()
+
+
+
+if st.session_state.page=="الإحصائيات":
+
+    statistics_page()
