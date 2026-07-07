@@ -81,3 +81,37 @@ elif choice == "الحصر العام":
 
 # الفوتر الثابت (يظهر دائماً)
 st.markdown('<div class="footer">مع تحيات وليد حماد الادارة العامة للشءون القانونية ديوان عام منطقة البحيرة</div>', unsafe_allow_html=True)
+# هذا الكود يوضع تحت قسم "الحصر العام" في الملف الرئيسي
+elif choice == "الحصر العام":
+    st.subheader("الحصر العام للقضايا")
+    
+    conn = sqlite3.connect('legal_data.db')
+    df = pd.read_sql_query("SELECT id, type, court, case_num, year, plaintiff, defendant FROM cases", conn)
+    conn.close()
+    
+    # اختيار قضية بعينها من الجدول
+    selected_id = st.selectbox("اختر رقم القضية للاطلاع على تفاصيلها:", df['id'].tolist())
+    
+    if selected_id:
+        st.markdown("---")
+        conn = sqlite3.connect('legal_data.db')
+        case_data = pd.read_sql_query(f"SELECT * FROM cases WHERE id={selected_id}", conn)
+        conn.close()
+        
+        # عرض بيانات القضية في جدول منسق
+        st.table(case_data.T.rename(columns={0: "بيانات القضية"}))
+        
+        # أزرار الإجراءات
+        col_a, col_b = st.columns(2)
+        with col_a:
+            if st.button("إضافة جلسة جديدة"):
+                st.session_state['show_session_form'] = True
+        with col_b:
+            if st.button("حذف القضية نهائياً"):
+                conn = sqlite3.connect('legal_data.db')
+                c = conn.cursor()
+                c.execute(f"DELETE FROM cases WHERE id={selected_id}")
+                conn.commit()
+                conn.close()
+                st.warning("تم الحذف بنجاح - يرجى تحديث الصفحة")
+        
