@@ -3390,3 +3390,227 @@ if st.session_state.page=="التقارير":
 if st.session_state.page=="الإحصائيات":
 
     statistics_page()
+    # ============================================================
+# إدارة القضايا
+# الجزء السابع : تحسين الواجهة النهائية + النسخ الاحتياطي + الإعدادات
+# ============================================================
+
+import shutil
+
+
+# ============================================================
+# تحسين شكل الجداول والخانات
+# ============================================================
+
+st.markdown("""
+<style>
+
+[data-testid="stDataFrame"] {
+
+    border-radius:20px;
+    overflow:hidden;
+    border:2px solid #D4AF37;
+
+}
+
+
+[data-testid="stDataFrame"] table {
+
+    direction:rtl;
+
+}
+
+
+div.stTextInput > label,
+div.stTextArea > label,
+div.stSelectbox > label,
+div.stDateInput > label {
+
+    color:#FFD700 !important;
+    font-weight:bold;
+    font-size:17px;
+
+}
+
+
+.stMetric {
+
+    background:
+    linear-gradient(
+    135deg,
+    #09203f,
+    #163f70
+    );
+
+    padding:20px;
+    border-radius:20px;
+    border:1px solid #D4AF37;
+
+}
+
+
+</style>
+""",
+unsafe_allow_html=True)
+
+
+
+# ============================================================
+# النسخ الاحتياطي
+# ============================================================
+
+def auto_backup():
+
+    if os.path.exists(DB):
+
+        backup_name = (
+            "backup_"
+            +
+            datetime.now().strftime("%Y%m%d_%H%M%S")
+            +
+            ".db"
+        )
+
+        shutil.copyfile(
+            DB,
+            backup_name
+        )
+
+        return True
+
+    return False
+
+
+
+# ============================================================
+# صفحة الإعدادات
+# ============================================================
+
+def settings_page():
+
+    st.markdown(
+    """
+    <h1 style="text-align:center;color:#FFD700">
+    ⚙️ إعدادات النظام
+    </h1>
+    """,
+    unsafe_allow_html=True
+    )
+
+
+    st.markdown(
+    """
+    <div class="card">
+    <div class="card-title">
+    نظام إدارة القضايا يحفظ البيانات نهائياً داخل قاعدة البيانات
+    </div>
+    </div>
+    """,
+    unsafe_allow_html=True
+    )
+
+
+    if st.button(
+        "💾 إنشاء نسخة احتياطية",
+        use_container_width=True
+    ):
+
+        if auto_backup():
+
+            st.success("تم إنشاء النسخة الاحتياطية بنجاح")
+
+        else:
+
+            st.error("تعذر إنشاء النسخة الاحتياطية")
+
+
+
+# ============================================================
+# صفحة عن البرنامج
+# ============================================================
+
+def about_page():
+
+    st.markdown(
+    """
+    <div style="text-align:center">
+
+    <div style="font-size:80px;color:#FFD700">
+    ⚖️
+    </div>
+
+    <h1 style="color:#FFD700">
+    إدارة القضايا
+    </h1>
+
+    <h3 style="color:white">
+    نظام إلكتروني متكامل لإدارة ومتابعة القضايا
+    </h3>
+
+    <p style="color:#FFD700;font-size:20px">
+
+    مع تحيات /
+    <br>
+    وليد شعبان حماد
+    <br><br>
+    الإدارة العامة للشئون القانونية
+    <br>
+    ديوان عام منطقة البحيرة
+    <br>
+    الهيئة القومية للتأمين الاجتماعى
+
+    </p>
+
+    </div>
+    """,
+    unsafe_allow_html=True
+    )
+
+
+
+# ============================================================
+# لوحة الإدارة
+# ============================================================
+
+with st.sidebar:
+
+    st.markdown(
+    """
+    <h2 style="color:#FFD700;text-align:center">
+    ⚖️ إدارة القضايا
+    </h2>
+    """,
+    unsafe_allow_html=True
+    )
+
+
+    admin_page=st.selectbox(
+    "انتقال",
+    [
+    "الرئيسية",
+    "الإحصائيات",
+    "الإعدادات",
+    "عن البرنامج"
+    ]
+    )
+
+
+    if admin_page=="الإحصائيات":
+
+        st.session_state.page="الإحصائيات"
+
+
+    elif admin_page=="الإعدادات":
+
+        st.session_state.page="الإعدادات"
+
+
+    elif admin_page=="عن البرنامج":
+
+        st.session_state.page="عن البرنامج"
+
+
+
+# ============================================================
+# نهاية الجزء السابع
+# ============================================================
