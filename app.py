@@ -46,4 +46,53 @@ if choice == "تسجيل القضايا":
         submit = st.form_submit_button("حفظ القضية")
         if submit:
             st.success("تم حفظ القضية بنجاح!")
+            import sqlite3
+
+def init_db():
+    conn = sqlite3.connect('legal_app.db')
+    cursor = conn.cursor()
+    
+    # جدول القضايا الرئيسي
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS cases (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            case_type TEXT,
+            court_level TEXT,
+            court_name TEXT,
+            mamoriya TEXT,
+            case_number TEXT,
+            year TEXT,
+            circuit TEXT,
+            type TEXT,
+            plaintiff TEXT,
+            defendant TEXT,
+            subject TEXT,
+            first_session_date DATE,
+            roll TEXT,
+            procedure TEXT,
+            notes TEXT,
+            whatsapp_alert BOOLEAN,
+            phone_number TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    
+    # جدول الجلسات والإجراءات
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS sessions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            case_id INTEGER,
+            session_date DATE,
+            roll TEXT,
+            reason TEXT,
+            FOREIGN KEY (case_id) REFERENCES cases (id)
+        )
+    ''')
+    
+    conn.commit()
+    conn.close()
+
+# تنفيذ إنشاء قاعدة البيانات
+init_db()
+
             
