@@ -366,6 +366,139 @@ elif page == "register":
         mobile = st.text_input("رقم الهاتف")
 
         notes = st.text_area("ملاحظات")
+        from datetime import datetime
+
+st.divider()
+
+save = st.button("💾 حفظ القضية", use_container_width=True)
+
+if save:
+
+    if case_number == "" or judicial_year == "" or claimant == "" or defendant == "":
+
+        st.error("يرجى استكمال البيانات الأساسية.")
+
+    else:
+
+        cur.execute("""
+
+        SELECT id FROM cases
+
+        WHERE case_number=?
+
+        AND judicial_year=?
+
+        """,(case_number,judicial_year))
+
+        if cur.fetchone():
+
+            st.warning("هذه القضية مسجلة بالفعل.")
+
+        else:
+
+            cur.execute("""
+
+            INSERT INTO cases(
+
+            litigation_type,
+
+            claimant_type,
+
+            claimant,
+
+            defendant_type,
+
+            defendant,
+
+            case_number,
+
+            judicial_year,
+
+            circuit,
+
+            case_type,
+
+            court,
+
+            court_name,
+
+            appeal_office,
+
+            subject,
+
+            roll_number,
+
+            session_date,
+
+            adjournment_reason,
+
+            notes,
+
+            judgment_result,
+
+            notifications_enabled,
+
+            mobile,
+
+            created_at
+
+            )
+
+            VALUES(
+
+            ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?
+
+            )
+
+            """,(
+
+            litigation_type,
+
+            claimant_type,
+
+            claimant,
+
+            defendant_type,
+
+            defendant,
+
+            case_number,
+
+            judicial_year,
+
+            circuit,
+
+            case_type,
+
+            court,
+
+            court_name,
+
+            appeal_office,
+
+            subject,
+
+            roll_number,
+
+            str(session_date),
+
+            adjournment_reason,
+
+            notes,
+
+            judgment_result,
+
+            int(notifications_enabled),
+
+            mobile,
+
+            datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+            ))
+
+            conn.commit()
+
+            st.success("✅ تم حفظ القضية بنجاح.")
 
 # ==========================================================
 # الحصر العام
