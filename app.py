@@ -274,20 +274,20 @@ if page == "home":
             [
                 "            claimant,
         # ==========================================================
-# تسجيل القضايا
+# بداية قسم تسجيل القضايا
 # ==========================================================
 
 elif page == "register":
 
-    c1, c2 = st.columns([1,5])
+    if st.button("🏠 العودة للصفحة الرئيسية", key="back_register"):
+        st.session_state.page = "home"
+        st.rerun()
 
-    with c1:
-        if st.button("🏠 الرئيسية", key="home_register"):
-            st.session_state.page = "home"
-            st.rerun()
-
-    with c2:
-        st.title("📚 تسجيل القضايا")
+    st.markdown("""
+    <h2 style='text-align:center;color:#FFD700'>
+    📚 تسجيل القضايا
+    </h2>
+    """, unsafe_allow_html=True)
 
     st.divider()
 
@@ -305,24 +305,40 @@ elif page == "register":
             ["المدعى", "المستأنف", "الطاعن"]
         )
 
-        claimant = st.text_input("اسم رافع الدعوى")
+        claimant = st.text_input(
+            "اسم رافع الدعوى"
+        )
 
-        case_number = st.text_input("رقم الدعوى")
+        case_number = st.text_input(
+            "رقم الدعوى"
+        )
 
-        judicial_year = st.text_input("السنة القضائية")
+        judicial_year = st.text_input(
+            "السنة القضائية"
+        )
 
-        circuit = st.text_input("الدائرة")
+        circuit = st.text_input(
+            "الدائرة"
+        )
 
-        case_type = st.text_input("نوع الدعوى")
+        case_type = st.text_input(
+            "نوع الدعوى"
+        )
 
     with col2:
 
         defendant_type = st.selectbox(
             "صفة الخصم",
-            ["المدعى عليه", "المستأنف ضده", "المطعون ضده"]
+            [
+                "المدعى عليه",
+                "المستأنف ضده",
+                "المطعون ضده"
+            ]
         )
 
-        defendant = st.text_input("اسم الخصم")
+        defendant = st.text_input(
+            "اسم الخصم"
+        )
 
         court = st.selectbox(
             "المحكمة",
@@ -336,129 +352,16 @@ elif page == "register":
             ]
         )
 
-        court_name = st.text_input("اسم المحكمة")
-
-        appeal_office = st.text_input("مكتب الاستئناف")
-
-        subject = st.text_area("موضوع الدعوى")
-
-    st.divider()
-
-    col3, col4 = st.columns(2)
-
-    with col3:
-
-        roll_number = st.text_input("رقم الرول")
-
-        session_date = st.date_input("تاريخ الجلسة")
-
-        adjournment_reason = st.text_area("سبب التأجيل")
-
-    with col4:
-
-        judgment_result = st.selectbox(
-            "حالة الدعوى",
-            [
-                "متداولة",
-                "لصالح الهيئة",
-                "ضد الهيئة"
-            ]
+        court_name = st.text_input(
+            "اسم المحكمة"
         )
 
-        notifications_enabled = st.checkbox("تفعيل التنبيهات")
+        appeal_office = st.text_input(
+            "مكتب الاستئناف"
+        )
 
-        mobile = st.text_input("رقم الهاتف")
-
-        notes = st.text_area("ملاحظات")
+        subject = st.text_area(
+            "موضوع الدعوى"
+        )
 
     st.divider()
-
-    if st.button("💾 حفظ القضية", use_container_width=True):
-
-        if (
-            case_number == ""
-            or judicial_year == ""
-            or claimant == ""
-            or defendant == ""
-        ):
-
-            st.error("يرجى استكمال البيانات الأساسية.")
-
-        else:
-
-            cur.execute(
-                """
-                SELECT id
-                FROM cases
-                WHERE case_number=?
-                AND judicial_year=?
-                """,
-                (case_number, judicial_year)
-            )
-
-            if cur.fetchone():
-
-                st.warning("هذه القضية مسجلة بالفعل.")
-
-            else:
-
-                from datetime import datetime
-
-                cur.execute(
-                    """
-                    INSERT INTO cases(
-                    litigation_type,
-                    claimant_type,
-                    claimant,
-                    defendant_type,
-                    defendant,
-                    case_number,
-                    judicial_year,
-                    circuit,
-                    case_type,
-                    court,
-                    court_name,
-                    appeal_office,
-                    subject,
-                    roll_number,
-                    session_date,
-                    adjournment_reason,
-                    notes,
-                    judgment_result,
-                    notifications_enabled,
-                    mobile,
-                    created_at
-                    )
-
-                    VALUES(
-                    ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?
-                    )
-                    """,
-                    (
-                        litigation_type,
-                        claimant_type,
-                        claimant,
-                        defendant_type,
-                        defendant,
-                        case_number,
-                        judicial_year,
-                        circuit,
-                        case_type,
-                        court,
-                        court_name,
-                        appeal_office,
-                        subject,
-                        roll_number,
-                        str(session_date),
-                        adjournment_reason,
-                        notes,
-                        judgment_result,
-                        int(notifications_enabled),
-                        mobile,
-                        datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                    ),
-                )
-
-                conn.commit()
-
-                st.success("✅ تم حفظ القضية بنجاح.")
