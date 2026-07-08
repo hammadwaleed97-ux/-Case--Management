@@ -322,18 +322,19 @@ elif page == "register":
         st.session_state.page = "home"
         st.rerun()
 
-    st.markdown(
-        """
-        <h2 style="text-align:center;color:#FFD700;">
-        📚 تسجيل القضايا
-        </h2>
-        """,
-        unsafe_allow_html=True
-    )
+    st.markdown("""
+    <h2 style='text-align:center;color:#FFD700'>
+    📚 تسجيل القضايا
+    </h2>
+    """, unsafe_allow_html=True)
 
     st.divider()
 
     col1, col2 = st.columns(2)
+
+    # ======================================================
+    # العمود الأول
+    # ======================================================
 
     with col1:
 
@@ -355,15 +356,9 @@ elif page == "register":
             ]
         )
 
-        claimant = st.text_input("اسم رافع الدعوى")
-
-        case_number = st.text_input("رقم الدعوى")
-
-        judicial_year = st.text_input("السنة القضائية")
-
-        circuit = st.text_input("الدائرة")
-
-    with col2:
+        claimant = st.text_input(
+            "اسم رافع الدعوى"
+        )
 
         defendant_type = st.selectbox(
             "صفة الخصم",
@@ -374,7 +369,27 @@ elif page == "register":
             ]
         )
 
-        defendant = st.text_input("اسم الخصم")
+        defendant = st.text_input(
+            "اسم الخصم"
+        )
+
+        case_number = st.text_input(
+            "رقم الدعوى"
+        )
+
+        judicial_year = st.text_input(
+            "السنة القضائية"
+        )
+
+        circuit = st.text_input(
+            "الدائرة"
+        )
+
+    # ======================================================
+    # العمود الثانى
+    # ======================================================
+
+    with col2:
 
         court = st.selectbox(
             "المحكمة",
@@ -388,17 +403,31 @@ elif page == "register":
             ]
         )
 
-        court_name = st.text_input("اسم المحكمة")
+        court_name = st.text_input(
+            "اسم المحكمة"
+        )
 
         if case_type == "استئناف":
 
-            appeal_office = st.text_input("مأمورية الاستئناف")
+            appeal_office = st.text_input(
+                "مأمورية الاستئناف"
+            )
 
         else:
 
             appeal_office = ""
 
-        subject = st.text_area("موضوع الدعوى")
+        subject = st.text_area(
+            "موضوع الدعوى"
+        )
+
+        session_date = st.date_input(
+            "تاريخ أول جلسة"
+        )
+
+        procedure = st.text_area(
+            "الإجراء المطلوب"
+        )
 
     st.divider()
 
@@ -411,11 +440,17 @@ elif page == "register":
             value=True
         )
 
-        mobile = st.text_input("رقم الهاتف")
+        mobile = st.text_input(
+            "رقم الهاتف"
+        )
 
     with col4:
 
-        notes = st.text_area("ملاحظات")
+        notes = st.text_area(
+            "ملاحظات"
+        )
+
+    st.info("حالة القضية عند التسجيل ستكون (متداولة) تلقائياً.")
 
     st.divider()
     # ==========================================================
