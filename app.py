@@ -499,12 +499,7 @@ if save:
             conn.commit()
 
             st.success("✅ تم حفظ القضية بنجاح.")
-
-# ==========================================================
-# الحصر العام
-# ==========================================================
-
-elif page == "general":
+            elif page == "general":
 
     if st.button("🏠 الرئيسية"):
         st.session_state.page = "home"
@@ -512,6 +507,89 @@ elif page == "general":
 
     st.title("📑 الحصر العام للقضايا")
 
+    st.divider()
+
+    search = st.text_input(
+        "🔍 البحث داخل القضايا"
+    )
+
+    if search == "":
+
+        cur.execute("""
+
+        SELECT *
+
+        FROM cases
+
+        ORDER BY id DESC
+
+        """)
+
+    else:
+
+        cur.execute("""
+
+        SELECT *
+
+        FROM cases
+
+        WHERE
+
+        claimant LIKE ?
+
+        OR defendant LIKE ?
+
+        OR case_number LIKE ?
+
+        OR subject LIKE ?
+
+        ORDER BY id DESC
+
+        """,(
+
+        f"%{search}%",
+
+        f"%{search}%",
+
+        f"%{search}%",
+
+        f"%{search}%"
+
+        ))
+
+    rows = cur.fetchall()
+
+    st.write(f"### إجمالى القضايا : {len(rows)}")
+
+    if rows:
+
+        for row in rows:
+
+            with st.expander(
+
+                f"📁 قضية رقم {row[6]}/{row[7]}"
+
+            ):
+
+                st.write(f"**المدعى :** {row[2]}")
+
+                st.write(f"**المدعى عليه :** {row[4]}")
+
+                st.write(f"**المحكمة :** {row[9]}")
+
+                st.write(f"**اسم المحكمة :** {row[10]}")
+
+                st.write(f"**الدائرة :** {row[8]}")
+
+                st.write(f"**الموضوع :** {row[13]}")
+
+                st.write(f"**الجلسة :** {row[15]}")
+
+                st.write(f"**الحالة :** {row[18]}")
+
+    else:
+
+        st.warning("لا توجد قضايا.")
 # ==========================================================
 # البحث
 # ==========================================================
