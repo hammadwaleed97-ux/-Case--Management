@@ -132,12 +132,16 @@ label{
 conn = sqlite3.connect("cases.db", check_same_thread=False)
 cur = conn.cursor()
 
+# ==========================================================
+# جدول القضايا
+# ==========================================================
+
 cur.execute("""
 CREATE TABLE IF NOT EXISTS cases(
 
 id INTEGER PRIMARY KEY AUTOINCREMENT,
 
-litigation_type TEXT,
+case_type TEXT,
 
 claimant_type TEXT,
 claimant TEXT,
@@ -148,39 +152,31 @@ defendant TEXT,
 case_number TEXT,
 judicial_year TEXT,
 
-circuit TEXT,
-
-case_type TEXT,
-
 court TEXT,
 court_name TEXT,
 
 appeal_office TEXT,
 
+circuit TEXT,
+
 subject TEXT,
 
-roll_number TEXT,
+status TEXT DEFAULT 'متداولة',
 
-session_date TEXT,
-
-adjournment_reason TEXT,
-
-notes TEXT,
-
-notifications_enabled INTEGER,
+notifications_enabled INTEGER DEFAULT 1,
 
 mobile TEXT,
 
-status TEXT DEFAULT 'متداولة',
+notes TEXT,
 
 created_at TEXT
 
 )
 """)
 
-# =====================================
+# ==========================================================
 # جدول الجلسات
-# =====================================
+# ==========================================================
 
 cur.execute("""
 CREATE TABLE IF NOT EXISTS sessions(
@@ -195,13 +191,39 @@ roll_number TEXT,
 
 procedure TEXT,
 
+adjournment_reason TEXT,
+
+session_notes TEXT,
+
+is_judgment INTEGER DEFAULT 0,
+
 judgment_date TEXT,
 
 judgment_text TEXT,
 
 judgment_result TEXT,
 
-created_at TEXT
+created_at TEXT,
+
+FOREIGN KEY(case_id) REFERENCES cases(id)
+
+)
+""")
+
+# ==========================================================
+# جدول القضايا المحذوفة
+# ==========================================================
+
+cur.execute("""
+CREATE TABLE IF NOT EXISTS deleted_cases(
+
+id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+case_id INTEGER,
+
+reason TEXT,
+
+deleted_at TEXT
 
 )
 """)
