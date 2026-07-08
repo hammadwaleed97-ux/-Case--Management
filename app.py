@@ -269,7 +269,7 @@ if page == "home":
     with c2:
         st.info("اختر أحد الأقسام من القائمة للبدء.")
         # ==========================================================
-# بداية قسم تسجيل القضايا
+# تسجيل القضايا
 # ==========================================================
 
 elif page == "register":
@@ -278,11 +278,14 @@ elif page == "register":
         st.session_state.page = "home"
         st.rerun()
 
-    st.markdown("""
-    <h2 style='text-align:center;color:#FFD700'>
-    📚 تسجيل القضايا
-    </h2>
-    """, unsafe_allow_html=True)
+    st.markdown(
+        """
+        <h2 style="text-align:center;color:#FFD700;">
+        📚 تسجيل القضايا
+        </h2>
+        """,
+        unsafe_allow_html=True
+    )
 
     st.divider()
 
@@ -297,7 +300,11 @@ elif page == "register":
 
         claimant_type = st.selectbox(
             "صفة رافع الدعوى",
-            ["المدعى", "المستأنف", "الطاعن"]
+            [
+                "المدعى",
+                "المستأنف",
+                "الطاعن"
+            ]
         )
 
         claimant = st.text_input(
@@ -357,6 +364,47 @@ elif page == "register":
 
         subject = st.text_area(
             "موضوع الدعوى"
+        )
+
+    st.divider()
+
+    col3, col4 = st.columns(2)
+
+    with col3:
+
+        roll_number = st.text_input(
+            "رقم الرول"
+        )
+
+        session_date = st.date_input(
+            "تاريخ الجلسة"
+        )
+
+        adjournment_reason = st.text_area(
+            "سبب التأجيل"
+        )
+
+    with col4:
+
+        judgment_result = st.selectbox(
+            "حالة الدعوى",
+            [
+                "متداولة",
+                "لصالح الهيئة",
+                "ضد الهيئة"
+            ]
+        )
+
+        notifications_enabled = st.checkbox(
+            "تفعيل التنبيهات"
+        )
+
+        mobile = st.text_input(
+            "رقم الهاتف"
+        )
+
+        notes = st.text_area(
+            "ملاحظات"
         )
 
     st.divider()
