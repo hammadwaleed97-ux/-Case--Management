@@ -445,9 +445,7 @@ elif page == "register":
                 (case_number, judicial_year)
             )
 
-            exists = cur.fetchone()
-
-            if exists:
+            if cur.fetchone():
 
                 st.warning("هذه القضية مسجلة بالفعل.")
 
@@ -459,60 +457,51 @@ elif page == "register":
                     """
                     INSERT INTO cases(
 
-                    litigation_type,
-                    claimant_type,
-                    claimant,
-                    defendant_type,
-                    defendant,
-                    case_number,
-                    judicial_year,
-                    circuit,
-                    case_type,
-                    court,
-                    court_name,
-                    appeal_office,
-                    subject,
-                    roll_number,
-                    session_date,
-                    adjournment_reason,
-                    notes,
-                    judgment_result,
-                    notifications_enabled,
-                    mobile,
-                    created_at
-
-                    )
-
-                    VALUES(
-
-                    ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?
-
-                    )
-
-                    """,
-
-                    (
-
-                        litigation_type,
+                        case_type,
                         claimant_type,
                         claimant,
                         defendant_type,
                         defendant,
                         case_number,
                         judicial_year,
-                        circuit,
-                        case_type,
                         court,
                         court_name,
                         appeal_office,
+                        circuit,
                         subject,
-                        roll_number,
-                        str(session_date),
-                        adjournment_reason,
+                        status,
+                        notifications_enabled,
+                        mobile,
                         notes,
-                        judgment_result,
+                        created_at
+
+                    )
+
+                    VALUES(
+
+                        ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?
+
+                    )
+                    """,
+
+                    (
+
+                        case_type,
+                        claimant_type,
+                        claimant,
+                        defendant_type,
+                        defendant,
+                        case_number,
+                        judicial_year,
+                        court,
+                        court_name,
+                        appeal_office,
+                        circuit,
+                        subject,
+                        "متداولة",
                         int(notifications_enabled),
                         mobile,
+                        notes,
                         datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
                     )
@@ -521,7 +510,7 @@ elif page == "register":
 
                 conn.commit()
 
-                st.success("✅ تم حفظ القضية بنجاح.")
+                st.success("✅ تم حفظ القضية بنجاح")
 
                 st.balloons()
 
