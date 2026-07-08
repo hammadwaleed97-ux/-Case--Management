@@ -270,6 +270,10 @@ if page == "home":
         st.info("اختر أحد الأقسام من القائمة للبدء.")
 
 # ==========================================================
+# تسجيل 
+            [
+                "            claimant,
+        # ==========================================================
 # تسجيل القضايا
 # ==========================================================
 
@@ -278,7 +282,7 @@ elif page == "register":
     c1, c2 = st.columns([1,5])
 
     with c1:
-        if st.button("🏠 الرئيسية"):
+        if st.button("🏠 الرئيسية", key="home_register"):
             st.session_state.page = "home"
             st.rerun()
 
@@ -366,286 +370,95 @@ elif page == "register":
         mobile = st.text_input("رقم الهاتف")
 
         notes = st.text_area("ملاحظات")
-        from datetime import datetime
-
-st.divider()
-
-save = st.button("💾 حفظ القضية", use_container_width=True)
-
-if save:
-
-    if case_number == "" or judicial_year == "" or claimant == "" or defendant == "":
-
-        st.error("يرجى استكمال البيانات الأساسية.")
-
-    else:
-
-        cur.execute("""
-
-        SELECT id FROM cases
-
-        WHERE case_number=?
-
-        AND judicial_year=?
-
-        """,(case_number,judicial_year))
-
-        if cur.fetchone():
-
-            st.warning("هذه القضية مسجلة بالفعل.")
-
-        else:
-
-            cur.execute("""
-
-            INSERT INTO cases(
-
-            litigation_type,
-
-            claimant_type,
-
-            claimant,
-
-            defendant_type,
-
-            defendant,
-
-            case_number,
-
-            judicial_year,
-
-            circuit,
-
-            case_type,
-
-            court,
-
-            court_name,
-
-            appeal_office,
-
-            subject,
-
-            roll_number,
-
-            session_date,
-
-            adjournment_reason,
-
-            notes,
-
-            judgment_result,
-
-            notifications_enabled,
-
-            mobile,
-
-            created_at
-
-            )
-
-            VALUES(
-
-            ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?
-
-            )
-
-            """,(
-
-            litigation_type,
-
-            claimant_type,
-
-            claimant,
-
-            defendant_type,
-
-            defendant,
-
-            case_number,
-
-            judicial_year,
-
-            circuit,
-
-            case_type,
-
-            court,
-
-            court_name,
-
-            appeal_office,
-
-            subject,
-
-            roll_number,
-
-            str(session_date),
-
-            adjournment_reason,
-
-            notes,
-
-            judgment_result,
-
-            int(notifications_enabled),
-
-            mobile,
-
-            datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-            ))
-
-            conn.commit()
-
-            st.success("✅ تم حفظ القضية بنجاح.")
-            elif page == "general":
-
-    if st.button("🏠 الرئيسية"):
-        st.session_state.page = "home"
-        st.rerun()
-
-    st.title("📑 الحصر العام للقضايا")
 
     st.divider()
 
-    search = st.text_input(
-        "🔍 البحث داخل القضايا"
-    )
+    if st.button("💾 حفظ القضية", use_container_width=True):
 
-    if search == "":
+        if (
+            case_number == ""
+            or judicial_year == ""
+            or claimant == ""
+            or defendant == ""
+        ):
 
-        cur.execute("""
+            st.error("يرجى استكمال البيانات الأساسية.")
 
-        SELECT *
+        else:
 
-        FROM cases
+            cur.execute(
+                """
+                SELECT id
+                FROM cases
+                WHERE case_number=?
+                AND judicial_year=?
+                """,
+                (case_number, judicial_year)
+            )
 
-        ORDER BY id DESC
+            if cur.fetchone():
 
-        """)
+                st.warning("هذه القضية مسجلة بالفعل.")
 
-    else:
+            else:
 
-        cur.execute("""
+                from datetime import datetime
 
-        SELECT *
+                cur.execute(
+                    """
+                    INSERT INTO cases(
+                    litigation_type,
+                    claimant_type,
+                    claimant,
+                    defendant_type,
+                    defendant,
+                    case_number,
+                    judicial_year,
+                    circuit,
+                    case_type,
+                    court,
+                    court_name,
+                    appeal_office,
+                    subject,
+                    roll_number,
+                    session_date,
+                    adjournment_reason,
+                    notes,
+                    judgment_result,
+                    notifications_enabled,
+                    mobile,
+                    created_at
+                    )
 
-        FROM cases
+                    VALUES(
+                    ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?
+                    )
+                    """,
+                    (
+                        litigation_type,
+                        claimant_type,
+                        claimant,
+                        defendant_type,
+                        defendant,
+                        case_number,
+                        judicial_year,
+                        circuit,
+                        case_type,
+                        court,
+                        court_name,
+                        appeal_office,
+                        subject,
+                        roll_number,
+                        str(session_date),
+                        adjournment_reason,
+                        notes,
+                        judgment_result,
+                        int(notifications_enabled),
+                        mobile,
+                        datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    ),
+                )
 
-        WHERE
+                conn.commit()
 
-        claimant LIKE ?
-
-        OR defendant LIKE ?
-
-        OR case_number LIKE ?
-
-        OR subject LIKE ?
-
-        ORDER BY id DESC
-
-        """,(
-
-        f"%{search}%",
-
-        f"%{search}%",
-
-        f"%{search}%",
-
-        f"%{search}%"
-
-        ))
-
-    rows = cur.fetchall()
-
-    st.write(f"### إجمالى القضايا : {len(rows)}")
-
-    if rows:
-
-        for row in rows:
-
-            with st.expander(
-
-                f"📁 قضية رقم {row[6]}/{row[7]}"
-
-            ):
-
-                st.write(f"**المدعى :** {row[2]}")
-
-                st.write(f"**المدعى عليه :** {row[4]}")
-
-                st.write(f"**المحكمة :** {row[9]}")
-
-                st.write(f"**اسم المحكمة :** {row[10]}")
-
-                st.write(f"**الدائرة :** {row[8]}")
-
-                st.write(f"**الموضوع :** {row[13]}")
-
-                st.write(f"**الجلسة :** {row[15]}")
-
-                st.write(f"**الحالة :** {row[18]}")
-
-    else:
-
-        st.warning("لا توجد قضايا.")
-# ==========================================================
-# البحث
-# ==========================================================
-
-elif page == "search":
-
-    if st.button("🏠 الرئيسية"):
-        st.session_state.page = "home"
-        st.rerun()
-
-    st.title("🔍 البحث عن دعوى")
-
-# ==========================================================
-# التقارير
-# ==========================================================
-
-elif page == "reports":
-
-    if st.button("🏠 الرئيسية"):
-        st.session_state.page = "home"
-        st.rerun()
-
-    st.title("📊 التقارير")
-
-# ==========================================================
-# التنبيهات
-# ==========================================================
-
-elif page == "notifications":
-
-    if st.button("🏠 الرئيسية"):
-        st.session_state.page = "home"
-        st.rerun()
-
-    st.title("🔔 التنبيهات")
-
-# ==========================================================
-# الأرشيف
-# ==========================================================
-
-elif page == "archive":
-
-    if st.button("🏠 الرئيسية"):
-        st.session_state.page = "home"
-        st.rerun()
-
-    st.title("🗂️ أرشيف القضايا")
-
-# ==========================================================
-# المكتبة القانونية
-# ==========================================================
-
-elif page == "library":
-
-    if st.button("🏠 الرئيسية"):
-        st.session_state.page = "home"
-        st.rerun()
-
-    st.title("⚖️ المكتبة القانونية")
+                st.success("✅ تم حفظ القضية بنجاح.")
