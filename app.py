@@ -181,3 +181,32 @@ with col2:
 
     if st.button("⚖️ المكتبة القانونية", use_container_width=True):
         st.session_state.page = "library"
+        # ==========================================================
+# اختبار التنقل
+# ==========================================================
+
+st.markdown("---")
+
+if st.session_state.page == "home":
+    st.info("اختر أحد الأقسام من الأعلى")
+
+elif st.session_state.page == "register":
+    st.success("📚 قسم تسجيل القضايا")
+
+elif st.session_state.page == "general":
+    st.success("📑 قسم الحصر العام")
+
+elif st.session_state.page == "search":
+    st.success("🔍 قسم البحث عن دعوى")
+
+elif st.session_state.page == "reports":
+    st.success("📊 قسم التقارير")
+
+elif st.session_state.page == "notifications":
+    st.success("🔔 قسم التنبيهات")
+
+elif st.session_state.page == "archive":
+    st.success("🗂️ قسم أرشيف القضايا")
+
+elif st.session_state.page == "library":
+    st.success("⚖️ قسم المكتبة القانونية")
