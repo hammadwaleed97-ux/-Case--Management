@@ -337,9 +337,13 @@ elif page == "register":
 
     with col1:
 
-        litigation_type = st.selectbox(
-            "نوع الطعن",
-            ["دعوى", "استئناف", "نقض"]
+        case_type = st.selectbox(
+            "نوع الدعوى",
+            [
+                "دعوى",
+                "استئناف",
+                "نقض"
+            ]
         )
 
         claimant_type = st.selectbox(
@@ -351,25 +355,13 @@ elif page == "register":
             ]
         )
 
-        claimant = st.text_input(
-            "اسم رافع الدعوى"
-        )
+        claimant = st.text_input("اسم رافع الدعوى")
 
-        case_number = st.text_input(
-            "رقم الدعوى"
-        )
+        case_number = st.text_input("رقم الدعوى")
 
-        judicial_year = st.text_input(
-            "السنة القضائية"
-        )
+        judicial_year = st.text_input("السنة القضائية")
 
-        circuit = st.text_input(
-            "الدائرة"
-        )
-
-        case_type = st.text_input(
-            "نوع الدعوى"
-        )
+        circuit = st.text_input("الدائرة")
 
     with col2:
 
@@ -382,9 +374,7 @@ elif page == "register":
             ]
         )
 
-        defendant = st.text_input(
-            "اسم الخصم"
-        )
+        defendant = st.text_input("اسم الخصم")
 
         court = st.selectbox(
             "المحكمة",
@@ -398,17 +388,17 @@ elif page == "register":
             ]
         )
 
-        court_name = st.text_input(
-            "اسم المحكمة"
-        )
+        court_name = st.text_input("اسم المحكمة")
 
-        appeal_office = st.text_input(
-            "مكتب الاستئناف"
-        )
+        if case_type == "استئناف":
 
-        subject = st.text_area(
-            "موضوع الدعوى"
-        )
+            appeal_office = st.text_input("مأمورية الاستئناف")
+
+        else:
+
+            appeal_office = ""
+
+        subject = st.text_area("موضوع الدعوى")
 
     st.divider()
 
@@ -416,40 +406,16 @@ elif page == "register":
 
     with col3:
 
-        roll_number = st.text_input(
-            "رقم الرول"
+        notifications_enabled = st.checkbox(
+            "تفعيل التنبيهات",
+            value=True
         )
 
-        session_date = st.date_input(
-            "تاريخ الجلسة"
-        )
-
-        adjournment_reason = st.text_area(
-            "سبب التأجيل"
-        )
+        mobile = st.text_input("رقم الهاتف")
 
     with col4:
 
-        judgment_result = st.selectbox(
-            "حالة الدعوى",
-            [
-                "متداولة",
-                "لصالح الهيئة",
-                "ضد الهيئة"
-            ]
-        )
-
-        notifications_enabled = st.checkbox(
-            "تفعيل التنبيهات"
-        )
-
-        mobile = st.text_input(
-            "رقم الهاتف"
-        )
-
-        notes = st.text_area(
-            "ملاحظات"
-        )
+        notes = st.text_area("ملاحظات")
 
     st.divider()
     # ==========================================================
