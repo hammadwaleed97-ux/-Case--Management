@@ -286,3 +286,134 @@ st.markdown("""
 # ==========================================================
 
 left, center, right = st.columns([1.1,3,1.1])
+# ==========================================================
+# القائمة الجانبية + منتصف الشاشة
+# الجزء الثاني (2/4)
+# ==========================================================
+
+with left:
+
+    st.markdown("""
+    <div class="menu">📚 تسجيل القضايا</div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("""
+    <div class="menu">📑 الحصر العام</div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("""
+    <div class="menu">🔍 البحث عن دعوى</div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("""
+    <div class="menu">📊 التقارير</div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("""
+    <div class="menu">🔔 التنبيهات</div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("""
+    <div class="menu">🗂 أرشيف القضايا</div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("""
+    <div class="menu">⚖️ المكتبة القانونية</div>
+    """, unsafe_allow_html=True)
+
+
+# ==========================================================
+# منتصف الصفحة
+# ==========================================================
+
+with center:
+
+    st.markdown("""
+
+    <div class="center">
+
+        <div style="display:flex;
+                    justify-content:space-between;
+                    align-items:center;">
+
+            <div style="width:25%;
+                        text-align:center;">
+
+                <div style="font-size:170px;
+                            color:#FFD700;
+                            filter:drop-shadow(0 0 18px gold);">
+
+                    ⚖️
+
+                </div>
+
+                <div style="
+                color:#FFD700;
+                font-size:24px;
+                font-weight:bold;">
+
+                ميزان العدالة
+
+                </div>
+
+            </div>
+
+            <div style="width:50%;
+                        text-align:center;">
+
+                <div style="
+                font-size:70px;
+                color:#FFD700;
+                font-weight:900;
+                text-shadow:0 0 25px gold;">
+
+                إدارة القضايا
+
+                </div>
+
+                <br>
+
+                <div style="
+                font-size:28px;
+                color:white;
+                line-height:60px;">
+
+                نظام إلكترونى متكامل لإدارة الدعاوى القضائية
+                <br>
+                ومتابعة الجلسات والتقارير
+                <br>
+                وإدارة المستندات
+                <br>
+                والمكتبة القانونية
+
+                </div>
+
+            </div>
+
+            <div style="width:25%;
+                        text-align:center;">
+
+                <div style="font-size:170px;
+                            color:#FFD700;
+                            filter:drop-shadow(0 0 18px gold);">
+
+                    🏛️
+
+                </div>
+
+                <div style="
+                color:#FFD700;
+                font-size:24px;
+                font-weight:bold;">
+
+                العدالة
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    """, unsafe_allow_html=True)
