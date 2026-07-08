@@ -140,15 +140,12 @@ id INTEGER PRIMARY KEY AUTOINCREMENT,
 litigation_type TEXT,
 
 claimant_type TEXT,
-
 claimant TEXT,
 
 defendant_type TEXT,
-
 defendant TEXT,
 
 case_number TEXT,
-
 judicial_year TEXT,
 
 circuit TEXT,
@@ -156,7 +153,6 @@ circuit TEXT,
 case_type TEXT,
 
 court TEXT,
-
 court_name TEXT,
 
 appeal_office TEXT,
@@ -171,13 +167,39 @@ adjournment_reason TEXT,
 
 notes TEXT,
 
-judgment_result TEXT,
-
 notifications_enabled INTEGER,
 
 mobile TEXT,
 
 status TEXT DEFAULT 'متداولة',
+
+created_at TEXT
+
+)
+""")
+
+# =====================================
+# جدول الجلسات
+# =====================================
+
+cur.execute("""
+CREATE TABLE IF NOT EXISTS sessions(
+
+id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+case_id INTEGER,
+
+session_date TEXT,
+
+roll_number TEXT,
+
+procedure TEXT,
+
+judgment_date TEXT,
+
+judgment_text TEXT,
+
+judgment_result TEXT,
 
 created_at TEXT
 
