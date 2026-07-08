@@ -454,7 +454,7 @@ elif page == "register":
 
     st.divider()
     # ==========================================================
-# الجزء الثانى : حفظ القضية
+# حفظ القضية
 # ==========================================================
 
     if st.button("💾 حفظ القضية", use_container_width=True):
@@ -488,6 +488,8 @@ elif page == "register":
 
                 from datetime import datetime
 
+                now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
                 cur.execute(
                     """
                     INSERT INTO cases(
@@ -517,6 +519,7 @@ elif page == "register":
                         ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?
 
                     )
+
                     """,
 
                     (
@@ -537,7 +540,38 @@ elif page == "register":
                         int(notifications_enabled),
                         mobile,
                         notes,
-                        datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                        now
+
+                    )
+
+                )
+
+                case_id = cur.lastrowid
+
+                cur.execute(
+                    """
+                    INSERT INTO sessions(
+
+                        case_id,
+                        session_date,
+                        procedure,
+                        created_at
+
+                    )
+
+                    VALUES(
+
+                        ?,?,?,?
+
+                    )
+                    """,
+
+                    (
+
+                        case_id,
+                        str(session_date),
+                        procedure,
+                        now
 
                     )
 
@@ -545,7 +579,7 @@ elif page == "register":
 
                 conn.commit()
 
-                st.success("✅ تم حفظ القضية بنجاح")
+                st.success("✅ تم تسجيل القضية وحفظ أول جلسة بنجاح.")
 
                 st.balloons()
 
