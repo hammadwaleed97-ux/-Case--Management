@@ -181,3 +181,79 @@ with col2:
 
     if st.button("⚖️ المكتبة القانونية", use_container_width=True):
         st.session_state.page = "library"
+        # ==========================================================
+# الصفحة الرئيسية
+# ==========================================================
+
+if st.session_state.page == "home":
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    c1, c2, c3 = st.columns([1,5,1])
+
+    with c2:
+
+        st.markdown("""
+        <div style="
+        background:linear-gradient(90deg,#062456,#0B3E91,#062456);
+        border:2px solid #FFD700;
+        border-radius:20px;
+        padding:18px;
+        text-align:center;
+        color:white;
+        font-size:26px;
+        font-weight:bold;
+        box-shadow:0px 0px 20px rgba(255,215,0,.45);
+        ">
+        مرحباً بك فى نظام إدارة القضايا
+        </div>
+        """, unsafe_allow_html=True)
+
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        m1,m2,m3 = st.columns(3)
+
+        with m1:
+            st.metric("إجمالى القضايا", "0")
+
+        with m2:
+            st.metric("جلسات اليوم", "0")
+
+        with m3:
+            st.metric("التنبيهات", "0")
+
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        st.info("اختر أحد الأقسام من الأعلى للبدء.")
+
+# ==========================================================
+# الأقسام
+# ==========================================================
+
+elif st.session_state.page == "register":
+
+    st.title("📚 تسجيل القضايا")
+
+elif st.session_state.page == "general":
+
+    st.title("📑 الحصر العام للقضايا")
+
+elif st.session_state.page == "search":
+
+    st.title("🔍 البحث عن دعوى")
+
+elif st.session_state.page == "reports":
+
+    st.title("📊 التقارير")
+
+elif st.session_state.page == "notifications":
+
+    st.title("🔔 التنبيهات")
+
+elif st.session_state.page == "archive":
+
+    st.title("🗂️ أرشيف القضايا")
+
+elif st.session_state.page == "library":
+
+    st.title("⚖️ المكتبة القانونية")
