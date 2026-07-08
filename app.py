@@ -1,7 +1,7 @@
 # ==========================================================
 # إدارة القضايا
 # Professional Judicial Edition
-# الجزء الأول (1/4)
+# الجزء الأول (1/10)
 # ==========================================================
 
 import streamlit as st
@@ -22,14 +22,26 @@ st.set_page_config(
 )
 
 # ==========================================================
-# قاعدة البيانات
+# إنشاء قاعدة البيانات
 # ==========================================================
 
 conn = sqlite3.connect("cases.db", check_same_thread=False)
 cur = conn.cursor()
 
+cur.execute("""
+CREATE TABLE IF NOT EXISTS cases(
+id INTEGER PRIMARY KEY AUTOINCREMENT,
+case_number TEXT,
+judicial_year TEXT,
+court TEXT,
+subject TEXT
+)
+""")
+
+conn.commit()
+
 # ==========================================================
-# تنسيق البرنامج
+# CSS
 # ==========================================================
 
 st.markdown("""
@@ -48,54 +60,43 @@ visibility:hidden;
 }
 
 .block-container{
-
 padding-top:0rem;
-
 padding-bottom:0rem;
-
-padding-left:1rem;
-
-padding-right:1rem;
-
+padding-left:0rem;
+padding-right:0rem;
 max-width:100%;
-
 }
 
 .stApp{
 
-background:
-linear-gradient(rgba(2,17,45,.94),rgba(1,10,28,.96)),
-url("https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=1600&q=80");
-
-background-size:cover;
-
-background-position:center;
-
-background-attachment:fixed;
+background:linear-gradient(
+135deg,
+#02162f 0%,
+#052b57 40%,
+#031c3d 100%
+);
 
 }
 
-/*=============================*/
+/*================ HEADER =================*/
 
-.title{
+.main_title{
 
 text-align:center;
 
-font-size:52px;
+font-size:55px;
 
 font-weight:900;
 
 color:#FFD700;
 
-margin-top:15px;
+margin-top:20px;
 
-text-shadow:0 0 20px gold;
+text-shadow:0px 0px 20px gold;
 
 }
 
-/*=============================*/
-
-.subtitle{
+.sub{
 
 text-align:center;
 
@@ -109,8 +110,6 @@ margin-top:10px;
 
 }
 
-/*=============================*/
-
 .name{
 
 text-align:center;
@@ -121,15 +120,13 @@ font-weight:900;
 
 color:#FFD700;
 
-margin-top:8px;
-
 text-shadow:0 0 15px gold;
+
+margin-top:8px;
 
 }
 
-/*=============================*/
-
-.end{
+.footertext{
 
 text-align:center;
 
@@ -137,104 +134,35 @@ font-size:23px;
 
 font-weight:bold;
 
-color:white;
-
-margin-top:10px;
-
 line-height:45px;
 
-}
-
-/*=============================*/
-
-.menu{
-
-background:linear-gradient(90deg,#09244d,#0d47a1);
-
-padding:18px;
-
-border-radius:15px;
-
-margin-bottom:15px;
-
-font-size:22px;
-
-font-weight:bold;
-
 color:white;
 
-border-left:6px solid gold;
-
-transition:.4s;
-
-cursor:pointer;
-
-box-shadow:0 0 15px rgba(0,0,0,.3);
+margin-top:12px;
 
 }
 
-.menu:hover{
+/*================ BOX =================*/
 
-background:linear-gradient(90deg,#1565c0,#1976d2);
-
-transform:translateX(10px);
-
-box-shadow:0 0 20px gold;
-
-}
-
-/*=============================*/
-
-.center{
+.box{
 
 background:rgba(255,255,255,.05);
 
 border-radius:25px;
 
-padding:35px;
+padding:25px;
 
-height:700px;
-
-border:1px solid rgba(255,215,0,.25);
+border:1px solid rgba(255,215,0,.30);
 
 backdrop-filter:blur(10px);
 
-box-shadow:0 0 40px rgba(0,0,0,.5);
+box-shadow:0 0 35px rgba(0,0,0,.45);
 
-}
-
-/*=============================*/
-
-.icon{
-
-font-size:190px;
-
-text-align:center;
-
-margin-top:20px;
-
-filter:drop-shadow(0 0 20px gold);
-
-}
-
-/*=============================*/
-
-.txt{
-
-font-size:28px;
-
-color:white;
-
-text-align:center;
-
-line-height:55px;
-
-margin-top:30px;
+height:720px;
 
 }
 
 </style>
-
 """, unsafe_allow_html=True)
 
 # ==========================================================
@@ -243,13 +171,13 @@ margin-top:30px;
 
 st.markdown("""
 
-<div class="title">
+<div class="main_title">
 
 ⚖️ إدارة القضايا
 
 </div>
 
-<div class="subtitle">
+<div class="sub">
 
 إعداد وتصميم
 
@@ -261,13 +189,13 @@ st.markdown("""
 
 </div>
 
-<div class="subtitle">
+<div class="sub">
 
 مع تحيات
 
 </div>
 
-<div class="end">
+<div class="footertext">
 
 الإدارة العامة للشئون القانونية<br>
 
@@ -277,7 +205,7 @@ st.markdown("""
 
 </div>
 
-<br>
+<br><br>
 
 """, unsafe_allow_html=True)
 
@@ -285,135 +213,4 @@ st.markdown("""
 # تقسيم الصفحة
 # ==========================================================
 
-left, center, right = st.columns([1.1,3,1.1])
-# ==========================================================
-# القائمة الجانبية + منتصف الشاشة
-# الجزء الثاني (2/4)
-# ==========================================================
-
-with left:
-
-    st.markdown("""
-    <div class="menu">📚 تسجيل القضايا</div>
-    """, unsafe_allow_html=True)
-
-    st.markdown("""
-    <div class="menu">📑 الحصر العام</div>
-    """, unsafe_allow_html=True)
-
-    st.markdown("""
-    <div class="menu">🔍 البحث عن دعوى</div>
-    """, unsafe_allow_html=True)
-
-    st.markdown("""
-    <div class="menu">📊 التقارير</div>
-    """, unsafe_allow_html=True)
-
-    st.markdown("""
-    <div class="menu">🔔 التنبيهات</div>
-    """, unsafe_allow_html=True)
-
-    st.markdown("""
-    <div class="menu">🗂 أرشيف القضايا</div>
-    """, unsafe_allow_html=True)
-
-    st.markdown("""
-    <div class="menu">⚖️ المكتبة القانونية</div>
-    """, unsafe_allow_html=True)
-
-
-# ==========================================================
-# منتصف الصفحة
-# ==========================================================
-
-with center:
-
-    st.markdown("""
-
-    <div class="center">
-
-        <div style="display:flex;
-                    justify-content:space-between;
-                    align-items:center;">
-
-            <div style="width:25%;
-                        text-align:center;">
-
-                <div style="font-size:170px;
-                            color:#FFD700;
-                            filter:drop-shadow(0 0 18px gold);">
-
-                    ⚖️
-
-                </div>
-
-                <div style="
-                color:#FFD700;
-                font-size:24px;
-                font-weight:bold;">
-
-                ميزان العدالة
-
-                </div>
-
-            </div>
-
-            <div style="width:50%;
-                        text-align:center;">
-
-                <div style="
-                font-size:70px;
-                color:#FFD700;
-                font-weight:900;
-                text-shadow:0 0 25px gold;">
-
-                إدارة القضايا
-
-                </div>
-
-                <br>
-
-                <div style="
-                font-size:28px;
-                color:white;
-                line-height:60px;">
-
-                نظام إلكترونى متكامل لإدارة الدعاوى القضائية
-                <br>
-                ومتابعة الجلسات والتقارير
-                <br>
-                وإدارة المستندات
-                <br>
-                والمكتبة القانونية
-
-                </div>
-
-            </div>
-
-            <div style="width:25%;
-                        text-align:center;">
-
-                <div style="font-size:170px;
-                            color:#FFD700;
-                            filter:drop-shadow(0 0 18px gold);">
-
-                    🏛️
-
-                </div>
-
-                <div style="
-                color:#FFD700;
-                font-size:24px;
-                font-weight:bold;">
-
-                العدالة
-
-                </div>
-
-            </div>
-
-        </div>
-
-    </div>
-
-    """, unsafe_allow_html=True)
+left,center,right=st.columns([1.2,3.5,1.2])
