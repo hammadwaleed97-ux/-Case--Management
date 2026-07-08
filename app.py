@@ -374,3 +374,170 @@ with center:
     </div>
 
     """, unsafe_allow_html=True)
+    # ==========================================================
+# الجزء الثالث (3/10)
+# صور الواجهة الرئيسية
+# ==========================================================
+
+with right:
+
+    st.markdown("""
+    <style>
+
+    .card{
+
+        background:rgba(255,255,255,.05);
+
+        border-radius:20px;
+
+        padding:18px;
+
+        border:1px solid rgba(255,215,0,.35);
+
+        text-align:center;
+
+        margin-bottom:20px;
+
+        box-shadow:0 0 25px rgba(0,0,0,.35);
+
+    }
+
+    .cardtitle{
+
+        color:#FFD700;
+
+        font-size:22px;
+
+        font-weight:bold;
+
+        margin-top:10px;
+
+    }
+
+    .cardtext{
+
+        color:white;
+
+        font-size:17px;
+
+        line-height:35px;
+
+    }
+
+    </style>
+    """, unsafe_allow_html=True)
+
+    st.markdown("""
+    <div class="card">
+
+    <img src="https://cdn-icons-png.flaticon.com/512/3132/3132693.png"
+         width="130">
+
+    <div class="cardtitle">
+
+    العدالة
+
+    </div>
+
+    <div class="cardtext">
+
+    تطبيق إلكترونى لإدارة
+    <br>
+    جميع الدعاوى القضائية
+
+    </div>
+
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("""
+    <div class="card">
+
+    <img src="https://cdn-icons-png.flaticon.com/512/3062/3062634.png"
+         width="130">
+
+    <div class="cardtitle">
+
+    الجلسات
+
+    </div>
+
+    <div class="cardtext">
+
+    متابعة الجلسات
+    <br>
+    والتنبيهات
+
+    </div>
+
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("""
+    <div class="card">
+
+    <img src="https://cdn-icons-png.flaticon.com/512/2991/2991112.png"
+         width="130">
+
+    <div class="cardtitle">
+
+    المكتبة القانونية
+
+    </div>
+
+    <div class="cardtext">
+
+    القوانين
+    <br>
+    والأحكام
+    <br>
+    واللوائح
+
+    </div>
+
+    </div>
+    """, unsafe_allow_html=True)
+
+
+# ==========================================================
+# شريط سفلى
+# ==========================================================
+
+st.markdown("""
+
+<hr style="
+border:1px solid gold;
+margin-top:25px;">
+
+<div style="
+
+text-align:center;
+
+color:white;
+
+font-size:22px;
+
+padding:15px;
+
+background:linear-gradient(90deg,#061a3b,#0d47a1,#061a3b);
+
+border-top:2px solid gold;
+
+">
+
+⚖️ جميع الحقوق محفوظة ©
+
+<span style="color:#FFD700;
+font-weight:bold;">
+
+وليد شعبان حماد
+
+</span>
+
+| الإدارة العامة للشئون القانونية |
+
+ديوان عام منطقة البحيرة
+
+</div>
+
+""", unsafe_allow_html=True)
