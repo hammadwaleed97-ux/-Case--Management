@@ -1,12 +1,18 @@
 # ==========================================================
 # إدارة القضايا
-# Professional Judicial UI
+# Professional Judicial Edition
 # الجزء الأول (1/4)
 # ==========================================================
 
 import streamlit as st
 import sqlite3
+import pandas as pd
 import os
+from datetime import datetime
+
+# ==========================================================
+# إعداد الصفحة
+# ==========================================================
 
 st.set_page_config(
     page_title="إدارة القضايا",
@@ -15,189 +21,268 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# -------------------------------
-# إخفاء واجهة Streamlit
-# -------------------------------
+# ==========================================================
+# قاعدة البيانات
+# ==========================================================
+
+conn = sqlite3.connect("cases.db", check_same_thread=False)
+cur = conn.cursor()
+
+# ==========================================================
+# تنسيق البرنامج
+# ==========================================================
 
 st.markdown("""
 <style>
 
-#MainMenu{visibility:hidden;}
-header{visibility:hidden;}
-footer{visibility:hidden;}
+#MainMenu{
+visibility:hidden;
+}
+
+header{
+visibility:hidden;
+}
+
+footer{
+visibility:hidden;
+}
 
 .block-container{
+
 padding-top:0rem;
+
 padding-bottom:0rem;
-padding-left:0rem;
-padding-right:0rem;
+
+padding-left:1rem;
+
+padding-right:1rem;
+
 max-width:100%;
+
 }
 
 .stApp{
+
 background:
-linear-gradient(rgba(2,18,45,.93),rgba(1,12,32,.95)),
+linear-gradient(rgba(2,17,45,.94),rgba(1,10,28,.96)),
 url("https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=1600&q=80");
+
 background-size:cover;
+
+background-position:center;
+
 background-attachment:fixed;
+
 }
 
-/*======================================*/
+/*=============================*/
 
-.title1{
+.title{
+
 text-align:center;
-font-size:44px;
+
+font-size:52px;
+
 font-weight:900;
+
 color:#FFD700;
+
 margin-top:15px;
-text-shadow:0 0 18px gold;
+
+text-shadow:0 0 20px gold;
+
 }
 
-.title2{
+/*=============================*/
+
+.subtitle{
+
 text-align:center;
-font-size:23px;
+
+font-size:25px;
+
 font-weight:bold;
+
 color:white;
-margin-top:-10px;
+
+margin-top:10px;
+
 }
 
-.title3{
-text-align:center;
-font-size:20px;
-color:#d6d6d6;
-margin-top:-10px;
-}
+/*=============================*/
 
-.author{
+.name{
+
 text-align:center;
-font-size:20px;
+
+font-size:34px;
+
+font-weight:900;
+
 color:#FFD700;
+
+margin-top:8px;
+
+text-shadow:0 0 15px gold;
+
+}
+
+/*=============================*/
+
+.end{
+
+text-align:center;
+
+font-size:23px;
+
 font-weight:bold;
-margin-top:-8px;
-margin-bottom:25px;
-}
 
-/*======================================*/
+color:white;
 
-.books{
+margin-top:10px;
 
-background:rgba(255,255,255,.05);
-
-backdrop-filter:blur(12px);
-
-border-radius:20px;
-
-padding:15px;
-
-border:1px solid rgba(255,215,0,.3);
-
-box-shadow:0 0 25px rgba(255,215,0,.25);
+line-height:45px;
 
 }
 
-/*======================================*/
+/*=============================*/
 
 .menu{
 
-background:linear-gradient(90deg,#0b1f3a,#123f77);
+background:linear-gradient(90deg,#09244d,#0d47a1);
 
 padding:18px;
 
+border-radius:15px;
+
 margin-bottom:15px;
-
-border-radius:16px;
-
-color:white;
 
 font-size:22px;
 
 font-weight:bold;
 
-transition:.4s;
+color:white;
 
 border-left:6px solid gold;
 
+transition:.4s;
+
 cursor:pointer;
+
+box-shadow:0 0 15px rgba(0,0,0,.3);
 
 }
 
 .menu:hover{
 
+background:linear-gradient(90deg,#1565c0,#1976d2);
+
 transform:translateX(10px);
 
-background:linear-gradient(90deg,#1565c0,#0d47a1);
-
-box-shadow:0 0 25px gold;
+box-shadow:0 0 20px gold;
 
 }
 
-/*======================================*/
+/*=============================*/
 
-.centerbox{
+.center{
 
-background:rgba(255,255,255,.04);
+background:rgba(255,255,255,.05);
 
 border-radius:25px;
 
 padding:35px;
 
-height:650px;
+height:700px;
 
-border:1px solid rgba(255,215,0,.2);
+border:1px solid rgba(255,215,0,.25);
 
-backdrop-filter:blur(8px);
+backdrop-filter:blur(10px);
 
-box-shadow:0 0 40px rgba(0,0,0,.4);
+box-shadow:0 0 40px rgba(0,0,0,.5);
 
 }
 
-/*======================================*/
+/*=============================*/
 
-.bigicon{
+.icon{
 
-font-size:180px;
+font-size:190px;
 
 text-align:center;
-
-color:gold;
-
-filter:drop-shadow(0 0 20px gold);
 
 margin-top:20px;
 
+filter:drop-shadow(0 0 20px gold);
+
 }
 
-.desc{
+/*=============================*/
 
-text-align:center;
+.txt{
 
-font-size:26px;
+font-size:28px;
 
 color:white;
 
+text-align:center;
+
 line-height:55px;
+
+margin-top:30px;
 
 }
 
 </style>
-""",unsafe_allow_html=True)
+
+""", unsafe_allow_html=True)
+
+# ==========================================================
+# الهيدر
+# ==========================================================
 
 st.markdown("""
-<div class='title1'>
-⚖ إدارة القضايا
+
+<div class="title">
+
+⚖️ إدارة القضايا
+
 </div>
 
-<div class='title2'>
-الهيئة القومية للتأمين الاجتماعى
+<div class="subtitle">
+
+إعداد وتصميم
+
 </div>
 
-<div class='title3'>
-الإدارة العامة للقضايا
+<div class="name">
+
+وليد شعبان حماد
+
 </div>
 
-<div class='author'>
-إعداد / وليد حماد
-</div>
-""",unsafe_allow_html=True)
+<div class="subtitle">
 
-left,center,right=st.columns([1.2,3,1.2])
+مع تحيات
+
+</div>
+
+<div class="end">
+
+الإدارة العامة للشئون القانونية<br>
+
+بديوان عام منطقة البحيرة<br>
+
+بالهيئة القومية للتأمين الاجتماعى
+
+</div>
+
+<br>
+
+""", unsafe_allow_html=True)
+
+# ==========================================================
+# تقسيم الصفحة
+# ==========================================================
+
+left, center, right = st.columns([1.1,3,1.1])
