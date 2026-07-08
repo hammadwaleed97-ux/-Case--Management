@@ -256,7 +256,6 @@ with col2:
 # ==========================================================
 
 page = st.session_state.page
-
 # ==========================================================
 # الصفحة الرئيسية
 # ==========================================================
@@ -268,15 +267,23 @@ if page == "home":
     c1, c2, c3 = st.columns([1,5,1])
 
     with c2:
-
         st.info("اختر أحد الأقسام من القائمة للبدء.")
-        # ==========================================================
+
+# ==========================================================
 # تسجيل القضايا
 # ==========================================================
 
 elif page == "register":
 
-    st.title("📚 تسجيل القضايا")
+    c1, c2 = st.columns([1,5])
+
+    with c1:
+        if st.button("🏠 الرئيسية"):
+            st.session_state.page = "home"
+            st.rerun()
+
+    with c2:
+        st.title("📚 تسجيل القضايا")
 
     st.divider()
 
@@ -333,9 +340,9 @@ elif page == "register":
 
     st.divider()
 
-    c1, c2 = st.columns(2)
+    col3, col4 = st.columns(2)
 
-    with c1:
+    with col3:
 
         roll_number = st.text_input("رقم الرول")
 
@@ -343,7 +350,7 @@ elif page == "register":
 
         adjournment_reason = st.text_area("سبب التأجيل")
 
-    with c2:
+    with col4:
 
         judgment_result = st.selectbox(
             "حالة الدعوى",
@@ -354,18 +361,21 @@ elif page == "register":
             ]
         )
 
-        notifications_enabled = st.checkbox(
-            "تفعيل التنبيهات"
-        )
+        notifications_enabled = st.checkbox("تفعيل التنبيهات")
 
         mobile = st.text_input("رقم الهاتف")
 
         notes = st.text_area("ملاحظات")
+
 # ==========================================================
 # الحصر العام
 # ==========================================================
 
 elif page == "general":
+
+    if st.button("🏠 الرئيسية"):
+        st.session_state.page = "home"
+        st.rerun()
 
     st.title("📑 الحصر العام للقضايا")
 
@@ -375,6 +385,10 @@ elif page == "general":
 
 elif page == "search":
 
+    if st.button("🏠 الرئيسية"):
+        st.session_state.page = "home"
+        st.rerun()
+
     st.title("🔍 البحث عن دعوى")
 
 # ==========================================================
@@ -382,6 +396,10 @@ elif page == "search":
 # ==========================================================
 
 elif page == "reports":
+
+    if st.button("🏠 الرئيسية"):
+        st.session_state.page = "home"
+        st.rerun()
 
     st.title("📊 التقارير")
 
@@ -391,6 +409,10 @@ elif page == "reports":
 
 elif page == "notifications":
 
+    if st.button("🏠 الرئيسية"):
+        st.session_state.page = "home"
+        st.rerun()
+
     st.title("🔔 التنبيهات")
 
 # ==========================================================
@@ -399,6 +421,10 @@ elif page == "notifications":
 
 elif page == "archive":
 
+    if st.button("🏠 الرئيسية"):
+        st.session_state.page = "home"
+        st.rerun()
+
     st.title("🗂️ أرشيف القضايا")
 
 # ==========================================================
@@ -406,5 +432,9 @@ elif page == "archive":
 # ==========================================================
 
 elif page == "library":
+
+    if st.button("🏠 الرئيسية"):
+        st.session_state.page = "home"
+        st.rerun()
 
     st.title("⚖️ المكتبة القانونية")
