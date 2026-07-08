@@ -104,6 +104,23 @@ margin-bottom:20px;
 text-shadow:0px 0px 15px gold;
 
 }
+/* ================= إظهار أسماء الحقول ================= */
+
+label{
+    color:white !important;
+    font-size:18px !important;
+    font-weight:bold !important;
+}
+
+.stTextInput label,
+.stTextArea label,
+.stSelectbox label,
+.stDateInput label,
+.stCheckbox label{
+    color:white !important;
+    font-size:18px !important;
+    font-weight:bold !important;
+}
 
 </style>
 
