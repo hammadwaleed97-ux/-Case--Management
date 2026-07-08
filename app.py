@@ -360,3 +360,104 @@ elif page == "register":
         )
 
     st.divider()
+    # ==========================================================
+# الحصر العام للقضايا
+# ==========================================================
+
+elif page == "general":
+
+    if st.button("🏠 العودة للصفحة الرئيسية", use_container_width=True):
+        st.session_state.page = "home"
+        st.rerun()
+
+    st.markdown("""
+    <h2 style='text-align:center;color:#FFD700'>
+    📑 الحصر العام للقضايا
+    </h2>
+    """, unsafe_allow_html=True)
+
+    st.divider()
+
+    search = st.text_input("🔍 البحث داخل القضايا")
+
+    if search.strip() == "":
+
+        cur.execute("""
+            SELECT *
+            FROM cases
+            ORDER BY id DESC
+        """)
+
+    else:
+
+        cur.execute("""
+            SELECT *
+            FROM cases
+            WHERE
+            claimant LIKE ?
+            OR defendant LIKE ?
+            OR case_number LIKE ?
+            OR subject LIKE ?
+            ORDER BY id DESC
+        """, (
+            f"%{search}%",
+            f"%{search}%",
+            f"%{search}%",
+            f"%{search}%"
+        ))
+
+    rows = cur.fetchall()
+
+    st.success(f"إجمالي القضايا : {len(rows)}")
+
+    st.divider()
+
+    if len(rows) == 0:
+
+        st.warning("لا توجد قضايا مسجلة.")
+
+    else:
+
+        for row in rows:
+
+            with st.expander(f"📁 القضية رقم {row[6]} / {row[7]}"):
+
+                st.write("**نوع الطعن:**", row[1])
+                st.write("**رافع الدعوى:**", row[3])
+                st.write("**الخصم:**", row[5])
+                st.write("**المحكمة:**", row[10])
+                st.write("**اسم المحكمة:**", row[11])
+                st.write("**الدائرة:**", row[8])
+                st.write("**نوع الدعوى:**", row[9])
+                st.write("**الموضوع:**", row[13])
+                st.write("**رقم الرول:**", row[14])
+                st.write("**تاريخ الجلسة:**", row[15])
+                st.write("**سبب التأجيل:**", row[16])
+                st.write("**الحالة:**", row[18])
+                st.write("**رقم الهاتف:**", row[20])
+                st.write("**ملاحظات:**", row[17])
+
+                st.divider()
+
+                c1, c2, c3 = st.columns(3)
+
+                with c1:
+                    st.button(
+                        "✏️ تعديل",
+                        key=f"edit_{row[0]}",
+                        use_container_width=True
+                    )
+
+                with c2:
+                    st.button(
+                        "📂 متابعة",
+                        key=f"follow_{row[0]}",
+                        use_container_width=True
+                    )
+
+                with c3:
+                    st.button(
+                        "🗑️ حذف",
+                        key=f"delete_{row[0]}",
+                        use_container_width=True
+                )
