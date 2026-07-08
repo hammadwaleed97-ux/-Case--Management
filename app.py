@@ -214,3 +214,163 @@ st.markdown("""
 # ==========================================================
 
 left,center,right=st.columns([1.2,3.5,1.2])
+# ==========================================================
+# الجزء الثاني (2/10)
+# القائمة الجانبية + الواجهة الرئيسية
+# ==========================================================
+
+with left:
+
+    st.markdown("""
+    <style>
+
+    .menu_btn{
+
+        background:linear-gradient(90deg,#0b2d5a,#1359b8);
+
+        color:white;
+
+        padding:16px;
+
+        margin-bottom:15px;
+
+        border-radius:15px;
+
+        text-align:center;
+
+        font-size:22px;
+
+        font-weight:bold;
+
+        border-left:6px solid gold;
+
+        box-shadow:0 0 15px rgba(0,0,0,.4);
+
+        transition:.3s;
+
+    }
+
+    .menu_btn:hover{
+
+        background:linear-gradient(90deg,#1565c0,#1e88e5);
+
+        transform:translateX(8px);
+
+        box-shadow:0 0 20px gold;
+
+    }
+
+    </style>
+    """,unsafe_allow_html=True)
+
+    st.markdown('<div class="menu_btn">📚 تسجيل القضايا</div>',unsafe_allow_html=True)
+
+    st.markdown('<div class="menu_btn">📑 الحصر العام</div>',unsafe_allow_html=True)
+
+    st.markdown('<div class="menu_btn">🔍 البحث عن دعوى</div>',unsafe_allow_html=True)
+
+    st.markdown('<div class="menu_btn">📊 التقارير</div>',unsafe_allow_html=True)
+
+    st.markdown('<div class="menu_btn">🔔 التنبيهات</div>',unsafe_allow_html=True)
+
+    st.markdown('<div class="menu_btn">🗂️ أرشيف القضايا</div>',unsafe_allow_html=True)
+
+    st.markdown('<div class="menu_btn">⚖️ المكتبة القانونية</div>',unsafe_allow_html=True)
+
+
+# ==========================================================
+# منتصف الشاشة
+# ==========================================================
+
+with center:
+
+    st.markdown("""
+    <div class="box">
+
+    <div style="display:flex;
+                justify-content:space-between;
+                align-items:center;">
+
+        <div style="width:22%;text-align:center;">
+
+            <div style="
+            font-size:170px;
+            color:#FFD700;
+            text-shadow:0 0 25px gold;">
+            ⚖️
+            </div>
+
+            <div style="
+            color:#FFD700;
+            font-size:24px;
+            font-weight:bold;">
+            ميزان العدالة
+            </div>
+
+        </div>
+
+        <div style="width:56%;
+                    text-align:center;">
+
+            <div style="
+            font-size:70px;
+            font-weight:900;
+            color:#FFD700;
+            text-shadow:0 0 20px gold;">
+
+            إدارة القضايا
+
+            </div>
+
+            <br>
+
+            <div style="
+            color:white;
+            font-size:28px;
+            line-height:60px;">
+
+            نظام إلكترونى متكامل
+
+            <br>
+
+            لإدارة الدعاوى القضائية
+
+            <br>
+
+            ومتابعة الجلسات
+
+            <br>
+
+            والتقارير والمستندات
+
+            <br>
+
+            والمكتبة القانونية
+
+            </div>
+
+        </div>
+
+        <div style="width:22%;text-align:center;">
+
+            <div style="
+            font-size:170px;
+            color:#FFD700;
+            text-shadow:0 0 25px gold;">
+            🏛️
+            </div>
+
+            <div style="
+            color:#FFD700;
+            font-size:24px;
+            font-weight:bold;">
+            العدالة
+            </div>
+
+        </div>
+
+    </div>
+
+    </div>
+
+    """, unsafe_allow_html=True)
