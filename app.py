@@ -138,3 +138,46 @@ st.markdown("""
 ⚖️ إدارة القضايا ⚖️
 </div>
 """, unsafe_allow_html=True)
+# ==========================================================
+# القائمة الرئيسية
+# ==========================================================
+
+if "page" not in st.session_state:
+    st.session_state.page = "home"
+
+col1, col2, col3 = st.columns([1,4,1])
+
+with col2:
+
+    if st.button("📚 تسجيل القضايا", use_container_width=True):
+        st.session_state.page = "register"
+
+    st.write("")
+
+    if st.button("📑 الحصر العام للقضايا", use_container_width=True):
+        st.session_state.page = "general"
+
+    st.write("")
+
+    if st.button("🔍 البحث عن دعوى", use_container_width=True):
+        st.session_state.page = "search"
+
+    st.write("")
+
+    if st.button("📊 التقارير", use_container_width=True):
+        st.session_state.page = "reports"
+
+    st.write("")
+
+    if st.button("🔔 التنبيهات", use_container_width=True):
+        st.session_state.page = "notifications"
+
+    st.write("")
+
+    if st.button("🗂️ أرشيف القضايا", use_container_width=True):
+        st.session_state.page = "archive"
+
+    st.write("")
+
+    if st.button("⚖️ المكتبة القانونية", use_container_width=True):
+        st.session_state.page = "library"
