@@ -253,8 +253,7 @@ if page == "home":
     with c2:
 
         st.info("اختر أحد الأقسام من القائمة للبدء.")
-
-# ==========================================================
+        # ==========================================================
 # تسجيل القضايا
 # ==========================================================
 
@@ -262,8 +261,89 @@ elif page == "register":
 
     st.title("📚 تسجيل القضايا")
 
-    st.write("سيتم إضافة النموذج الكامل هنا")
+    st.divider()
 
+    col1, col2 = st.columns(2)
+
+    with col1:
+
+        litigation_type = st.selectbox(
+            "نوع الطعن",
+            ["دعوى", "استئناف", "نقض"]
+        )
+
+        claimant_type = st.selectbox(
+            "صفة رافع الدعوى",
+            ["المدعى", "المستأنف", "الطاعن"]
+        )
+
+        claimant = st.text_input("اسم رافع الدعوى")
+
+        case_number = st.text_input("رقم الدعوى")
+
+        judicial_year = st.text_input("السنة القضائية")
+
+        circuit = st.text_input("الدائرة")
+
+        case_type = st.text_input("نوع الدعوى")
+
+    with col2:
+
+        defendant_type = st.selectbox(
+            "صفة الخصم",
+            ["المدعى عليه", "المستأنف ضده", "المطعون ضده"]
+        )
+
+        defendant = st.text_input("اسم الخصم")
+
+        court = st.selectbox(
+            "المحكمة",
+            [
+                "الابتدائية",
+                "الاستئناف",
+                "النقض",
+                "الإدارية",
+                "القضاء الإداري",
+                "الإدارية العليا"
+            ]
+        )
+
+        court_name = st.text_input("اسم المحكمة")
+
+        appeal_office = st.text_input("مكتب الاستئناف")
+
+        subject = st.text_area("موضوع الدعوى")
+
+    st.divider()
+
+    c1, c2 = st.columns(2)
+
+    with c1:
+
+        roll_number = st.text_input("رقم الرول")
+
+        session_date = st.date_input("تاريخ الجلسة")
+
+        adjournment_reason = st.text_area("سبب التأجيل")
+
+    with c2:
+
+        judgment_result = st.selectbox(
+            "حالة الدعوى",
+            [
+                "متداولة",
+                "لصالح الهيئة",
+                "ضد الهيئة"
+            ]
+        )
+
+        notifications_enabled = st.checkbox(
+            "تفعيل التنبيهات"
+        )
+
+        mobile = st.text_input("رقم الهاتف")
+
+        notes = st.text_area("ملاحظات")
 # ==========================================================
 # الحصر العام
 # ==========================================================
