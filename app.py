@@ -409,6 +409,116 @@ elif page == "register":
 
     st.divider()
     # ==========================================================
+# الجزء الثانى : حفظ القضية
+# ==========================================================
+
+    if st.button("💾 حفظ القضية", use_container_width=True):
+
+        if (
+            claimant.strip() == ""
+            or defendant.strip() == ""
+            or case_number.strip() == ""
+            or judicial_year.strip() == ""
+        ):
+
+            st.error("يرجى استكمال البيانات الأساسية.")
+
+        else:
+
+            cur.execute(
+                """
+                SELECT id
+                FROM cases
+                WHERE case_number=?
+                AND judicial_year=?
+                """,
+                (case_number, judicial_year)
+            )
+
+            exists = cur.fetchone()
+
+            if exists:
+
+                st.warning("هذه القضية مسجلة بالفعل.")
+
+            else:
+
+                from datetime import datetime
+
+                cur.execute(
+                    """
+                    INSERT INTO cases(
+
+                    litigation_type,
+                    claimant_type,
+                    claimant,
+                    defendant_type,
+                    defendant,
+                    case_number,
+                    judicial_year,
+                    circuit,
+                    case_type,
+                    court,
+                    court_name,
+                    appeal_office,
+                    subject,
+                    roll_number,
+                    session_date,
+                    adjournment_reason,
+                    notes,
+                    judgment_result,
+                    notifications_enabled,
+                    mobile,
+                    created_at
+
+                    )
+
+                    VALUES(
+
+                    ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?
+
+                    )
+
+                    """,
+
+                    (
+
+                        litigation_type,
+                        claimant_type,
+                        claimant,
+                        defendant_type,
+                        defendant,
+                        case_number,
+                        judicial_year,
+                        circuit,
+                        case_type,
+                        court,
+                        court_name,
+                        appeal_office,
+                        subject,
+                        roll_number,
+                        str(session_date),
+                        adjournment_reason,
+                        notes,
+                        judgment_result,
+                        int(notifications_enabled),
+                        mobile,
+                        datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+                    )
+
+                )
+
+                conn.commit()
+
+                st.success("✅ تم حفظ القضية بنجاح.")
+
+                st.balloons()
+
+# ==========================================================
+# نهاية قسم تسجيل القضايا
+# ==========================================================
+    # ==========================================================
 # الحصر العام للقضايا
 # ==========================================================
 
