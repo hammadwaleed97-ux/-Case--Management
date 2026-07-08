@@ -108,13 +108,66 @@ text-shadow:0px 0px 15px gold;
 </style>
 
 """, unsafe_allow_html=True)
-
 # ==========================================================
-# قاعدة البيانات
+# إنشاء قاعدة البيانات
 # ==========================================================
 
 conn = sqlite3.connect("cases.db", check_same_thread=False)
+cur = conn.cursor()
 
+cur.execute("""
+CREATE TABLE IF NOT EXISTS cases(
+
+id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+litigation_type TEXT,
+
+claimant_type TEXT,
+
+claimant TEXT,
+
+defendant_type TEXT,
+
+defendant TEXT,
+
+case_number TEXT,
+
+judicial_year TEXT,
+
+circuit TEXT,
+
+case_type TEXT,
+
+court TEXT,
+
+court_name TEXT,
+
+appeal_office TEXT,
+
+subject TEXT,
+
+roll_number TEXT,
+
+session_date TEXT,
+
+adjournment_reason TEXT,
+
+notes TEXT,
+
+judgment_result TEXT,
+
+notifications_enabled INTEGER,
+
+mobile TEXT,
+
+status TEXT DEFAULT 'متداولة',
+
+created_at TEXT
+
+)
+""")
+
+conn.commit()
 # ==========================================================
 # صورة الواجهة
 # ==========================================================
