@@ -245,8 +245,7 @@ elif st.session_state.page == "تسجيل":
                 st.session_state.page = "حصر"
         with col2:
             if st.form_submit_button("🗑️ حذف القضية", use_container_width=True): st.warning("ميزة الحذف سيتم تفعيلها لاحقا")
-
-# ============================================================
+                # ============================================================
 # =================== 2. الحصر العام  =======================
 # ============================================================
 elif st.session_state.page == "حصر":
@@ -257,18 +256,27 @@ elif st.session_state.page == "حصر":
     if not data["cases"]:
         st.info("لا توجد قضايا مسجلة")
     else:
-        for case in sorted(data["cases"], key=lambda x: x["id"], reverse=True):
+        # نضيف id للقضايا القديمة اللي مفيهاش
+        updated = False
+        for i, case in enumerate(data["cases"]):
+            if "id" not in case:
+                case["id"] = i + 1
+                updated = True
+        if updated:
+            save_data(data)
+
+        # نعرض من الاحدث للاقدم
+        for case in sorted(data["cases"], key=lambda x: x.get("id", 0), reverse=True):
             st.markdown(f"""
             <div class='case-card'>
-                <h4>قضية رقم: {case['رقم']} / {case['سنة']}</h4>
-                <p><b>الدائرة:</b> {case['دائرة']} | <b>النوع:</b> {case['نوع']}</p>
-                <p><b>المحكمة:</b> {case['محكمة_اسم']} {case['مأمورية']}</p>
-                <p><b>الخصوم:</b> {case['مدعي']} ضد {case['مدعي_عليه']}</p>
-                <p><b>الموضوع:</b> {case['موضوع']}</p>
-                <p><b>آخر جلسة:</b> {case['تاريخ_جلسة']} - {case['سبب']}</p>
+                <h4>قضية رقم: {case.get('رقم','-')} / {case.get('سنة','-')}</h4>
+                <p><b>الدائرة:</b> {case.get('دائرة','-')} | <b>النوع:</b> {case.get('نوع','-')}</p>
+                <p><b>المحكمة:</b> {case.get('محكمة_اسم','-')} {case.get('مأمورية','')}</p>
+                <p><b>الخصوم:</b> {case.get('مدعي','-')} ضد {case.get('مدعي_عليه','-')}</p>
+                <p><b>الموضوع:</b> {case.get('موضوع','-')}</p>
+                <p><b>آخر جلسة:</b> {case.get('تاريخ_جلسة','-')} - {case.get('سبب','-')}</p>
             </div>
             """, unsafe_allow_html=True)
-
 # باقي الصفحات فاضية
 elif st.session_state.page == "بحث":
     st.markdown("<h2 style='color:#C9A961; text-align:center'>🔍 البحث عن دعوى</h2>", unsafe_allow_html=True)
