@@ -1318,3 +1318,178 @@ elif page == "general":
                     else:
 
                         st.info("لا توجد مستندات مرفقة.")
+                                        # ==================================================
+                # تبويب تعديل بيانات القضية
+                # ==================================================
+
+                with tab4:
+
+                    st.markdown("## ✏️ تعديل بيانات القضية")
+
+                    edit_case_type = st.selectbox(
+                        "نوع الدعوى",
+                        ["دعوى","استئناف","نقض"],
+                        index=["دعوى","استئناف","نقض"].index(case[1]),
+                        key=f"case_type_{case_id}"
+                    )
+
+                    edit_claimant_type = st.selectbox(
+                        "صفة رافع الدعوى",
+                        ["المدعى","المستأنف","الطاعن"],
+                        index=["المدعى","المستأنف","الطاعن"].index(case[2]),
+                        key=f"claimant_type_{case_id}"
+                    )
+
+                    edit_claimant = st.text_input(
+                        "اسم رافع الدعوى",
+                        value=case[3],
+                        key=f"claimant_{case_id}"
+                    )
+
+                    edit_defendant_type = st.selectbox(
+                        "صفة الخصم",
+                        ["المدعى عليه","المستأنف ضده","المطعون ضده"],
+                        index=["المدعى عليه","المستأنف ضده","المطعون ضده"].index(case[4]),
+                        key=f"defendant_type_{case_id}"
+                    )
+
+                    edit_defendant = st.text_input(
+                        "اسم الخصم",
+                        value=case[5],
+                        key=f"defendant_{case_id}"
+                    )
+
+                    edit_court = st.selectbox(
+                        "المحكمة",
+                        [
+                            "الابتدائية",
+                            "الاستئناف",
+                            "النقض",
+                            "الإدارية",
+                            "القضاء الإداري",
+                            "الإدارية العليا"
+                        ],
+                        index=[
+                            "الابتدائية",
+                            "الاستئناف",
+                            "النقض",
+                            "الإدارية",
+                            "القضاء الإداري",
+                            "الإدارية العليا"
+                        ].index(case[8]),
+                        key=f"court_{case_id}"
+                    )
+
+                    edit_court_name = st.text_input(
+                        "اسم المحكمة",
+                        value=case[9],
+                        key=f"court_name_{case_id}"
+                    )
+
+                    if edit_case_type == "استئناف":
+
+                        edit_appeal = st.text_input(
+                            "مأمورية الاستئناف",
+                            value=case[10],
+                            key=f"appeal_{case_id}"
+                        )
+
+                    else:
+
+                        edit_appeal = ""
+
+                    edit_subject = st.text_area(
+                        "موضوع الدعوى",
+                        value=case[12],
+                        key=f"subject_{case_id}"
+                    )
+
+                    edit_mobile = st.text_input(
+                        "رقم الهاتف",
+                        value=case[15],
+                        key=f"mobile_{case_id}"
+                    )
+
+                    edit_notes = st.text_area(
+                        "ملاحظات",
+                        value=case[16],
+                        key=f"notes_{case_id}"
+                    )
+
+                    if st.button(
+                        "💾 حفظ تعديل بيانات القضية",
+                        key=f"save_case_{case_id}",
+                        use_container_width=True
+                    ):
+
+                        cur.execute("""
+
+                        UPDATE cases
+
+                        SET
+
+                        case_type=?,
+                        claimant_type=?,
+                        claimant=?,
+                        defendant_type=?,
+                        defendant=?,
+                        court=?,
+                        court_name=?,
+                        appeal_office=?,
+                        subject=?,
+                        mobile=?,
+                        notes=?
+
+                        WHERE id=?
+
+                        """,(
+
+                            edit_case_type,
+                            edit_claimant_type,
+                            edit_claimant,
+                            edit_defendant_type,
+                            edit_defendant,
+                            edit_court,
+                            edit_court_name,
+                            edit_appeal,
+                            edit_subject,
+                            edit_mobile,
+                            edit_notes,
+                            case_id
+
+                        ))
+
+                        conn.commit()
+
+                        st.success("✅ تم حفظ التعديلات")
+
+                        st.rerun()
+
+                    st.divider()
+
+                    if st.button(
+                        "🗑️ حذف القضية نهائياً",
+                        key=f"delete_case_{case_id}",
+                        use_container_width=True
+                    ):
+
+                        cur.execute(
+                            "DELETE FROM sessions WHERE case_id=?",
+                            (case_id,)
+                        )
+
+                        cur.execute(
+                            "DELETE FROM documents WHERE case_id=?",
+                            (case_id,)
+                        )
+
+                        cur.execute(
+                            "DELETE FROM cases WHERE id=?",
+                            (case_id,)
+                        )
+
+                        conn.commit()
+
+                        st.success("✅ تم حذف القضية نهائياً")
+
+                        st.rerun()
