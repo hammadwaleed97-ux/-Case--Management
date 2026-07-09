@@ -541,6 +541,147 @@ with left:
 # 📅 ثانياً : بيانات أول جلسة
 # ==========================================================
 # ==========================================================
+# ==========================================================
+# الجزء الثالث (3/15)
+# بيانات أول جلسة + مستندات القضية
+# يبدأ بعد نهاية بيانات القضية
+# وينتهى قبل أزرار الحفظ
+# ==========================================================
+
+st.markdown("""
+<div class="section-title">
+📅 ثانياً : بيانات أول جلسة
+</div>
+""", unsafe_allow_html=True)
+
+col_session1, col_session2 = st.columns(2)
+
+# ======================================================
+# بيانات الجلسة
+# ======================================================
+
+with col_session1:
+
+    session_date = st.date_input(
+        "تاريخ أول جلسة"
+    )
+
+    roll_number = st.text_input(
+        "رقم الرول"
+    )
+
+    procedure = st.text_area(
+        "الإجراء المطلوب",
+        height=130,
+        placeholder="اكتب الإجراء المطلوب فى الجلسة..."
+    )
+
+with col_session2:
+
+    adjournment_reason = st.text_area(
+        "سبب التأجيل",
+        height=130
+    )
+
+    session_notes = st.text_area(
+        "ملاحظات الجلسة",
+        height=130
+    )
+
+st.divider()
+
+# ==========================================================
+# مستندات القضية
+# ==========================================================
+
+st.markdown("""
+<div class="section-title">
+📎 ثالثاً : مستندات القضية
+</div>
+""", unsafe_allow_html=True)
+
+uploaded_files = st.file_uploader(
+
+    "إرفاق مستندات القضية",
+
+    type=[
+        "pdf",
+        "doc",
+        "docx",
+        "jpg",
+        "jpeg",
+        "png",
+        "xlsx",
+        "xls"
+    ],
+
+    accept_multiple_files=True
+
+)
+
+if uploaded_files:
+
+    os.makedirs("documents", exist_ok=True)
+
+    cur.execute("""
+
+    CREATE TABLE IF NOT EXISTS documents(
+
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+        case_id INTEGER,
+
+        file_name TEXT,
+
+        file_path TEXT,
+
+        uploaded_at TEXT
+
+    )
+
+    """)
+
+st.info(
+"""
+سيتم حفظ المستندات تلقائياً مع حفظ القضية.
+"""
+)
+
+st.markdown("""
+<div class="section-title">
+⚙️ رابعاً : إعدادات القضية
+</div>
+""", unsafe_allow_html=True)
+
+status = "متداولة"
+
+st.success(
+"حالة القضية عند التسجيل : متداولة"
+)
+
+st.markdown(
+"""
+<p style='color:white;font-size:17px'>
+
+● تتحول الحالة تلقائياً بعد تسجيل جلسة حكم.
+
+● لصالح الهيئة.
+
+● ضد الهيئة.
+
+</p>
+""",
+unsafe_allow_html=True
+)
+
+st.divider()
+
+# ==========================================================
+# نهاية الجزء الثالث
+# الجزء الرابع يبدأ من:
+# أزرار (حفظ القضية - مسح البيانات - العودة)
+# ثم كود الحفظ بالكامل
+# ==========================================================
 # الحصر العام للقضايا
 # ==========================================================
 
