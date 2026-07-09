@@ -714,3 +714,150 @@ elif page == "general":
                 """,(case_id,))
 
                 last_session = cur.fetchone()
+                                if last_session:
+
+                    st.markdown("### 📅 آخر جلسة")
+
+                    st.write("**تاريخ الجلسة :**", last_session[0])
+
+                    st.write("**رقم الرول :**", last_session[1])
+
+                    st.write("**الإجراء المطلوب :**", last_session[2])
+
+                    if last_session[3]:
+                        st.write("**سبب التأجيل :**", last_session[3])
+
+                    if last_session[4]:
+                        st.write("**ملاحظات :**", last_session[4])
+
+                    if last_session[5] == 1:
+
+                        st.success("⚖️ صدر حكم فى الدعوى")
+
+                        st.write("**تاريخ الحكم :**", last_session[6])
+
+                        st.write("**منطوق الحكم :**")
+
+                        st.info(last_session[7])
+
+                        st.write("**النتيجة :**", last_session[8])
+
+                else:
+
+                    st.info("لا توجد جلسات مسجلة حتى الآن.")
+
+                st.divider()
+
+                # ==================================================
+                # متابعة القضية
+                # ==================================================
+
+                st.markdown("## 📂 متابعة القضية")
+
+                tab1, tab2, tab3 = st.tabs([
+
+                    "➕ إضافة جلسة",
+
+                    "📅 الجلسات السابقة",
+
+                    "📎 مستندات القضية"
+
+                ])
+
+                # ===============================================
+                # إضافة جلسة
+                # ===============================================
+
+                with tab1:
+
+                    session_date = st.date_input(
+
+                        "تاريخ الجلسة",
+
+                        key=f"session_date_{case_id}"
+
+                    )
+
+                    roll_number = st.text_input(
+
+                        "رقم الرول",
+
+                        key=f"roll_{case_id}"
+
+                    )
+
+                    procedure = st.text_area(
+
+                        "الإجراء المطلوب",
+
+                        key=f"procedure_{case_id}"
+
+                    )
+
+                    adjournment_reason = st.text_area(
+
+                        "سبب التأجيل",
+
+                        key=f"reason_{case_id}"
+
+                    )
+
+                    session_notes = st.text_area(
+
+                        "ملاحظات الجلسة",
+
+                        key=f"notes_{case_id}"
+
+                    )
+
+                    st.divider()
+
+                    is_judgment = st.checkbox(
+
+                        "⚖️ جلسة حكم",
+
+                        key=f"is_judgment_{case_id}"
+
+                    )
+
+                    judgment_date = ""
+
+                    judgment_text = ""
+
+                    judgment_result = ""
+
+                    if is_judgment:
+
+                        judgment_date = st.date_input(
+
+                            "تاريخ الحكم",
+
+                            key=f"judgment_date_{case_id}"
+
+                        )
+
+                        judgment_text = st.text_area(
+
+                            "منطوق الحكم",
+
+                            key=f"judgment_text_{case_id}"
+
+                        )
+
+                        judgment_result = st.radio(
+
+                            "النتيجة",
+
+                            [
+
+                                "لصالح الهيئة",
+
+                                "ضد الهيئة"
+
+                            ],
+
+                            horizontal=True,
+
+                            key=f"judgment_result_{case_id}"
+
+                    )
