@@ -597,7 +597,7 @@ elif page == "general":
         st.rerun()
 
     st.markdown("""
-    <h2 style='text-align:center;color:#FFD700'>
+    <h2 style="text-align:center;color:#FFD700;">
     📑 الحصر العام للقضايا
     </h2>
     """, unsafe_allow_html=True)
@@ -605,7 +605,8 @@ elif page == "general":
     st.divider()
 
     search = st.text_input(
-        "🔍 البحث برقم الدعوى أو الخصوم أو الموضوع"
+        "🔍 البحث فى القضايا",
+        placeholder="رقم الدعوى أو الخصوم أو الموضوع..."
     )
 
     if search.strip() == "":
@@ -622,69 +623,75 @@ elif page == "general":
         SELECT *
         FROM cases
         WHERE
-
         claimant LIKE ?
         OR defendant LIKE ?
         OR case_number LIKE ?
         OR subject LIKE ?
-
         ORDER BY id DESC
-
         """,(
-
-        f"%{search}%",
-
-        f"%{search}%",
-
-        f"%{search}%",
-
-        f"%{search}%"
-
+            f"%{search}%",
+            f"%{search}%",
+            f"%{search}%",
+            f"%{search}%"
         ))
 
-    rows = cur.fetchall()
+    cases = cur.fetchall()
 
-    st.success(f"إجمالى القضايا : {len(rows)}")
+    st.success(f"إجمالى القضايا : {len(cases)}")
 
     st.divider()
 
-    if len(rows)==0:
+    if not cases:
 
-        st.warning("لا توجد قضايا.")
+        st.warning("لا توجد قضايا مسجلة.")
 
     else:
 
-        for row in rows:
+        for case in cases:
 
-            with st.expander(f"📁 القضية رقم {row[5]} / {row[6]}"):
+            case_id = case[0]
 
-                st.write("### بيانات القضية")
+            with st.expander(
+                f"📁 القضية رقم {case[6]} / {case[7]}",
+                expanded=False
+            ):
 
-                st.write("**نوع القضية :**",row[1])
+                st.subheader("بيانات القضية")
 
-                st.write("**رافع الدعوى :**",row[3])
+                col1, col2 = st.columns(2)
 
-                st.write("**الخصم :**",row[5])
+                with col1:
 
-                st.write("**رقم الدعوى :**",row[5])
+                    st.write("**نوع القضية:**", case[1])
 
-                st.write("**السنة القضائية :**",row[6])
+                    st.write("**صفة رافع الدعوى:**", case[2])
 
-                st.write("**المحكمة :**",row[7])
+                    st.write("**رافع الدعوى:**", case[3])
 
-                st.write("**اسم المحكمة :**",row[8])
+                    st.write("**صفة الخصم:**", case[4])
 
-                st.write("**مأمورية الاستئناف :**",row[9])
+                    st.write("**الخصم:**", case[5])
 
-                st.write("**الدائرة :**",row[10])
+                    st.write("**رقم الدعوى:**", case[6])
 
-                st.write("**موضوع الدعوى :**",row[11])
+                    st.write("**السنة القضائية:**", case[7])
 
-                st.write("**الحالة :**",row[12])
+                    st.write("**الدائرة:**", case[11])
 
-                st.write("**رقم الهاتف :**",row[14])
+                with col2:
 
-                st.write("**ملاحظات :**",row[15])
+                    st.write("**المحكمة:**", case[8])
+
+                    st.write("**اسم المحكمة:**", case[9])
+
+                    st.write("**مأمورية الاستئناف:**", case[10])
+
+                    st.write("**موضوع الدعوى:**", case[12])
+
+                    st.write("**الحالة:**", case[13])
+
+                    st.write("**رقم الهاتف:**", case[15])
+
+                    st.write("**ملاحظات:**", case[16])
 
                 st.divider()
-                
