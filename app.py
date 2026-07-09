@@ -331,6 +331,135 @@ page = st.session_state.page
 # الصفحة الرئيسية
 # ==========================================================
 # ==========================================================
+# تسجيل القضايا
+# Professional Judicial Edition
+# الجزء الأول (1/4)
+# يبدأ من:
+# elif page == "register":
+# ==========================================================
+
+elif page == "register":
+
+    if st.button(
+        "⬅️ العودة للرئيسية",
+        key="back_register",
+        use_container_width=True
+    ):
+        st.session_state.page = "home"
+        st.rerun()
+
+    st.markdown("""
+
+    <style>
+
+    .register-page{
+
+        background:linear-gradient(180deg,#081B36,#061428);
+
+        border:2px solid #D4AF37;
+
+        border-radius:25px;
+
+        padding:30px;
+
+        margin-top:15px;
+
+        margin-bottom:20px;
+
+        box-shadow:0 0 25px rgba(255,215,0,.25);
+
+    }
+
+    .register-title{
+
+        text-align:center;
+
+        color:#FFD700;
+
+        font-size:40px;
+
+        font-weight:900;
+
+        margin-bottom:8px;
+
+        text-shadow:0 0 12px gold;
+
+    }
+
+    .register-sub{
+
+        text-align:center;
+
+        color:white;
+
+        font-size:18px;
+
+        margin-bottom:25px;
+
+    }
+
+    .card{
+
+        background:#0A2449;
+
+        border:1px solid #D4AF37;
+
+        border-radius:18px;
+
+        padding:20px;
+
+        margin-bottom:18px;
+
+    }
+
+    .card-title{
+
+        color:#FFD700;
+
+        font-size:23px;
+
+        font-weight:bold;
+
+        margin-bottom:18px;
+
+        border-bottom:1px solid #D4AF37;
+
+        padding-bottom:10px;
+
+    }
+
+    </style>
+
+    <div class="register-page">
+
+    <div class="register-title">
+
+    ⚖️ تسجيل قضية جديدة
+
+    </div>
+
+    <div class="register-sub">
+
+    إدخال جميع بيانات القضية
+
+    </div>
+
+    """,unsafe_allow_html=True)
+
+    # ======================================================
+    # الكارت الأول
+    # بيانات القضية
+    # ======================================================
+
+    st.markdown("""
+    <div class="card">
+    <div class="card-title">
+    📋 بيانات القضية
+    </div>
+    """,unsafe_allow_html=True)
+
+    right,left=st.columns(2)
+# ==========================================================
 # ==========================================================
 # الحصر العام للقضايا
 # ==========================================================
