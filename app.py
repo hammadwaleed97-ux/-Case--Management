@@ -677,7 +677,237 @@ unsafe_allow_html=True
 st.divider()
 
 # ==========================================================
+# ==========================================================
+# الجزء الرابع (4/15)
+# أزرار الحفظ + حفظ القضية + حفظ أول جلسة + حفظ المستندات
+# ==========================================================
 
+st.divider()
+
+btn1, btn2, btn3 = st.columns(3)
+
+with btn1:
+
+    save_case = st.button(
+        "💾 حفظ القضية",
+        use_container_width=True,
+        type="primary"
+    )
+
+with btn2:
+
+    clear_form = st.button(
+        "🧹 مسح البيانات",
+        use_container_width=True
+    )
+
+with btn3:
+
+    if st.button(
+        "🏠 العودة للرئيسية",
+        use_container_width=True,
+        key="back_register_bottom"
+    ):
+        st.session_state.page = "home"
+        st.rerun()
+
+# ==========================================================
+# حفظ القضية
+# ==========================================================
+
+if save_case:
+
+    if (
+        claimant.strip()=="" or
+        defendant.strip()=="" or
+        case_number.strip()=="" or
+        judicial_year.strip()==""
+    ):
+
+        st.error("يرجى استكمال البيانات الأساسية.")
+
+    else:
+
+        cur.execute("""
+
+        SELECT id
+
+        FROM cases
+
+        WHERE case_number=?
+
+        AND judicial_year=?
+
+        """,(
+
+        case_number,
+
+        judicial_year
+
+        ))
+
+        if cur.fetchone():
+
+            st.warning("هذه القضية مسجلة بالفعل.")
+
+        else:
+
+            from datetime import datetime
+
+            now=datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+            cur.execute("""
+
+            INSERT INTO cases(
+
+            case_type,
+            claimant_type,
+            claimant,
+            defendant_type,
+            defendant,
+            case_number,
+            judicial_year,
+            court,
+            court_name,
+            appeal_office,
+            circuit,
+            subject,
+            status,
+            notifications_enabled,
+            mobile,
+            notes,
+            created_at
+
+            )
+
+            VALUES(
+
+            ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?
+
+            )
+
+            """,(
+
+            case_type,
+            claimant_type,
+            claimant,
+            defendant_type,
+            defendant,
+            case_number,
+            judicial_year,
+            court,
+            court_name,
+            appeal_office,
+            circuit,
+            subject,
+            "متداولة",
+            int(notifications_enabled),
+            mobile,
+            notes,
+            now
+
+            ))
+
+            case_id=cur.lastrowid
+
+            cur.execute("""
+
+            INSERT INTO sessions(
+
+            case_id,
+            session_date,
+            roll_number,
+            procedure,
+            adjournment_reason,
+            session_notes,
+            created_at
+
+            )
+
+            VALUES(
+
+            ?,?,?,?,?,?,?
+
+            )
+
+            """,(
+
+            case_id,
+            str(session_date),
+            roll_number,
+            procedure,
+            adjournment_reason,
+            session_notes,
+            now
+
+            ))
+
+            if uploaded_files:
+
+                for file in uploaded_files:
+
+                    filename=f"{case_id}_{file.name}"
+
+                    save_path=os.path.join(
+                        "documents",
+                        filename
+                    )
+
+                    with open(save_path,"wb") as f:
+
+                        f.write(file.getbuffer())
+
+                    cur.execute("""
+
+                    INSERT INTO documents(
+
+                    case_id,
+                    file_name,
+                    file_path,
+                    uploaded_at
+
+                    )
+
+                    VALUES(
+
+                    ?,?,?,?
+
+                    )
+
+                    """,(
+
+                    case_id,
+                    file.name,
+                    save_path,
+                    now
+
+                    ))
+
+            conn.commit()
+
+            st.success("✅ تم تسجيل القضية بنجاح")
+
+            st.balloons()
+
+# ==========================================================
+# مسح البيانات
+# ==========================================================
+
+if clear_form:
+
+    st.session_state.clear_register=True
+
+    st.rerun()
+
+st.markdown("""
+
+</div>
+
+""",unsafe_allow_html=True)
+
+# ==========================================================
+# نهاية قسم تسجيل القضايا
+# ==========================================================
 # ==========================================================
 # الحصر العام للقضايا
 # ==========================================================
