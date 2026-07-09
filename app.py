@@ -789,3 +789,163 @@ elif page == "general":
                     )
 
                 st.divider()
+                                # ============================================
+                # إضافة جلسة جديدة
+                # ============================================
+
+                if add_session:
+
+                    st.markdown("## ➕ إضافة جلسة جديدة")
+
+                    session_date = st.date_input(
+                        "تاريخ الجلسة",
+                        key=f"date_{case_id}"
+                    )
+
+                    roll_number = st.text_input(
+                        "رقم الرول",
+                        key=f"roll_{case_id}"
+                    )
+
+                    procedure = st.text_area(
+                        "الإجراء المطلوب",
+                        key=f"procedure_{case_id}"
+                    )
+
+                    adjournment_reason = st.text_area(
+                        "سبب التأجيل",
+                        key=f"reason_{case_id}"
+                    )
+
+                    session_notes = st.text_area(
+                        "ملاحظات الجلسة",
+                        key=f"notes_{case_id}"
+                    )
+
+                    st.divider()
+
+                    is_judgment = st.checkbox(
+                        "⚖️ هذه جلسة حكم",
+                        key=f"judgment_{case_id}"
+                    )
+
+                    judgment_date = ""
+                    judgment_text = ""
+                    judgment_result = ""
+
+                    if is_judgment:
+
+                        judgment_date = st.date_input(
+                            "تاريخ الحكم",
+                            key=f"judgment_date_{case_id}"
+                        )
+
+                        judgment_text = st.text_area(
+                            "منطوق الحكم",
+                            key=f"judgment_text_{case_id}"
+                        )
+
+                        judgment_result = st.selectbox(
+                            "النتيجة",
+                            [
+                                "لصالح الهيئة",
+                                "ضد الهيئة"
+                            ],
+                            key=f"judgment_result_{case_id}"
+                        )
+
+                    if st.button(
+                        "💾 حفظ الجلسة",
+                        key=f"save_session_{case_id}",
+                        use_container_width=True
+                    ):
+
+                        from datetime import datetime
+
+                        now = datetime.now().strftime(
+                            "%Y-%m-%d %H:%M:%S"
+                        )
+
+                        cur.execute("""
+
+                        INSERT INTO sessions(
+
+                        case_id,
+
+                        session_date,
+
+                        roll_number,
+
+                        procedure,
+
+                        adjournment_reason,
+
+                        session_notes,
+
+                        is_judgment,
+
+                        judgment_date,
+
+                        judgment_text,
+
+                        judgment_result,
+
+                        created_at
+
+                        )
+
+                        VALUES(
+
+                        ?,?,?,?,?,?,?,?,?,?,?
+
+                        )
+
+                        """,(
+
+                        case_id,
+
+                        str(session_date),
+
+                        roll_number,
+
+                        procedure,
+
+                        adjournment_reason,
+
+                        session_notes,
+
+                        int(is_judgment),
+
+                        str(judgment_date) if is_judgment else "",
+
+                        judgment_text,
+
+                        judgment_result,
+
+                        now
+
+                        ))
+
+                        if is_judgment:
+
+                            cur.execute("""
+
+                            UPDATE cases
+
+                            SET status=?
+
+                            WHERE id=?
+
+                            """,(
+
+                            f"منتهية - {judgment_result}",
+
+                            case_id
+
+                            ))
+
+                        conn.commit()
+
+                        st.success("✅ تم حفظ الجلسة بنجاح")
+
+                        st.rerun()
