@@ -330,17 +330,12 @@ page = st.session_state.page
 # ==========================================================
 # الصفحة الرئيسية
 # ==========================================================
-
-if page == "home":
-
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    c1, c2, c3 = st.columns([1,5,1])
-
-    with c2:
-        st.info("اختر أحد الأقسام من القائمة للبدء.")
-        # ==========================================================
+# ==========================================================
 # تسجيل القضايا
+# Professional Judicial Edition
+# الجزء الأول (1/4)
+# يبدأ من:
+# elif page == "register":
 # ==========================================================
 
 elif page == "register":
@@ -357,21 +352,21 @@ elif page == "register":
 
     <style>
 
-    .register-box{
+    .register-page{
 
-        background:linear-gradient(180deg,#071B38,#06162F);
+        background:linear-gradient(180deg,#081B36,#061428);
 
         border:2px solid #D4AF37;
 
         border-radius:25px;
 
-        padding:25px;
+        padding:30px;
 
-        margin-top:10px;
+        margin-top:15px;
 
-        margin-bottom:25px;
+        margin-bottom:20px;
 
-        box-shadow:0 0 20px rgba(212,175,55,.35);
+        box-shadow:0 0 25px rgba(255,215,0,.25);
 
     }
 
@@ -381,13 +376,13 @@ elif page == "register":
 
         color:#FFD700;
 
-        font-size:42px;
+        font-size:40px;
 
         font-weight:900;
 
-        margin-bottom:5px;
+        margin-bottom:8px;
 
-        text-shadow:0px 0px 12px gold;
+        text-shadow:0 0 12px gold;
 
     }
 
@@ -403,531 +398,67 @@ elif page == "register":
 
     }
 
-    .section-title{
+    .card{
 
-        background:#0B2E63;
-
-        color:#FFD700;
-
-        padding:12px;
-
-        border-radius:12px;
-
-        font-size:24px;
-
-        font-weight:bold;
+        background:#0A2449;
 
         border:1px solid #D4AF37;
 
-        margin-top:15px;
+        border-radius:18px;
 
-        margin-bottom:15px;
+        padding:20px;
+
+        margin-bottom:18px;
+
+    }
+
+    .card-title{
+
+        color:#FFD700;
+
+        font-size:23px;
+
+        font-weight:bold;
+
+        margin-bottom:18px;
+
+        border-bottom:1px solid #D4AF37;
+
+        padding-bottom:10px;
 
     }
 
     </style>
 
-    <div class="register-box">
+    <div class="register-page">
 
-        <div class="register-title">
+    <div class="register-title">
 
-        ⚖️ تسجيل قضية جديدة
+    ⚖️ تسجيل قضية جديدة
 
-        </div>
+    </div>
 
-        <div class="register-sub">
+    <div class="register-sub">
 
-        أدخل جميع بيانات القضية بدقة
+    إدخال جميع بيانات القضية
 
-        </div>
+    </div>
 
-    """, unsafe_allow_html=True)
-    # ==========================================================
-# الجزء الثانى (2/15)
-# كارت بيانات القضية
-# يبدأ بعد عنوان (تسجيل قضية جديدة)
-# وينتهى قبل (بيانات أول جلسة)
-# ==========================================================
+    """,unsafe_allow_html=True)
 
-st.markdown("""
-<div class="section-title">
-📋 أولاً : بيانات القضية
-</div>
-""", unsafe_allow_html=True)
+    # ======================================================
+    # الكارت الأول
+    # بيانات القضية
+    # ======================================================
 
-left,right = st.columns(2)
+    st.markdown("""
+    <div class="card">
+    <div class="card-title">
+    📋 بيانات القضية
+    </div>
+    """,unsafe_allow_html=True)
 
-# ======================================================
-# العمود الأيمن
-# ======================================================
-
-with right:
-
-    case_number = st.text_input(
-        "رقم الدعوى *",
-        placeholder="أدخل رقم الدعوى"
-    )
-
-    judicial_year = st.text_input(
-        "السنة القضائية *",
-        placeholder="مثال : 2026"
-    )
-
-    circuit = st.text_input(
-        "الدائرة *"
-    )
-
-    case_type = st.selectbox(
-        "نوع الدعوى *",
-        [
-            "دعوى",
-            "استئناف",
-            "نقض"
-        ]
-    )
-
-    court = st.selectbox(
-        "المحكمة *",
-        [
-            "الابتدائية",
-            "الاستئناف",
-            "النقض",
-            "الإدارية",
-            "القضاء الإداري",
-            "الإدارية العليا"
-        ]
-    )
-
-    court_name = st.text_input(
-        "اسم المحكمة *"
-    )
-
-    if case_type == "استئناف":
-
-        appeal_office = st.text_input(
-            "مأمورية الاستئناف"
-        )
-
-    else:
-
-        appeal_office = ""
-
-# ======================================================
-# العمود الأيسر
-# ======================================================
-
-with left:
-
-    claimant_type = st.selectbox(
-        "صفة رافع الدعوى",
-        [
-            "المدعى",
-            "المستأنف",
-            "الطاعن"
-        ]
-    )
-
-    claimant = st.text_input(
-        "اسم رافع الدعوى"
-    )
-
-    defendant_type = st.selectbox(
-        "صفة الخصم",
-        [
-            "المدعى عليه",
-            "المستأنف ضده",
-            "المطعون ضده"
-        ]
-    )
-
-    defendant = st.text_input(
-        "اسم الخصم"
-    )
-
-    subject = st.text_area(
-        "موضوع الدعوى",
-        height=120
-    )
-
-    mobile = st.text_input(
-        "رقم الهاتف"
-    )
-
-    notifications_enabled = st.checkbox(
-        "تفعيل التنبيهات",
-        value=True
-    )
-
-    notes = st.text_area(
-        "ملاحظات"
-    )
-
-# ==========================================================
-# نهاية الجزء الثانى
-# الجزء الثالث يبدأ من:
-# 📅 ثانياً : بيانات أول جلسة
-# ==========================================================
-# ==========================================================
-# ==========================================================
-# الجزء الثالث (3/15)
-# بيانات أول جلسة + مستندات القضية
-# يبدأ بعد نهاية بيانات القضية
-# وينتهى قبل أزرار الحفظ
-# ==========================================================
-
-st.markdown("""
-<div class="section-title">
-📅 ثانياً : بيانات أول جلسة
-</div>
-""", unsafe_allow_html=True)
-
-col_session1, col_session2 = st.columns(2)
-
-# ======================================================
-# بيانات الجلسة
-# ======================================================
-
-with col_session1:
-
-    session_date = st.date_input(
-        "تاريخ أول جلسة"
-    )
-
-    roll_number = st.text_input(
-        "رقم الرول"
-    )
-
-    procedure = st.text_area(
-        "الإجراء المطلوب",
-        height=130,
-        placeholder="اكتب الإجراء المطلوب فى الجلسة..."
-    )
-
-with col_session2:
-
-    adjournment_reason = st.text_area(
-        "سبب التأجيل",
-        height=130
-    )
-
-    session_notes = st.text_area(
-        "ملاحظات الجلسة",
-        height=130
-    )
-
-st.divider()
-
-# ==========================================================
-# مستندات القضية
-# ==========================================================
-
-st.markdown("""
-<div class="section-title">
-📎 ثالثاً : مستندات القضية
-</div>
-""", unsafe_allow_html=True)
-
-uploaded_files = st.file_uploader(
-
-    "إرفاق مستندات القضية",
-
-    type=[
-        "pdf",
-        "doc",
-        "docx",
-        "jpg",
-        "jpeg",
-        "png",
-        "xlsx",
-        "xls"
-    ],
-
-    accept_multiple_files=True
-
-)
-
-if uploaded_files:
-
-    os.makedirs("documents", exist_ok=True)
-
-    cur.execute("""
-
-    CREATE TABLE IF NOT EXISTS documents(
-
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-
-        case_id INTEGER,
-
-        file_name TEXT,
-
-        file_path TEXT,
-
-        uploaded_at TEXT
-
-    )
-
-    """)
-
-st.info(
-"""
-سيتم حفظ المستندات تلقائياً مع حفظ القضية.
-"""
-)
-
-st.markdown("""
-<div class="section-title">
-⚙️ رابعاً : إعدادات القضية
-</div>
-""", unsafe_allow_html=True)
-
-status = "متداولة"
-
-st.success(
-"حالة القضية عند التسجيل : متداولة"
-)
-
-st.markdown(
-"""
-<p style='color:white;font-size:17px'>
-
-● تتحول الحالة تلقائياً بعد تسجيل جلسة حكم.
-
-● لصالح الهيئة.
-
-● ضد الهيئة.
-
-</p>
-""",
-unsafe_allow_html=True
-)
-
-st.divider()
-
-# ==========================================================
-# ==========================================================
-# الجزء الرابع (4/15)
-# أزرار الحفظ + حفظ القضية + حفظ أول جلسة + حفظ المستندات
-# ==========================================================
-
-st.divider()
-
-btn1, btn2, btn3 = st.columns(3)
-
-with btn1:
-
-    save_case = st.button(
-        "💾 حفظ القضية",
-        use_container_width=True,
-        type="primary"
-    )
-
-with btn2:
-
-    clear_form = st.button(
-        "🧹 مسح البيانات",
-        use_container_width=True
-    )
-
-with btn3:
-
-    if st.button(
-        "🏠 العودة للرئيسية",
-        use_container_width=True,
-        key="back_register_bottom"
-    ):
-        st.session_state.page = "home"
-        st.rerun()
-
-# ==========================================================
-# حفظ القضية
-# ==========================================================
-
-if save_case:
-
-    if (
-        claimant.strip()=="" or
-        defendant.strip()=="" or
-        case_number.strip()=="" or
-        judicial_year.strip()==""
-    ):
-
-        st.error("يرجى استكمال البيانات الأساسية.")
-
-    else:
-
-        cur.execute("""
-
-        SELECT id
-
-        FROM cases
-
-        WHERE case_number=?
-
-        AND judicial_year=?
-
-        """,(
-
-        case_number,
-
-        judicial_year
-
-        ))
-
-        if cur.fetchone():
-
-            st.warning("هذه القضية مسجلة بالفعل.")
-
-        else:
-
-            from datetime import datetime
-
-            now=datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-            cur.execute("""
-
-            INSERT INTO cases(
-
-            case_type,
-            claimant_type,
-            claimant,
-            defendant_type,
-            defendant,
-            case_number,
-            judicial_year,
-            court,
-            court_name,
-            appeal_office,
-            circuit,
-            subject,
-            status,
-            notifications_enabled,
-            mobile,
-            notes,
-            created_at
-
-            )
-
-            VALUES(
-
-            ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?
-
-            )
-
-            """,(
-
-            case_type,
-            claimant_type,
-            claimant,
-            defendant_type,
-            defendant,
-            case_number,
-            judicial_year,
-            court,
-            court_name,
-            appeal_office,
-            circuit,
-            subject,
-            "متداولة",
-            int(notifications_enabled),
-            mobile,
-            notes,
-            now
-
-            ))
-
-            case_id=cur.lastrowid
-
-            cur.execute("""
-
-            INSERT INTO sessions(
-
-            case_id,
-            session_date,
-            roll_number,
-            procedure,
-            adjournment_reason,
-            session_notes,
-            created_at
-
-            )
-
-            VALUES(
-
-            ?,?,?,?,?,?,?
-
-            )
-
-            """,(
-
-            case_id,
-            str(session_date),
-            roll_number,
-            procedure,
-            adjournment_reason,
-            session_notes,
-            now
-
-            ))
-
-            if uploaded_files:
-
-                for file in uploaded_files:
-
-                    filename=f"{case_id}_{file.name}"
-
-                    save_path=os.path.join(
-                        "documents",
-                        filename
-                    )
-
-                    with open(save_path,"wb") as f:
-
-                        f.write(file.getbuffer())
-
-                    cur.execute("""
-
-                    INSERT INTO documents(
-
-                    case_id,
-                    file_name,
-                    file_path,
-                    uploaded_at
-
-                    )
-
-                    VALUES(
-
-                    ?,?,?,?
-
-                    )
-
-                    """,(
-
-                    case_id,
-                    file.name,
-                    save_path,
-                    now
-
-                    ))
-
-            conn.commit()
-
-            st.success("✅ تم تسجيل القضية بنجاح")
-
-            st.balloons()
-            # ==========================================================
-# مسح البيانات
-# ==========================================================
-
-if clear_form:
-
-    st.session_state.clear_register = True
-
-    st.rerun()
-
-# ==========================================================
-# نهاية قسم تسجيل القضايا
-# ==========================================================
+    right,left=st.columns(2)
 # ==========================================================
 # ==========================================================
 # الحصر العام للقضايا
