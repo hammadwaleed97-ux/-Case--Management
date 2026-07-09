@@ -1262,3 +1262,129 @@ if docs:
     for d in docs:
 
         st.write("📄",d[1])
+        # ==========================================================
+# تعديل بيانات القضية
+# ==========================================================
+
+st.divider()
+
+st.markdown("""
+<h3 style='text-align:center;color:#FFD700'>
+✏️ تعديل بيانات القضية
+</h3>
+""", unsafe_allow_html=True)
+
+with st.expander("فتح تعديل بيانات القضية"):
+
+    edit_case_type = st.selectbox(
+        "نوع الدعوى",
+        ["دعوى","استئناف","نقض"],
+        index=["دعوى","استئناف","نقض"].index(row[1]) if row[1] in ["دعوى","استئناف","نقض"] else 0,
+        key=f"case_type_{case_id}"
+    )
+
+    edit_claimant = st.text_input(
+        "اسم رافع الدعوى",
+        value=row[3],
+        key=f"claimant_{case_id}"
+    )
+
+    edit_defendant = st.text_input(
+        "اسم الخصم",
+        value=row[5],
+        key=f"defendant_{case_id}"
+    )
+
+    edit_court = st.text_input(
+        "اسم المحكمة",
+        value=row[9],
+        key=f"court_{case_id}"
+    )
+
+    if edit_case_type == "استئناف":
+
+        edit_appeal = st.text_input(
+            "مأمورية الاستئناف",
+            value=row[10],
+            key=f"appeal_{case_id}"
+        )
+
+    else:
+
+        edit_appeal = ""
+
+    edit_subject = st.text_area(
+        "موضوع الدعوى",
+        value=row[12],
+        key=f"subject_{case_id}"
+    )
+
+    edit_mobile = st.text_input(
+        "رقم الهاتف",
+        value=row[15],
+        key=f"mobile_{case_id}"
+    )
+
+    edit_notes = st.text_area(
+        "ملاحظات",
+        value=row[16],
+        key=f"notes_{case_id}"
+    )
+
+    if st.button(
+        "💾 حفظ التعديلات",
+        key=f"save_case_{case_id}",
+        use_container_width=True
+    ):
+
+        cur.execute("""
+
+        UPDATE cases
+
+        SET
+
+        case_type=?,
+
+        claimant=?,
+
+        defendant=?,
+
+        court_name=?,
+
+        appeal_office=?,
+
+        subject=?,
+
+        mobile=?,
+
+        notes=?
+
+        WHERE id=?
+
+        """,(
+
+        edit_case_type,
+
+        edit_claimant,
+
+        edit_defendant,
+
+        edit_court,
+
+        edit_appeal,
+
+        edit_subject,
+
+        edit_mobile,
+
+        edit_notes,
+
+        case_id
+
+        ))
+
+        conn.commit()
+
+        st.success("✅ تم تعديل بيانات القضية بنجاح")
+
+        st.rerun()
