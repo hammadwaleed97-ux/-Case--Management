@@ -470,15 +470,12 @@ if st.button("💾 حفظ القضية", use_container_width=True):
 
     else:
 
-        cur.execute(
-            """
+        cur.execute("""
             SELECT id
             FROM cases
             WHERE case_number=?
             AND judicial_year=?
-            """,
-            (case_number, judicial_year)
-        )
+        """, (case_number, judicial_year))
 
         if cur.fetchone():
 
@@ -490,10 +487,13 @@ if st.button("💾 حفظ القضية", use_container_width=True):
 
             now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-            # ==========================================
-            # حفظ بيانات القضية
-            # ==========================================
+            # إذا لم يوجد رقم رول عند التسجيل
+            try:
+                roll = roll_number
+            except:
+                roll = ""
 
+            # حفظ بيانات القضية
             cur.execute("""
             INSERT INTO cases(
 
@@ -519,7 +519,7 @@ if st.button("💾 حفظ القضية", use_container_width=True):
 
             VALUES(
 
-                ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?
+                ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?
 
             )
             """,(
@@ -546,22 +546,13 @@ if st.button("💾 حفظ القضية", use_container_width=True):
 
             case_id = cur.lastrowid
 
-            # ==========================================
-            # إنشاء مجلد خاص بالقضية
-            # ==========================================
-
+            # إنشاء مجلد مستندات القضية
             os.makedirs(
-                os.path.join(
-                    "documents",
-                    str(case_id)
-                ),
+                os.path.join("documents", str(case_id)),
                 exist_ok=True
             )
 
-            # ==========================================
             # حفظ أول جلسة
-            # ==========================================
-
             cur.execute("""
             INSERT INTO sessions(
 
@@ -588,7 +579,7 @@ if st.button("💾 حفظ القضية", use_container_width=True):
 
                 case_id,
                 str(session_date),
-                roll_number,
+                roll,
                 procedure,
                 "",
                 "",
@@ -605,6 +596,9 @@ if st.button("💾 حفظ القضية", use_container_width=True):
             st.success("✅ تم تسجيل القضية وحفظ أول جلسة بنجاح.")
 
             st.balloons()
+
+            st.rerun()
+            
 # ==========================================================
 # الحصر العام للقضايا
 # ==========================================================
