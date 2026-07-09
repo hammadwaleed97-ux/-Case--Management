@@ -1,5 +1,5 @@
 # ============================================================
-# ================== إدارة القضايا v2.3 =====================
+# ================== إدارة القضايا v2.4 =====================
 # ========== الإدارة العامة للشئون القانونية البحيرة ==========
 # ============================================================
 
@@ -110,7 +110,6 @@ st.markdown(f"""
 
 st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
 
-
 # ============================================================
 # ===================  الصفحة الرئيسية  ======================
 # ============================================================
@@ -145,11 +144,13 @@ if st.session_state.page == "الرئيسية":
     st.markdown("<div class='stats-title'>📊 ملخص الإحصائيات</div>", unsafe_allow_html=True)
     
     total_cases = len([c for c in data["cases"] if c.get("status") != "منتهية"])
+    أحكام_لصالح = len([c for c in data["cases"] if c.get("result") == "لصالح"])
+    أحكام_ضد = len([c for c in data["cases"] if c.get("result") == "ضد"])
+    
     st.markdown(f"<div class='small-stat s1'><p>📁 القضايا المتداولة</p><h2>{total_cases}</h2></div>", unsafe_allow_html=True)
     st.markdown(f"<div class='small-stat s2'><p>📅 الجلسات القادمة</p><h2>18</h2></div>", unsafe_allow_html=True)
-    st.markdown(f"<div class='small-stat s3'><p>✅ أحكام لصالح</p><h2>42</h2></div>", unsafe_allow_html=True)
-    st.markdown(f"<div class='small-stat s4'><p>❌ أحكام ضد</p><h2>7</h2></div>", unsafe_allow_html=True)
-
+    st.markdown(f"<div class='small-stat s3'><p>✅ أحكام لصالح</p><h2>{أحكام_لصالح}</h2></div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='small-stat s4'><p>❌ أحكام ضد</p><h2>{أحكام_ضد}</h2></div>", unsafe_allow_html=True)
 
 # ============================================================
 # =================== 1. تسجيل القضايا كامل  =================
@@ -195,7 +196,7 @@ elif st.session_state.page == "تسجيل":
                     "مدعي": مدعي, "مدعي_عليه": مدعي_عليه, "موضوع": موضوع, "تاريخ_جلسة": str(تاريخ_جلسة),
                     "الرول": الرول, "سبب": سبب, "ملاحظات": ملاحظات, "تنبيه": تنبيه, "واتس": واتس,
                     "جلسات": [{"الرول": الرول, "التاريخ": str(تاريخ_جلسة), "الاجراء": سبب}],
-                    "مستندات": [], "status": "متداولة"
+                    "مستندات": [], "status": "متداولة", "result": ""
                 }
                 data["cases"].append(new_case)
                 save_data(data)
@@ -203,7 +204,6 @@ elif st.session_state.page == "تسجيل":
                 st.session_state.page = "حصر"
         with col2:
             if st.form_submit_button("🗑️ حذف القضية"): st.warning("ميزة الحذف")
-
 
 # ============================================================
 # =================== 2. الحصر العام  =======================
@@ -216,9 +216,17 @@ elif st.session_state.page == "حصر":
     if not data["cases"]:
         st.info("لا توجد قضايا مسجلة")
     else:
-        for case in sorted(data["cases"], key=lambda x: x["id"]):
-            st.markdown(f"<div class='case-card'><h4>قضية رقم: {case['رقم']} / {case['سنة']}</h4><p><b>الدائرة:</b> {case['دائرة']} | <b>النوع:</b> {case['نوع']}</p><p><b>المحكمة:</b> {case['محكمة_اسم']} {case['مأمورية']}</p><p><b>الخصوم:</b> {case['مدعي']} ضد {case['مدعي_عليه']}</p><p><b>الموضوع:</b> {case['موضوع']}</p><p><b>آخر جلسة:</b> {case['تاريخ_جلسة']} - {case['سبب']}</p></div>", unsafe_allow_html=True)
-
+        for case in sorted(data["cases"], key=lambda x: x["id"], reverse=True):
+            st.markdown(f"""
+            <div class='case-card'>
+                <h4>قضية رقم: {case['رقم']} / {case['سنة']}</h4>
+                <p><b>الدائرة:</b> {case['دائرة']} | <b>النوع:</b> {case['نوع']}</p>
+                <p><b>المحكمة:</b> {case['محكمة_اسم']} {case['مأمورية']}</p>
+                <p><b>الخصوم:</b> {case['مدعي']} ضد {case['مدعي_عليه']}</p>
+                <p><b>الموضوع:</b> {case['موضوع']}</p>
+                <p><b>آخر جلسة:</b> {case['تاريخ_جلسة']} - {case['سبب']}</p>
+            </div>
+            """, unsafe_allow_html=True)
 
 # ============================================================
 # =================== 4. البحث عن دعوى  =====================
@@ -228,7 +236,6 @@ elif st.session_state.page == "بحث":
     st.markdown("<h2 style='color:#C9A961; text-align:center'>🔍 البحث عن دعوى</h2>", unsafe_allow_html=True)
     if st.button("⬅️ العودة للرئيسية", key="btn_back_3"): st.session_state.page = "الرئيسية"
 
-
 # ============================================================
 # =================== 5. التنبيهات  =========================
 # ============================================================
@@ -236,7 +243,6 @@ elif st.session_state.page == "تنبيهات":
     st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
     st.markdown("<h2 style='color:#C9A961; text-align:center'>🔔 التنبيهات</h2>", unsafe_allow_html=True)
     if st.button("⬅️ العودة للرئيسية", key="btn_back_4"): st.session_state.page = "الرئيسية"
-
 
 # ============================================================
 # =================== 6. التقارير  ==========================
@@ -246,7 +252,6 @@ elif st.session_state.page == "تقارير":
     st.markdown("<h2 style='color:#C9A961; text-align:center'>📑 التقارير</h2>", unsafe_allow_html=True)
     if st.button("⬅️ العودة للرئيسية", key="btn_back_5"): st.session_state.page = "الرئيسية"
 
-
 # ============================================================
 # =================== 7. الأرشيف  ===========================
 # ============================================================
@@ -254,7 +259,6 @@ elif st.session_state.page == "ارشيف":
     st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
     st.markdown("<h2 style='color:#C9A961; text-align:center'>🗃️ الأرشيف</h2>", unsafe_allow_html=True)
     if st.button("⬅️ العودة للرئيسية", key="btn_back_6"): st.session_state.page = "الرئيسية"
-
 
 # ============================================================
 # =================== 8. المكتبة القانونية  ==================
@@ -264,7 +268,6 @@ elif st.session_state.page == "مكتبة":
     st.markdown("<h2 style='color:#C9A961; text-align:center'>📚 المكتبة القانونية</h2>", unsafe_allow_html=True)
     if st.button("⬅️ العودة للرئيسية", key="btn_back_7"): st.session_state.page = "الرئيسية"
 
-
 # ============================================================
 # =================== 9. الإحصائيات  ========================
 # ============================================================
@@ -272,7 +275,6 @@ elif st.session_state.page == "احصائيات":
     st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
     st.markdown("<h2 style='color:#C9A961; text-align:center'>📈 الإحصائيات</h2>", unsafe_allow_html=True)
     if st.button("⬅️ العودة للرئيسية", key="btn_back_8"): st.session_state.page = "الرئيسية"
-
 
 # ============================================================
 # ====================== نهاية الكود =========================
