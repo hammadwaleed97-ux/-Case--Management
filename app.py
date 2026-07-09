@@ -763,3 +763,195 @@ elif page == "general":
                     "✏️ تعديل بيانات القضية"
 
                 ])
+                                # ==================================================
+                # تبويب إضافة جلسة
+                # ==================================================
+
+                with tab1:
+
+                    session_date = st.date_input(
+                        "تاريخ الجلسة",
+                        key=f"session_date_{case_id}"
+                    )
+
+                    roll_number = st.text_input(
+                        "رقم الرول",
+                        key=f"roll_{case_id}"
+                    )
+
+                    procedure = st.text_area(
+                        "الإجراء المطلوب",
+                        key=f"procedure_{case_id}"
+                    )
+
+                    adjournment_reason = st.text_area(
+                        "سبب التأجيل",
+                        key=f"reason_{case_id}"
+                    )
+
+                    session_notes = st.text_area(
+                        "ملاحظات الجلسة",
+                        key=f"notes_{case_id}"
+                    )
+
+                    st.divider()
+
+                    is_judgment = st.checkbox(
+                        "⚖️ هذه جلسة حكم",
+                        key=f"judgment_{case_id}"
+                    )
+
+                    judgment_date = None
+                    judgment_text = ""
+                    judgment_result = ""
+
+                    if is_judgment:
+
+                        judgment_date = st.date_input(
+                            "تاريخ الحكم",
+                            key=f"judgment_date_{case_id}"
+                        )
+
+                        judgment_text = st.text_area(
+                            "منطوق الحكم",
+                            key=f"judgment_text_{case_id}"
+                        )
+
+                        judgment_result = st.radio(
+                            "نتيجة الحكم",
+                            ["لصالح الهيئة", "ضد الهيئة"],
+                            horizontal=True,
+                            key=f"judgment_result_{case_id}"
+                        )
+
+                    if st.button(
+                        "💾 حفظ الجلسة",
+                        key=f"save_session_{case_id}",
+                        use_container_width=True
+                    ):
+
+                        from datetime import datetime
+
+                        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+                        cur.execute("""
+                        INSERT INTO sessions(
+
+                            case_id,
+                            session_date,
+                            roll_number,
+                            procedure,
+                            adjournment_reason,
+                            session_notes,
+                            is_judgment,
+                            judgment_date,
+                            judgment_text,
+                            judgment_result,
+                            created_at
+
+                        )
+
+                        VALUES(
+
+                            ?,?,?,?,?,?,?,?,?,?,?
+
+                        )
+                        """,(
+
+                            case_id,
+                            str(session_date),
+                            roll_number,
+                            procedure,
+                            adjournment_reason,
+                            session_notes,
+                            int(is_judgment),
+                            str(judgment_date) if is_judgment else "",
+                            judgment_text,
+                            judgment_result,
+                            now
+
+                        ))
+
+                        if is_judgment:
+
+                            cur.execute("""
+
+                            UPDATE cases
+
+                            SET status=?
+
+                            WHERE id=?
+
+                            """,(
+
+                                f"منتهية - {judgment_result}",
+
+                                case_id
+
+                            ))
+
+                        conn.commit()
+
+                        st.success("✅ تم حفظ الجلسة بنجاح")
+
+                        st.rerun()
+
+                # ==================================================
+                # تبويب الجلسات السابقة
+                # ==================================================
+
+                with tab2:
+
+                    cur.execute("""
+
+                    SELECT *
+
+                    FROM sessions
+
+                    WHERE case_id=?
+
+                    ORDER BY session_date DESC,id DESC
+
+                    """,(case_id,))
+
+                    sessions = cur.fetchall()
+
+                    if not sessions:
+
+                        st.info("لا توجد جلسات مسجلة.")
+
+                    else:
+
+                        for s in sessions:
+
+                            with st.expander(f"📅 جلسة {s[2]}"):
+
+                                st.write("**رقم الرول:**", s[3])
+
+                                st.write("**الإجراء المطلوب:**", s[4])
+
+                                if s[5]:
+                                    st.write("**سبب التأجيل:**", s[5])
+
+                                if s[6]:
+                                    st.write("**ملاحظات:**", s[6])
+
+                                if s[7]:
+
+                                    st.success("جلسة حكم")
+
+                                    st.write("**تاريخ الحكم:**", s[8])
+
+                                    st.write("**منطوق الحكم:**")
+
+                                    st.info(s[9])
+
+                                    st.write("**النتيجة:**", s[10])
+
+                                if st.button(
+                                    "✏️ تعديل هذه الجلسة",
+                                    key=f"edit_session_{s[0]}",
+                                    use_container_width=True
+                                ):
+
+                                    st.session_state[f"edit_session_{case_id}"] = s[0]
