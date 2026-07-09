@@ -586,3 +586,102 @@ elif page == "register":
 # ==========================================================
 # نهاية قسم تسجيل القضايا
 # ==========================================================
+# ==========================================================
+# الحصر العام للقضايا
+# ==========================================================
+
+elif page == "general":
+
+    if st.button("🏠 العودة للصفحة الرئيسية", key="back_general"):
+        st.session_state.page = "home"
+        st.rerun()
+
+    st.markdown("""
+    <h2 style='text-align:center;color:#FFD700'>
+    📑 الحصر العام للقضايا
+    </h2>
+    """, unsafe_allow_html=True)
+
+    st.divider()
+
+    search = st.text_input(
+        "🔍 البحث داخل القضايا",
+        placeholder="رقم الدعوى - الخصوم - الموضوع"
+    )
+
+    if search.strip():
+
+        cur.execute("""
+        SELECT *
+        FROM cases
+        WHERE
+            claimant LIKE ?
+            OR defendant LIKE ?
+            OR case_number LIKE ?
+            OR subject LIKE ?
+        ORDER BY id DESC
+        """,(
+            f"%{search}%",
+            f"%{search}%",
+            f"%{search}%",
+            f"%{search}%"
+        ))
+
+    else:
+
+        cur.execute("""
+        SELECT *
+        FROM cases
+        ORDER BY id DESC
+        """)
+
+    cases = cur.fetchall()
+
+    st.success(f"إجمالى القضايا : {len(cases)}")
+
+    st.divider()
+
+    if not cases:
+
+        st.warning("لا توجد قضايا مسجلة.")
+
+    else:
+
+        for case in cases:
+
+            case_id = case[0]
+
+            with st.expander(
+                f"📁 القضية رقم {case[6]} / {case[7]}",
+                expanded=False
+            ):
+
+                st.markdown("## 📋 بيانات القضية")
+
+                left, right = st.columns(2)
+
+                with left:
+
+                    st.write("**نوع الدعوى :**", case[1])
+                    st.write("**صفة رافع الدعوى :**", case[2])
+                    st.write("**رافع الدعوى :**", case[3])
+                    st.write("**صفة الخصم :**", case[4])
+                    st.write("**الخصم :**", case[5])
+                    st.write("**رقم الدعوى :**", case[6])
+                    st.write("**السنة القضائية :**", case[7])
+                    st.write("**الدائرة :**", case[11])
+
+                with right:
+
+                    st.write("**المحكمة :**", case[8])
+                    st.write("**اسم المحكمة :**", case[9])
+
+                    if case[10]:
+                        st.write("**مأمورية الاستئناف :**", case[10])
+
+                    st.write("**موضوع الدعوى :**", case[12])
+                    st.write("**الحالة :**", case[13])
+                    st.write("**رقم الهاتف :**", case[15])
+                    st.write("**ملاحظات :**", case[16])
+
+                st.divider()
