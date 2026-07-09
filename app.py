@@ -578,6 +578,129 @@ elif page == "register":
 
     col1, col2 = st.columns(2)
 # ==========================================================
+# تسجيل القضايا
+# الجزء الثالث (3/4)
+# بيانات أول جلسة + مستندات القضية
+# ==========================================================
+
+    with col1:
+
+        session_date = st.date_input(
+            "تاريخ أول جلسة"
+        )
+
+        roll_number = st.text_input(
+            "رقم الرول"
+        )
+
+        procedure = st.text_area(
+            "الإجراء المطلوب",
+            height=140,
+            placeholder="اكتب الإجراء المطلوب..."
+        )
+
+    with col2:
+
+        adjournment_reason = st.text_area(
+            "سبب التأجيل",
+            height=140
+        )
+
+        session_notes = st.text_area(
+            "ملاحظات الجلسة",
+            height=140
+        )
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    # ======================================================
+    # الكارت الثالث
+    # مستندات القضية
+    # ======================================================
+
+    st.markdown("""
+    <div class="card">
+    <div class="card-title">
+    📎 مستندات القضية
+    </div>
+    """, unsafe_allow_html=True)
+
+    uploaded_files = st.file_uploader(
+
+        "إرفاق مستندات القضية",
+
+        accept_multiple_files=True,
+
+        type=[
+            "pdf",
+            "doc",
+            "docx",
+            "jpg",
+            "jpeg",
+            "png",
+            "xlsx",
+            "xls"
+        ]
+
+    )
+
+    st.info(
+        "سيتم حفظ جميع المستندات تلقائياً مع حفظ القضية."
+    )
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    # ======================================================
+    # الكارت الرابع
+    # إعدادات القضية
+    # ======================================================
+
+    st.markdown("""
+    <div class="card">
+    <div class="card-title">
+    ⚙️ إعدادات القضية
+    </div>
+    """, unsafe_allow_html=True)
+
+    status = "متداولة"
+
+    st.success("حالة القضية عند التسجيل : متداولة")
+
+    st.checkbox(
+        "تفعيل التنبيهات لهذه القضية",
+        value=True,
+        key="notify_case"
+    )
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    btn1, btn2, btn3 = st.columns(3)
+
+    with btn1:
+
+        save_case = st.button(
+            "💾 حفظ القضية",
+            use_container_width=True,
+            type="primary"
+        )
+
+    with btn2:
+
+        clear_form = st.button(
+            "🧹 مسح البيانات",
+            use_container_width=True
+        )
+
+    with btn3:
+
+        if st.button(
+            "🏠 العودة للرئيسية",
+            key="back_register_bottom",
+            use_container_width=True
+        ):
+            st.session_state.page = "home"
+            st.rerun()
+# ==========================================================
 # ==========================================================
 # الحصر العام للقضايا
 # ==========================================================
