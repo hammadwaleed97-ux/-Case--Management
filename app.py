@@ -19,65 +19,64 @@ today = datetime.now().strftime("%A, %d %B %Y")
 
 st.markdown(f"""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap');
-    html, body {{font-family: 'Cairo', sans-serif;}}
-    .stApp {{background: #0a1a3a;}}
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap');
+    html, body {{font-family: 'Cairo', sans-serif; direction: rtl;}}
+    .stApp {{background: linear-gradient(180deg, #0F1C2E 0%, #1A2F4F 100%);}}
     
-    /* الشريط المتحرك بتاع التليفزيون */
+    /* الشريط المتحرك صح RTL */
     .marquee-container {{
-        background: linear-gradient(90deg, #DAA520, #FFD700);
-        padding: 12px; overflow: hidden; border-radius: 8px;
-        margin-bottom: 15px; box-shadow: 0 0 15px #DAA520;
+        background: linear-gradient(90deg, #C9A961, #D4B96A);
+        padding: 10px; overflow: hidden; border-radius: 8px;
+        margin-bottom: 15px; box-shadow: 0 0 10px rgba(201,169,97,0.4);
     }}
     .marquee-text {{
-        color: #0a1a3a; font-weight: 900; font-size: 14px;
+        color: #0F1C2E; font-weight: 800; font-size: 14px;
         white-space: nowrap; display: inline-block;
-        animation: scroll-left 15s linear infinite;
+        animation: scroll-rtl 18s linear infinite;
     }}
-    @keyframes scroll-left {{
-        0% {{transform: translateX(100%);}}
-        100% {{transform: translateX(-100%);}}
+    @keyframes scroll-rtl {{
+        0% {{transform: translateX(-100%);}}
+        100% {{transform: translateX(100%);}}
     }}
     
-    /* هيدر اصفر */
-    .header-yellow {{
-        background: linear-gradient(135deg, #DAA520, #FFD700);
-        padding: 20px; border-radius: 15px; text-align: center;
-        border: 3px solid #FFD700; margin-bottom: 20px;
+    /* هيدر هادي فخم */
+    .header-calm {{
+        background: linear-gradient(135deg, #1A2F4F, #2C4A73);
+        padding: 18px; border-radius: 12px; text-align: center;
+        border: 2px solid #C9A961; margin-bottom: 20px;
     }}
-    .header-yellow h1 {{color: #0a1a3a; font-size: 32px; font-weight: 900; margin: 0;}}
-    .header-yellow p {{color: #0a1a3a; font-size: 14px; font-weight: 700; margin: 8px 0 0 0;}}
+    .header-calm h1 {{color: #D4B96A; font-size: 30px; font-weight: 800; margin: 0;}}
+    .header-calm p {{color: #E8E8E8; font-size: 13px; font-weight: 600; margin: 6px 0 0 0;}}
     
     /* عنوان الاقسام */
-    .section-title {{color: #FFD700; text-align: center; font-size: 28px; font-weight: 900; margin: 20px 0;}}
+    .section-title {{color: #C9A961; text-align: center; font-size: 22px; font-weight: 800; margin: 15px 0;}}
     
-    /* الايقونات البيضاء بحد دهبي والاسم جواها */
-    div[data-testid="stButton"] > button {{
-        background: white !important;
-        color: #0a1a3a !important;
-        width: 100%; padding: 25px 10px; border-radius: 15px; 
-        border: 3px solid #DAA520; font-weight: 900; font-size: 16px;
-        height: 80px; margin-bottom: 5px;
+    /* الاقسام فوق - 2 و 4 و 2 */
+    .section-btn {{
+        background: linear-gradient(135deg, #2C4A73, #3A5F8A) !important;
+        color: #E8E8E8 !important;
+        width: 100%; padding: 20px 10px; border-radius: 12px; 
+        border: 2px solid #C9A961; font-weight: 700; font-size: 15px;
+        height: 90px; margin: 5px 0;
         display: flex; flex-direction: column; justify-content: center; align-items: center;
+        transition: 0.3s;
     }}
-    div[data-testid="stButton"] > button:hover {{border-color: #FFD700; box-shadow: 0 0 15px #FFD700;}}
+    .section-btn:hover {{background: linear-gradient(135deg, #3A5F8A, #4A76A8) !important; border-color: #D4B96A;}}
+    .icon {{font-size: 26px; margin-bottom: 6px;}}
     
-    .icon {{font-size: 28px; margin-bottom: 5px;}}
-    .btn-text {{font-size: 14px;}}
-    
-    /* كروت الاحصائيات الصغيرة جنب بعض */
+    /* كروت الاحصائيات الصغيرة تحت بعض بالوان هادئة */
     .small-stat {{
-        padding: 15px; border-radius: 12px; text-align: center; 
-        border: 3px solid #DAA520; margin-bottom: 10px;
+        padding: 14px; border-radius: 10px; text-align: center; 
+        border: 2px solid #C9A961; margin-bottom: 10px;
     }}
-    .small-stat p {{color: white; font-size: 13px; margin: 0; font-weight: 700;}}
-    .small-stat h2 {{color: #FFD700; font-size: 32px; font-weight: 900; margin: 5px 0 0 0;}}
-    .s1 {{background: #2F4F4F;}}
-    .s2 {{background: #1e3a5f;}}
-    .s3 {{background: #006400;}}
-    .s4 {{background: #8B0000;}}
+    .small-stat p {{color: #E8E8E8; font-size: 12px; margin: 0; font-weight: 600;}}
+    .small-stat h2 {{color: #D4B96A; font-size: 28px; font-weight: 800; margin: 4px 0 0 0;}}
+    .s1 {{background: linear-gradient(135deg, #3A4F63, #4A6578);}}
+    .s2 {{background: linear-gradient(135deg, #2C4A73, #3A5F8A);}}
+    .s3 {{background: linear-gradient(135deg, #4A5A4A, #5A6E5A);}}
+    .s4 {{background: linear-gradient(135deg, #5A3A3A, #6E4A4A);}}
     
-    .stats-title {{color: #FFD700; font-size: 20px; font-weight: 900; margin: 15px 0;}}
+    .stats-title {{color: #C9A961; font-size: 18px; font-weight: 800; margin: 20px 0 10px 0;}}
 </style>
 """, unsafe_allow_html=True)
 
@@ -90,9 +89,9 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# الهيدر الاصفر
+# الهيدر
 st.markdown(f"""
-<div class='header-yellow'>
+<div class='header-calm'>
     <h1>⚖️ إدارة القضايا</h1>
     <p>📅 {today}</p>
 </div>
@@ -101,30 +100,47 @@ st.markdown(f"""
 # الصفحة الرئيسية
 if st.session_state.page == "الرئيسية":
     
+    st.markdown("<div class='section-title'>الأقسام</div>", unsafe_allow_html=True)
+    
+    # الاقسام فوق: 2
+    r1c1, r1c2 = st.columns(2)
+    with r1c1:
+        if st.button("📝\nتسجيل القضايا", use_container_width=True, key="b1"): st.session_state.page = "تسجيل"
+    with r1c2:
+        if st.button("📊\nالحصر العام", use_container_width=True, key="b2"): st.session_state.page = "حصر"
+    
+    # 4 في النص
+    r2c1, r2c2, r2c3, r2c4 = st.columns(4)
+    with r2c1:
+        if st.button("🔍\nالبحث", use_container_width=True, key="b3"): st.session_state.page = "بحث"
+    with r2c2:
+        if st.button("🔔\nالتنبيهات", use_container_width=True, key="b4"): st.session_state.page = "تنبيهات"
+    with r2c3:
+        if st.button("📑\nالتقارير", use_container_width=True, key="b5"): st.session_state.page = "تقارير"
+    with r2c4:
+        if st.button("🗃️\nالأرشيف", use_container_width=True, key="b6"): st.session_state.page = "ارشيف"
+    
+    # 2 تحت
+    r3c1, r3c2 = st.columns(2)
+    with r3c1:
+        if st.button("📚\nالمكتبة", use_container_width=True, key="b7"): st.session_state.page = "مكتبة"
+    with r3c2:
+        if st.button("📈\nالإحصائيات", use_container_width=True, key="b8"): st.session_state.page = "احصائيات"
+    
+    st.markdown("<hr style='border:1px solid #C9A961; margin:20px 0'>", unsafe_allow_html=True)
+    
+    # الاحصائيات تحت
     st.markdown("<div class='stats-title'>📊 ملخص الإحصائيات</div>", unsafe_allow_html=True)
     
-    # الكروت الصغيرة تحت بعض
     total_cases = len(data["cases"])
     st.markdown(f"<div class='small-stat s1'><p>📁 القضايا المتداولة</p><h2>{total_cases}</h2></div>", unsafe_allow_html=True)
     st.markdown(f"<div class='small-stat s2'><p>📅 الجلسات القادمة</p><h2>18</h2></div>", unsafe_allow_html=True)
     st.markdown(f"<div class='small-stat s3'><p>✅ أحكام لصالح</p><h2>42</h2></div>", unsafe_allow_html=True)
     st.markdown(f"<div class='small-stat s4'><p>❌ أحكام ضد</p><h2>7</h2></div>", unsafe_allow_html=True)
-    
-    st.markdown("<div class='section-title'>الأقسام</div>", unsafe_allow_html=True)
-    
-    # الاقسام كل واحد في سطر والاسم جوه
-    if st.button("📝\nتسجيل القضايا", use_container_width=True, key="b1"): st.session_state.page = "تسجيل"
-    if st.button("📊\nالحصر العام", use_container_width=True, key="b2"): st.session_state.page = "حصر"
-    if st.button("🔍\nالبحث", use_container_width=True, key="b3"): st.session_state.page = "بحث"
-    if st.button("🔔\nالتنبيهات", use_container_width=True, key="b4"): st.session_state.page = "تنبيهات"
-    if st.button("📑\nالتقارير", use_container_width=True, key="b5"): st.session_state.page = "تقارير"
-    if st.button("🗃️\nالأرشيف", use_container_width=True, key="b6"): st.session_state.page = "ارشيف"
-    if st.button("📚\nالمكتبة القانونية", use_container_width=True, key="b7"): st.session_state.page = "مكتبة"
-    if st.button("📈\nالإحصائيات", use_container_width=True, key="b8"): st.session_state.page = "احصائيات"
 
 # صفحة التسجيل
 elif st.session_state.page == "تسجيل":
-    st.markdown("<h2 style='color:#FFD700'>📝 تسجيل القضايا</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='color:#C9A961'>📝 تسجيل القضايا</h2>", unsafe_allow_html=True)
     if st.button("⬅️ العودة للرئيسية"): st.session_state.page = "الرئيسية"
     with st.form("form"):
         نوع = st.selectbox("نوع الدعوى", ["دعوى", "استئناف", "طعن"])
@@ -137,7 +153,7 @@ elif st.session_state.page == "تسجيل":
 
 # صفحة الحصر
 elif st.session_state.page == "حصر":
-    st.markdown("<h2 style='color:#FFD700'>📊 الحصر العام</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='color:#C9A961'>📊 الحصر العام</h2>", unsafe_allow_html=True)
     if st.button("⬅️ العودة للرئيسية"): st.session_state.page = "الرئيسية"
     if data["cases"]:
         st.dataframe(pd.DataFrame(data["cases"]), use_container_width=True, hide_index=True)
@@ -146,5 +162,5 @@ elif st.session_state.page == "حصر":
 
 # باقي الصفحات...
 elif st.session_state.page == "تنبيهات":
-    st.markdown("<h2 style='color:#FFD700'>🔔 التنبيهات</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='color:#C9A961'>🔔 التنبيهات</h2>", unsafe_allow_html=True)
     if st.button("⬅️ العودة للرئيسية"): st.session_state.page = "الرئيسية"
