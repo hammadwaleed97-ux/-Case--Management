@@ -1388,3 +1388,78 @@ with st.expander("فتح تعديل بيانات القضية"):
         st.success("✅ تم تعديل بيانات القضية بنجاح")
 
         st.rerun()
+        # ==========================================================
+# أدوات القضية
+# ==========================================================
+
+st.divider()
+
+st.markdown("""
+<h3 style='text-align:center;color:#FFD700'>
+⚙️ أدوات القضية
+</h3>
+""", unsafe_allow_html=True)
+
+tool1, tool2, tool3 = st.columns(3)
+
+with tool1:
+
+    if st.button(
+        "🖨️ طباعة ملف القضية",
+        key=f"print_case_{case_id}",
+        use_container_width=True
+    ):
+        st.info("سيتم ربط طباعة Word و PDF لاحقاً.")
+
+with tool2:
+
+    if st.button(
+        "📄 إنشاء مذكرة دفاع",
+        key=f"memo_{case_id}",
+        use_container_width=True
+    ):
+        st.info("سيتم ربط الذكاء الاصطناعى بالمكتبة القانونية.")
+
+with tool3:
+
+    if st.button(
+        "🗑️ إنهاء القضية",
+        key=f"finish_case_{case_id}",
+        use_container_width=True
+    ):
+
+        if row[13] == "متداولة":
+
+            st.warning("لا يمكن إنهاء القضية قبل تسجيل جلسة حكم.")
+
+        else:
+
+            cur.execute("""
+
+            INSERT INTO deleted_cases(
+
+            case_id,
+
+            reason,
+
+            deleted_at
+
+            )
+
+            VALUES(
+
+            ?,?,datetime('now')
+
+            )
+
+            """,(
+
+            case_id,
+
+            "انتهاء الدعوى"
+
+            ))
+
+            conn.commit()
+
+            st.success("تم نقل القضية إلى الأرشيف.")
