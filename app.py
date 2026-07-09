@@ -460,6 +460,124 @@ elif page == "register":
 
     right,left=st.columns(2)
 # ==========================================================
+# تسجيل القضايا
+# الجزء الثاني (2/4)
+# بيانات القضية
+# ==========================================================
+
+    with right:
+
+        case_number = st.text_input(
+            "رقم الدعوى *",
+            placeholder="رقم الدعوى"
+        )
+
+        judicial_year = st.text_input(
+            "السنة القضائية *",
+            placeholder="2026"
+        )
+
+        circuit = st.text_input(
+            "الدائرة"
+        )
+
+        case_type = st.selectbox(
+            "نوع الدعوى",
+            [
+                "دعوى",
+                "استئناف",
+                "نقض"
+            ]
+        )
+
+        court = st.selectbox(
+            "المحكمة",
+            [
+                "الابتدائية",
+                "الاستئناف",
+                "النقض",
+                "الإدارية",
+                "القضاء الإداري",
+                "الإدارية العليا"
+            ]
+        )
+
+        court_name = st.text_input(
+            "اسم المحكمة"
+        )
+
+        if case_type == "استئناف":
+
+            appeal_office = st.text_input(
+                "مأمورية الاستئناف"
+            )
+
+        else:
+
+            appeal_office = ""
+
+    with left:
+
+        claimant_type = st.selectbox(
+            "صفة رافع الدعوى",
+            [
+                "المدعى",
+                "المستأنف",
+                "الطاعن"
+            ]
+        )
+
+        claimant = st.text_input(
+            "اسم رافع الدعوى"
+        )
+
+        defendant_type = st.selectbox(
+            "صفة الخصم",
+            [
+                "المدعى عليه",
+                "المستأنف ضده",
+                "المطعون ضده"
+            ]
+        )
+
+        defendant = st.text_input(
+            "اسم الخصم"
+        )
+
+        subject = st.text_area(
+            "موضوع الدعوى",
+            height=120
+        )
+
+        mobile = st.text_input(
+            "رقم الهاتف"
+        )
+
+        notifications_enabled = st.checkbox(
+            "تفعيل التنبيهات",
+            value=True
+        )
+
+        notes = st.text_area(
+            "ملاحظات"
+        )
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    # ======================================================
+    # الكارت الثانى
+    # بيانات أول جلسة
+    # ======================================================
+
+    st.markdown("""
+    <div class="card">
+    <div class="card-title">
+    📅 بيانات أول جلسة
+    </div>
+    """, unsafe_allow_html=True)
+
+    col1, col2 = st.columns(2)
+# ==========================================================
 # ==========================================================
 # الحصر العام للقضايا
 # ==========================================================
