@@ -107,3 +107,143 @@ elif menu == "الحصر العام":
                     st.success("تمت الإضافة")
 
 st.sidebar.info(": التنبيهات والتقارير")
+import streamlit as st
+import pandas as pd
+from datetime import datetime, timedelta
+import io
+
+st.set_page_config(page_title="إدارة القضايا", layout="wide")
+
+# التصميم الفخم
+st.markdown("""
+<style>
+    .stApp {background: linear-gradient(135deg, #0a1a3a 0%, #1e3a5f 100%);}
+    h1, h2, h3 { color: #DAA520!important; text-align: center; }
+    .logo-text {animation: blink 3s infinite; color: #FFD700; font-weight: bold; text-align: center;}
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+    .card {background: #1e3a5f; padding: 20px; border-radius: 15px; border: 2px solid #DAA520; margin: 10px 0;}
+    .alert {background: #8B0000; color: white; padding: 15px; border-radius: 10px;}
+</style>
+""", unsafe_allow_html=True)
+
+st.markdown("<h1>⚖️</h1>", unsafe_allow_html=True)
+st.markdown("<h1>إدارة القضايا</h1>", unsafe_allow_html=True)
+st.markdown("<p class='logo-text'>مع تحيات / وليد حماد - الإدارة العامة للشئون القانونية - ديوان عام منطقة البحيرة</p>", unsafe_allow_html=True)
+st.markdown("---")
+
+if 'cases' not in st.session_state: st.session_state.cases = []
+if 'archive' not in st.session_state: st.session_state.archive = []
+
+menu = st.sidebar.selectbox("📋 القائمة", 
+["تسجيل القضايا", "الحصر العام", "البحث عن دعوى", "التنبيهات", "التقارير", "الأرشيف", "المكتبة القانونية", "الإحصائيات"])
+
+# 1. تسجيل القضايا - نفس اللي فات
+if menu == "تسجيل القضايا":
+    st.markdown("<div class='card'>", unsafe_allow_html=True)
+    st.subheader("📝 تسجيل قضية جديدة")
+    with st.form("form"):
+        c1, c2 = st.columns(2)
+        with c1:
+            نوع = st.selectbox("نوع الدعوى", ["دعوى", "استئناف", "طعن"])
+            محكمة = st.selectbox("نوع المحكمة", ["الابتدائية","الاستئناف","النقض","الإدارية","القضاء الإداري","الإدارية العليا"])
+            اسم_المحكمة = st.text_input("اسم المحكمة")
+            رقم = st.text_input("رقم الدعوى")
+            سنة = st.text_input("السنة")
+            دائرة = st.text_input("الدائرة")
+        with c2:
+            مدعي = st.text_input("المدعي")
+            مدعي_عليه = st.text_input("المدعي عليه")
+            موضوع = st.text_area("الموضوع")
+            تاريخ = st.date_input("تاريخ أول جلسة")
+            رول = st.text_input("الرول")
+            سبب = st.text_input("سبب الجلسة")
+        واتس = st.checkbox("تفعيل تنبيهات الواتس")
+        رقم_واتس = st.text_input("رقم الواتس") if واتس else ""
+        if st.form_submit_button("💾 حفظ القضية"):
+            st.session_state.cases.append({
+                "رقم": f"{رقم} لسنة {سنة}", "نوع": نوع, "المحكمة": اسم_المحكمة, "الدائرة": دائرة,
+                "مدعي": مدعي, "مدعي_عليه": مدعي_عليه, "موضوع": موضوع, "تاريخ": str(تاريخ),
+                "رول": رول, "سبب": سبب, "الحالة": "متداولة", "واتس": رقم_واتس
+            })
+            st.success("تم الحفظ")
+    st.markdown("</div>", unsafe_allow_html=True)
+
+# 2. الحصر العام
+elif menu == "الحصر العام":
+    st.subheader("📊 الحصر العام")
+    for i, ق in enumerate(st.session_state.cases):
+        with st.expander(f"{ق['رقم']} - {ق['مدعي']}"):
+            st.write(f"المحكمة: {ق['المحكمة']} | الموضوع: {ق['موضوع']}")
+            st.write(f"آخر جلسة: {ق['تاريخ']} | السبب: {ق['سبب']}")
+            if st.button("أرشفة القضية", key=i):
+                st.session_state.archive.append(ق)
+                st.session_state.cases.pop(i)
+                st.rerun()
+
+# 3. البحث
+elif menu == "البحث عن دعوى":
+    st.subheader("🔍 البحث")
+    بحث = st.text_input("ابحث برقم القضية أو اسم المدعي")
+    if st.button("اضغط للبحث"):
+        نتائج = [ق for ق in st.session_state.cases + st.session_state.archive if بحث in ق['رقم'] or بحث in ق['مدعي']]
+        if نتائج:
+            for ق in نتائج: st.json(ق)
+        else: st.error("لا توجد قضية. تأكد من بيانات البحث")
+
+# 4. التنبيهات
+elif menu == "التنبيهات":
+    st.subheader("🔔 التنبيهات")
+    st.markdown("### 1. تنبيهات الجلسات - خلال 7 أيام")
+    اليوم = datetime.now().date()
+    for ق in st.session_state.cases:
+        ت_الجلسة = datetime.strptime(ق['تاريخ'], '%Y-%m-%d').date()
+        if 0 <= (ت_الجلسة - اليوم).days <= 7:
+            st.markdown(f"<div class='alert'>⚠️ جلسة بتاريخ {ق['تاريخ']} - {ق['رقم']}</div>", unsafe_allow_html=True)
+
+    st.markdown("### 2. تنبيهات مواعيد الطعن - خلال 15 يوم")
+    st.info("40 يوم استئناف | 60 يوم نقض")
+    تفعيل = st.checkbox("تفعيل تنبيهات الواتس الساعة 9 صباحاً")
+    if تفعيل: st.text_input("رقم الواتس للتنبيهات")
+
+# 5. التقارير
+elif menu == "التقارير":
+    st.subheader("📑 التقارير")
+    نوع_التقرير = st.selectbox("نوع التقرير", ["المتداولة", "الأحكام"])
+    من = st.date_input("من")
+    إلى = st.date_input("إلى")
+    المحامي = st.text_input("طرف الاستاذ المحامي")
+    منطقة = st.text_input("ديوان عام منطقة")
+
+    if st.button("إنشاء التقرير"):
+        df = pd.DataFrame(st.session_state.cases)
+        st.dataframe(df, use_container_width=True)
+        
+        # تصدير
+        csv = df.to_csv(index=False).encode('utf-8')
+        st.download_button("📥 تحميل Excel", csv, "تقرير.csv")
+        st.button("📄 فتح PDF") # هنضيف مكتبة reportlab بعدين
+        st.button("📝 فتح Word")
+
+# 6. الأرشيف
+elif menu == "الأرشيف":
+    st.subheader("🗃️ الأرشيف")
+    for ق in st.session_state.archive:
+        st.write(f"{ق['رقم']} - {ق['مدعي']} - منتهية")
+
+# 7. المكتبة
+elif menu == "المكتبة القانونية":
+    st.subheader("📚 المكتبة القانونية")
+    اقسام = ["القوانين","القرارات الوزارية","احكام النقض","احكام الدستورية","أخرى"]
+    for قسم in اقسام:
+        with st.expander(f"📁 {قسم}"):
+            st.file_uploader(f"رفع مستند {قسم}", key=قسم)
+            st.text_input("اسم المستند", key=f"name{قسم}")
+
+# 8. الإحصائيات
+elif menu == "الإحصائيات":
+    st.subheader("📈 الإحصائيات")
+    c1,c2,c3,c4 = st.columns(4)
+    c1.metric("المتداولة", len(st.session_state.cases))
+    c2.metric("المؤرشفة", len(st.session_state.archive))
+    c3.metric("للمصلحة", 0)
+    c4.metric("ضد المصلحة", 0)
