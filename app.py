@@ -1130,3 +1130,191 @@ elif page == "general":
                                     st.session_state.pop(f"edit_session_{case_id}")
 
                                     st.rerun()
+                                                    # ==================================================
+                # تبويب مستندات القضية
+                # ==================================================
+
+                with tab3:
+
+                    st.markdown("## 📎 مستندات القضية")
+
+                    cur.execute("""
+                    CREATE TABLE IF NOT EXISTS documents(
+
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+                        case_id INTEGER,
+
+                        document_name TEXT,
+
+                        file_name TEXT,
+
+                        file_path TEXT,
+
+                        uploaded_at TEXT
+
+                    )
+                    """)
+
+                    uploaded_file = st.file_uploader(
+
+                        "إرفاق مستند",
+
+                        type=[
+                            "pdf",
+                            "doc",
+                            "docx",
+                            "xls",
+                            "xlsx",
+                            "jpg",
+                            "jpeg",
+                            "png"
+                        ],
+
+                        key=f"upload_{case_id}"
+
+                    )
+
+                    document_name = st.text_input(
+
+                        "اسم المستند",
+
+                        key=f"doc_name_{case_id}"
+
+                    )
+
+                    if st.button(
+
+                        "💾 حفظ المستند",
+
+                        key=f"save_doc_{case_id}",
+
+                        use_container_width=True
+
+                    ):
+
+                        if uploaded_file is None:
+
+                            st.warning("اختر ملف أولاً.")
+
+                        else:
+
+                            os.makedirs("documents", exist_ok=True)
+
+                            file_path = os.path.join(
+
+                                "documents",
+
+                                f"{case_id}_{uploaded_file.name}"
+
+                            )
+
+                            with open(file_path, "wb") as f:
+
+                                f.write(uploaded_file.getbuffer())
+
+                            from datetime import datetime
+
+                            cur.execute("""
+
+                            INSERT INTO documents(
+
+                                case_id,
+
+                                document_name,
+
+                                file_name,
+
+                                file_path,
+
+                                uploaded_at
+
+                            )
+
+                            VALUES(
+
+                                ?,?,?,?,?,?
+
+                            )
+
+                            """,(
+
+                                case_id,
+
+                                document_name,
+
+                                uploaded_file.name,
+
+                                file_path,
+
+                                datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+                            ))
+
+                            conn.commit()
+
+                            st.success("✅ تم حفظ المستند")
+
+                            st.rerun()
+
+                    st.divider()
+
+                    cur.execute("""
+
+                    SELECT
+
+                    id,
+
+                    document_name,
+
+                    file_name,
+
+                    uploaded_at
+
+                    FROM documents
+
+                    WHERE case_id=?
+
+                    ORDER BY id DESC
+
+                    """,(case_id,))
+
+                    docs = cur.fetchall()
+
+                    if docs:
+
+                        for d in docs:
+
+                            c1,c2 = st.columns([5,1])
+
+                            with c1:
+
+                                st.write(
+                                    f"📄 {d[1]} - {d[2]}"
+                                )
+
+                            with c2:
+
+                                if st.button(
+
+                                    "🗑️",
+
+                                    key=f"delete_doc_{d[0]}"
+
+                                ):
+
+                                    cur.execute(
+
+                                        "DELETE FROM documents WHERE id=?",
+
+                                        (d[0],)
+
+                                    )
+
+                                    conn.commit()
+
+                                    st.rerun()
+
+                    else:
+
+                        st.info("لا توجد مستندات مرفقة.")
