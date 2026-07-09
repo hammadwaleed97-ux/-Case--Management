@@ -685,3 +685,81 @@ elif page == "general":
                     st.write("**ملاحظات :**", case[16])
 
                 st.divider()
+                                # ==================================================
+                # آخر جلسة
+                # ==================================================
+
+                cur.execute("""
+                SELECT
+                    session_date,
+                    roll_number,
+                    procedure,
+                    adjournment_reason,
+                    session_notes,
+                    is_judgment,
+                    judgment_date,
+                    judgment_text,
+                    judgment_result
+
+                FROM sessions
+
+                WHERE case_id=?
+
+                ORDER BY id DESC
+
+                LIMIT 1
+                """,(case_id,))
+
+                last_session = cur.fetchone()
+
+                if last_session:
+
+                    st.markdown("## 📅 آخر جلسة")
+
+                    st.write("**تاريخ الجلسة :**", last_session[0])
+
+                    st.write("**رقم الرول :**", last_session[1])
+
+                    st.write("**الإجراء المطلوب :**", last_session[2])
+
+                    if last_session[3]:
+                        st.write("**سبب التأجيل :**", last_session[3])
+
+                    if last_session[4]:
+                        st.write("**ملاحظات الجلسة :**", last_session[4])
+
+                    if last_session[5]:
+
+                        st.success("⚖️ صدر حكم فى الدعوى")
+
+                        st.write("**تاريخ الحكم :**", last_session[6])
+
+                        st.write("**منطوق الحكم :**")
+
+                        st.info(last_session[7])
+
+                        st.write("**النتيجة :**", last_session[8])
+
+                else:
+
+                    st.info("لا توجد جلسات مسجلة لهذه القضية.")
+
+                st.divider()
+
+                # ==================================================
+                # متابعة القضية
+                # ==================================================
+
+                st.markdown("## 📂 متابعة القضية")
+
+                tab1, tab2, tab3, tab4 = st.tabs([
+
+                    "➕ إضافة جلسة",
+
+                    "📅 الجلسات السابقة",
+
+                    "📎 مستندات القضية",
+
+                    "✏️ تعديل بيانات القضية"
+
+                ])
