@@ -209,6 +209,33 @@ FOREIGN KEY(case_id) REFERENCES cases(id)
 
 )
 """)
+# ==========================================================
+# جدول مستندات القضايا
+# ==========================================================
+
+cur.execute("""
+
+CREATE TABLE IF NOT EXISTS documents(
+
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+    case_id INTEGER NOT NULL,
+
+    file_name TEXT NOT NULL,
+
+    file_path TEXT NOT NULL,
+
+    file_type TEXT,
+
+    uploaded_at TEXT,
+
+    FOREIGN KEY(case_id) REFERENCES cases(id)
+
+)
+
+""")
+
+conn.commit()
 
 # ==========================================================
 # جدول القضايا المحذوفة
