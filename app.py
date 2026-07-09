@@ -949,3 +949,205 @@ elif page == "general":
                         st.success("✅ تم حفظ الجلسة بنجاح")
 
                         st.rerun()
+                                        # ============================================
+                # جميع الجلسات السابقة
+                # ============================================
+
+                st.divider()
+
+                st.markdown("## 📅 سجل الجلسات")
+
+                cur.execute("""
+
+                SELECT *
+
+                FROM sessions
+
+                WHERE case_id=?
+
+                ORDER BY session_date DESC,id DESC
+
+                """,(case_id,))
+
+                sessions = cur.fetchall()
+
+                if not sessions:
+
+                    st.info("لا توجد جلسات.")
+
+                else:
+
+                    for s in sessions:
+
+                        with st.expander(
+                            f"📅 جلسة {s[2]}"
+                        ):
+
+                            new_date = st.date_input(
+                                "تاريخ الجلسة",
+                                value=s[2],
+                                key=f"date_edit_{s[0]}"
+                            )
+
+                            new_roll = st.text_input(
+                                "رقم الرول",
+                                value=s[3],
+                                key=f"roll_edit_{s[0]}"
+                            )
+
+                            new_procedure = st.text_area(
+                                "الإجراء المطلوب",
+                                value=s[4],
+                                key=f"proc_edit_{s[0]}"
+                            )
+
+                            new_reason = st.text_area(
+                                "سبب التأجيل",
+                                value=s[5],
+                                key=f"reason_edit_{s[0]}"
+                            )
+
+                            new_notes = st.text_area(
+                                "ملاحظات",
+                                value=s[6],
+                                key=f"notes_edit_{s[0]}"
+                            )
+
+                            judgment = st.checkbox(
+                                "جلسة حكم",
+                                value=bool(s[7]),
+                                key=f"judgment_edit_{s[0]}"
+                            )
+
+                            judgment_date = ""
+                            judgment_text = ""
+                            judgment_result = ""
+
+                            if judgment:
+
+                                judgment_date = st.date_input(
+                                    "تاريخ الحكم",
+                                    value=s[8] if s[8] else None,
+                                    key=f"jdate_{s[0]}"
+                                )
+
+                                judgment_text = st.text_area(
+                                    "منطوق الحكم",
+                                    value=s[9],
+                                    key=f"jtext_{s[0]}"
+                                )
+
+                                judgment_result = st.selectbox(
+                                    "النتيجة",
+                                    [
+                                        "لصالح الهيئة",
+                                        "ضد الهيئة"
+                                    ],
+                                    index=0 if s[10]!="ضد الهيئة" else 1,
+                                    key=f"jresult_{s[0]}"
+                                )
+
+                            c1,c2=st.columns(2)
+
+                            with c1:
+
+                                if st.button(
+                                    "💾 حفظ التعديل",
+                                    key=f"save_edit_{s[0]}",
+                                    use_container_width=True
+                                ):
+
+                                    cur.execute("""
+
+                                    UPDATE sessions
+
+                                    SET
+
+                                    session_date=?,
+
+                                    roll_number=?,
+
+                                    procedure=?,
+
+                                    adjournment_reason=?,
+
+                                    session_notes=?,
+
+                                    is_judgment=?,
+
+                                    judgment_date=?,
+
+                                    judgment_text=?,
+
+                                    judgment_result=?
+
+                                    WHERE id=?
+
+                                    """,(
+
+                                    str(new_date),
+
+                                    new_roll,
+
+                                    new_procedure,
+
+                                    new_reason,
+
+                                    new_notes,
+
+                                    int(judgment),
+
+                                    str(judgment_date) if judgment else "",
+
+                                    judgment_text,
+
+                                    judgment_result,
+
+                                    s[0]
+
+                                    ))
+
+                                    if judgment:
+
+                                        cur.execute("""
+
+                                        UPDATE cases
+
+                                        SET status=?
+
+                                        WHERE id=?
+
+                                        """,(
+
+                                        f"منتهية - {judgment_result}",
+
+                                        case_id
+
+                                        ))
+
+                                    conn.commit()
+
+                                    st.success("تم تعديل الجلسة")
+
+                                    st.rerun()
+
+                            with c2:
+
+                                if s[0] != sessions[-1][0]:
+
+                                    if st.button(
+                                        "🗑️ حذف الجلسة",
+                                        key=f"delete_session_{s[0]}",
+                                        use_container_width=True
+                                    ):
+
+                                        cur.execute(
+                                            "DELETE FROM sessions WHERE id=?",
+                                            (s[0],)
+                                        )
+
+                                        conn.commit()
+
+                                        st.success("تم حذف الجلسة")
+
+                                        st.rerun()
