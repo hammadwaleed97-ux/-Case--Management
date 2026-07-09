@@ -955,3 +955,178 @@ elif page == "general":
                                 ):
 
                                     st.session_state[f"edit_session_{case_id}"] = s[0]
+                # ==================================================
+                # تعديل جلسة سابقة
+                # ==================================================
+
+                if st.session_state.get(f"edit_session_{case_id}"):
+
+                    session_id = st.session_state[f"edit_session_{case_id}"]
+
+                    cur.execute("""
+                    SELECT *
+                    FROM sessions
+                    WHERE id=?
+                    """,(session_id,))
+
+                    s = cur.fetchone()
+
+                    if s:
+
+                        st.divider()
+
+                        st.markdown("## ✏️ تعديل الجلسة")
+
+                        edit_session_date = st.date_input(
+                            "تاريخ الجلسة",
+                            value=s[2],
+                            key=f"edit_date_{session_id}"
+                        )
+
+                        edit_roll = st.text_input(
+                            "رقم الرول",
+                            value=s[3],
+                            key=f"edit_roll_{session_id}"
+                        )
+
+                        edit_procedure = st.text_area(
+                            "الإجراء المطلوب",
+                            value=s[4],
+                            key=f"edit_proc_{session_id}"
+                        )
+
+                        edit_reason = st.text_area(
+                            "سبب التأجيل",
+                            value=s[5],
+                            key=f"edit_reason_{session_id}"
+                        )
+
+                        edit_notes = st.text_area(
+                            "ملاحظات الجلسة",
+                            value=s[6],
+                            key=f"edit_notes_{session_id}"
+                        )
+
+                        edit_is_judgment = st.checkbox(
+                            "جلسة حكم",
+                            value=bool(s[7]),
+                            key=f"edit_judgment_{session_id}"
+                        )
+
+                        edit_judgment_date = ""
+                        edit_judgment_text = ""
+                        edit_judgment_result = ""
+
+                        if edit_is_judgment:
+
+                            edit_judgment_date = st.date_input(
+                                "تاريخ الحكم",
+                                value=s[8] if s[8] else None,
+                                key=f"edit_jdate_{session_id}"
+                            )
+
+                            edit_judgment_text = st.text_area(
+                                "منطوق الحكم",
+                                value=s[9],
+                                key=f"edit_jtext_{session_id}"
+                            )
+
+                            edit_judgment_result = st.radio(
+                                "نتيجة الحكم",
+                                ["لصالح الهيئة","ضد الهيئة"],
+                                horizontal=True,
+                                index=0 if s[10] != "ضد الهيئة" else 1,
+                                key=f"edit_jresult_{session_id}"
+                            )
+
+                        col_save,col_delete = st.columns(2)
+
+                        with col_save:
+
+                            if st.button(
+                                "💾 حفظ التعديل",
+                                key=f"save_edit_{session_id}",
+                                use_container_width=True
+                            ):
+
+                                cur.execute("""
+                                UPDATE sessions
+                                SET
+                                    session_date=?,
+                                    roll_number=?,
+                                    procedure=?,
+                                    adjournment_reason=?,
+                                    session_notes=?,
+                                    is_judgment=?,
+                                    judgment_date=?,
+                                    judgment_text=?,
+                                    judgment_result=?
+                                WHERE id=?
+                                """,(
+
+                                    str(edit_session_date),
+                                    edit_roll,
+                                    edit_procedure,
+                                    edit_reason,
+                                    edit_notes,
+                                    int(edit_is_judgment),
+                                    str(edit_judgment_date) if edit_is_judgment else "",
+                                    edit_judgment_text,
+                                    edit_judgment_result,
+                                    session_id
+
+                                ))
+
+                                if edit_is_judgment:
+
+                                    cur.execute("""
+                                    UPDATE cases
+                                    SET status=?
+                                    WHERE id=?
+                                    """,(
+                                        f"منتهية - {edit_judgment_result}",
+                                        case_id
+                                    ))
+
+                                conn.commit()
+
+                                st.success("تم تعديل الجلسة")
+
+                                st.session_state.pop(f"edit_session_{case_id}")
+
+                                st.rerun()
+
+                        with col_delete:
+
+                            if st.button(
+                                "🗑️ حذف الجلسة",
+                                key=f"delete_session_{session_id}",
+                                use_container_width=True
+                            ):
+
+                                cur.execute("""
+                                SELECT COUNT(*)
+                                FROM sessions
+                                WHERE case_id=?
+                                """,(case_id,))
+
+                                total_sessions = cur.fetchone()[0]
+
+                                if total_sessions <= 1:
+
+                                    st.error("لا يمكن حذف آخر جلسة بالقضية.")
+
+                                else:
+
+                                    cur.execute(
+                                        "DELETE FROM sessions WHERE id=?",
+                                        (session_id,)
+                                    )
+
+                                    conn.commit()
+
+                                    st.success("تم حذف الجلسة")
+
+                                    st.session_state.pop(f"edit_session_{case_id}")
+
+                                    st.rerun()
