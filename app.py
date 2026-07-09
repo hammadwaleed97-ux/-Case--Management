@@ -457,135 +457,154 @@ elif page == "register":
 # حفظ القضية
 # ==========================================================
 
-    if st.button("💾 حفظ القضية", use_container_width=True):
+if st.button("💾 حفظ القضية", use_container_width=True):
 
-        if (
-            claimant.strip() == ""
-            or defendant.strip() == ""
-            or case_number.strip() == ""
-            or judicial_year.strip() == ""
-        ):
+    if (
+        claimant.strip() == ""
+        or defendant.strip() == ""
+        or case_number.strip() == ""
+        or judicial_year.strip() == ""
+    ):
 
-            st.error("يرجى استكمال البيانات الأساسية.")
+        st.error("يرجى استكمال البيانات الأساسية.")
+
+    else:
+
+        cur.execute(
+            """
+            SELECT id
+            FROM cases
+            WHERE case_number=?
+            AND judicial_year=?
+            """,
+            (case_number, judicial_year)
+        )
+
+        if cur.fetchone():
+
+            st.warning("هذه القضية مسجلة بالفعل.")
 
         else:
 
-            cur.execute(
-                """
-                SELECT id
-                FROM cases
-                WHERE case_number=?
-                AND judicial_year=?
-                """,
-                (case_number, judicial_year)
+            from datetime import datetime
+
+            now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+            # ==========================================
+            # حفظ بيانات القضية
+            # ==========================================
+
+            cur.execute("""
+            INSERT INTO cases(
+
+                case_type,
+                claimant_type,
+                claimant,
+                defendant_type,
+                defendant,
+                case_number,
+                judicial_year,
+                court,
+                court_name,
+                appeal_office,
+                circuit,
+                subject,
+                status,
+                notifications_enabled,
+                mobile,
+                notes,
+                created_at
+
             )
 
-            if cur.fetchone():
+            VALUES(
 
-                st.warning("هذه القضية مسجلة بالفعل.")
+                ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?
 
-            else:
+            )
+            """,(
 
-                from datetime import datetime
+                case_type,
+                claimant_type,
+                claimant,
+                defendant_type,
+                defendant,
+                case_number,
+                judicial_year,
+                court,
+                court_name,
+                appeal_office,
+                circuit,
+                subject,
+                "متداولة",
+                int(notifications_enabled),
+                mobile,
+                notes,
+                now
 
-                now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            ))
 
-                cur.execute(
-                    """
-                    INSERT INTO cases(
+            case_id = cur.lastrowid
 
-                        case_type,
-                        claimant_type,
-                        claimant,
-                        defendant_type,
-                        defendant,
-                        case_number,
-                        judicial_year,
-                        court,
-                        court_name,
-                        appeal_office,
-                        circuit,
-                        subject,
-                        status,
-                        notifications_enabled,
-                        mobile,
-                        notes,
-                        created_at
+            # ==========================================
+            # إنشاء مجلد خاص بالقضية
+            # ==========================================
 
-                    )
+            os.makedirs(
+                os.path.join(
+                    "documents",
+                    str(case_id)
+                ),
+                exist_ok=True
+            )
 
-                    VALUES(
+            # ==========================================
+            # حفظ أول جلسة
+            # ==========================================
 
-                        ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?
+            cur.execute("""
+            INSERT INTO sessions(
 
-                    )
+                case_id,
+                session_date,
+                roll_number,
+                procedure,
+                adjournment_reason,
+                session_notes,
+                is_judgment,
+                judgment_date,
+                judgment_text,
+                judgment_result,
+                created_at
 
-                    """,
+            )
 
-                    (
+            VALUES(
 
-                        case_type,
-                        claimant_type,
-                        claimant,
-                        defendant_type,
-                        defendant,
-                        case_number,
-                        judicial_year,
-                        court,
-                        court_name,
-                        appeal_office,
-                        circuit,
-                        subject,
-                        "متداولة",
-                        int(notifications_enabled),
-                        mobile,
-                        notes,
-                        now
+                ?,?,?,?,?,?,?,?,?,?,?
 
-                    )
+            )
+            """,(
 
-                )
+                case_id,
+                str(session_date),
+                roll_number,
+                procedure,
+                "",
+                "",
+                0,
+                "",
+                "",
+                "",
+                now
 
-                case_id = cur.lastrowid
+            ))
 
-                cur.execute(
-                    """
-                    INSERT INTO sessions(
+            conn.commit()
 
-                        case_id,
-                        session_date,
-                        procedure,
-                        created_at
+            st.success("✅ تم تسجيل القضية وحفظ أول جلسة بنجاح.")
 
-                    )
-
-                    VALUES(
-
-                        ?,?,?,?
-
-                    )
-                    """,
-
-                    (
-
-                        case_id,
-                        str(session_date),
-                        procedure,
-                        now
-
-                    )
-
-                )
-
-                conn.commit()
-
-                st.success("✅ تم تسجيل القضية وحفظ أول جلسة بنجاح.")
-
-                st.balloons()
-
-# ==========================================================
-# نهاية قسم تسجيل القضايا
-# ==========================================================
+            st.balloons()
 # ==========================================================
 # الحصر العام للقضايا
 # ==========================================================
