@@ -1,5 +1,5 @@
 # ============================================================
-# ================== إدارة القضايا v2.4 =====================
+# ================== إدارة القضايا v3.0 =====================
 # ========== الإدارة العامة للشئون القانونية البحيرة ==========
 # ============================================================
 
@@ -90,7 +90,6 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 if 'page' not in st.session_state: st.session_state.page = "الرئيسية"
-if 'selected_case_id' not in st.session_state: st.session_state.selected_case_id = None
 
 # الشريط المتحرك
 st.markdown("""
@@ -161,35 +160,77 @@ elif st.session_state.page == "تسجيل":
     if st.button("⬅️ العودة للرئيسية", key="btn_back_1"): st.session_state.page = "الرئيسية"
     
     with st.form("form_case"):
+        # الصف 1
+        نوع = st.selectbox("نوع الدعوى", ["دعوى", "استئناف", "طعن"], key="sel_type")
+        
+        # الصف 2
         col1, col2 = st.columns(2)
         with col1:
-            نوع = st.selectbox("نوع الدعوى", ["دعوى", "استئناف", "طعن"], key="sel_type")
             محكمة_نوع = st.selectbox("المحكمة", ["الابتدائية", "الاستئناف", "النقض", "الإدارية", "القضاء الإدارى", "الإدارية العليا"], key="sel_court_type")
-            رقم = st.text_input("رقم الدعوى / الاستئناف / الطعن", key="txt_num")
-            دائرة = st.text_input("الدائرة", key="txt_circle")
-            مدعي = st.text_input("اسم المدعى / المستأنف / الطاعن", key="txt_plaintiff")
-            تاريخ_جلسة = st.date_input("تاريخ أول جلسة", value=datetime.now(), key="date_session")
-            الرول = st.text_input("الرول", key="txt_role")
         with col2:
             محكمة_اسم = st.text_input("اسم المحكمة", key="txt_court_name")
-            مأمورية = st.text_input("المأمورية", key="txt_mission") if نوع == "استئناف" else ""
-            سنة = st.text_input("السنة القضائية", key="txt_year")
-            النوع_تفصيلي = st.text_input("النوع", key="txt_type_detail")
-            مدعي_عليه = st.text_input("اسم المدعى عليه / المستأنف ضده / المطعون ضده", key="txt_defendant")
-            سبب = st.text_input("سبب الجلسة", key="txt_reason")
         
-        موضوع = st.text_area("موضوع الدعوى", key="txt_subject")
-        ملاحظات = st.text_area("ملاحظات", key="txt_notes")
+        # الصف 3 - المأمورية شرط
+        if نوع == "استئناف":
+            مأمورية = st.text_input("المأمورية", key="txt_mission")
+        else:
+            مأمورية = ""
         
-        تنبيه = st.checkbox("تفعيل التنبيهات عبر الواتس اب", key="chk_whats")
-        واتس = st.text_input("رقم هاتف واتس اب", key="txt_whats") if تنبيه else ""
-        
-        مستند_نوع = st.selectbox("تحميل المستندات", ["صحيفة الدعوى", "صحيفة الاستئناف", "صحيفة الطعن"], key="sel_doc")
-        مستند_ملف = st.file_uploader("اختر الملف", key="file_upload")
-        
+        # الصف 4
         col1, col2 = st.columns(2)
         with col1:
-            if st.form_submit_button("💾 حفظ القضية"):
+            رقم = st.text_input("رقم الدعوى / الاستئناف / الطعن", key="txt_num")
+        with col2:
+            سنة = st.text_input("السنة القضائية", key="txt_year")
+        
+        # الصف 5
+        col1, col2 = st.columns(2)
+        with col1:
+            دائرة = st.text_input("الدائرة", key="txt_circle")
+        with col2:
+            النوع_تفصيلي = st.text_input("النوع", key="txt_type_detail")
+        
+        # الصف 6
+        col1, col2 = st.columns(2)
+        with col1:
+            مدعي = st.text_input("اسم المدعى / المستأنف / الطاعن", key="txt_plaintiff")
+        with col2:
+            مدعي_عليه = st.text_input("اسم المدعى عليه / المستأنف ضده / المطعون ضده", key="txt_defendant")
+        
+        # الصف 7
+        موضوع = st.text_area("موضوع الدعوى", key="txt_subject")
+        
+        # الصف 8
+        col1, col2 = st.columns(2)
+        with col1:
+            تاريخ_جلسة = st.date_input("تاريخ أول جلسة", value=datetime.now(), key="date_session")
+        with col2:
+            الرول = st.text_input("الرول", key="txt_role")
+        
+        # الصف 9
+        سبب = st.text_input("سبب الجلسة", key="txt_reason")
+        
+        # الصف 10
+        ملاحظات = st.text_area("ملاحظات", key="txt_notes")
+        
+        # الصف 11
+        تنبيه = st.checkbox("تفعيل التنبيهات عبر الواتس اب", key="chk_whats")
+        if تنبيه:
+            واتس = st.text_input("رقم هاتف واتس اب", key="txt_whats")
+        else:
+            واتس = ""
+        
+        # الصف 12
+        col1, col2 = st.columns(2)
+        with col1:
+            مستند_نوع = st.selectbox("تحميل المستندات", ["صحيفة الدعوى", "صحيفة الاستئناف", "صحيفة الطعن"], key="sel_doc")
+        with col2:
+            مستند_ملف = st.file_uploader("اختر الملف", key="file_upload")
+        
+        # الازرار
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.form_submit_button("💾 حفظ القضية", use_container_width=True):
                 new_case = {
                     "id": len(data["cases"])+1, "نوع": نوع, "محكمة_نوع": محكمة_نوع, "محكمة_اسم": محكمة_اسم,
                     "مأمورية": مأمورية, "رقم": رقم, "سنة": سنة, "دائرة": دائرة, "النوع": النوع_تفصيلي,
@@ -200,10 +241,10 @@ elif st.session_state.page == "تسجيل":
                 }
                 data["cases"].append(new_case)
                 save_data(data)
-                st.success("✅ تم الحفظ")
+                st.success("✅ تم الحفظ بنجاح")
                 st.session_state.page = "حصر"
         with col2:
-            if st.form_submit_button("🗑️ حذف القضية"): st.warning("ميزة الحذف")
+            if st.form_submit_button("🗑️ حذف القضية", use_container_width=True): st.warning("ميزة الحذف سيتم تفعيلها لاحقا")
 
 # ============================================================
 # =================== 2. الحصر العام  =======================
@@ -228,54 +269,22 @@ elif st.session_state.page == "حصر":
             </div>
             """, unsafe_allow_html=True)
 
-# ============================================================
-# =================== 4. البحث عن دعوى  =====================
-# ============================================================
+# باقي الصفحات فاضية
 elif st.session_state.page == "بحث":
-    st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
     st.markdown("<h2 style='color:#C9A961; text-align:center'>🔍 البحث عن دعوى</h2>", unsafe_allow_html=True)
     if st.button("⬅️ العودة للرئيسية", key="btn_back_3"): st.session_state.page = "الرئيسية"
-
-# ============================================================
-# =================== 5. التنبيهات  =========================
-# ============================================================
 elif st.session_state.page == "تنبيهات":
-    st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
     st.markdown("<h2 style='color:#C9A961; text-align:center'>🔔 التنبيهات</h2>", unsafe_allow_html=True)
     if st.button("⬅️ العودة للرئيسية", key="btn_back_4"): st.session_state.page = "الرئيسية"
-
-# ============================================================
-# =================== 6. التقارير  ==========================
-# ============================================================
 elif st.session_state.page == "تقارير":
-    st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
     st.markdown("<h2 style='color:#C9A961; text-align:center'>📑 التقارير</h2>", unsafe_allow_html=True)
     if st.button("⬅️ العودة للرئيسية", key="btn_back_5"): st.session_state.page = "الرئيسية"
-
-# ============================================================
-# =================== 7. الأرشيف  ===========================
-# ============================================================
 elif st.session_state.page == "ارشيف":
-    st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
     st.markdown("<h2 style='color:#C9A961; text-align:center'>🗃️ الأرشيف</h2>", unsafe_allow_html=True)
     if st.button("⬅️ العودة للرئيسية", key="btn_back_6"): st.session_state.page = "الرئيسية"
-
-# ============================================================
-# =================== 8. المكتبة القانونية  ==================
-# ============================================================
 elif st.session_state.page == "مكتبة":
-    st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
     st.markdown("<h2 style='color:#C9A961; text-align:center'>📚 المكتبة القانونية</h2>", unsafe_allow_html=True)
     if st.button("⬅️ العودة للرئيسية", key="btn_back_7"): st.session_state.page = "الرئيسية"
-
-# ============================================================
-# =================== 9. الإحصائيات  ========================
-# ============================================================
 elif st.session_state.page == "احصائيات":
-    st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
     st.markdown("<h2 style='color:#C9A961; text-align:center'>📈 الإحصائيات</h2>", unsafe_allow_html=True)
     if st.button("⬅️ العودة للرئيسية", key="btn_back_8"): st.session_state.page = "الرئيسية"
-
-# ============================================================
-# ====================== نهاية الكود =========================
-# ============================================================
