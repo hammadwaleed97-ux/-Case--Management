@@ -1151,3 +1151,114 @@ elif page == "general":
                                         st.success("تم حذف الجلسة")
 
                                         st.rerun()
+                                        # ============================================
+# مستندات القضية
+# ============================================
+
+st.divider()
+
+st.markdown("## 📎 مستندات القضية")
+
+uploaded_files = st.file_uploader(
+
+    "إرفاق مستندات القضية",
+
+    accept_multiple_files=True,
+
+    type=["pdf","doc","docx","jpg","jpeg","png"],
+
+    key=f"docs_{case_id}"
+
+)
+
+if uploaded_files:
+
+    os.makedirs("documents", exist_ok=True)
+
+    cur.execute("""
+
+    CREATE TABLE IF NOT EXISTS documents(
+
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+        case_id INTEGER,
+
+        file_name TEXT,
+
+        file_path TEXT,
+
+        uploaded_at TEXT
+
+    )
+
+    """)
+
+    from datetime import datetime
+
+    for file in uploaded_files:
+
+        save_path = os.path.join(
+
+            "documents",
+
+            f"{case_id}_{file.name}"
+
+        )
+
+        with open(save_path,"wb") as f:
+
+            f.write(file.getbuffer())
+
+        cur.execute("""
+
+        INSERT INTO documents(
+
+        case_id,
+
+        file_name,
+
+        file_path,
+
+        uploaded_at
+
+        )
+
+        VALUES(?,?,?,?)
+
+        """,(
+
+        case_id,
+
+        file.name,
+
+        save_path,
+
+        datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        ))
+
+    conn.commit()
+
+    st.success("تم حفظ المستندات بنجاح.")
+
+cur.execute("""
+
+SELECT id,file_name
+
+FROM documents
+
+WHERE case_id=?
+
+ORDER BY id DESC
+
+""",(case_id,))
+
+docs=cur.fetchall()
+
+if docs:
+
+    st.write("### المستندات المرفقة")
+
+    for d in docs:
+
+        st.write("📄",d[1])
