@@ -1,5 +1,5 @@
 # ============================================================
-# ================== إدارة القضايا v3.4 =====================
+# ================== إدارة القضايا v3.5 =====================
 # ========== الإدارة العامة للشئون القانونية البحيرة ==========
 # ============================================================
 
@@ -26,18 +26,18 @@ st.markdown(f"""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap');
     html, body {{font-family: 'Cairo', sans-serif; direction: rtl;}}
-    .stApp {{background: linear-gradient(180deg, #0F1C2E 0%, #1A2F4F 100%);}}
-    .stApp::before {{
+   .stApp {{background: linear-gradient(180deg, #0F1C2E 0%, #1A2F4F 100%);}}
+   .stApp::before {{
         content: "⚖️"; position: fixed; top: 50%; left: 50%;
         transform: translate(-50%, -50%); font-size: 400px;
         opacity: 0.04; z-index: 0; color: #C9A961;
     }}
-    .marquee-container {{
+   .marquee-container {{
         background: linear-gradient(90deg, #C9A961, #D4B96A);
         padding: 10px; overflow: hidden; border-radius: 8px;
         margin-bottom: 15px; box-shadow: 0 0 10px rgba(201,169,97,0.4);
     }}
-    .marquee-text {{
+   .marquee-text {{
         color: #0F1C2E; font-weight: 800; font-size: 14px;
         white-space: nowrap; display: inline-block;
         animation: scroll-rtl 18s linear infinite;
@@ -46,59 +46,62 @@ st.markdown(f"""
         0% {{transform: translateX(-100%);}}
         100% {{transform: translateX(100%);}}
     }}
-    .header-calm {{
+   .header-calm {{
         background: linear-gradient(135deg, #1A2F4F, #2C4A73);
         padding: 18px; border-radius: 12px; text-align: center;
         border: 2px solid #C9A961; margin-bottom: 20px;
     }}
-    .header-calm h1 {{color: #D4B96A; font-size: 30px; font-weight: 800; margin: 0;}}
-    .header-calm p {{color: #E8E8E8; font-size: 13px; font-weight: 600; margin: 6px 0 0 0;}}
-    .section-title {{color: #C9A961; text-align: center; font-size: 22px; font-weight: 800; margin: 15px 0;}}
-    .section-divider {{height: 4px; background: linear-gradient(90deg, transparent, #C9A961, transparent); margin: 15px 0;}}
-    
-    label, .stTextInput label, .stSelectbox label, .stTextArea label, .stDateInput label {{
-        color: #D4B96A !important; 
-        font-weight: 700 !important;
-        font-size: 15px !important;
+   .header-calm h1 {{color: #D4B96A; font-size: 30px; font-weight: 800; margin: 0;}}
+   .header-calm p {{color: #E8E8E8; font-size: 13px; font-weight: 600; margin: 6px 0 0 0;}}
+   .section-title {{color: #C9A961; text-align: center; font-size: 22px; font-weight: 800; margin: 15px 0;}}
+   .section-divider {{height: 4px; background: linear-gradient(90deg, transparent, #C9A961, transparent); margin: 15px 0;}}
+
+    label,.stTextInput label,.stSelectbox label,.stTextArea label,.stDateInput label {{
+        color: #D4B96A!important;
+        font-weight: 700!important;
+        font-size: 15px!important;
     }}
-    input, textarea, select {{color: #0F1C2E !important; font-weight: 600; background-color: #FFFFFF !important;}}
-    
+    input, textarea, select {{color: #0F1C2E!important; font-weight: 600; background-color: #FFFFFF!important;}}
+
     div[data-testid="stButton"] > button {{
-        background: linear-gradient(135deg, #2C4A73, #3A5F8A) !important;
-        color: #E8E8E8 !important; width: 100%; padding: 20px 10px; border-radius: 12px; 
+        background: linear-gradient(135deg, #2C4A73, #3A5F8A)!important;
+        color: #E8E8E8!important; width: 100%; padding: 20px 10px; border-radius: 12px;
         border: 2px solid #C9A961; font-weight: 700; font-size: 15px;
         height: 90px; margin: 5px 0;
     }}
-    /* زرار الحفظ والحذف */
-    div[data-testid="stFormSubmitButton"] > button {{
-        height: 50px !important; font-weight:800 !important; font-size:16px !important;
-    }}
-    .btn-save button {{background: linear-gradient(135deg, #C9A961, #D4B96A) !important; color: #0F1C2E !important;}}
-    .btn-delete button {{background: linear-gradient(135deg, #6E4A4A, #8A5A5A) !important; color: #E8E8E8 !important;}}
-    
-    .card {{
+   .btn-save button {{background: linear-gradient(135deg, #C9A961, #D4B96A)!important; color: #0F1C2E!important; height: 50px!important; font-weight:800!important}}
+   .btn-delete button {{background: linear-gradient(135deg, #6E4A4A, #8A5A5A)!important; color: #E8E8E8!important; height: 50px!important; font-weight:800!important}}
+   .btn-open button {{background: linear-gradient(135deg, #2C4A73, #3A5F8A)!important; color: #C9A961!important; height: 38px!important; font-weight:700!important; border: 1px solid #C9A961!important}}
+
+   .card {{
         background: rgba(26,47,79,0.85); padding: 18px; border-radius: 12px;
         border: 2px solid #C9A961; margin-bottom: 18px; box-shadow: 0 0 10px rgba(201,169,97,0.2);
     }}
-    .card-title {{color: #D4B96A; font-weight: 800; font-size: 17px; margin-bottom: 12px; border-bottom: 1px solid #C9A961; padding-bottom: 8px;}}
-    .small-stat {{
-        padding: 14px; border-radius: 10px; text-align: center; 
+   .card-title {{color: #D4B96A; font-weight: 800; font-size: 17px; margin-bottom: 12px; border-bottom: 1px solid #C9A961; padding-bottom: 8px;}}
+
+   .case-row {{
+        background: rgba(26,47,79,0.6); padding: 12px; border-radius: 10px;
+        border: 1px solid #C9A961; margin-bottom: 8px;
+    }}
+   .case-row:hover {{background: rgba(201,169,97,0.1);}}
+
+   .small-stat {{
+        padding: 14px; border-radius: 10px; text-align: center;
         border: 2px solid #C9A961; margin-bottom: 10px;
     }}
-    .small-stat p {{color: #E8E8E8; font-size: 12px; margin: 0; font-weight: 600;}}
-    .small-stat h2 {{color: #D4B96A; font-size: 28px; font-weight: 800; margin: 4px 0 0 0;}}
-    .s1 {{background: linear-gradient(135deg, #3A4F63, #4A6578);}}
-    .s2 {{background: linear-gradient(135deg, #2C4A73, #3A5F8A);}}
-    .s3 {{background: linear-gradient(135deg, #4A5A4A, #5A6E5A);}}
-    .s4 {{background: linear-gradient(135deg, #5A3A3A, #6E4A4A);}}
-    .case-detail {{
+   .small-stat p {{color: #E8E8E8; font-size: 12px; margin: 0; font-weight: 600;}}
+   .small-stat h2 {{color: #D4B96A; font-size: 28px; font-weight: 800; margin: 4px 0 0 0;}}
+   .s1 {{background: linear-gradient(135deg, #3A4F63, #4A6578);}}
+   .s2 {{background: linear-gradient(135deg, #2C4A73, #3A5F8A);}}
+   .s3 {{background: linear-gradient(135deg, #4A5A4A, #5A6E5A);}}
+   .s4 {{background: linear-gradient(135deg, #5A3A3A, #6E4A4A);}}
+   .case-detail {{
         background: #1A2F4F; padding: 20px; border-radius: 10px;
         border: 2px solid #C9A961; margin: 10px 0; color: white;
     }}
-    .case-detail h3 {{color: #D4B96A; text-align: center;}}
-    .stats-title {{color: #C9A961; font-size: 18px; font-weight: 800; margin: 20px 0 10px 0;}}
-    h2, h3, h4, p {{color: #FFFFFF !important;}}
-    .stDataFrame {{border: 2px solid #C9A961; border-radius: 8px;}}
+   .case-detail h3 {{color: #D4B96A; text-align: center;}}
+   .stats-title {{color: #C9A961; font-size: 18px; font-weight: 800; margin: 20px 0 10px 0;}}
+    h2, h3, h4, p {{color: #FFFFFF!important;}}
 </style>
 """, unsafe_allow_html=True)
 
@@ -124,7 +127,7 @@ st.markdown(f"""
 st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
 
 # ============================================================
-# ===================  الصفحة الرئيسية  ======================
+# =================== الصفحة الرئيسية ======================
 # ============================================================
 if st.session_state.page == "الرئيسية":
     st.markdown("<div class='section-title'>الأقسام</div>", unsafe_allow_html=True)
@@ -133,26 +136,26 @@ if st.session_state.page == "الرئيسية":
         if st.button("📝\nتسجيل القضايا", use_container_width=True, key="btn_main_1"): st.session_state.page = "تسجيل"; st.rerun()
     with r1c2:
         if st.button("📊\nالحصر العام", use_container_width=True, key="btn_main_2"): st.session_state.page = "حصر"; st.rerun()
-    
+
     r2c1, r2c2, r2c3, r2c4 = st.columns(4)
     with r2c1:
         if st.button("🔍\nالبحث", use_container_width=True, key="btn_main_3"): st.session_state.page = "بحث"; st.rerun()
     with r2c2:
-        if st.button("🔔\nالتنبيهات", use_container_width=True, key="btn_main_4"): st.session_state.page = "تنبيهات"; st.rerun()
+        if st.button("🔔\nالتنبيهات", use_container-width=True, key="btn_main_4"): st.session_state.page = "تنبيهات"; st.rerun()
     with r2c3:
         if st.button("📑\nالتقارير", use_container_width=True, key="btn_main_5"): st.session_state.page = "تقارير"; st.rerun()
     with r2c4:
         if st.button("🗃️\nالأرشيف", use_container_width=True, key="btn_main_6"): st.session_state.page = "ارشيف"; st.rerun()
-    
+
     r3c1, r3c2 = st.columns(2)
     with r3c1:
         if st.button("📚\nالمكتبة", use_container_width=True, key="btn_main_7"): st.session_state.page = "مكتبة"; st.rerun()
     with r3c2:
         if st.button("📈\nالإحصائيات", use_container_width=True, key="btn_main_8"): st.session_state.page = "احصائيات"; st.rerun()
-    
+
     st.markdown("<hr style='border:1px solid #C9A961; margin:20px 0'>", unsafe_allow_html=True)
     st.markdown("<div class='stats-title'>📊 ملخص الإحصائيات</div>", unsafe_allow_html=True)
-    total_cases = len([c for c in data["cases"] if c.get("status") != "منتهية"])
+    total_cases = len([c for c in data["cases"] if c.get("status")!= "منتهية"])
     أحكام_لصالح = len([c for c in data["cases"] if c.get("result") == "لصالح"])
     أحكام_ضد = len([c for c in data["cases"] if c.get("result") == "ضد"])
     st.markdown(f"<div class='small-stat s1'><p>📁 القضايا المتداولة</p><h2>{total_cases}</h2></div>", unsafe_allow_html=True)
@@ -161,18 +164,17 @@ if st.session_state.page == "الرئيسية":
     st.markdown(f"<div class='small-stat s4'><p>❌ أحكام ضد</p><h2>{أحكام_ضد}</h2></div>", unsafe_allow_html=True)
 
 # ============================================================
-# =================== 1. تسجيل القضايا كروت  =================
+# =================== 1. تسجيل القضايا ======================
 # ============================================================
 elif st.session_state.page == "تسجيل":
     st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
     st.markdown("<h2 style='color:#C9A961; text-align:center'>تسجيل القضايا 📝</h2>", unsafe_allow_html=True)
-    if st.button("⬅️ العودة للرئيسية", key="btn_back_1"): 
+    if st.button("⬅️ العودة للرئيسية", key="btn_back_1"):
         st.session_state.page = "الرئيسية"
         st.rerun()
-    
-    # "نوع الدعوى" بره الفورم عشان المأمورية تظهر فورا
+
     نوع = st.selectbox("نوع الدعوى", ["دعوى", "استئناف", "طعن"], key="sel_type")
-    
+
     with st.form("form_case"):
         # كارت 1: بيانات المحكمة
         st.markdown("<div class='card'><div class='card-title'>1- بيانات المحكمة</div>", unsafe_allow_html=True)
@@ -181,8 +183,7 @@ elif st.session_state.page == "تسجيل":
             محكمة_نوع = st.selectbox("المحكمة", ["الابتدائية", "الاستئناف", "النقض", "الإدارية", "القضاء الإدارى", "الإدارية العليا"], key="sel_court_type")
         with col2:
             محكمة_اسم = st.text_input("اسم المحكمة", key="txt_court_name")
-        
-        # المأمورية تظهر فورا
+
         if نوع == "استئناف":
             مأمورية = st.text_input("المأمورية", key="txt_mission")
         else:
@@ -196,7 +197,7 @@ elif st.session_state.page == "تسجيل":
             رقم = st.text_input("رقم الدعوى / الاستئناف / الطعن", key="txt_num")
         with col2:
             سنة = st.text_input("السنة القضائية", key="txt_year")
-        
+
         col1, col2 = st.columns(2)
         with col1:
             دائرة = st.text_input("الدائرة", key="txt_circle")
@@ -232,7 +233,7 @@ elif st.session_state.page == "تسجيل":
             واتس = st.text_input("رقم هاتف واتس اب", key="txt_whats")
         else:
             واتس = ""
-        
+
         col1, col2 = st.columns(2)
         with col1:
             مستند_نوع = st.selectbox("تحميل المستندات", ["صحيفة الدعوى", "صحيفة الاستئناف", "صحيفة الطعن"], key="sel_doc")
@@ -250,7 +251,7 @@ elif st.session_state.page == "تسجيل":
             st.markdown("<div class='btn-delete'>", unsafe_allow_html=True)
             deleted = st.form_submit_button("🗑️ حذف القضية", use_container_width=True)
             st.markdown("</div>", unsafe_allow_html=True)
-        
+
         if submitted:
             if not رقم or not سنة:
                 st.error("❌ من فضلك ادخل رقم الدعوى والسنة")
@@ -265,23 +266,23 @@ elif st.session_state.page == "تسجيل":
                 }
                 data["cases"].append(new_case)
                 save_data(data)
-                st.success("✅ تم حفظ القضية بنجاح")
+                st.success(f"✅ تم حفظ القضية رقم {رقم}/{سنة} بنجاح")
                 st.balloons()
                 st.session_state.page = "الرئيسية"
                 st.rerun()
-        
+
         if deleted: st.warning("ميزة الحذف سيتم تفعيلها لاحقا")
 
 # ============================================================
-# =================== 2. الحصر العام مرتب  ===================
+# =================== 2. الحصر العام جدول شيك ================
 # ============================================================
 elif st.session_state.page == "حصر":
     st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
     st.markdown("<h2 style='color:#C9A961; text-align:center'>📊 الحصر العام</h2>", unsafe_allow_html=True)
-    if st.button("⬅️ العودة للرئيسية", key="btn_back_2"): 
+    if st.button("⬅️ العودة للرئيسية", key="btn_back_2"):
         st.session_state.page = "الرئيسية"
         st.rerun()
-    
+
     if not data["cases"]:
         st.info("لا توجد قضايا مسجلة")
     else:
@@ -292,52 +293,48 @@ elif st.session_state.page == "حصر":
                 updated = True
         if updated: save_data(data)
 
-        # نرتب حسب تاريخ الجلسة من الاقدم للاحدث
-        sorted_cases = sorted(data["cases"], key=lambda x: x.get("تاريخ_جلسة","9999"))
+        # نرتب من الاحدث للاقدم بالتاريخ
+        sorted_cases = sorted(data["cases"], key=lambda x: x.get("تاريخ_جلسة","0000"), reverse=True)
 
-        df_data = []
-        for case in sorted_cases:
-            df_data.append({
-                "م": case.get("id"),
-                "الرقم": f"{case.get('رقم','-')}/{case.get('سنة','-')}",
-                "النوع": case.get("نوع"),
-                "المحكمة": case.get("محكمة_اسم"),
-                "الدائرة": case.get("دائرة"),
-                "المدعي": case.get("مدعي"),
-                "المدعى عليه": case.get("مدعي_عليه"),
-                "الموضوع": case.get("موضوع"),
-                "تاريخ الجلسة": case.get("تاريخ_جلسة"),
-                "سبب الجلسة": case.get("سبب")
-            })
-        
-        df = pd.DataFrame(df_data)
-        st.dataframe(df, use_container_width=True, hide_index=True)
+        # هيدر الجدول
+        header_cols = st.columns([0.5,1,1,1.5,1,1.5,1.5,2,1,0.8])
+        headers = ["م", "الرقم", "النوع", "المحكمة", "الدائرة", "المدعي", "المدعى عليه", "الموضوع", "الجلسة", ""]
+        for col, h in zip(header_cols, headers):
+            col.markdown(f"<b style='color:#C9A961'>{h}</b>", unsafe_allow_html=True)
 
-        st.markdown("<hr style='border:1px solid #C9A961'>", unsafe_allow_html=True)
-        st.markdown("<h4 style='color:#C9A961'>اختر قضية لعرض التفاصيل</h4>", unsafe_allow_html=True)
-        
+        # صفوف القضايا
         for case in sorted_cases:
-            col1, col2 = st.columns([4,1])
-            with col1:
-                st.write(f"**{case.get('رقم')}/{case.get('سنة')}** - {case.get('مدعي')} ضد {case.get('مدعي_عليه')} - الجلسة: {case.get('تاريخ_جلسة')}")
-            with col2:
+            cols = st.columns([0.5,1,1,1.5,1,1.5,1.5,2,1,0.8])
+            with cols[0]: st.write(case.get("id"))
+            with cols[1]: st.write(f"{case.get('رقم')}/{case.get('سنة')}")
+            with cols[2]: st.write(case.get("نوع"))
+            with cols[3]: st.write(case.get("محكمة_اسم"))
+            with cols[4]: st.write(case.get("دائرة"))
+            with cols[5]: st.write(case.get("مدعي"))
+            with cols[6]: st.write(case.get("مدعي_عليه"))
+            with cols[7]: st.write(case.get("موضوع"))
+            with cols[8]: st.write(case.get("تاريخ_جلسة"))
+            with cols[9]:
+                st.markdown("<div class='btn-open'>", unsafe_allow_html=True)
                 if st.button("فتح", key=f"open_{case['id']}"):
                     st.session_state.selected_case_id = case['id']
                     st.session_state.page = "تفاصيل"
                     st.rerun()
+                st.markdown("</div>", unsafe_allow_html=True)
+            st.markdown("<hr style='border:1px dashed #C9A961; opacity:0.3'>", unsafe_allow_html=True)
 
 # ============================================================
-# =================== 3. تفاصيل القضية  ======================
+# =================== 3. تفاصيل القضية ======================
 # ============================================================
 elif st.session_state.page == "تفاصيل":
     case = next((c for c in data["cases"] if c["id"] == st.session_state.selected_case_id), None)
     if case:
         st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
         st.markdown(f"<h2 style='color:#C9A961; text-align:center'>📄 تفاصيل القضية رقم {case['رقم']}/{case['سنة']}</h2>", unsafe_allow_html=True)
-        if st.button("⬅️ العودة للحصر", key="btn_back_detail"): 
+        if st.button("⬅️ العودة للحصر", key="btn_back_detail"):
             st.session_state.page = "حصر"
             st.rerun()
-        
+
         st.markdown(f"""
         <div class='case-detail'>
             <h3>البيانات الأساسية</h3>
