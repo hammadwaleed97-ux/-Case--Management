@@ -1,5 +1,5 @@
 # ============================================================
-# ================== إدارة القضايا v5.1 =====================
+# ================== إدارة القضايا v5.3 =====================
 # ========== الإدارة العامة للشئون القانونية البحيرة ==========
 # ============================================================
 
@@ -180,7 +180,7 @@ elif st.session_state.page == "تسجيل":
         st.markdown("<div class='card'><div class='card-title'>1- بيانات المحكمة</div>", unsafe_allow_html=True)
         col1, col2 = st.columns(2)
         with col1:
-            محكمة_نوع = st.selectbox("المحكمة", ["الابتدائية", "الاستئناف", "النقض", "الإدارية", "القضاء الإدارى", "الإدارية العليا"], key="sel_court_type")
+            محكمة_نوع = st.selectbox("نوع المحكمة", ["الابتدائية", "الاستئناف", "النقض", "الإدارية", "القضاء الإدارى", "الإدارية العليا"], key="sel_court_type")
         with col2:
             محكمة_اسم = st.text_input("اسم المحكمة", key="txt_court_name")
         if نوع == "استئناف":
@@ -195,7 +195,6 @@ elif st.session_state.page == "تسجيل":
         with col2: سنة = st.text_input("السنة القضائية", key="txt_year")
         col1, col2 = st.columns(2)
         with col1: دائرة = st.text_input("الدائرة", key="txt_circle")
-        with col2: النوع_تفصيلي = st.text_input("النوع", key="txt_type_detail")
         st.markdown("</div>", unsafe_allow_html=True)
 
         st.markdown("<div class='card'><div class='card-title'>3- بيانات الخصوم</div>", unsafe_allow_html=True)
@@ -240,7 +239,7 @@ elif st.session_state.page == "تسجيل":
             else:
                 new_case = {
                     "id": len(data["cases"])+1, "نوع": نوع, "محكمة_نوع": محكمة_نوع, "محكمة_اسم": محكمة_اسم,
-                    "مأمورية": مأمورية, "رقم": رقم, "سنة": سنة, "دائرة": دائرة, "النوع": النوع_تفصيلي,
+                    "مأمورية": مأمورية, "رقم": رقم, "سنة": سنة, "دائرة": دائرة,
                     "مدعي": مدعي, "مدعي_عليه": مدعي_عليه, "موضوع": موضوع, "تاريخ_جلسة": str(تاريخ_جلسة),
                     "الرول": الرول, "سبب": سبب, "ملاحظات": ملاحظات, "تنبيه": تنبيه, "واتس": واتس,
                     "جلسات": [{"الرول": الرول, "التاريخ": str(تاريخ_جلسة), "الاجراء": سبب}],
@@ -248,7 +247,7 @@ elif st.session_state.page == "تسجيل":
                 }
                 data["cases"].append(new_case)
                 save_data(data)
-                st.success(f"✅ تم حفظ القضية رقم {رقم}-{سنة} بنجاح")
+                st.success(f"✅ تم حفظ القضية رقم {رقم} لسنة {سنة} بنجاح")
                 st.balloons()
                 st.session_state.page = "الرئيسية"
                 st.rerun()
@@ -280,19 +279,21 @@ elif st.session_state.page == "حصر":
 
         st.markdown("<div class='table-container'>", unsafe_allow_html=True)
         table_html = "<table class='case-table'>"
-        table_html += "<tr><th>م</th><th>الرقم</th><th>النوع</th><th>المحكمة</th><th>الدائرة</th><th>المدعي</th><th>المدعى عليه</th><th>الموضوع</th><th>الجلسة</th><th>الاجراء</th><th>فتح</th></tr>"
+        table_html += "<tr><th>م</th><th>الرقم</th><th>المحكمة</th><th>الدائرة</th><th>المدعي</th><th>المدعى عليه</th><th>الموضوع</th><th>الجلسة</th><th>الاجراء</th><th>فتح</th></tr>"
         
         for idx, case in enumerate(sorted_cases, 1):
-            رقم_كامل = f"{case.get('رقم','')}-{case.get('سنة','')}"
-            محكمة_كاملة = f"{case.get('محكمة_اسم','')}<br>{case.get('مأمورية','')}"
+            رقم_كامل = f"{case.get('رقم','')} لسنة {case.get('سنة','')}"
+            محكمة_كاملة = f"{case.get('محكمة_نوع','')} {case.get('محكمة_اسم','')}"
+            if case.get('مأمورية',''):
+                محكمة_كاملة += f"<br>مأمورية {case.get('مأمورية','')}"
+            دائرة_كاملة = f"{case.get('دائرة','')} عمال" if case.get('دائرة','') else ""
             row_class = "row1" if idx % 2 == 1 else "row2"
 
             table_html += f"<tr class='{row_class}'>"
             table_html += f"<td>{idx}</td>"
             table_html += f"<td>{رقم_كامل}</td>"
-            table_html += f"<td>{case.get('نوع','')}</td>"
             table_html += f"<td>{محكمة_كاملة}</td>"
-            table_html += f"<td>{case.get('دائرة','')}</td>"
+            table_html += f"<td>{دائرة_كاملة}</td>"
             table_html += f"<td>{case.get('مدعي','')}</td>"
             table_html += f"<td>{case.get('مدعي_عليه','')}</td>"
             table_html += f"<td>{case.get('موضوع','')}</td>"
@@ -315,7 +316,7 @@ elif st.session_state.page == "تفاصيل":
     case = next((c for c in data["cases"] if c["id"] == st.session_state.selected_case_id), None)
     if case:
         st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
-        st.markdown(f"<h2 style='color:#C9A961; text-align:center'>📄 تفاصيل القضية رقم {case['رقم']}-{case['سنة']}</h2>", unsafe_allow_html=True)
+        st.markdown(f"<h2 style='color:#C9A961; text-align:center'>📄 تفاصيل القضية رقم {case['رقم']} لسنة {case['سنة']}</h2>", unsafe_allow_html=True)
         if st.button("العودة للحصر", key="btn_back_detail"):
             st.session_state.page = "حصر"
             st.rerun()
@@ -323,8 +324,9 @@ elif st.session_state.page == "تفاصيل":
         <div class='case-detail'>
             <h3>البيانات الأساسية</h3>
             <p><b>نوع الدعوى:</b> {case['نوع']}</p>
-            <p><b>المحكمة:</b> {case['محكمة_نوع']} - {case['محكمة_اسم']} {case['مأمورية']}</p>
-            <p><b>الدائرة:</b> {case['دائرة']} | <b>النوع:</b> {case['النوع']}</p>
+            <p><b>المحكمة:</b> {case['محكمة_نوع']} {case['محكمة_اسم']}</p>
+            <p><b>المأمورية:</b> {case['مأمورية']}</p>
+            <p><b>الدائرة:</b> {case['دائرة']} عمال</p>
             <p><b>الخصوم:</b> {case['مدعي']} ضد {case['مدعي_عليه']}</p>
             <p><b>الموضوع:</b> {case['موضوع']}</p>
             <p><b>آخر جلسة:</b> {case['تاريخ_جلسة']} - الرول: {case['الرول']} - {case['سبب']}</p>
