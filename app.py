@@ -1,5 +1,5 @@
 # ============================================================
-# ================== إدارة القضايا v4.0 =====================
+# ================== إدارة القضايا v4.3 =====================
 # ========== الإدارة العامة للشئون القانونية البحيرة ==========
 # ============================================================
 
@@ -72,6 +72,11 @@ st.markdown(f"""
 .btn-back {{background: linear-gradient(135deg, #2C4A73, #3A5F8A)!important; border: 2px solid #C9A961!important; height: 55px!important;}}
 .btn-save button {{background: linear-gradient(135deg, #C9A961, #D4B96A)!important; color: #0F1C2E!important; height: 50px!important; font-weight:800!important}}
 .btn-delete button {{background: linear-gradient(135deg, #6E4A4A, #8A5A5A)!important; color: #E8E8E8!important; height: 50px!important; font-weight:800!important}}
+.btn-open-mini button {{
+        background: #2C4A73!important; color: #C9A961!important;
+        height: 28px!important; font-weight:800!important; font-size:12px!important;
+        padding:2px 8px!important; border:1px solid #C9A961!important; border-radius:5px!important; width:100%!important;
+    }}
 
 .card {{
         background: rgba(26,47,79,0.85); padding: 18px; border-radius: 12px;
@@ -85,19 +90,15 @@ st.markdown(f"""
         width: 100%; border-collapse: collapse; background: #FFFFFF; color: #0F1C2E; font-size: 14px;
     }}
 .case-table th {{
-        background: #F5F5F5; color: #0F1C2E; padding: 12px 8px;
-        text-align: center; font-weight: 800; border: 1px solid #DDD;
+        background: linear-gradient(90deg, #C9A961, #D4B96A); color: #0F1C2E; padding: 12px 8px;
+        text-align: center; font-weight: 800; border: 1px solid #C9A961;
     }}
 .case-table td {{
         padding: 10px 8px; text-align: center; border: 1px solid #DDD; font-weight: 600;
     }}
-.case-table tr:nth-child(even) {{background: #FAFAFA;}}
+.case-table tr:nth-child(odd) {{background: #FFFFFF;}}
+.case-table tr:nth-child(even) {{background: #F0F4F8;}}
 .case-table tr:hover {{background: #FFF8E1;}}
-.btn-open-mini button {{
-        background: #2C4A73!important; color: #C9A961!important; 
-        height: 28px!important; font-weight:800!important; font-size:12px!important; 
-        padding:2px 8px!important; border:1px solid #C9A961!important; border-radius:5px!important;
-    }}
 
 .small-stat {{
         padding: 14px; border-radius: 10px; text-align: center;
@@ -296,33 +297,41 @@ elif st.session_state.page == "حصر":
 
         st.markdown("<div class='table-container'>", unsafe_allow_html=True)
         table_html = "<table class='case-table'>"
+        # معكوس: يبدأ بـ م من اليمين + المأمورية
         table_html += "<tr><th>م</th><th>الرقم</th><th>النوع</th><th>المحكمة</th><th>الدائرة</th><th>المدعي</th><th>المدعى عليه</th><th>الموضوع</th><th>الجلسة</th><th>الاجراء</th><th>فتح</th></tr>"
         
-        for case in sorted_cases:
+        for idx, case in enumerate(sorted_cases, 1): # الترقيم من 1
+            رقم_كامل = f"{case.get('رقم','')}/{case.get('سنة','')}" # رقم/السنة
+            محكمة_كاملة = f"{case.get('محكمة_اسم','')} {case.get('مأمورية','')}" # مع المأمورية
+
             table_html += f"<tr>"
-            table_html += f"<td>{case.get('id','')}</td>"
-            table_html += f"<td>{case.get('رقم','')}/{case.get('سنة','')}</td>"
+            table_html += f"<td>{idx}</td>" # م
+            table_html += f"<td>{رقم_كامل}</td>" # الرقم مظبوط
             table_html += f"<td>{case.get('نوع','')}</td>"
-            table_html += f"<td>{case.get('محكمة_اسم','')}</td>"
+            table_html += f"<td>{محكمة_كاملة}</td>" # المحكمة + المأمورية
             table_html += f"<td>{case.get('دائرة','')}</td>"
             table_html += f"<td>{case.get('مدعي','')}</td>"
             table_html += f"<td>{case.get('مدعي_عليه','')}</td>"
             table_html += f"<td>{case.get('موضوع','')}</td>"
             table_html += f"<td>{case.get('تاريخ_جلسة','')}</td>"
             table_html += f"<td>{case.get('سبب','')}</td>"
-            table_html += f"<td><form><button formaction='?open={case.get('id')}' style='background:#2C4A73;color:#C9A961;border:1px solid #C9A961;border-radius:5px;padding:2px 8px;font-weight:800'>فتح</button></form></td>"
+            table_html += f"<td></td>" # مكان الزرار
             table_html += "</tr>"
         
         table_html += "</table></div>"
         st.markdown(table_html, unsafe_allow_html=True)
 
-        # معالجة الضغط على زرار فتح
-        query_params = st.query_params
-        if "open" in query_params:
-            st.session_state.selected_case_id = int(query_params["open"])
-            st.session_state.page = "تفاصيل"
-            st.query_params.clear()
-            st.rerun()
+        # ازرار الفتح تحت الجدول عشان ميهربش
+        st.markdown("<h4 style='color:#C9A961; margin-top:15px'>اختر قضية لفتحها</h4>", unsafe_allow_html=True)
+        cols = st.columns(4)
+        for idx, case in enumerate(sorted_cases):
+            with cols[idx % 4]:
+                st.markdown("<div class='btn-open-mini'>", unsafe_allow_html=True)
+                if st.button(f"فتح {case.get('رقم')}/{case.get('سنة')}", key=f"open_{case['id']}"):
+                    st.session_state.selected_case_id = case['id']
+                    st.session_state.page = "تفاصيل"
+                    st.rerun()
+                st.markdown("</div>", unsafe_allow_html=True)
 
 # ============================================================
 # =================== 3. تفاصيل القضية ======================
@@ -368,5 +377,4 @@ elif st.session_state.page == "مكتبة":
     st.markdown("<h2 style='color:#C9A961; text-align:center'>📚 المكتبة القانونية</h2>", unsafe_allow_html=True)
     if st.button("⬅️ العودة للرئيسية", key="btn_back_7"): st.session_state.page = "الرئيسية"; st.rerun()
 elif st.session_state.page == "احصائيات":
-    st.markdown("<h2 style='color:#C9A961; text-align:center'>📈 الإحصائيات</h2>", unsafe_allow_html=True)
-    if st.button("⬅️ العودة للرئيسية", key="btn_back_8"): st.session_state.page = "الرئيسية"; st.rerun()
+    st.markdown("<h2 
