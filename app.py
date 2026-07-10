@@ -191,6 +191,7 @@ elif st.session_state.page == "حصر":
             else:
                 row_class = "row1" if idx % 2 == 1 else "row2"
 
+            case_id = case.get('id')
             table_html += f"<tr class='{row_class}'>"
             table_html += f"<td>{idx}</td>"
             table_html += f"<td>{رقم_سنة}</td>"
@@ -200,7 +201,7 @@ elif st.session_state.page == "حصر":
             table_html += f"<td>{case.get('موضوع','')}</td>"
             table_html += f"<td>{case.get('تاريخ_جلسة','')}</td>"
             table_html += f"<td>{case.get('سبب','')}</td>"
-            table_html += f"<td><select onchange=\"window.location.href='?open={case.get('id')}'\" style='background:#C9A961;color:#0F1C2E;border:none;border-radius:5px;padding:5px 8px;font-weight:800'><option>فتح</option></select></td>"
+            table_html += f"<td><select onchange=\"if(this.value=='open')window.location.href='?open={case_id}';if(this.value=='del'){{if(confirm('هل انت متاكد من حذف القضية؟'))window.location.href='?del={case_id}'}};this.value='';\" style='background:#C9A961;color:#0F1C2E;border:none;border-radius:5px;padding:5px 8px;font-weight:800'><option>الاجراء</option><option value='open'>فتح</option><option value='del'>حذف</option></select></td>"
             table_html += "</tr>"
         
         table_html += "</table></div>"
@@ -211,6 +212,13 @@ elif st.session_state.page == "حصر":
             st.session_state.selected_case_id = int(query_params["open"])
             st.session_state.page = "تفاصيل"
             st.query_params.clear()
+            st.rerun()
+        if "del" in query_params:
+            del_id = int(query_params["del"])
+            data["cases"] = [c for c in data["cases"] if c["id"] != del_id]
+            save_data(data)
+            st.query_params.clear()
+            st.success("✅ تم حذف القضية")
             st.rerun()
 # ==================== نهاية القسم 3: الحصر العام الخارجي ====================
 # ==================== بداية قسم 4: تفاصيل القضية ====================
