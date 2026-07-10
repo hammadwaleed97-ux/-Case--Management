@@ -221,17 +221,55 @@ elif st.session_state.page == "تفاصيل":
     if st.button("العودة للحصر", use_container_width=True): st.session_state.page = "حصر"; st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # كارت 1: بيانات القضية الاساسية
+    # جدول 4x1 بيانات القضية الاساسية - الشكل الخرافي
     st.markdown("<h3 style='color:#C9A961'>📌 بيانات القضية</h3>", unsafe_allow_html=True)
-    col1, col2 = st.columns(2)
-    with col1:
-        st.markdown(f"<div class='info-box'><b>الرقم:</b> {case.get('رقم')}<br><b>السنة:</b> {case.get('سنة')}</div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='info-box'><b>المحكمة:</b> {case.get('نوع')}<br>{case.get('محكمة_اسم')}<br>{'مأمورية ' + case.get('مأمورية') if case.get('مأمورية') else ''}</div>", unsafe_allow_html=True)
-    with col2:
-        st.markdown(f"<div class='info-box'><b>الدائرة:</b> {case.get('دائرة')} مدنى</div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='info-box'><b>الموضوع:</b> {case.get('موضوع')}</div>", unsafe_allow_html=True)
     
-    # كارت 2: الخصوم
+    table_html = """
+    <div class='table-container'>
+    <table class='case-table' style='width:100%; table-layout:fixed; border-spacing:10px;'>
+    <!-- الصف الاول 4 مربعات -->
+    <tr>
+        <td style='background:#1E2A47; border:2px solid #C9A961; border-radius:12px; padding:15px; text-align:center; height:90px'>
+            <div style='font-size:12px; color:#C9A961; margin-bottom:5px'><b>رقم القضية</b></div>
+            <div style='font-size:18px; color:#FFFFFF'><b>""" + str(case.get('رقم')) + """</b></div>
+        </td>
+        <td style='background:#0F1A2E; border:2px solid #C9A961; border-radius:12px; padding:15px; text-align:center; height:90px'>
+            <div style='font-size:12px; color:#C9A961; margin-bottom:5px'><b>السنة</b></div>
+            <div style='font-size:18px; color:#FFFFFF'><b>""" + str(case.get('سنة')) + """</b></div>
+        </td>
+        <td style='background:#1E2A47; border:2px solid #C9A961; border-radius:12px; padding:15px; text-align:center; height:90px'>
+            <div style='font-size:12px; color:#C9A961; margin-bottom:5px'><b>الدائرة</b></div>
+            <div style='font-size:18px; color:#FFFFFF'><b>""" + str(case.get('دائرة')) + """ مدنى</b></div>
+        </td>
+        <td style='background:#0F1A2E; border:2px solid #C9A961; border-radius:12px; padding:15px; text-align:center; height:90px'>
+            <div style='font-size:12px; color:#C9A961; margin-bottom:5px'><b>النوع</b></div>
+            <div style='font-size:16px; color:#FFFFFF'><b>""" + str(case.get('نوع')) + """</b></div>
+        </td>
+    </tr>
+    <!-- الصف الثاني -->
+    <tr>
+        <td colspan='2' style='background:#1E2A47; border:2px solid #C9A961; border-radius:12px; padding:15px; text-align:center; height:90px'>
+            <div style='font-size:12px; color:#C9A961; margin-bottom:5px'><b>المحكمة</b></div>
+            <div style='font-size:15px; color:#FFFFFF'><b>""" + str(case.get('محكمة_اسم')) + """</b></div>
+        </td>
+        <td colspan='2' style='background:#0F1A2E; border:2px solid #C9A961; border-radius:12px; padding:15px; text-align:center; height:90px'>
+            <div style='font-size:12px; color:#C9A961; margin-bottom:5px'><b>المأمورية</b></div>
+            <div style='font-size:15px; color:#FFFFFF'><b>""" + str(case.get('مأمورية') or '-') + """</b></div>
+        </td>
+    </tr>
+    <!-- الصف الثالث -->
+    <tr>
+        <td colspan='4' style='background:#1E2A47; border:2px solid #C9A961; border-radius:12px; padding:15px; text-align:center; height:90px'>
+            <div style='font-size:12px; color:#C9A961; margin-bottom:5px'><b>الموضوع</b></div>
+            <div style='font-size:15px; color:#FFFFFF'><b>""" + str(case.get('موضوع')) + """</b></div>
+        </td>
+    </tr>
+    </table>
+    </div>
+    """
+    st.markdown(table_html, unsafe_allow_html=True)
+    
+    # كارت 2: الخصوم - زي ما هو
     st.markdown("<h3 style='color:#C9A961'>👥 الخصوم</h3>", unsafe_allow_html=True)
     col1, col2 = st.columns(2)
     with col1:
