@@ -2,12 +2,11 @@
 # ================== إدارة القضايا v5.9 =====================
 # ========== الإدارة العامة للشئون القانونية البحيرة ==========
 # ============================================================
-
 import streamlit as st
+import pandas as pd # <--- ده اللي كان ناقص
 import json
 import os
 from datetime import datetime
-
 st.set_page_config(page_title="إدارة القضايا", layout="wide", page_icon="⚖️")
 
 DATA_FILE = "cases_data.json"
