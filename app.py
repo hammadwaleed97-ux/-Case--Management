@@ -300,7 +300,7 @@ elif st.session_state.page == "تفاصيل":
         data["cases"] = [c for c in data["cases"] if c['id'] != case['id']]
         save_data(data); st.success("تم حذف القضية"); st.session_state.page = "حصر"; st.rerun()
 # ==================== نهاية قسم 4: تفاصيل القضية ====================
-# ==================== بداية قسم 4: تفاصيل القضية v5.15 ====================
+# ==================== بداية قسم 4: تفاصيل القضية v5.16 ====================
 elif st.session_state.page == "تفاصيل":
     case = next((c for c in data["cases"] if c['id'] == st.session_state.selected_case_id), None)
     if not case:
@@ -328,12 +328,25 @@ elif st.session_state.page == "تفاصيل":
         # ... سيب بيانات القضية بتاعتك زي ما هي فوق هنا ...
 
         # ================= 1. جدول الجلسات =================
-        st.markdown("<h3 style='color:#C9A961'>📅 جدول الجلسات والاجراءات</h3>", unsafe_allow_html=True)
+        st.markdown("<h3 style='color:#C9A961'>📅 سجل الجلسات</h3>", unsafe_allow_html=True)
         if case.get("جلسات"):
             جلسات_مرتبة = sorted(case["جلسات"], key=lambda x: x['تاريخ'])
-            table_html = "<table style='width:100%; border:2px solid #C9A961; border-radius:10px; background:#FFFFFF; color:#0F1C2E'><tr style='background:linear-gradient(90deg, #1E3A6B, #2C5282); color:#FFFFFF'><th>م</th><th>الرول</th><th>تاريخ الجلسة</th><th>الاجراءات</th></tr>"
+            table_html = """
+            <table style='width:100%; border:2px solid #C9A961; border-radius:10px; background:#0A1428; color:#FFFFFF; border-collapse: collapse;'>
+            <tr style='background:linear-gradient(90deg, #C9A961, #D4B96A); color:#0F1C2E; font-weight:800'>
+                <th style='padding:10px; border:1px solid #C9A961'>م</th>
+                <th style='padding:10px; border:1px solid #C9A961'>الرول</th>
+                <th style='padding:10px; border:1px solid #C9A961'>التاريخ</th>
+                <th style='padding:10px; border:1px solid #C9A961'>القرار / الاجراءات</th>
+            </tr>"""
             for i, ج in enumerate(جلسات_مرتبة, 1):
-                table_html += f"<tr><td style='text-align:center; padding:8px; border:1px solid #DDD'>{i}</td><td style='text-align:center; padding:8px; border:1px solid #DDD'>{ج.get('الرول','')}</td><td style='text-align:center; padding:8px; border:1px solid #DDD'>{ج['تاريخ']}</td><td style='text-align:center; padding:8px; border:1px solid #DDD'>{ج.get('سبب','')}</td></tr>"
+                table_html += f"""
+                <tr>
+                    <td style='text-align:center; padding:8px; border:1px solid #C9A961; color:#FFFFFF; font-weight:600'>{i}</td>
+                    <td style='text-align:center; padding:8px; border:1px solid #C9A961; color:#FFFFFF; font-weight:600'>{ج.get('الرول','')}</td>
+                    <td style='text-align:center; padding:8px; border:1px solid #C9A961; color:#FFFFFF; font-weight:600'>{ج['تاريخ']}</td>
+                    <td style='text-align:center; padding:8px; border:1px solid #C9A961; color:#FFFFFF; font-weight:600'>{ج.get('سبب','')}</td>
+                </tr>"""
             table_html += "</table>"
             st.markdown(table_html, unsafe_allow_html=True)
         else:
@@ -345,13 +358,13 @@ elif st.session_state.page == "تفاصيل":
                 c1, c2, c3 = st.columns(3)
                 تاريخ_جديد = c1.date_input("تاريخ الجلسة القادمة")
                 رول_جديد = c2.text_input("الرول")
-                سبب_جديد = c3.text_input("سبب التأجيل / الاجراءات")
+                قرار_جديد = c3.text_input("القرار / سبب التأجيل")
                 if st.form_submit_button("حفظ الجلسة"):
-                    جلسه_جديده = {"تاريخ": str(تاريخ_جديد), "الرول": رول_جديد, "سبب": سبب_جديد} # تم التعديل هنا
+                    جلسه_جديده = {"تاريخ": str(تاريخ_جديد), "الرول": رول_جديد, "سبب": قرار_جديد}
                     if "جلسات" not in case: case["جلسات"] = []
-                    case["جلسات"].append(جلسه_جديده) # تم التعديل هنا
+                    case["جلسات"].append(جلسه_جديده)
                     # تحديث اخر جلسة في الحصر العام
-                    case["تاريخ_جلسة"] = str(تاريخ_جديد); case["سبب"] = سبب_جديد
+                    case["تاريخ_جلسة"] = str(تاريخ_جديد); case["سبب"] = قرار_جديد
                     save_data(data); st.success("✅ تم حفظ الجلسة"); st.rerun()
 
         # ================= 3. تعديل جلسة =================
@@ -367,14 +380,14 @@ elif st.session_state.page == "تفاصيل":
                         c1, c2, c3 = st.columns(3)
                         تاريخ_معدل = c1.date_input("التاريخ الجديد", value=datetime.strptime(جلسه_مختارة['تاريخ'], "%Y-%m-%d"))
                         رول_معدل = c2.text_input("الرول الجديد", value=جلسه_مختارة.get('الرول',''))
-                        سبب_معدل = c3.text_input("الاجراءات الجديدة", value=جلسه_مختارة.get('سبب',''))
+                        قرار_معدل = c3.text_input("القرار الجديد", value=جلسه_مختارة.get('سبب',''))
                         if st.form_submit_button("حفظ التعديل"):
                             جلسه_مختارة['تاريخ'] = str(تاريخ_معدل)
                             جلسه_مختارة['الرول'] = رول_معدل
-                            جلسه_مختارة['سبب'] = سبب_معدل
+                            جلسه_مختارة['سبب'] = قرار_معدل
                             # لو دي اخر جلسة حدثها فوق
                             if str(تاريخ_معدل) >= case["تاريخ_جلسة"]:
-                                case["تاريخ_جلسة"] = str(تاريخ_معدل); case["سبب"] = سبب_معدل
+                                case["تاريخ_جلسة"] = str(تاريخ_معدل); case["سبب"] = قرار_معدل
                             save_data(data); st.success("✅ تم تعديل الجلسة"); st.rerun()
             else:
                 st.warning("لا توجد جلسات للتعديل")
@@ -401,7 +414,7 @@ elif st.session_state.page == "تفاصيل":
         # ================= 5. جلسة الحكم =================
         st.markdown("<h3 style='color:#C9A961'>⚖️ بيانات جلسة الحكم</h3>", unsafe_allow_html=True)
         with st.form("judgement_form"):
-            c1, c2 = c1, c2 = st.columns(2)
+            c1, c2 = st.columns(2)
             تاريخ_الحكم = c1.date_input("تاريخ جلسة الحكم")
             مسند = c2.selectbox("مسند الحكم", ["", "لصالح الهيئة", "ضد الهيئة"])
             منطوق_الحكم = st.text_area("منطوق الحكم")
@@ -412,7 +425,7 @@ elif st.session_state.page == "تفاصيل":
                 # اضافة الحكم لجدول الاجراءات
                 if "جلسات" not in case: case["جلسات"] = []
                 case["جلسات"].append({"تاريخ": str(تاريخ_الحكم), "الرول": "الحكم", "سبب": f"{منطوق_الحكم} - {مسند}"})
-                case["تاريخ_جلسة"] = str(تاريخ_الحكم); case["سبب"] = "صدر حكم" # تم التعديل هنا
+                case["تاريخ_جلسة"] = str(تاريخ_الحكم); case["سبب"] = "صدر حكم"
                 save_data(data); st.success("✅ تم حفظ الحكم"); st.rerun()
 
         st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
