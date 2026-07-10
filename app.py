@@ -140,7 +140,7 @@ elif st.session_state.page == "تسجيل":
                 st.session_state.page = "الرئيسية"
                 st.rerun()
         st.markdown("</div>", unsafe_allow_html=True)
-# ==================== نهاية قسم 2: التسجيل ====================
+# ==================== نهاية قسم 2: التسجيل =================
 # ==================== بداية قسم 3: فتح القضايا المسجلة ====================
 elif st.session_state.page == "حصر":
     st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
@@ -159,12 +159,12 @@ elif st.session_state.page == "حصر":
             مدعي_عليه = str(c.get('مدعي_عليه', '')).lower()
             موضوع = str(c.get('موضوع', '')).lower()
             
-            # الشرط الجديد: الهيئة مدعية او مستأنفة او طاعنة
+            # الشرط: الهيئة مدعية او مستأنفة او طاعنة
             هيئة_مدعية = 'الهيئة' in مدعي
-            هيئة_مستأنفة = 'الهيئة' in موضوع and ('مستأنف' in موضوع or 'استئناف' in موضوع)
-            هيئة_طاعنة = 'الهيئة' in موضوع and 'طعن' in موضوع
+            هيئة_مستأنفة = 'الهيئة' in مدعي and ('مستأنف' in موضوع or 'استئناف' in موضوع)
+            هيئة_طاعنة = 'الهيئة' in مدعي and 'طعن' in موضوع
             
-            لون = "احمر" if هيئة_مدعية or هيئة_مستأنفة or هيئة_طاعنة else "عادي"
+            لون = "احمر" if هيئة_مدعية or هيئة_مستأنفة or هيئة_طاعنة else "ازرق"
             
             df_data.append({
                 "رقم": c.get('رقم'), 
@@ -175,22 +175,26 @@ elif st.session_state.page == "حصر":
                 "الموضوع": c.get('موضوع'), 
                 "اخر جلسة": c.get('تاريخ_جلسة', '-'),
                 "السبب": c.get('سبب', '-'),
-                "لون": لون,
+                "لون": لون,  # هنخليه ونستخدمه للتلوين
                 "id": c['id']
             })
         df = pd.DataFrame(df_data)
         
+        # تلوين الصفوف - نعمله قبل ما نمسح عمود اللون
         def color_rows(row):
             if row['لون'] == "احمر":
                 return ['background-color: #8B0000; color: white; font-weight: bold'] * len(row)
             else:
                 return ['background-color: #1E3A6B; color: white'] * len(row)
         
-        styled_df = df.drop(['id', 'لون'], axis=1).style.apply(color_rows, axis=1)
+        # نطبق الستايل الاول وبعدين نمسح الاعمدة الزيادة
+        styled_df = df.style.apply(color_rows, axis=1)
+        styled_df = styled_df.hide(axis="columns", subset=["id", "لون"]) # اخفاء بدل المسح
+        
         st.dataframe(styled_df, use_container_width=True, hide_index=True, height=500)
         
         st.markdown("<hr style='border:1px solid #C9A961'>", unsafe_allow_html=True)
-        st.caption("🔴 احمر = الهيئة مدعية / مستأنفة / طاعنة")
+        st.caption("🔴 احمر = الهيئة مدعية / مستأنفة / طاعنة   |   🔵 ازرق = باقي القضايا")
         
         case_ids = df['id'].tolist()
         case_labels = [f"رقم {c.get('رقم')}/{c.get('سنة')} - {c.get('موضوع')[:30]}" for c in data["cases"]]
