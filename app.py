@@ -185,7 +185,9 @@ elif st.session_state.page == "حصر":
             مأمورية = f"مأمورية {case.get('مأمورية','-')}" if case.get('مأمورية','') else "-"
             خصوم = f"{case.get('مدعي','')}<br>ضد<br>{case.get('مدعي_عليه','')}"
             
-            if "الهيئة" in str(case.get('مدعي','')):
+            مدعي = str(case.get('مدعي',''))
+            مدعي_عليه = str(case.get('مدعي_عليه',''))
+            if "الهيئة" in مدعي or "الهيئة" in مدعي_عليه:
                 row_class = "row-hey2a"
             else:
                 row_class = "row1" if idx % 2 == 1 else "row2"
