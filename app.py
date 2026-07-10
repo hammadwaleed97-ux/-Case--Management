@@ -1,5 +1,5 @@
 # ============================================================
-# ================== إدارة القضايا v3.9.1 ===================
+# ================== إدارة القضايا v4.0 =====================
 # ========== الإدارة العامة للشئون القانونية البحيرة ==========
 # ============================================================
 
@@ -69,6 +69,7 @@ st.markdown(f"""
         border: 2px solid #C9A961; font-weight: 700; font-size: 15px;
         height: 90px; margin: 5px 0;
     }}
+.btn-back {{background: linear-gradient(135deg, #2C4A73, #3A5F8A)!important; border: 2px solid #C9A961!important; height: 55px!important;}}
 .btn-save button {{background: linear-gradient(135deg, #C9A961, #D4B96A)!important; color: #0F1C2E!important; height: 50px!important; font-weight:800!important}}
 .btn-delete button {{background: linear-gradient(135deg, #6E4A4A, #8A5A5A)!important; color: #E8E8E8!important; height: 50px!important; font-weight:800!important}}
 
@@ -78,8 +79,25 @@ st.markdown(f"""
     }}
 .card-title {{color: #D4B96A; font-weight: 800; font-size: 17px; margin-bottom: 12px; border-bottom: 1px solid #C9A961; padding-bottom: 8px;}}
 
-   /* جدول الحصر */
-.table-container {{overflow-x: auto; border: 2px solid #C9A961; border-radius: 10px;}}
+   /* جدول الحصر مطابق للصورة */
+.table-container {{overflow-x: auto; border: 3px solid #C9A961; border-radius: 10px; background: white;}}
+.case-table {{
+        width: 100%; border-collapse: collapse; background: #FFFFFF; color: #0F1C2E; font-size: 14px;
+    }}
+.case-table th {{
+        background: #F5F5F5; color: #0F1C2E; padding: 12px 8px;
+        text-align: center; font-weight: 800; border: 1px solid #DDD;
+    }}
+.case-table td {{
+        padding: 10px 8px; text-align: center; border: 1px solid #DDD; font-weight: 600;
+    }}
+.case-table tr:nth-child(even) {{background: #FAFAFA;}}
+.case-table tr:hover {{background: #FFF8E1;}}
+.btn-open-mini button {{
+        background: #2C4A73!important; color: #C9A961!important; 
+        height: 28px!important; font-weight:800!important; font-size:12px!important; 
+        padding:2px 8px!important; border:1px solid #C9A961!important; border-radius:5px!important;
+    }}
 
 .small-stat {{
         padding: 14px; border-radius: 10px; text-align: center;
@@ -254,10 +272,15 @@ elif st.session_state.page == "تسجيل":
 # ============================================================
 elif st.session_state.page == "حصر":
     st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
-    st.markdown("<h2 style='color:#C9A961; text-align:center'>📊 الحصر العام</h2>", unsafe_allow_html=True)
-    if st.button("⬅️ العودة للرئيسية", key="btn_back_2"):
-        st.session_state.page = "الرئيسية"
-        st.rerun()
+    st.markdown("<h2 style='color:#FFFFFF; text-align:center'>📊 الحصر العام</h2>", unsafe_allow_html=True)
+    
+    col1, col2 = st.columns([4,1])
+    with col2:
+        st.markdown("<div class='btn-back'>", unsafe_allow_html=True)
+        if st.button("⬅️ العودة للرئيسية", key="btn_back_2", use_container_width=True):
+            st.session_state.page = "الرئيسية"
+            st.rerun()
+        st.markdown("</div>", unsafe_allow_html=True)
 
     if not data["cases"]:
         st.info("لا توجد قضايا مسجلة")
@@ -272,33 +295,34 @@ elif st.session_state.page == "حصر":
         sorted_cases = sorted(data["cases"], key=lambda x: x.get("تاريخ_جلسة","0000"), reverse=True)
 
         st.markdown("<div class='table-container'>", unsafe_allow_html=True)
-
-        # الهيدر
-        header_cols = st.columns([0.5,1,1,1.2,0.8,1.2,1.2,1.8,1,1,0.7])
-        headers = ["م", "الرقم", "النوع", "المحكمة", "الدائرة", "المدعي", "المدعى عليه", "الموضوع", "الجلسة", "الاجراء", "فتح"]
-        for col, h in zip(header_cols, headers):
-            col.markdown(f"<div style='background:linear-gradient(90deg,#C9A961,#D4B96A); color:#0F1C2E; padding:10px; font-weight:800; text-align:center; border:1px solid #C9A961'>{h}</div>", unsafe_allow_html=True)
-
-        # الصفوف
+        table_html = "<table class='case-table'>"
+        table_html += "<tr><th>م</th><th>الرقم</th><th>النوع</th><th>المحكمة</th><th>الدائرة</th><th>المدعي</th><th>المدعى عليه</th><th>الموضوع</th><th>الجلسة</th><th>الاجراء</th><th>فتح</th></tr>"
+        
         for case in sorted_cases:
-            row_cols = st.columns([0.5,1,1,1.2,0.8,1.2,1.2,1.8,1,1,0.7])
-            with row_cols[0]: st.markdown(f"<div style='background:#FFF; color:#0F1C2E; padding:8px; text-align:center; border:1px solid #DDD; font-weight:600'>{case.get('id')}</div>", unsafe_allow_html=True)
-            with row_cols[1]: st.markdown(f"<div style='background:#FFF; color:#0F1C2E; padding:8px; text-align:center; border:1px solid #DDD; font-weight:600'>{case.get('رقم')}/{case.get('سنة')}</div>", unsafe_allow_html=True)
-            with row_cols[2]: st.markdown(f"<div style='background:#FFF; color:#0F1C2E; padding:8px; text-align:center; border:1px solid #DDD; font-weight:600'>{case.get('نوع')}</div>", unsafe_allow_html=True)
-            with row_cols[3]: st.markdown(f"<div style='background:#FFF; color:#0F1C2E; padding:8px; text-align:center; border:1px solid #DDD; font-weight:600'>{case.get('محكمة_اسم')}</div>", unsafe_allow_html=True)
-            with row_cols[4]: st.markdown(f"<div style='background:#FFF; color:#0F1C2E; padding:8px; text-align:center; border:1px solid #DDD; font-weight:600'>{case.get('دائرة')}</div>", unsafe_allow_html=True)
-            with row_cols[5]: st.markdown(f"<div style='background:#FFF; color:#0F1C2E; padding:8px; text-align:center; border:1px solid #DDD; font-weight:600'>{case.get('مدعي')}</div>", unsafe_allow_html=True)
-            with row_cols[6]: st.markdown(f"<div style='background:#FFF; color:#0F1C2E; padding:8px; text-align:center; border:1px solid #DDD; font-weight:600'>{case.get('مدعي_عليه')}</div>", unsafe_allow_html=True)
-            with row_cols[7]: st.markdown(f"<div style='background:#FFF; color:#0F1C2E; padding:8px; text-align:center; border:1px solid #DDD; font-weight:600'>{case.get('موضوع')}</div>", unsafe_allow_html=True)
-            with row_cols[8]: st.markdown(f"<div style='background:#FFF; color:#0F1C2E; padding:8px; text-align:center; border:1px solid #DDD; font-weight:600'>{case.get('تاريخ_جلسة')}</div>", unsafe_allow_html=True)
-            with row_cols[9]: st.markdown(f"<div style='background:#FFF; color:#0F1C2E; padding:8px; text-align:center; border:1px solid #DDD; font-weight:600'>{case.get('سبب')}</div>", unsafe_allow_html=True)
-            with row_cols[10]:
-                if st.button("فتح", key=f"open_{case['id']}"):
-                    st.session_state.selected_case_id = case['id']
-                    st.session_state.page = "تفاصيل"
-                    st.rerun()
+            table_html += f"<tr>"
+            table_html += f"<td>{case.get('id','')}</td>"
+            table_html += f"<td>{case.get('رقم','')}/{case.get('سنة','')}</td>"
+            table_html += f"<td>{case.get('نوع','')}</td>"
+            table_html += f"<td>{case.get('محكمة_اسم','')}</td>"
+            table_html += f"<td>{case.get('دائرة','')}</td>"
+            table_html += f"<td>{case.get('مدعي','')}</td>"
+            table_html += f"<td>{case.get('مدعي_عليه','')}</td>"
+            table_html += f"<td>{case.get('موضوع','')}</td>"
+            table_html += f"<td>{case.get('تاريخ_جلسة','')}</td>"
+            table_html += f"<td>{case.get('سبب','')}</td>"
+            table_html += f"<td><form><button formaction='?open={case.get('id')}' style='background:#2C4A73;color:#C9A961;border:1px solid #C9A961;border-radius:5px;padding:2px 8px;font-weight:800'>فتح</button></form></td>"
+            table_html += "</tr>"
+        
+        table_html += "</table></div>"
+        st.markdown(table_html, unsafe_allow_html=True)
 
-        st.markdown("</div>", unsafe_allow_html=True)
+        # معالجة الضغط على زرار فتح
+        query_params = st.query_params
+        if "open" in query_params:
+            st.session_state.selected_case_id = int(query_params["open"])
+            st.session_state.page = "تفاصيل"
+            st.query_params.clear()
+            st.rerun()
 
 # ============================================================
 # =================== 3. تفاصيل القضية ======================
