@@ -153,36 +153,25 @@ elif st.session_state.page == "حصر":
         
         case_ids = []
         case_labels = []
-        case_colors = [] # عشان نلون الاحمر
         
         for c in data["cases"]:
             case_ids.append(c['id'])
             
-            # ترتيب البيانات: رقم ثم سنة ثم نوع ثم محكمة ثم دائرة ثم موضوع
-            label = f"رقم {c.get('رقم')} / {c.get('سنة')} | {c.get('نوع')} - {c.get('محكمة_اسم')} | دائرة {c.get('دائرة')} | {c.get('موضوع')[:25]}..."
+            # الشكل الجديد: رقم-سنة نوع محكمة مأمورية مدعي ضد مدعي عليه موضوع اخر جلسة
+            رقم_سنة = f"{c.get('رقم')}-{c.get('سنة')}"
+            نوع_محكمة = f"{c.get('دائرة')}{c.get('نوع')} {c.get('نوع')} {c.get('محكمة_اسم')}"
+            مأمورية = c.get('مأمورية') or ''
+            خصوم = f"{c.get('مدعي')} ضد {c.get('مدعي_عليه')}"
+            موضوع = c.get('موضوع') or ''
+            جلسة = c.get('تاريخ_جلسة', '')
+            سبب = c.get('سبب', '')
+            
+            label = f"{رقم_سنة} {نوع_محكمة} {مأمورية} {خصوم} {موضوع} {جلسة} {سبب}"
             case_labels.append(label)
-            
-            # تشييك لو الهيئة طرف
-            موضوع = str(c.get('موضوع', '')).lower()
-            مدعي = str(c.get('مدعي', '')).lower()
-            مدعي_عليه = str(c.get('مدعي_عليه', '')).lower()
-            
-            if 'الهيئة' in موضوع or 'الهيئة' in مدعي or 'الهيئة' in مدعي_عليه or \
-               'مستأنفة' in موضوع or 'مستأنف' in موضوع or \
-               'طاعنة' in موضوع or 'طاعن' in موضوع:
-                case_colors.append('red') # احمر
-            else:
-                case_colors.append('white') # ابيض عادي
         
         c1, c2 = st.columns([4,1])
         with c1:
-            selected_label = st.selectbox(
-                "اختار القضية", 
-                options=case_labels, 
-                index=None, 
-                placeholder="دوس هنا واختار القضية...",
-                label_visibility="collapsed"
-            )
+            selected_label = st.selectbox("اختار القضية", options=case_labels, index=None, placeholder="دوس هنا واختار القضية...")
         with c2:
             فتح = st.button("فتح 📂", use_container_width=True, type="primary")
         
@@ -193,18 +182,6 @@ elif st.session_state.page == "حصر":
             st.rerun()
         elif فتح and not selected_label:
             st.warning("من فضلك اختار قضية الاول")
-            
-        # CSS عشان نلون القائمة
-        st.markdown("""
-        <style>
-        div[data-baseweb="select"] li {
-            color: white !important;
-        }
-        </style>
-        """, unsafe_allow_html=True)
-        
-        # ملحوظة للالوان
-        st.caption("🔴 القضايا التي الهيئة طرف فيها تظهر بلون مميز في التفاصيل")
 # ==================== نهاية قسم 3: فتح القضايا المسجلة ====================
 # ==================== بداية قسم 4: تفاصيل القضية ====================
 elif st.session_state.page == "تفاصيل":
