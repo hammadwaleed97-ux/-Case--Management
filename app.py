@@ -177,7 +177,7 @@ elif st.session_state.page == "حصر":
 
         st.markdown("<div class='table-container'>", unsafe_allow_html=True)
         table_html = "<table class='case-table'>"
-        table_html += "<tr><th>م</th><th>الرقم والسنة</th><th>المحكمة والدائرة</th><th>المأمورية</th><th>الخصوم</th><th>الموضوع</th><th>اخر جلسة</th><th>السبب</th><th>فتح</th></tr>"
+        table_html += "<tr><th>م</th><th>الرقم والسنة</th><th>المحكمة والدائرة</th><th>المأمورية</th><th>الخصوم</th><th>الموضوع</th><th>اخر جلسة</th><th>السبب</th><th>الاجراء</th></tr>"
         
         for idx, case in enumerate(sorted_cases, 1):
             رقم_سنة = f"{case.get('رقم','')} لسنة {case.get('سنة','')}"
@@ -186,8 +186,7 @@ elif st.session_state.page == "حصر":
             خصوم = f"{case.get('مدعي','')}<br>ضد<br>{case.get('مدعي_عليه','')}"
             
             مدعي = str(case.get('مدعي',''))
-            مدعي_عليه = str(case.get('مدعي_عليه',''))
-            if "الهيئة" in مدعي or "الهيئة" in مدعي_عليه:
+            if "الهيئة" in مدعي:
                 row_class = "row-hey2a"
             else:
                 row_class = "row1" if idx % 2 == 1 else "row2"
@@ -201,7 +200,7 @@ elif st.session_state.page == "حصر":
             table_html += f"<td>{case.get('موضوع','')}</td>"
             table_html += f"<td>{case.get('تاريخ_جلسة','')}</td>"
             table_html += f"<td>{case.get('سبب','')}</td>"
-            table_html += f"<td><form><button formaction='?open={case.get('id')}' style='background:#C9A961;color:#0F1C2E;border:none;border-radius:5px;padding:6px 12px;font-weight:800;cursor:pointer'>فتح</button></form></td>"
+            table_html += f"<td><select onchange=\"window.location.href='?open={case.get('id')}'\" style='background:#C9A961;color:#0F1C2E;border:none;border-radius:5px;padding:5px 8px;font-weight:800'><option>فتح</option></select></td>"
             table_html += "</tr>"
         
         table_html += "</table></div>"
