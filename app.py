@@ -146,60 +146,58 @@ elif st.session_state.page == "حصر":
     st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
     st.markdown("<h2 style='color:#FFFFFF; text-align:center'>📂 فتح القضايا المسجلة</h2>", unsafe_allow_html=True)
     
-    # CSS عشان نكبر القائمة ونصغر الخط
-    st.markdown("""
-    <style>
-    div[data-baseweb="select"] > div {
-        font-size: 12px !important;
-    }
-    div[data-baseweb="select"] ul {
-        font-size: 12px !important;
-        max-height: 400px !important; /* طول القائمة */
-        min-height: 400px !important;
-        overflow-x: auto !important;
-        overflow-y: auto !important;
-        white-space: nowrap !important;
-    }
-    div[data-baseweb="select"] li {
-        white-space: nowrap !important;
-        min-width: max-content !important;
-        padding: 8px 12px !important; /* تباعد بين السطور */
-    }
-    </style>
-    """, unsafe_allow_html=True)
-    
     if not data["cases"]:
         st.info("لا توجد قضايا مسجلة")
     else:
-        st.markdown("<p style='color:#C9A961; text-align:center'>اختار القضية من القائمة بالاسفل - اسحب يمين وشمال</p>", unsafe_allow_html=True)
+        st.markdown("<p style='color:#C9A961; text-align:center'>دوس فتح جنب القضية عشان تدخل على التفاصيل</p>", unsafe_allow_html=True)
         
-        case_ids = []
-        case_labels = []
+        st.markdown("""<style>.dataframe {font-size: 11px !important;}</style>""", unsafe_allow_html=True)
         
+        df_data = []
         for c in data["cases"]:
-            case_ids.append(c['id'])
+            مدعي = str(c.get('مدعي', '')).lower()
+            مدعي_عليه = str(c.get('مدعي_عليه', '')).lower()
+            موضوع = str(c.get('موضوع', '')).lower()
             
-            رقم_سنة = f"{c.get('رقم')}-{c.get('سنة')}"
-            دائرة_نوع = f"{c.get('دائرة')}{c.get('نوع')} {c.get('نوع')} {c.get('محكمة_اسم')}"
-            مأمورية = f"مأمورية {c.get('مأمورية')}" if c.get('مأمورية') else ""
-            خصوم = f"{c.get('مدعي')} ضد {c.get('مدعي_عليه')}"
-            موضوع = c.get('موضوع', '')
-            تاريخ_جلسة = c.get('تاريخ_جلسة', '')
-            سبب = c.get('سبب', '')
+            # الشرط الجديد: الهيئة مدعية او مستأنفة او طاعنة
+            هيئة_مدعية = 'الهيئة' in مدعي
+            هيئة_مستأنفة = 'الهيئة' in موضوع and ('مستأنف' in موضوع or 'استئناف' in موضوع)
+            هيئة_طاعنة = 'الهيئة' in موضوع and 'طعن' in موضوع
             
-            parts = [رقم_سنة, دائرة_نوع, مأمورية, خصوم, موضوع, تاريخ_جلسة, سبب]
-            label = " ".join([p for p in parts if p])
-            case_labels.append(label)
+            لون = "احمر" if هيئة_مدعية or هيئة_مستأنفة or هيئة_طاعنة else "عادي"
+            
+            df_data.append({
+                "رقم": c.get('رقم'), 
+                "السنة": c.get('سنة'),
+                "النوع": f"{c.get('دائرة')}{c.get('نوع')} {c.get('نوع')} {c.get('محكمة_اسم')}",
+                "المأمورية": c.get('مأمورية', '-'),
+                "الخصوم": f"{c.get('مدعي')} ضد {c.get('مدعي_عليه')}",
+                "الموضوع": c.get('موضوع'), 
+                "اخر جلسة": c.get('تاريخ_جلسة', '-'),
+                "السبب": c.get('سبب', '-'),
+                "لون": لون,
+                "id": c['id']
+            })
+        df = pd.DataFrame(df_data)
+        
+        def color_rows(row):
+            if row['لون'] == "احمر":
+                return ['background-color: #8B0000; color: white; font-weight: bold'] * len(row)
+            else:
+                return ['background-color: #1E3A6B; color: white'] * len(row)
+        
+        styled_df = df.drop(['id', 'لون'], axis=1).style.apply(color_rows, axis=1)
+        st.dataframe(styled_df, use_container_width=True, hide_index=True, height=500)
+        
+        st.markdown("<hr style='border:1px solid #C9A961'>", unsafe_allow_html=True)
+        st.caption("🔴 احمر = الهيئة مدعية / مستأنفة / طاعنة")
+        
+        case_ids = df['id'].tolist()
+        case_labels = [f"رقم {c.get('رقم')}/{c.get('سنة')} - {c.get('موضوع')[:30]}" for c in data["cases"]]
         
         c1, c2 = st.columns([4,1])
         with c1:
-            selected_label = st.selectbox(
-                "اختار القضية", 
-                options=case_labels, 
-                index=None, 
-                placeholder="دوس هنا واختار القضية...",
-                label_visibility="collapsed"
-            )
+            selected_label = st.selectbox("اختار القضية", options=case_labels, index=None, placeholder="اختار من هنا...")
         with c2:
             فتح = st.button("فتح 📂", use_container_width=True, type="primary")
         
