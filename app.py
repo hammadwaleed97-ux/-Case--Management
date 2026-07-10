@@ -141,60 +141,70 @@ elif st.session_state.page == "تسجيل":
                 st.rerun()
         st.markdown("</div>", unsafe_allow_html=True)
 # ==================== نهاية قسم 2: التسجيل ============
-# ==================== القسم 3: الحصر العام ====================
+# ==================== القسم 3: الحصر العام الخارجي ====================
 elif st.session_state.page == "حصر":
     st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
-    st.markdown("<h2 style='color:#FFFFFF; text-align:center'>📊 القسم 3: الحصر العام</h2>", unsafe_allow_html=True)
-
-    if st.button("العودة للرئيسية", use_container_width=True, type="secondary"):
-        st.session_state.page = "الرئيسية"
-        st.rerun()
+    st.markdown("<h2 style='color:#FFFFFF; text-align:center'>📊 القسم 3: الحصر العام الخارجي</h2>", unsafe_allow_html=True)
+    
+    col1, col2 = st.columns([4,1])
+    with col2:
+        st.markdown("<div class='btn-back'>", unsafe_allow_html=True)
+        if st.button("العودة للرئيسية", key="btn_back_2", use_container_width=True):
+            st.session_state.page = "الرئيسية"
+            st.rerun()
+        st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown("<hr style='border:2px solid #C9A961'>", unsafe_allow_html=True)
 
     if not data["cases"]:
         st.info("لا توجد قضايا مسجلة")
     else:
-        st.markdown("""
-        <style>
-        .case-table {width: 100%; border-collapse: collapse; font-size: 12px; color: black; background: white;}
-        .case-table th {background-color: #C9A961; color: black; padding: 8px; text-align: center; font-weight: bold; border: 1px solid #999;}
-        .case-table td {padding: 6px; text-align: center; border: 1px solid #999; vertical-align: middle;}
-        .red-row {background-color: #8B0000; color: white; font-weight: bold;}
-        .blue-row {background-color: white; color: black;}
-        .open-btn {background: #C9A961; color: black; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-weight: bold;}
-        </style>
-        """, unsafe_allow_html=True)
+        updated = False
+        for i, case in enumerate(data["cases"]):
+            if "id" not in case:
+                case["id"] = i + 1
+                updated = True
+        if updated: save_data(data)
 
+        sorted_cases = sorted(data["cases"], key=lambda x: x.get("تاريخ_جلسة","9999"))
+
+        st.markdown("<div class='table-container'>", unsafe_allow_html=True)
         table_html = "<table class='case-table'>"
         table_html += "<tr><th>م</th><th>الرقم والسنة</th><th>المحكمة والدائرة</th><th>المأمورية</th><th>الخصوم</th><th>الموضوع</th><th>اخر جلسة</th><th>السبب</th><th>فتح</th></tr>"
-
-        for idx, c in enumerate(data["cases"], 1):
-            مدعي = str(c.get('مدعي', '')).lower()
-            is_red = 'الهيئة' in مدعي
-            row_class = "red-row" if is_red else "blue-row"
+        
+        for idx, case in enumerate(sorted_cases, 1):
+            رقم_سنة = f"{case.get('رقم','')}<br>سنة {case.get('سنة','')}"
+            محكمة_دائرة = f"{case.get('دائرة','')}{case.get('نوع','')}<br>{case.get('محكمة_اسم','')}"
+            مأمورية = f"مأمورية {case.get('مأمورية','-')}" if case.get('مأمورية','') else "-"
+            خصوم = f"{case.get('مدعي','')} ضد {case.get('مدعي_عليه','')}"
+            
+            if "الهيئة" in case.get('مدعي',''):
+                row_class = "row-hey2a"
+            else:
+                row_class = "row1" if idx % 2 == 1 else "row2"
 
             table_html += f"<tr class='{row_class}'>"
             table_html += f"<td>{idx}</td>"
-            table_html += f"<td>{c.get('رقم')}<br>سنة {c.get('سنة')}</td>"
-            table_html += f"<td>{c.get('دائرة')}{c.get('نوع')}<br>{c.get('محكمة_اسم')}</td>"
-            table_html += f"<td>مأمورية {c.get('مأمورية', '-')}</td>"
-            table_html += f"<td>{c.get('مدعي')} ضد {c.get('مدعي_عليه')}</td>"
-            table_html += f"<td>{c.get('موضوع')}</td>"
-            table_html += f"<td>{c.get('تاريخ_جلسة', '-')}</td>"
-            table_html += f"<td>{c.get('سبب', '-')}</td>"
-            table_html += f"<td><button class='open-btn' onclick=\"window.location.href='?open={c['id']}'\">فتح</button></td>"
+            table_html += f"<td>{رقم_سنة}</td>"
+            table_html += f"<td>{محكمة_دائرة}</td>"
+            table_html += f"<td>{مأمورية}</td>"
+            table_html += f"<td>{خصوم}</td>"
+            table_html += f"<td>{case.get('موضوع','')}</td>"
+            table_html += f"<td>{case.get('تاريخ_جلسة','')}</td>"
+            table_html += f"<td>{case.get('سبب','')}</td>"
+            table_html += f"<td><form><button formaction='?open={case.get('id')}' style='background:#C9A961;color:#0F1C2E;border:none;border-radius:5px;padding:5px 10px;font-weight:800;cursor:pointer'>فتح</button></form></td>"
             table_html += "</tr>"
         
-        table_html += "</table>"
+        table_html += "</table></div>"
         st.markdown(table_html, unsafe_allow_html=True)
 
-        if "open" in st.query_params:
-            st.session_state.selected_case_id = st.query_params["open"]
+        query_params = st.query_params
+        if "open" in query_params:
+            st.session_state.selected_case_id = int(query_params["open"])
             st.session_state.page = "تفاصيل"
             st.query_params.clear()
             st.rerun()
-# ==================== نهاية القسم 3 ====================
+# ==================== نهاية القسم 3: الحصر العام الخارجي ====================
 # ==================== بداية قسم 4: تفاصيل القضية ====================
 elif st.session_state.page == "تفاصيل":
     case = next((c for c in data["cases"] if c['id'] == st.session_state.selected_case_id), None)
