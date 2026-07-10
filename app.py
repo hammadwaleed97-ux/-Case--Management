@@ -141,10 +141,10 @@ elif st.session_state.page == "تسجيل":
                 st.rerun()
         st.markdown("</div>", unsafe_allow_html=True)
 # ==================== نهاية قسم 2: التسجيل ============
-# ==================== بداية قسم 3: فتح القضايا المسجلة ====================
+# ==================== القسم 3: الحصر العام ====================
 elif st.session_state.page == "حصر":
     st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
-    st.markdown("<h2 style='color:#FFFFFF; text-align:center'>📊 الحصر العام</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='color:#FFFFFF; text-align:center'>📊 القسم 3: الحصر العام</h2>", unsafe_allow_html=True)
 
     if st.button("العودة للرئيسية", use_container_width=True, type="secondary"):
         st.session_state.page = "الرئيسية"
@@ -166,24 +166,20 @@ elif st.session_state.page == "حصر":
         </style>
         """, unsafe_allow_html=True)
 
-        # نبدأ الجدول
         table_html = "<table class='case-table'>"
-        table_html += "<tr><th>م</th><th>الرقم</th><th>المحكمة</th><th>المدعي</th><th>المدعى عليه</th><th>الموضوع</th><th>اخر جلسة</th><th>السبب</th><th>فتح</th></tr>"
+        table_html += "<tr><th>م</th><th>الرقم والسنة</th><th>المحكمة والدائرة</th><th>المأمورية</th><th>الخصوم</th><th>الموضوع</th><th>اخر جلسة</th><th>السبب</th><th>فتح</th></tr>"
 
         for idx, c in enumerate(data["cases"], 1):
             مدعي = str(c.get('مدعي', '')).lower()
-            موضوع = str(c.get('موضوع', '')).lower()
-
-            # الاحمر: الهيئة مدعية او مستأنفة او طاعنة
-            is_red = 'الهيئة' in مدعي and ('مستأنف' in موضوع or 'استئناف' in موضوع or 'طعن' in موضوع or مدعي == 'الهيئة')
+            is_red = 'الهيئة' in مدعي
             row_class = "red-row" if is_red else "blue-row"
 
             table_html += f"<tr class='{row_class}'>"
             table_html += f"<td>{idx}</td>"
             table_html += f"<td>{c.get('رقم')}<br>سنة {c.get('سنة')}</td>"
             table_html += f"<td>{c.get('دائرة')}{c.get('نوع')}<br>{c.get('محكمة_اسم')}</td>"
-            table_html += f"<td>{c.get('مدعي')}</td>"
-            table_html += f"<td>{c.get('مدعي_عليه')}</td>"
+            table_html += f"<td>مأمورية {c.get('مأمورية', '-')}</td>"
+            table_html += f"<td>{c.get('مدعي')} ضد {c.get('مدعي_عليه')}</td>"
             table_html += f"<td>{c.get('موضوع')}</td>"
             table_html += f"<td>{c.get('تاريخ_جلسة', '-')}</td>"
             table_html += f"<td>{c.get('سبب', '-')}</td>"
@@ -193,16 +189,12 @@ elif st.session_state.page == "حصر":
         table_html += "</table>"
         st.markdown(table_html, unsafe_allow_html=True)
 
-        st.caption("🔴 احمر = الهيئة مدعية / مستأنفة / طاعنة")
-
-        # تشييك الزرار
         if "open" in st.query_params:
             st.session_state.selected_case_id = st.query_params["open"]
             st.session_state.page = "تفاصيل"
             st.query_params.clear()
             st.rerun()
-
-# ==================== نهاية قسم 3: فتح القضايا المسجلة ====================
+# ==================== نهاية القسم 3 ====================
 # ==================== بداية قسم 4: تفاصيل القضية ====================
 elif st.session_state.page == "تفاصيل":
     case = next((c for c in data["cases"] if c['id'] == st.session_state.selected_case_id), None)
