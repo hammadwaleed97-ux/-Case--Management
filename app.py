@@ -151,12 +151,28 @@ elif st.session_state.page == "حصر":
     else:
         st.markdown("<p style='color:#C9A961; text-align:center'>اختار القضية من القائمة بالاسفل</p>", unsafe_allow_html=True)
         
-        case_ids = [c['id'] for c in data["cases"]]
-        # القائمة فيها كل بيانات القضية
-        case_labels = [
-            f"رقم {c.get('رقم')}/{c.get('سنة')} | {c.get('نوع')} - {c.get('محكمة_اسم')} | دائرة {c.get('دائرة')} | {c.get('موضوع')[:35]}..." 
-            for c in data["cases"]
-        ]
+        case_ids = []
+        case_labels = []
+        case_colors = [] # عشان نلون الاحمر
+        
+        for c in data["cases"]:
+            case_ids.append(c['id'])
+            
+            # ترتيب البيانات: رقم ثم سنة ثم نوع ثم محكمة ثم دائرة ثم موضوع
+            label = f"رقم {c.get('رقم')} / {c.get('سنة')} | {c.get('نوع')} - {c.get('محكمة_اسم')} | دائرة {c.get('دائرة')} | {c.get('موضوع')[:25]}..."
+            case_labels.append(label)
+            
+            # تشييك لو الهيئة طرف
+            موضوع = str(c.get('موضوع', '')).lower()
+            مدعي = str(c.get('مدعي', '')).lower()
+            مدعي_عليه = str(c.get('مدعي_عليه', '')).lower()
+            
+            if 'الهيئة' in موضوع or 'الهيئة' in مدعي or 'الهيئة' in مدعي_عليه or \
+               'مستأنفة' in موضوع or 'مستأنف' in موضوع or \
+               'طاعنة' in موضوع or 'طاعن' in موضوع:
+                case_colors.append('red') # احمر
+            else:
+                case_colors.append('white') # ابيض عادي
         
         c1, c2 = st.columns([4,1])
         with c1:
@@ -177,6 +193,18 @@ elif st.session_state.page == "حصر":
             st.rerun()
         elif فتح and not selected_label:
             st.warning("من فضلك اختار قضية الاول")
+            
+        # CSS عشان نلون القائمة
+        st.markdown("""
+        <style>
+        div[data-baseweb="select"] li {
+            color: white !important;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+        
+        # ملحوظة للالوان
+        st.caption("🔴 القضايا التي الهيئة طرف فيها تظهر بلون مميز في التفاصيل")
 # ==================== نهاية قسم 3: فتح القضايا المسجلة ====================
 # ==================== بداية قسم 4: تفاصيل القضية ====================
 elif st.session_state.page == "تفاصيل":
