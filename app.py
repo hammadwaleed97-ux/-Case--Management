@@ -48,6 +48,7 @@ st.markdown("""
 .case-table {width: 100%; border-collapse: collapse; background: #FFFFFF; color: #0F1C2E; font-size: 14px;}
 .case-table th {background: linear-gradient(90deg, #D4B96A, #C9A961); color: #0F1C2E; padding: 12px 8px; text-align: center; font-weight: 800;}
 .case-table td {padding: 10px 8px; text-align: center; border: 1px solid #DDD; font-weight: 600;}
+.info-box {background:#1E2A47; border:1px solid #C9A961; border-radius:8px; padding:15px; margin-bottom:10px; color:#FFFFFF}
     h2, h3, h4, p {color: #FFFFFF!important;}
 </style>
 """, unsafe_allow_html=True)
