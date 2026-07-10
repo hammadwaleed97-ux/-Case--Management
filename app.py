@@ -140,78 +140,85 @@ elif st.session_state.page == "تسجيل":
                 st.session_state.page = "الرئيسية"
                 st.rerun()
         st.markdown("</div>", unsafe_allow_html=True)
-# ==================== نهاية قسم 2: التسجيل =================
+# ==================== نهاية قسم 2: التسجيل ============
 # ==================== بداية قسم 3: فتح القضايا المسجلة ====================
 elif st.session_state.page == "حصر":
     st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
-    st.markdown("<h2 style='color:#FFFFFF; text-align:center'>📂 فتح القضايا المسجلة</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='color:#FFFFFF; text-align:center'>📊 الحصر العام</h2>", unsafe_allow_html=True)
+    
+    if st.button("العودة للرئيسية", use_container_width=True, type="secondary"):
+        st.session_state.page = "الرئيسية"
+        st.rerun()
+    
+    st.markdown("<hr style='border:2px solid #C9A961'>", unsafe_allow_html=True)
     
     if not data["cases"]:
         st.info("لا توجد قضايا مسجلة")
     else:
-        st.markdown("<p style='color:#C9A961; text-align:center'>دوس فتح جنب القضية عشان تدخل على التفاصيل</p>", unsafe_allow_html=True)
+        # CSS للجدول الدهبي
+        st.markdown("""
+        <style>
+        .case-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            color: black;
+        }
+        .case-table th {
+            background-color: #C9A961;
+            color: black;
+            padding: 10px;
+            text-align: center;
+            font-weight: bold;
+            border: 1px solid #ddd;
+        }
+        .case-table td {
+            padding: 8px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+        .red-row {background-color: #8B0000 !important; color: white !important; font-weight: bold;}
+        .blue-row {background-color: #FFFFFF !important; color: black !important;}
+        </style>
+        """, unsafe_allow_html=True)
         
-        st.markdown("""<style>.dataframe {font-size: 11px !important;}</style>""", unsafe_allow_html=True)
+        # بناء الجدول يدوي عشان الالوان والزرار
+        table_html = "<table class='case-table'><tr>"
+        headers = ["م", "الرقم", "المحكمة", "المدعي", "المدعى عليه", "الموضوع", "فتح"]
+        for h in headers:
+            table_html += f"<th>{h}</th>"
+        table_html += "</tr>"
         
-        df_data = []
-        for c in data["cases"]:
+        for idx, c in enumerate(data["cases"], 1):
             مدعي = str(c.get('مدعي', '')).lower()
-            مدعي_عليه = str(c.get('مدعي_عليه', '')).lower()
             موضوع = str(c.get('موضوع', '')).lower()
             
             # الشرط: الهيئة مدعية او مستأنفة او طاعنة
-            هيئة_مدعية = 'الهيئة' in مدعي
-            هيئة_مستأنفة = 'الهيئة' in مدعي and ('مستأنف' in موضوع or 'استئناف' in موضوع)
-            هيئة_طاعنة = 'الهيئة' in مدعي and 'طعن' in موضوع
+            is_red = 'الهيئة' in مدعي or ('الهيئة' in مدعي and 'مستأنف' in موضوع) or ('الهيئة' in مدعي and 'طعن' in موضوع)
+            row_class = "red-row" if is_red else "blue-row"
             
-            لون = "احمر" if هيئة_مدعية or هيئة_مستأنفة or هيئة_طاعنة else "ازرق"
-            
-            df_data.append({
-                "رقم": c.get('رقم'), 
-                "السنة": c.get('سنة'),
-                "النوع": f"{c.get('دائرة')}{c.get('نوع')} {c.get('نوع')} {c.get('محكمة_اسم')}",
-                "المأمورية": c.get('مأمورية', '-'),
-                "الخصوم": f"{c.get('مدعي')} ضد {c.get('مدعي_عليه')}",
-                "الموضوع": c.get('موضوع'), 
-                "اخر جلسة": c.get('تاريخ_جلسة', '-'),
-                "السبب": c.get('سبب', '-'),
-                "لون": لون,  # هنخليه ونستخدمه للتلوين
-                "id": c['id']
-            })
-        df = pd.DataFrame(df_data)
+            table_html += f"<tr class='{row_class}'>"
+            table_html += f"<td>{idx}</td>"
+            table_html += f"<td>{c.get('رقم')}<br>سنة {c.get('سنة')}</td>"
+            table_html += f"<td>{c.get('دائرة')}{c.get('نوع')}<br>{c.get('محكمة_اسم')}</td>"
+            table_html += f"<td>{c.get('مدعي')}</td>"
+            table_html += f"<td>{c.get('مدعي_عليه')}</td>"
+            table_html += f"<td>{c.get('موضوع')}</td>"
+            table_html += f"<td><form><button name='open_case' value='{c['id']}'>فتح 📂</button></form></td>"
+            table_html += "</tr>"
+        table_html += "</table>"
         
-        # تلوين الصفوف - نعمله قبل ما نمسح عمود اللون
-        def color_rows(row):
-            if row['لون'] == "احمر":
-                return ['background-color: #8B0000; color: white; font-weight: bold'] * len(row)
-            else:
-                return ['background-color: #1E3A6B; color: white'] * len(row)
+        st.markdown(table_html, unsafe_allow_html=True)
         
-        # نطبق الستايل الاول وبعدين نمسح الاعمدة الزيادة
-        styled_df = df.style.apply(color_rows, axis=1)
-        styled_df = styled_df.hide(axis="columns", subset=["id", "لون"]) # اخفاء بدل المسح
+        st.caption("🔴 احمر = الهيئة مدعية / مستأنفة / طاعنة")
         
-        st.dataframe(styled_df, use_container_width=True, hide_index=True, height=500)
-        
-        st.markdown("<hr style='border:1px solid #C9A961'>", unsafe_allow_html=True)
-        st.caption("🔴 احمر = الهيئة مدعية / مستأنفة / طاعنة   |   🔵 ازرق = باقي القضايا")
-        
-        case_ids = df['id'].tolist()
-        case_labels = [f"رقم {c.get('رقم')}/{c.get('سنة')} - {c.get('موضوع')[:30]}" for c in data["cases"]]
-        
-        c1, c2 = st.columns([4,1])
-        with c1:
-            selected_label = st.selectbox("اختار القضية", options=case_labels, index=None, placeholder="اختار من هنا...")
-        with c2:
-            فتح = st.button("فتح 📂", use_container_width=True, type="primary")
-        
-        if فتح and selected_label:
-            selected_index = case_labels.index(selected_label)
-            st.session_state.selected_case_id = case_ids[selected_index]
+        # تشييك لو اتداس على زرار فتح
+        if "open_case" in st.query_params:
+            st.session_state.selected_case_id = st.query_params["open_case"]
             st.session_state.page = "تفاصيل"
+            st.query_params.clear()
             st.rerun()
-        elif فتح and not selected_label:
-            st.warning("من فضلك اختار قضية الاول")
+
 # ==================== نهاية قسم 3: فتح القضايا المسجلة ====================
 # ==================== بداية قسم 4: تفاصيل القضية ====================
 elif st.session_state.page == "تفاصيل":
