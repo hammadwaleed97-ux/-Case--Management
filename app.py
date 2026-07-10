@@ -151,57 +151,51 @@ elif st.session_state.page == "حصر":
     if not data["cases"]:
         st.info("لا توجد قضايا مسجلة")
     else:
-        # 1. نرتب الاول وبعدين نعكس عشان الاحدث فوق
-        sorted_cases = sorted(data["cases"], key=lambda x: x.get("تاريخ_جلسة","9999"), reverse=True)
+        # 1. ترتيب من الاقدم للاحدث حسب تاريخ الجلسة
+        sorted_cases = sorted(data["cases"], key=lambda x: x.get("تاريخ_جلسة","9999"))
 
-        table_data = []
+        st.markdown("<div class='table-container'>", unsafe_allow_html=True)
+        # 2. الجدول يبدأ بـ م
+        table_html = "<table class='case-table'>"
+        table_html += "<tr><th>م</th><th>الرقم</th><th>المحكمة</th><th>الدائرة</th><th>المدعي</th><th>المدعى عليه</th><th>الموضوع</th><th>اخر جلسة</th><th>سببها</th><th>فتح</th></tr>"
+
         for idx, case in enumerate(sorted_cases, 1):
+            رقم_كامل = f"{case.get('رقم','')}<br>لسنة {case.get('سنة','')}"
+
+            محكمة_كاملة = f"{case.get('نوع','')}<br>{case.get('محكمة_اسم','')}"
+            if case.get('مأمورية',''): محكمة_كاملة += f"<br>مأمورية {case.get('مأمورية','')}"
+
+            دائرة_كاملة = f"{case.get('دائرة','')} مدنى"
+
             مدعى = case.get('مدعي','')
             مدعى_عليه = case.get('مدعي_عليه','')
 
-            # 2. التلوين حسب طلبك
+            # 3. التلوين الجديد
             if "الهيئة" in مدعى: # الهيئة مدعية/مستانفة/طاعنة = احمر
-                لون = "🔴"
-            else: # الهيئة مدعى عليها/مستانف ضدها = اصفر ورمادي بالتبادل
-                لون = "🟡" if idx % 2 == 1 else "⚪"
+                bg = "#FFCDD2"
+            else: # الهيئة مدعى عليها = اصفر ورمادي
+                bg = "#FFF8E1" if idx % 2 == 1 else "#F0F4F8"
 
-            محكمة_كاملة = f"{case.get('نوع','')}\n{case.get('محكمة_اسم','')}"
-            if case.get('مأمورية',''): محكمة_كاملة += f"\nمأمورية {case.get('مأمورية','')}"
+            table_html += f"<tr style='background:{bg}'>"
+            table_html += f"<td>{idx}</td>"
+            table_html += f"<td>{رقم_كامل}</td>"
+            table_html += f"<td>{محكمة_كاملة}</td>"
+            table_html += f"<td>{دائرة_كاملة}</td>"
+            table_html += f"<td>{مدعى}</td>"
+            table_html += f"<td>{مدعى_عليه}</td>"
+            table_html += f"<td>{case.get('موضوع','')}</td>"
+            table_html += f"<td>{case.get('تاريخ_جلسة','')}</td>"
+            table_html += f"<td>{case.get('سبب','')}</td>"
+            # 4. زر الفتح جوه السطر
+            table_html += f"<td><button onclick=\"document.getElementById('btn_open_{case.get('id')}').click()\" style='background:#C9A961;color:#0F1C2E;border:none;border-radius:5px;padding:6px 15px;font-weight:800;cursor:pointer'>فتح</button></td>"
+            table_html += "</tr>"
+            
+            # زرار مخفي streamlit
+            if st.button("فتح", key=f"btn_open_{case.get('id')}", label_visibility="hidden"):
+                st.session_state.selected_case_id = case['id']
+                st.session_state.page = "تفاصيل"
+                st.rerun()
 
-            table_data.append({
-                "م": idx,
-                "الرقم": f"{case.get('رقم','')}\nلسنة {case.get('سنة','')}",
-                "المحكمة": محكمة_كاملة,
-                "الدائرة": f"{case.get('دائرة','')} مدنى",
-                "المدعي": مدعى,
-                "المدعى عليه": مدعى_عليه,
-                "الموضوع": case.get('موضوع',''),
-                "اخر جلسة": case.get('تاريخ_جلسة',''),
-                "سببها": case.get('سبب',''),
-                "الحالة": لون,
-                "id": case['id'], # مخفي
-            })
-
-        df = pd.DataFrame(table_data)
-
-        st.info("اضغط على اي صف لفتح تفاصيل القضية")
-        event = st.dataframe(
-            df.drop(columns=["id"]), # نخفي ال id
-            use_container_width=True,
-            height=450,
-            on_select="rerun",
-            selection_mode="single-row",
-            column_config={
-                "الحالة": st.column_config.TextColumn("الحالة", width="small"),
-                "م": st.column_config.NumberColumn("م", width="small")
-            }
-        )
-
-        # 3. تفعيل الفتح عند الضغط على اي صف
-        if event.selection.rows:
-            selected_index = event.selection.rows[0]
-            selected_id = df.iloc[selected_index]["id"]
-            st.session_state.selected_case_id = selected_id
-            st.session_state.page = "تفاصيل"
-            st.rerun()
+        table_html += "</table></div>"
+        st.markdown(table_html, unsafe_allow_html=True)
 # ==================== نهاية قسم 3: الحصر العام ====================
