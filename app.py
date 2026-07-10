@@ -148,14 +148,21 @@ elif st.session_state.page == "حصر":
     if st.button("العودة للرئيسية", use_container_width=True): st.session_state.page = "الرئيسية"; st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
 
+    # لو دوست فتح
+    if "open_case" in st.session_state:
+        st.session_state.selected_case_id = st.session_state.open_case
+        st.session_state.page = "تفاصيل"
+        del st.session_state.open_case
+        st.rerun()
+
     if not data["cases"]:
         st.info("لا توجد قضايا مسجلة")
     else:
-        # 1. ترتيب من الاقدم للاحدث حسب تاريخ الجلسة
+        # ترتيب من الاقدم للاحدث
         sorted_cases = sorted(data["cases"], key=lambda x: x.get("تاريخ_جلسة","9999"))
 
         st.markdown("<div class='table-container'>", unsafe_allow_html=True)
-        # 2. الجدول يبدأ بـ م
+        # الجدول يبدأ بـ م وشلنا الحالة
         table_html = "<table class='case-table'>"
         table_html += "<tr><th>م</th><th>الرقم</th><th>المحكمة</th><th>الدائرة</th><th>المدعي</th><th>المدعى عليه</th><th>الموضوع</th><th>اخر جلسة</th><th>سببها</th><th>فتح</th></tr>"
 
@@ -170,12 +177,13 @@ elif st.session_state.page == "حصر":
             مدعى = case.get('مدعي','')
             مدعى_عليه = case.get('مدعي_عليه','')
 
-            # 3. التلوين الجديد
-            if "الهيئة" in مدعى: # الهيئة مدعية/مستانفة/طاعنة = احمر
+            # التلوين
+            if "الهيئة" in مدعى: # الهيئة مدعية = احمر
                 bg = "#FFCDD2"
             else: # الهيئة مدعى عليها = اصفر ورمادي
                 bg = "#FFF8E1" if idx % 2 == 1 else "#F0F4F8"
 
+            # زر الفتح بلينك يغير session_state
             table_html += f"<tr style='background:{bg}'>"
             table_html += f"<td>{idx}</td>"
             table_html += f"<td>{رقم_كامل}</td>"
@@ -186,16 +194,16 @@ elif st.session_state.page == "حصر":
             table_html += f"<td>{case.get('موضوع','')}</td>"
             table_html += f"<td>{case.get('تاريخ_جلسة','')}</td>"
             table_html += f"<td>{case.get('سبب','')}</td>"
-            # 4. زر الفتح جوه السطر
-            table_html += f"<td><button onclick=\"document.getElementById('btn_open_{case.get('id')}').click()\" style='background:#C9A961;color:#0F1C2E;border:none;border-radius:5px;padding:6px 15px;font-weight:800;cursor:pointer'>فتح</button></td>"
+            table_html += f"<td><a href='?open={case.get('id')}' target='_self' style='background:#C9A961;color:#0F1C2E;text-decoration:none;border-radius:5px;padding:6px 15px;font-weight:800'>فتح</a></td>"
             table_html += "</tr>"
-            
-            # زرار مخفي streamlit
-            if st.button("فتح", key=f"btn_open_{case.get('id')}", label_visibility="hidden"):
-                st.session_state.selected_case_id = case['id']
-                st.session_state.page = "تفاصيل"
-                st.rerun()
 
         table_html += "</table></div>"
         st.markdown(table_html, unsafe_allow_html=True)
+
+        # نمسك اللينك
+        query_params = st.query_params
+        if "open" in query_params:
+            st.session_state.open_case = int(query_params["open"])
+            st.query_params.clear()
+            st.rerun()
 # ==================== نهاية قسم 3: الحصر العام ====================
