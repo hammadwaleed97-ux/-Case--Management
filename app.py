@@ -159,12 +159,11 @@ elif st.session_state.page == "حصر":
     if not data["cases"]:
         st.info("لا توجد قضايا مسجلة")
     else:
-        updated = False
+        # ترقيم تلقائي
         for i, case in enumerate(data["cases"]):
             if "id" not in case:
                 case["id"] = i + 1
-                updated = True
-        if updated: save_data(data)
+        save_data(data)
 
         sorted_cases = sorted(data["cases"], key=lambda x: x.get("تاريخ_جلسة","9999"))
 
@@ -172,6 +171,7 @@ elif st.session_state.page == "حصر":
         <style>
         .case-table td {line-height: 2; white-space: normal; word-wrap: break-word; padding: 12px 8px;}
         .case-table th {padding: 12px 8px;}
+        .case-table select {background:#C9A961;color:#0F1C2E;border:none;border-radius:5px;padding:6px 10px;font-weight:800;width:90px}
         </style>
         """, unsafe_allow_html=True)
 
@@ -185,6 +185,7 @@ elif st.session_state.page == "حصر":
             مأمورية = f"مأمورية {case.get('مأمورية','-')}" if case.get('مأمورية','') else "-"
             خصوم = f"{case.get('مدعي','')}<br>ضد<br>{case.get('مدعي_عليه','')}"
             
+            # اللون الاحمر لو الهيئة مدعية او مستأنفة او طاعنة
             مدعي = str(case.get('مدعي',''))
             if "الهيئة" in مدعي:
                 row_class = "row-hey2a"
@@ -201,12 +202,13 @@ elif st.session_state.page == "حصر":
             table_html += f"<td>{case.get('موضوع','')}</td>"
             table_html += f"<td>{case.get('تاريخ_جلسة','')}</td>"
             table_html += f"<td>{case.get('سبب','')}</td>"
-            table_html += f"<td><select onchange=\"if(this.value=='open')window.location.href='?open={case_id}';if(this.value=='del'){{if(confirm('هل انت متاكد من حذف القضية؟'))window.location.href='?del={case_id}'}};this.value='';\" style='background:#C9A961;color:#0F1C2E;border:none;border-radius:5px;padding:5px 8px;font-weight:800'><option>الاجراء</option><option value='open'>فتح</option><option value='del'>حذف</option></select></td>"
+            table_html += f"<td><select onchange=\"if(this.value=='open'){{window.location.href='?open={case_id}'}}else if(this.value=='del'){{if(confirm('هل انت متاكد من حذف القضية رقم {case.get('رقم','')} لسنة {case.get('سنة','')}؟')){{window.location.href='?del={case_id}'}}}};this.selectedIndex=0;\" ><option value=''>الاجراء</option><option value='open'>فتح</option><option value='del'>حذف</option></select></td>"
             table_html += "</tr>"
         
         table_html += "</table></div>"
         st.markdown(table_html, unsafe_allow_html=True)
 
+        # معالجة الاوامر
         query_params = st.query_params
         if "open" in query_params:
             st.session_state.selected_case_id = int(query_params["open"])
@@ -218,7 +220,7 @@ elif st.session_state.page == "حصر":
             data["cases"] = [c for c in data["cases"] if c["id"] != del_id]
             save_data(data)
             st.query_params.clear()
-            st.success("✅ تم حذف القضية")
+            st.success("✅ تم حذف القضية بنجاح")
             st.rerun()
 # ==================== نهاية القسم 3: الحصر العام الخارجي ====================
 # ==================== بداية قسم 4: تفاصيل القضية ====================
