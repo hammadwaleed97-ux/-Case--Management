@@ -141,25 +141,63 @@ elif st.session_state.page == "تسجيل":
                 st.rerun()
         st.markdown("</div>", unsafe_allow_html=True)
 # ==================== نهاية قسم 2: التسجيل ====================
-
 # ==================== بداية قسم 3: الحصر العام ====================
 elif st.session_state.page == "حصر":
     st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
-    st.markdown("<h2 style='color:#FFFFFF; text-align:center'>📊 الحصر العام</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='color:#FFFFFF; text-align:center'>📊 الحصر العام 📊</h2>", unsafe_allow_html=True)
     st.markdown("<div class='btn-back'>", unsafe_allow_html=True)
     if st.button("العودة للرئيسية", use_container_width=True): st.session_state.page = "الرئيسية"; st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
 
-    if data["cases"]:
+    if not data["cases"]:
+        st.info("لا توجد قضايا مسجلة")
+    else:
+        # ترتيب حسب تاريخ الجلسة
+        sorted_cases = sorted(data["cases"], key=lambda x: x.get("تاريخ_جلسة","9999"))
+
         st.markdown("<div class='table-container'>", unsafe_allow_html=True)
-        table_html = "<table class='case-table'><tr><th>م</th><th>الرقم</th><th>المحكمة</th><th>المدعي</th><th>المدعى عليه</th><th>الموضوع</th></tr>"
-        for idx, case in enumerate(data["cases"], 1):
-            رقم_كامل = f"{case.get('رقم','')} لسنة {case.get('سنة','')}"
-            محكمة = f"{case.get('محكمة_اسم','')}"
-            if case.get('مأمورية',''): محكمة += f"<br>مأمورية {case.get('مأمورية','')}"
-            table_html += f"<tr><td>{idx}</td><td>{رقم_كامل}</td><td>{محكمة}</td><td>{case.get('مدعي','')}</td><td>{case.get('مدعي_عليه','')}</td><td>{case.get('موضوع','')}</td></tr>"
+        table_html = "<table class='case-table'>"
+        table_html += "<tr><th>م</th><th>الرقم</th><th>المحكمة</th><th>الدائرة</th><th>المدعي</th><th>المدعى عليه</th><th>الموضوع</th><th>اخر جلسة</th><th>سببها</th><th>فتح</th></tr>"
+        
+        for idx, case in enumerate(sorted_cases, 1):
+            رقم_كامل = f"{case.get('رقم','')}<br>لسنة {case.get('سنة','')}"
+            
+            # المحكمة + المأمورية لو موجودة
+            محكمة_كاملة = f"{case.get('محكمة_اسم','')}"
+            if case.get('مأمورية',''):
+                محكمة_كاملة = f"{case.get('نوع','')}<br>مأمورية {case.get('مأمورية','')}<br>{محكمة_كاملة}"
+            # لو مش استئناف هيظهر الاسم بس
+            
+            دائرة_كاملة = f"{case.get('دائرة','')}"
+            if "مدنى" in دائرة_كاملة or "عمال" in دائرة_كاملة or "جنح" in دائرة_كاملة:
+                pass
+            else:
+                دائرة_كاملة += " مدنى" # تقدر تغيرها
+
+            اخر_جلسة = case.get('تاريخ_جلسة','')
+            سببها = case.get('سبب','')
+
+            table_html += f"<tr>"
+            table_html += f"<td>{idx}</td>"
+            table_html += f"<td>{رقم_كامل}</td>"
+            table_html += f"<td>{محكمة_كاملة}</td>"
+            table_html += f"<td>{دائرة_كاملة}</td>"
+            table_html += f"<td>{case.get('مدعي','')}</td>"
+            table_html += f"<td>{case.get('مدعي_عليه','')}</td>"
+            table_html += f"<td>{case.get('موضوع','')}</td>"
+            table_html += f"<td>{اخر_جلسة}</td>"
+            table_html += f"<td>{سببها}</td>"
+            table_html += f"<td><button onclick=\"window.location.href='?open={case.get('id')}'\" style='background:#C9A961;color:#0F1C2E;border:none;border-radius:5px;padding:5px 15px;font-weight:800;cursor:pointer'>فتح</button></td>"
+            table_html += "</tr>"
+        
         table_html += "</table></div>"
         st.markdown(table_html, unsafe_allow_html=True)
-    else:
-        st.info("لا توجد قضايا مسجلة")
+
+        # تشغيل زر الفتح
+        query_params = st.query_params
+        if "open" in query_params:
+            st.session_state.selected_case_id = int(query_params["open"])
+            st.session_state.page = "تفاصيل"
+            st.query_params.clear()
+            st.rerun()
 # ==================== نهاية قسم 3: الحصر العام ====================
