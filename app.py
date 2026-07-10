@@ -326,3 +326,58 @@ elif st.session_state.page == "تفاصيل":
         save_data(data)
         st.success("تم حذف القضية"); st.session_state.page = "حصر"; st.rerun()
 # ==================== نهاية قسم 4: تفاصيل القضية ====================
+# ==================== بداية قسم 3: الحصر العام الخارجي ====================
+elif st.session_state.page == "حصر":
+    st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
+    st.markdown("<h2 style='color:#FFFFFF; text-align:center'>📊 الحصر العام الخارجي</h2>", unsafe_allow_html=True)
+    
+    if not data["cases"]:
+        st.info("لا توجد قضايا مسجلة")
+    else:
+        # بناء الجدول
+        df_data = []
+        for c in data["cases"]:
+            df_data.append({
+                "رقم": c.get('رقم'), 
+                "السنة": c.get('سنة'), 
+                "المحكمة": f"{c.get('نوع')} - {c.get('محكمة_اسم')}",
+                "الدائرة": f"{c.get('دائرة')} مدنى", 
+                "الموضوع": c.get('موضوع'), 
+                "اخر جلسة": c.get('تاريخ_جلسة', '-'),
+                "id": c['id'] # id مخفي
+            })
+        df = pd.DataFrame(df_data)
+        
+        # عرض الجدول
+        st.dataframe(
+            df.drop('id', axis=1), 
+            use_container_width=True, 
+            hide_index=True,
+            column_config={
+                "رقم": st.column_config.NumberColumn("رقم", width="small"),
+                "السنة": st.column_config.NumberColumn("السنة", width="small"),
+                "الموضوع": st.column_config.TextColumn("الموضوع", width="large"),
+            }
+        )
+        
+        st.markdown("<hr style='border:1px solid #C9A961'>", unsafe_allow_html=True)
+        st.markdown("<h4 style='color:#C9A961'>⚡ فتح تفاصيل قضية</h4>", unsafe_allow_html=True)
+        
+        # اختيار سريع - بمجرد ما تختار يدخل
+        case_ids = [c['id'] for c in data["cases"]]
+        case_labels = [f"{c.get('رقم')}/{c.get('سنة')} - {c.get('موضوع')[:40]}" for c in data["cases"]]
+        selected_label = st.selectbox(
+            "اختار القضية", 
+            options=case_labels, 
+            index=None, 
+            placeholder="دوس واختار رقم القضية...",
+            label_visibility="collapsed"
+        )
+        
+        if selected_label:
+            selected_index = case_labels.index(selected_label)
+            st.session_state.selected_case_id = case_ids[selected_index]
+            st.session_state.page = "تفاصيل"
+            st.rerun()
+
+# ==================== نهاية قسم 3: الحصر العام الخارجي ====================
