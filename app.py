@@ -209,48 +209,6 @@ elif st.session_state.page == "حصر":
             st.rerun()
 # ==================== نهاية قسم 3: الحصر العام ====================
 # ==================== بداية قسم 4: تفاصيل القضية ====================
-
-        st.markdown(f"<div class='info-box' style='background:linear-gradient(135deg, #F0F4F8 0%, #E1E8F0 100%)'><b>المدعى عليه:</b><br>{case.get('مدعي_عليه')}</div>", unsafe_allow_html=True)
-
-    # كارت 3: ادارة الجلسات
-    st.markdown("<h3 style='color:#C9A961'>📅 إدارة الجلسات</h3>", unsafe_allow_html=True)
-    
-    with st.expander("➕ اضافة جلسة جديدة"):
-        with st.form("new_session"):
-            c1, c2 = st.columns(2)
-            تاريخ = c1.date_input("تاريخ الجلسة")
-            سبب = c2.text_input("سبب الجلسة")
-            قرار = st.text_area("قرار الجلسة")
-            if st.form_submit_button("حفظ الجلسة"):
-                if "جلسات" not in case: case["جلسات"] = []
-                case["جلسات"].append({"تاريخ": str(تاريخ), "سبب": سبب, "قرار": قرار})
-                case["تاريخ_جلسة"] = str(تاريخ)
-                case["سبب"] = سبب
-                save_data(data)
-                st.success("تم حفظ الجلسة"); st.rerun()
-
-    if "جلسات" in case and case["جلسات"]:
-        st.markdown("<h4>سجل الجلسات</h4>", unsafe_allow_html=True)
-        جلسات_مرتبة = sorted(case["جلسات"], key=lambda x: x['تاريخ'])
-        table_html = "<table class='case-table'>"
-        table_html += "<tr><th>م</th><th>التاريخ</th><th>السبب</th><th>القرار</th></tr>"
-        for i, ج in enumerate(جلسات_مرتبة, 1):
-            table_html += f"<tr><td>{i}</td><td>{ج['تاريخ']}</td><td>{ج['سبب']}</td><td>{ج['قرار']}</td></tr>"
-        table_html += "</table>"
-        st.markdown(table_html, unsafe_allow_html=True)
-    else:
-        st.info("لا توجد جلسات مسجلة لهذه القضية")
-
-    # كارت 4: المذكرات والمستندات
-    st.markdown("<h3 style='color:#C9A961'>📎 المذكرات والمستندات</h3>", unsafe_allow_html=True)
-    st.info("سيتم اضافة رفع الملفات هنا في التحديث القادم")
-
-    st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
-    if st.button("🗑️ حذف القضية نهائيا", type="primary"):
-        data["cases"] = [c for c in data["cases"] if c['id'] != case['id']]
-        save_data(data)
-        st.success("تم حذف القضية"); st.session_state.page = "حصر"; st.rerun()
-        # ==================== بداية قسم 4: تفاصيل القضية ====================
 elif st.session_state.page == "تفاصيل":
     case = next((c for c in data["cases"] if c['id'] == st.session_state.selected_case_id), None)
     if not case:
@@ -263,47 +221,47 @@ elif st.session_state.page == "تفاصيل":
     if st.button("العودة للحصر", use_container_width=True): st.session_state.page = "حصر"; st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # جدول بيانات القضية - مززهه
+    # جدول بيانات القضية - مززهه ومظبوط
     st.markdown("<h3 style='color:#C9A961'>📌 بيانات القضية</h3>", unsafe_allow_html=True)
     
-    table_html = """
-    <div class='table-container' style='background:linear-gradient(180deg, #0F1A2E 0%, #1E2A47 100%); padding:15px; border-radius:15px; border:2px solid #C9A961; box-shadow:0 0 20px rgba(201,169,97,0.3)'>
-    <table style='width:100%; table-layout:fixed; border-spacing:8px; border-collapse:separate'>
+    table_html = f"""
+    <div style='background:linear-gradient(180deg, #0A1428 0%, #1E2A47 100%); padding:15px; border-radius:18px; border:2px solid #C9A961'>
+    <table style='width:100%; border-spacing:8px 8px; border-collapse:separate'>
     <!-- الصف الاول 4 مربعات -->
     <tr>
-        <td style='background:linear-gradient(135deg, #1A365D 0%, #2C5282 100%); border:2px solid #C9A961; border-radius:12px; padding:15px; text-align:center; height:90px; box-shadow:0 4px 8px rgba(0,0,0,0.3)'>
-            <div style='font-size:11px; color:#C9A961; margin-bottom:5px; font-weight:bold; letter-spacing:1px'>رقم القضية</div>
-            <div style='font-size:20px; color:#FFFFFF; font-weight:bold'>""" + str(case.get('رقم')) + """</div>
+        <td style='background:linear-gradient(145deg, #1E3A6B 0%, #2C5282 100%); border:2px solid #C9A961; border-radius:12px; padding:12px; text-align:center; min-height:85px; box-shadow:inset 0 0 10px rgba(0,0,0,0.3)'>
+            <div style='font-size:12px; color:#FFD700; margin-bottom:6px; font-weight:bold'>رقم القضية</div>
+            <div style='font-size:20px; color:#FFFFFF; font-weight:bold; white-space:nowrap'>{case.get('رقم')}</div>
         </td>
-        <td style='background:linear-gradient(135deg, #2C5282 0%, #1A365D 100%); border:2px solid #C9A961; border-radius:12px; padding:15px; text-align:center; height:90px; box-shadow:0 4px 8px rgba(0,0,0,0.3)'>
-            <div style='font-size:11px; color:#C9A961; margin-bottom:5px; font-weight:bold; letter-spacing:1px'>السنة</div>
-            <div style='font-size:20px; color:#FFFFFF; font-weight:bold'>""" + str(case.get('سنة')) + """</div>
+        <td style='background:linear-gradient(145deg, #2C5282 0%, #1E3A6B 100%); border:2px solid #C9A961; border-radius:12px; padding:12px; text-align:center; min-height:85px; box-shadow:inset 0 0 10px rgba(0,0,0,0.3)'>
+            <div style='font-size:12px; color:#FFD700; margin-bottom:6px; font-weight:bold'>السنة</div>
+            <div style='font-size:20px; color:#FFFFFF; font-weight:bold; white-space:nowrap'>{case.get('سنة')}</div>
         </td>
-        <td style='background:linear-gradient(135deg, #1A365D 0%, #2C5282 100%); border:2px solid #C9A961; border-radius:12px; padding:15px; text-align:center; height:90px; box-shadow:0 4px 8px rgba(0,0,0,0.3)'>
-            <div style='font-size:11px; color:#C9A961; margin-bottom:5px; font-weight:bold; letter-spacing:1px'>الدائرة</div>
-            <div style='font-size:18px; color:#FFFFFF; font-weight:bold'>""" + str(case.get('دائرة')) + """ مدنى</div>
+        <td style='background:linear-gradient(145deg, #1E3A6B 0%, #2C5282 100%); border:2px solid #C9A961; border-radius:12px; padding:12px; text-align:center; min-height:85px; box-shadow:inset 0 0 10px rgba(0,0,0,0.3)'>
+            <div style='font-size:12px; color:#FFD700; margin-bottom:6px; font-weight:bold'>الدائرة</div>
+            <div style='font-size:18px; color:#FFFFFF; font-weight:bold; white-space:nowrap'>{case.get('دائرة')} مدنى</div>
         </td>
-        <td style='background:linear-gradient(135deg, #2C5282 0%, #1A365D 100%); border:2px solid #C9A961; border-radius:12px; padding:15px; text-align:center; height:90px; box-shadow:0 4px 8px rgba(0,0,0,0.3)'>
-            <div style='font-size:11px; color:#C9A961; margin-bottom:5px; font-weight:bold; letter-spacing:1px'>النوع</div>
-            <div style='font-size:16px; color:#FFFFFF; font-weight:bold'>""" + str(case.get('نوع')) + """</div>
+        <td style='background:linear-gradient(145deg, #2C5282 0%, #1E3A6B 100%); border:2px solid #C9A961; border-radius:12px; padding:12px; text-align:center; min-height:85px; box-shadow:inset 0 0 10px rgba(0,0,0,0.3)'>
+            <div style='font-size:12px; color:#FFD700; margin-bottom:6px; font-weight:bold'>النوع</div>
+            <div style='font-size:16px; color:#FFFFFF; font-weight:bold; white-space:nowrap'>{case.get('نوع')}</div>
         </td>
     </tr>
     <!-- الصف الثاني -->
     <tr>
-        <td colspan='2' style='background:linear-gradient(135deg, #1A365D 0%, #2C5282 100%); border:2px solid #C9A961; border-radius:12px; padding:15px; text-align:center; height:90px; box-shadow:0 4px 8px rgba(0,0,0,0.3)'>
-            <div style='font-size:11px; color:#C9A961; margin-bottom:5px; font-weight:bold; letter-spacing:1px'>المحكمة</div>
-            <div style='font-size:16px; color:#FFFFFF; font-weight:bold'>""" + str(case.get('محكمة_اسم')) + """</div>
+        <td colspan='2' style='background:linear-gradient(145deg, #1E3A6B 0%, #2C5282 100%); border:2px solid #C9A961; border-radius:12px; padding:12px; text-align:center; min-height:85px; box-shadow:inset 0 0 10px rgba(0,0,0,0.3)'>
+            <div style='font-size:12px; color:#FFD700; margin-bottom:6px; font-weight:bold'>المحكمة</div>
+            <div style='font-size:15px; color:#FFFFFF; font-weight:bold; word-wrap:break-word'>{case.get('محكمة_اسم')}</div>
         </td>
-        <td colspan='2' style='background:linear-gradient(135deg, #2C5282 0%, #1A365D 100%); border:2px solid #C9A961; border-radius:12px; padding:15px; text-align:center; height:90px; box-shadow:0 4px 8px rgba(0,0,0,0.3)'>
-            <div style='font-size:11px; color:#C9A961; margin-bottom:5px; font-weight:bold; letter-spacing:1px'>المأمورية</div>
-            <div style='font-size:16px; color:#FFFFFF; font-weight:bold'>""" + str(case.get('مأمورية') or '-') + """</div>
+        <td colspan='2' style='background:linear-gradient(145deg, #2C5282 0%, #1E3A6B 100%); border:2px solid #C9A961; border-radius:12px; padding:12px; text-align:center; min-height:85px; box-shadow:inset 0 0 10px rgba(0,0,0,0.3)'>
+            <div style='font-size:12px; color:#FFD700; margin-bottom:6px; font-weight:bold'>المأمورية</div>
+            <div style='font-size:15px; color:#FFFFFF; font-weight:bold; word-wrap:break-word'>{case.get('مأمورية') or '-'}</div>
         </td>
     </tr>
     <!-- الصف الثالث -->
     <tr>
-        <td colspan='4' style='background:linear-gradient(135deg, #1A365D 0%, #2C5282 100%); border:2px solid #C9A961; border-radius:12px; padding:15px; text-align:center; height:90px; box-shadow:0 4px 8px rgba(0,0,0,0.3)'>
-            <div style='font-size:11px; color:#C9A961; margin-bottom:5px; font-weight:bold; letter-spacing:1px'>الموضوع</div>
-            <div style='font-size:16px; color:#FFFFFF; font-weight:bold'>""" + str(case.get('موضوع')) + """</div>
+        <td colspan='4' style='background:linear-gradient(145deg, #1E3A6B 0%, #2C5282 100%); border:2px solid #C9A961; border-radius:12px; padding:12px; text-align:center; min-height:85px; box-shadow:inset 0 0 10px rgba(0,0,0,0.3)'>
+            <div style='font-size:12px; color:#FFD700; margin-bottom:6px; font-weight:bold'>الموضوع</div>
+            <div style='font-size:15px; color:#FFFFFF; font-weight:bold; word-wrap:break-word'>{case.get('موضوع')}</div>
         </td>
     </tr>
     </table>
@@ -311,21 +269,21 @@ elif st.session_state.page == "تفاصيل":
     """
     st.markdown(table_html, unsafe_allow_html=True)
     
-    # كارت 2: الخصوم - واضحين ومززهين
+    # كارت 2: الخصوم - خلفية ملونة
     st.markdown("<h3 style='color:#C9A961'>👥 الخصوم</h3>", unsafe_allow_html=True)
     col1, col2 = st.columns(2)
     with col1:
         st.markdown(f"""
-        <div style='background:linear-gradient(135deg, #FFF8E1 0%, #FFECB3 100%); border:2px solid #C9A961; border-radius:12px; padding:15px; box-shadow:0 4px 8px rgba(0,0,0,0.2)'>
-            <div style='font-size:12px; color:#8B6914; font-weight:bold; margin-bottom:5px'>المدعي:</div>
-            <div style='font-size:15px; color:#1A365D; font-weight:bold'>{case.get('مدعي')}</div>
+        <div style='background:linear-gradient(145deg, #FFF3CD 0%, #FFE69C 100%); border:2px solid #C9A961; border-radius:12px; padding:15px; box-shadow:0 4px 10px rgba(201,169,97,0.3)'>
+            <div style='font-size:13px; color:#8B6914; font-weight:bold; margin-bottom:6px'>المدعي:</div>
+            <div style='font-size:15px; color:#1E3A6B; font-weight:bold'>{case.get('مدعي')}</div>
         </div>
         """, unsafe_allow_html=True)
     with col2:
         st.markdown(f"""
-        <div style='background:linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 100%); border:2px solid #C9A961; border-radius:12px; padding:15px; box-shadow:0 4px 8px rgba(0,0,0,0.2)'>
-            <div style='font-size:12px; color:#1565C0; font-weight:bold; margin-bottom:5px'>المدعى عليه:</div>
-            <div style='font-size:15px; color:#1A365D; font-weight:bold'>{case.get('مدعي_عليه')}</div>
+        <div style='background:linear-gradient(145deg, #CFF4FC 0%, #9EEAF9 100%); border:2px solid #C9A961; border-radius:12px; padding:15px; box-shadow:0 4px 10px rgba(201,169,97,0.3)'>
+            <div style='font-size:13px; color:#055160; font-weight:bold; margin-bottom:6px'>المدعى عليه:</div>
+            <div style='font-size:15px; color:#1E3A6B; font-weight:bold'>{case.get('مدعي_عليه')}</div>
         </div>
         """, unsafe_allow_html=True)
 
@@ -349,8 +307,8 @@ elif st.session_state.page == "تفاصيل":
     if "جلسات" in case and case["جلسات"]:
         st.markdown("<h4 style='color:#C9A961'>سجل الجلسات</h4>", unsafe_allow_html=True)
         جلسات_مرتبة = sorted(case["جلسات"], key=lambda x: x['تاريخ'])
-        table_html = "<table class='case-table' style='border:2px solid #C9A961'>"
-        table_html += "<tr style='background:linear-gradient(90deg, #1A365D, #2C5282)'><th>م</th><th>التاريخ</th><th>السبب</th><th>القرار</th></tr>"
+        table_html = "<table class='case-table' style='border:2px solid #C9A961; border-radius:10px; overflow:hidden'>"
+        table_html += "<tr style='background:linear-gradient(90deg, #1E3A6B, #2C5282)'><th>م</th><th>التاريخ</th><th>السبب</th><th>القرار</th></tr>"
         for i, ج in enumerate(جلسات_مرتبة, 1):
             table_html += f"<tr><td>{i}</td><td>{ج['تاريخ']}</td><td>{ج['سبب']}</td><td>{ج['قرار']}</td></tr>"
         table_html += "</table>"
