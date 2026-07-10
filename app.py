@@ -145,79 +145,69 @@ elif st.session_state.page == "تسجيل":
 elif st.session_state.page == "حصر":
     st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
     st.markdown("<h2 style='color:#FFFFFF; text-align:center'>📊 الحصر العام</h2>", unsafe_allow_html=True)
-    
+
     if st.button("العودة للرئيسية", use_container_width=True, type="secondary"):
         st.session_state.page = "الرئيسية"
         st.rerun()
-    
+
     st.markdown("<hr style='border:2px solid #C9A961'>", unsafe_allow_html=True)
-    
+
     if not data["cases"]:
         st.info("لا توجد قضايا مسجلة")
     else:
-        # CSS للجدول الدهبي
+        # CSS للجدول
         st.markdown("""
         <style>
-        .case-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 13px;
-            color: black;
+      .case-table td,.case-table th {
+            font-size: 12px;
+            padding: 6px;
+            text-align: center;
+            border: 1px solid #ddd;
         }
-        .case-table th {
+      .case-table th {
             background-color: #C9A961;
             color: black;
-            padding: 10px;
-            text-align: center;
             font-weight: bold;
-            border: 1px solid #ddd;
         }
-        .case-table td {
-            padding: 8px;
-            text-align: center;
-            border: 1px solid #ddd;
-        }
-        .red-row {background-color: #8B0000 !important; color: white !important; font-weight: bold;}
-        .blue-row {background-color: #FFFFFF !important; color: black !important;}
+       .red-row td {background-color: #8B0000!important; color: white!important; font-weight: bold;}
+       .blue-row td {background-color: white!important; color: black!important;}
         </style>
         """, unsafe_allow_html=True)
-        
-        # بناء الجدول يدوي عشان الالوان والزرار
-        table_html = "<table class='case-table'><tr>"
-        headers = ["م", "الرقم", "المحكمة", "المدعي", "المدعى عليه", "الموضوع", "فتح"]
-        for h in headers:
-            table_html += f"<th>{h}</th>"
-        table_html += "</tr>"
-        
+
+        # هيدر الجدول بالترتيب اللي طلبته
+        headers = ["م", "الرقم والسنة", "المحكمة والدائرة", "المأمورية", "الخصوم", "الموضوع", "اخر جلسة", "السبب", "فتح"]
+        cols = st.columns([0.4, 1, 1.5, 1, 1.8, 1, 1, 1, 0.7])
+        for col, header in zip(cols, headers):
+            col.markdown(f"<div style='background:#C9A961; padding:8px; font-weight:bold; border:1px solid #ddd'>{header}</div>", unsafe_allow_html=True)
+
+        # الصفوف
         for idx, c in enumerate(data["cases"], 1):
             مدعي = str(c.get('مدعي', '')).lower()
             موضوع = str(c.get('موضوع', '')).lower()
-            
-            # الشرط: الهيئة مدعية او مستأنفة او طاعنة
+
+            # الشرط: احمر لو الهيئة مدعية او مستأنفة او طاعنة
             is_red = 'الهيئة' in مدعي or ('الهيئة' in مدعي and 'مستأنف' in موضوع) or ('الهيئة' in مدعي and 'طعن' in موضوع)
             row_class = "red-row" if is_red else "blue-row"
-            
-            table_html += f"<tr class='{row_class}'>"
-            table_html += f"<td>{idx}</td>"
-            table_html += f"<td>{c.get('رقم')}<br>سنة {c.get('سنة')}</td>"
-            table_html += f"<td>{c.get('دائرة')}{c.get('نوع')}<br>{c.get('محكمة_اسم')}</td>"
-            table_html += f"<td>{c.get('مدعي')}</td>"
-            table_html += f"<td>{c.get('مدعي_عليه')}</td>"
-            table_html += f"<td>{c.get('موضوع')}</td>"
-            table_html += f"<td><form><button name='open_case' value='{c['id']}'>فتح 📂</button></form></td>"
-            table_html += "</tr>"
-        table_html += "</table>"
-        
-        st.markdown(table_html, unsafe_allow_html=True)
-        
+
+            cols = st.columns([0.4, 1, 1.5, 1, 1.8, 1, 1, 1, 0.7])
+
+            cols[0].markdown(f"<div class='{row_class}'>{idx}</div>", unsafe_allow_html=True)
+            cols[1].markdown(f"<div class='{row_class}'>{c.get('رقم')}<br>لسنة {c.get('سنة')}</div>", unsafe_allow_html=True)
+            cols[2].markdown(f"<div class='{row_class}'>{c.get('دائرة')}{c.get('نوع')}<br>{c.get('محكمة_اسم')}</div>", unsafe_allow_html=True)
+            cols[3].markdown(f"<div class='{row_class}'>مأمورية {c.get('مأمورية', '-')}</div>", unsafe_allow_html=True)
+            cols[4].markdown(f"<div class='{row_class}'>{c.get('مدعي')} ضد {c.get('مدعي_عليه')}</div>", unsafe_allow_html=True)
+            cols[5].markdown(f"<div class='{row_class}'>{c.get('موضوع')}</div>", unsafe_allow_html=True)
+            cols[6].markdown(f"<div class='{row_class}'>{c.get('تاريخ_جلسة', '-')}</div>", unsafe_allow_html=True)
+            cols[7].markdown(f"<div class='{row_class}'>{c.get('سبب', '-')}</div>", unsafe_allow_html=True)
+
+            # زرار الفتح
+            if cols[8].button("فتح", key=f"open_{c['id']}", use_container_width=True, type="primary"):
+                st.session_state.selected_case_id = c['id']
+                st.session_state.page = "تفاصيل"
+                st.rerun()
+
+        st.markdown("<hr style='border:1px solid #C9A961'>", unsafe_allow_html=True)
         st.caption("🔴 احمر = الهيئة مدعية / مستأنفة / طاعنة")
-        
-        # تشييك لو اتداس على زرار فتح
-        if "open_case" in st.query_params:
-            st.session_state.selected_case_id = st.query_params["open_case"]
-            st.session_state.page = "تفاصيل"
-            st.query_params.clear()
-            st.rerun()
 
 # ==================== نهاية قسم 3: فتح القضايا المسجلة ====================
 # ==================== بداية قسم 4: تفاصيل القضية ====================
