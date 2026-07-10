@@ -1,5 +1,5 @@
 # ============================================================
-# ================== إدارة القضايا v3.3 =====================
+# ================== إدارة القضايا v3.4 =====================
 # ========== الإدارة العامة للشئون القانونية البحيرة ==========
 # ============================================================
 
@@ -61,7 +61,7 @@ st.markdown(f"""
         font-weight: 700 !important;
         font-size: 15px !important;
     }}
-    input, textarea, select {{color: #0F1C2E !important; font-weight: 600;}}
+    input, textarea, select {{color: #0F1C2E !important; font-weight: 600; background-color: #FFFFFF !important;}}
     
     div[data-testid="stButton"] > button {{
         background: linear-gradient(135deg, #2C4A73, #3A5F8A) !important;
@@ -69,14 +69,18 @@ st.markdown(f"""
         border: 2px solid #C9A961; font-weight: 700; font-size: 15px;
         height: 90px; margin: 5px 0;
     }}
-    .btn-save button {{background: linear-gradient(135deg, #C9A961, #D4B96A) !important; color: #0F1C2E !important; height: 50px !important; font-weight:800 !important}}
-    .btn-delete button {{background: linear-gradient(135deg, #6E4A4A, #8A5A5A) !important; color: #E8E8E8 !important; height: 50px !important; font-weight:800 !important}}
+    /* زرار الحفظ والحذف */
+    div[data-testid="stFormSubmitButton"] > button {{
+        height: 50px !important; font-weight:800 !important; font-size:16px !important;
+    }}
+    .btn-save button {{background: linear-gradient(135deg, #C9A961, #D4B96A) !important; color: #0F1C2E !important;}}
+    .btn-delete button {{background: linear-gradient(135deg, #6E4A4A, #8A5A5A) !important; color: #E8E8E8 !important;}}
     
     .card {{
-        background: rgba(26,47,79,0.7); padding: 15px; border-radius: 12px;
-        border: 2px solid #C9A961; margin-bottom: 15px;
+        background: rgba(26,47,79,0.85); padding: 18px; border-radius: 12px;
+        border: 2px solid #C9A961; margin-bottom: 18px; box-shadow: 0 0 10px rgba(201,169,97,0.2);
     }}
-    .card-title {{color: #D4B96A; font-weight: 800; font-size: 16px; margin-bottom: 10px;}}
+    .card-title {{color: #D4B96A; font-weight: 800; font-size: 17px; margin-bottom: 12px; border-bottom: 1px solid #C9A961; padding-bottom: 8px;}}
     .small-stat {{
         padding: 14px; border-radius: 10px; text-align: center; 
         border: 2px solid #C9A961; margin-bottom: 10px;
@@ -119,7 +123,6 @@ st.markdown(f"""
 
 st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
 
-
 # ============================================================
 # ===================  الصفحة الرئيسية  ======================
 # ============================================================
@@ -157,7 +160,6 @@ if st.session_state.page == "الرئيسية":
     st.markdown(f"<div class='small-stat s3'><p>✅ أحكام لصالح</p><h2>{أحكام_لصالح}</h2></div>", unsafe_allow_html=True)
     st.markdown(f"<div class='small-stat s4'><p>❌ أحكام ضد</p><h2>{أحكام_ضد}</h2></div>", unsafe_allow_html=True)
 
-
 # ============================================================
 # =================== 1. تسجيل القضايا كروت  =================
 # ============================================================
@@ -168,18 +170,19 @@ elif st.session_state.page == "تسجيل":
         st.session_state.page = "الرئيسية"
         st.rerun()
     
+    # "نوع الدعوى" بره الفورم عشان المأمورية تظهر فورا
+    نوع = st.selectbox("نوع الدعوى", ["دعوى", "استئناف", "طعن"], key="sel_type")
+    
     with st.form("form_case"):
         # كارت 1: بيانات المحكمة
         st.markdown("<div class='card'><div class='card-title'>1- بيانات المحكمة</div>", unsafe_allow_html=True)
-        نوع = st.selectbox("نوع الدعوى", ["دعوى", "استئناف", "طعن"], key="sel_type")
-        
         col1, col2 = st.columns(2)
         with col1:
             محكمة_نوع = st.selectbox("المحكمة", ["الابتدائية", "الاستئناف", "النقض", "الإدارية", "القضاء الإدارى", "الإدارية العليا"], key="sel_court_type")
         with col2:
             محكمة_اسم = st.text_input("اسم المحكمة", key="txt_court_name")
         
-        # المأمورية تظهر فقط لو استئناف
+        # المأمورية تظهر فورا
         if نوع == "استئناف":
             مأمورية = st.text_input("المأمورية", key="txt_mission")
         else:
@@ -241,7 +244,17 @@ elif st.session_state.page == "تسجيل":
         col1, col2 = st.columns(2)
         with col1:
             st.markdown("<div class='btn-save'>", unsafe_allow_html=True)
-            if st.form_submit_button("💾 حفظ القضية", use_container_width=True):
+            submitted = st.form_submit_button("💾 حفظ القضية", use_container_width=True)
+            st.markdown("</div>", unsafe_allow_html=True)
+        with col2:
+            st.markdown("<div class='btn-delete'>", unsafe_allow_html=True)
+            deleted = st.form_submit_button("🗑️ حذف القضية", use_container_width=True)
+            st.markdown("</div>", unsafe_allow_html=True)
+        
+        if submitted:
+            if not رقم or not سنة:
+                st.error("❌ من فضلك ادخل رقم الدعوى والسنة")
+            else:
                 new_case = {
                     "id": len(data["cases"])+1, "نوع": نوع, "محكمة_نوع": محكمة_نوع, "محكمة_اسم": محكمة_اسم,
                     "مأمورية": مأمورية, "رقم": رقم, "سنة": سنة, "دائرة": دائرة, "النوع": النوع_تفصيلي,
@@ -252,18 +265,15 @@ elif st.session_state.page == "تسجيل":
                 }
                 data["cases"].append(new_case)
                 save_data(data)
-                st.success("✅ تم الحفظ بنجاح")
+                st.success("✅ تم حفظ القضية بنجاح")
+                st.balloons()
                 st.session_state.page = "الرئيسية"
                 st.rerun()
-            st.markdown("</div>", unsafe_allow_html=True)
-        with col2:
-            st.markdown("<div class='btn-delete'>", unsafe_allow_html=True)
-            if st.form_submit_button("🗑️ حذف القضية", use_container_width=True): st.warning("ميزة الحذف سيتم تفعيلها لاحقا")
-            st.markdown("</div>", unsafe_allow_html=True)
-
+        
+        if deleted: st.warning("ميزة الحذف سيتم تفعيلها لاحقا")
 
 # ============================================================
-# =================== 2. الحصر العام جدول  ===================
+# =================== 2. الحصر العام مرتب  ===================
 # ============================================================
 elif st.session_state.page == "حصر":
     st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
@@ -282,8 +292,11 @@ elif st.session_state.page == "حصر":
                 updated = True
         if updated: save_data(data)
 
+        # نرتب حسب تاريخ الجلسة من الاقدم للاحدث
+        sorted_cases = sorted(data["cases"], key=lambda x: x.get("تاريخ_جلسة","9999"))
+
         df_data = []
-        for case in sorted(data["cases"], key=lambda x: x.get("id", 0), reverse=True):
+        for case in sorted_cases:
             df_data.append({
                 "م": case.get("id"),
                 "الرقم": f"{case.get('رقم','-')}/{case.get('سنة','-')}",
@@ -293,7 +306,8 @@ elif st.session_state.page == "حصر":
                 "المدعي": case.get("مدعي"),
                 "المدعى عليه": case.get("مدعي_عليه"),
                 "الموضوع": case.get("موضوع"),
-                "آخر جلسة": case.get("تاريخ_جلسة")
+                "تاريخ الجلسة": case.get("تاريخ_جلسة"),
+                "سبب الجلسة": case.get("سبب")
             })
         
         df = pd.DataFrame(df_data)
@@ -302,16 +316,15 @@ elif st.session_state.page == "حصر":
         st.markdown("<hr style='border:1px solid #C9A961'>", unsafe_allow_html=True)
         st.markdown("<h4 style='color:#C9A961'>اختر قضية لعرض التفاصيل</h4>", unsafe_allow_html=True)
         
-        for case in sorted(data["cases"], key=lambda x: x.get("id", 0), reverse=True):
+        for case in sorted_cases:
             col1, col2 = st.columns([4,1])
             with col1:
-                st.write(f"**{case.get('رقم')}/{case.get('سنة')}** - {case.get('مدعي')} ضد {case.get('مدعي_عليه')}")
+                st.write(f"**{case.get('رقم')}/{case.get('سنة')}** - {case.get('مدعي')} ضد {case.get('مدعي_عليه')} - الجلسة: {case.get('تاريخ_جلسة')}")
             with col2:
                 if st.button("فتح", key=f"open_{case['id']}"):
                     st.session_state.selected_case_id = case['id']
                     st.session_state.page = "تفاصيل"
                     st.rerun()
-
 
 # ============================================================
 # =================== 3. تفاصيل القضية  ======================
