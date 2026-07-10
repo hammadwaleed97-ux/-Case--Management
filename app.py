@@ -1,9 +1,8 @@
 # ===========================================================
-# ================== إدارة القضايا v5.11 =====================
+# ================== إدارة القضايا v5.12 =====================
 # ========== الإدارة العامة للشئون القانونية البحيرة ==========
 # ============================================================
 import streamlit as st
-import pandas as pd
 import json
 import os
 from datetime import datetime
@@ -45,14 +44,14 @@ st.markdown("""
 .card {background: rgba(26,47,79,0.85); padding: 18px; border-radius: 12px; border: 2px solid #C9A961; margin-bottom: 18px;}
 .card-title {color: #D4B96A; font-weight: 800; font-size: 18px; margin-bottom: 15px; border-bottom: 2px solid #C9A961; padding-bottom: 10px; text-align: right;}
 .table-container {overflow-x: auto; border: 3px solid #C9A961; border-radius: 10px; background: white;}
-.case-table {width: 100%; border-collapse: collapse; background: #FFFFFF; color: #0F1C2E; font-size: 14px;}
+.case-table {width: 100%; border-collapse: collapse; background: #FFFFFF; color: #0F1C2E; font-size: 14px; margin-bottom:0}
 .case-table th {background: linear-gradient(90deg, #D4B96A, #C9A961); color: #0F1C2E; padding: 12px 8px; text-align: center; font-weight: 800;}
 .case-table td {padding: 10px 8px; text-align: center; border: 1px solid #DDD; font-weight: 600; vertical-align: middle;}
+.btn-row {background:#F0F0F0; border-bottom:2px solid #C9A961}
+.btn-open {background: linear-gradient(135deg, #8B0000, #A52A2A)!important; color: #FFFFFF!important; border:none!important; border-radius:6px!important; padding:3px 12px!important; font-size:12px!important; font-weight:700!important; height:30px!important; width:80px!important; margin:5px auto!important; display:block!important;}
 .row1 {background:#F9F9F9}
 .row2 {background:#FFFFFF}
 .row-hey2a {background:#FFE5E5; font-weight:800}
-.btn-open {background: linear-gradient(135deg, #8B0000, #A52A2A)!important; color: #FFFFFF!important; border:none!important; border-radius:6px!important; padding:4px 10px!important; font-size:12px!important; font-weight:700!important; height:32px!important; width:70px!important;}
-.info-box {background:#1E2A47; border:1px solid #C9A961; border-radius:8px; padding:15px; margin-bottom:10px; color:#FFFFFF}
     h2, h3, h4, p {color: #FFFFFF!important;}
 </style>
 """, unsafe_allow_html=True)
@@ -115,14 +114,6 @@ elif st.session_state.page == "تسجيل":
         ملاحظات = st.text_area("ملاحظات")
         st.markdown("</div>", unsafe_allow_html=True)
 
-        st.markdown("<div class='card'><div class='card-title'>5- التنبيهات والمستندات</div>", unsafe_allow_html=True)
-        تنبيه = st.checkbox("تفعيل التنبيهات عبر الواتس اب")
-        واتس = st.text_input("رقم هاتف واتس اب") if تنبيه else ""
-        col1, col2 = st.columns(2)
-        with col1: مستند_نوع = st.selectbox("نوع المستند", ["صحيفة الدعوى", "صحيفة الاستئناف", "صحيفة الطعن"])
-        with col2: مستند_ملف = st.file_uploader("اختر الملف")
-        st.markdown("</div>", unsafe_allow_html=True)
-
         st.markdown("<div class='btn-save'>", unsafe_allow_html=True)
         if st.form_submit_button("حفظ القضية", use_container_width=True):
             if not رقم or not سنة:
@@ -132,7 +123,7 @@ elif st.session_state.page == "تسجيل":
                     "id": len(data["cases"])+1, "نوع": نوع, "محكمة_اسم": محكمة_اسم, "مأمورية": مأمورية,
                     "رقم": رقم, "سنة": سنة, "دائرة": دائرة, "مدعي": مدعي, "مدعي_عليه": مدعي_عليه,
                     "موضوع": موضوع, "تاريخ_جلسة": str(تاريخ_جلسة), "الرول": الرول, "سبب": سبب,
-                    "ملاحظات": ملاحظات, "تنبيه": تنبيه, "واتس": واتس, "جلسات": []
+                    "ملاحظات": ملاحظات, "جلسات": []
                 }
                 data["cases"].append(new_case)
                 save_data(data)
@@ -163,10 +154,6 @@ elif st.session_state.page == "حصر":
 
         sorted_cases = sorted(data["cases"], key=lambda x: x.get("تاريخ_جلسة","9999"))
 
-        st.markdown("<div class='table-container'>", unsafe_allow_html=True)
-        st.markdown("<table class='case-table'>", unsafe_allow_html=True)
-        st.markdown("<tr><th>م</th><th>الرقم والسنة</th><th>المحكمة والدائرة</th><th>الخصوم</th><th>الموضوع</th><th>اخر جلسة</th><th>السبب</th><th>فتح</th></tr>", unsafe_allow_html=True)
-
         for idx, case in enumerate(sorted_cases, 1):
             رقم_كامل = f"{case.get('رقم','')} لسنة {case.get('سنة','')}"
             محكمة_كاملة = f"{case.get('نوع','')} {case.get('محكمة_اسم','')}"
@@ -182,26 +169,28 @@ elif st.session_state.page == "حصر":
             else:
                 row_class = "row1" if idx % 2 == 1 else "row2"
 
+            # جدول بيانات القضية
+            st.markdown("<div class='table-container'>", unsafe_allow_html=True)
+            st.markdown("<table class='case-table'>", unsafe_allow_html=True)
             st.markdown(f"<tr class='{row_class}'>", unsafe_allow_html=True)
-            st.markdown(f"<td>{idx}</td>", unsafe_allow_html=True)
-            st.markdown(f"<td>{رقم_كامل}</td>", unsafe_allow_html=True)
-            st.markdown(f"<td>{محكمة_كاملة}</td>", unsafe_allow_html=True)
-            st.markdown(f"<td>{خصوم}</td>", unsafe_allow_html=True)
-            st.markdown(f"<td>{case.get('موضوع','')}</td>", unsafe_allow_html=True)
-            st.markdown(f"<td>{case.get('تاريخ_جلسة','')}</td>", unsafe_allow_html=True)
-            st.markdown(f"<td>{case.get('سبب','')}</td>", unsafe_allow_html=True)
-
-            # الزرار جوه الجدول
-            with st.container():
-                col_btn = st.columns([1])
-                with col_btn[0]:
-                    if st.button("فتح", key=f"open_{case['id']}", help=f"عرض تفاصيل قضية {رقم_كامل}"):
-                        st.session_state.selected_case_id = case['id']
-                        st.session_state.page = "تفاصيل"
-                        st.rerun()
+            st.markdown(f"<td><b>م</b><br>{idx}</td>", unsafe_allow_html=True)
+            st.markdown(f"<td><b>الرقم</b><br>{رقم_كامل}</td>", unsafe_allow_html=True)
+            st.markdown(f"<td><b>المحكمة</b><br>{محكمة_كاملة}</td>", unsafe_allow_html=True)
+            st.markdown(f"<td><b>الخصوم</b><br>{خصوم}</td>", unsafe_allow_html=True)
+            st.markdown(f"<td><b>الموضوع</b><br>{case.get('موضوع','')}</td>", unsafe_allow_html=True)
+            st.markdown(f"<td><b>اخر جلسة</b><br>{case.get('تاريخ_جلسة','')}</td>", unsafe_allow_html=True)
+            st.markdown(f"<td><b>السبب</b><br>{case.get('سبب','')}</td>", unsafe_allow_html=True)
             st.markdown("</tr>", unsafe_allow_html=True)
+            st.markdown("</table>", unsafe_allow_html=True)
 
-        st.markdown("</table></div>", unsafe_allow_html=True)
+            # صف الزرار الاحمر الصغير في النص
+            c1, c2, c3 = st.columns([3,2,3])
+            with c2:
+                if st.button("فتح", key=f"open_{case['id']}", help=f"عرض تفاصيل قضية {رقم_كامل}"):
+                    st.session_state.selected_case_id = case['id']
+                    st.session_state.page = "تفاصيل"
+                    st.rerun()
+            st.markdown("</div>", unsafe_allow_html=True)
 
 # ==================== نهاية القسم 3: الحصر العام الخارجي ====================
 
@@ -293,9 +282,6 @@ elif st.session_state.page == "تفاصيل":
         st.markdown(table_html, unsafe_allow_html=True)
     else:
         st.info("لا توجد جلسات مسجلة لهذه القضية")
-
-    st.markdown("<h3 style='color:#C9A961'>📎 المذكرات والمستندات</h3>", unsafe_allow_html=True)
-    st.info("سيتم اضافة رفع الملفات هنا في التحديث القادم")
 
     st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
     if st.button("🗑️ حذف القضية نهائيا", type="primary"):
