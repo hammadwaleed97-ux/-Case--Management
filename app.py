@@ -151,15 +151,18 @@ elif st.session_state.page == "حصر":
     if not data["cases"]:
         st.info("لا توجد قضايا مسجلة")
     else:
-        sorted_cases = sorted(data["cases"], key=lambda x: x.get("تاريخ_جلسة","9999"))
+        # 1. نرتب الاول وبعدين نعكس عشان الاحدث فوق
+        sorted_cases = sorted(data["cases"], key=lambda x: x.get("تاريخ_جلسة","9999"), reverse=True)
 
         table_data = []
         for idx, case in enumerate(sorted_cases, 1):
-            # تحديد اللون
             مدعى = case.get('مدعي','')
+            مدعى_عليه = case.get('مدعي_عليه','')
+
+            # 2. التلوين حسب طلبك
             if "الهيئة" in مدعى: # الهيئة مدعية/مستانفة/طاعنة = احمر
                 لون = "🔴"
-            else: # الهيئة مدعى عليها = اصفر ورمادي
+            else: # الهيئة مدعى عليها/مستانف ضدها = اصفر ورمادي بالتبادل
                 لون = "🟡" if idx % 2 == 1 else "⚪"
 
             محكمة_كاملة = f"{case.get('نوع','')}\n{case.get('محكمة_اسم','')}"
@@ -169,14 +172,14 @@ elif st.session_state.page == "حصر":
                 "م": idx,
                 "الرقم": f"{case.get('رقم','')}\nلسنة {case.get('سنة','')}",
                 "المحكمة": محكمة_كاملة,
-                "الدائرة": f"{case.get('دائرة','')} مدنى", # زي 41 مدنى
+                "الدائرة": f"{case.get('دائرة','')} مدنى",
                 "المدعي": مدعى,
-                "المدعى عليه": case.get('مدعي_عليه',''),
+                "المدعى عليه": مدعى_عليه,
                 "الموضوع": case.get('موضوع',''),
                 "اخر جلسة": case.get('تاريخ_جلسة',''),
                 "سببها": case.get('سبب',''),
+                "الحالة": لون,
                 "id": case['id'], # مخفي
-                "الحالة": لون # عمود الالوان
             })
 
         df = pd.DataFrame(table_data)
@@ -185,12 +188,16 @@ elif st.session_state.page == "حصر":
         event = st.dataframe(
             df.drop(columns=["id"]), # نخفي ال id
             use_container_width=True,
-            height=400,
+            height=450,
             on_select="rerun",
-            selection_mode="single-row"
+            selection_mode="single-row",
+            column_config={
+                "الحالة": st.column_config.TextColumn("الحالة", width="small"),
+                "م": st.column_config.NumberColumn("م", width="small")
+            }
         )
 
-        # لو اختار صف
+        # 3. تفعيل الفتح عند الضغط على اي صف
         if event.selection.rows:
             selected_index = event.selection.rows[0]
             selected_id = df.iloc[selected_index]["id"]
