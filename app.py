@@ -272,15 +272,13 @@ elif st.session_state.page == "تفاصيل":
         </td>
     </tr>
     
-    <!-- الصف الرابع -->
+    <<!-- الصف الرابع: الموضوع في النص -->
     <tr>
-        <td colspan='4' style='background:linear-gradient(145deg, #1E3A6B 0%, #2C5282 100%); border:2px solid #C9A961; border-radius:12px; padding:12px; text-align:right; min-height:80px'>
+        <td colspan='4' style='background:linear-gradient(145deg, #1E3A6B 0%, #2C5282 100%); border:2px solid #C9A961; border-radius:12px; padding:12px; text-align:center; min-height:80px'>
             <div style='font-size:12px; color:#FFD700; margin-bottom:6px; font-weight:bold'>الموضوع</div>
             <div style='font-size:15px; color:#FFFFFF; font-weight:bold'>{case.get('موضوع')}</div>
         </td>
     </tr>
-    </table>
-    </div>
     """
     st.markdown(table_html, unsafe_allow_html=True)
     
