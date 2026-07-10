@@ -1,5 +1,5 @@
 # ============================================================
-# ================== إدارة القضايا v5.5.7 ===================
+# ================== إدارة القضايا v5.6 =====================
 # ========== الإدارة العامة للشئون القانونية البحيرة ==========
 # ============================================================
 
@@ -72,7 +72,6 @@ st.markdown(f"""
 .btn-back {{background: linear-gradient(135deg, #2C4A73, #3A5F8A)!important; border: 2px solid #C9A961!important; height: 55px!important;}}
 .btn-save button {{background: linear-gradient(135deg, #C9A961, #D4B96A)!important; color: #0F1C2E!important; height: 50px!important; font-weight:800!important}}
 .btn-delete button {{background: linear-gradient(135deg, #6E4A4A, #8A5A5A)!important; color: #E8E8E8!important; height: 50px!important; font-weight:800!important}}
-.btn-open button {{background: linear-gradient(135deg, #C9A961, #D4B96A)!important; color: #0F1C2E!important; height: 40px!important; font-weight:800!important; font-size:13px!important}}
 
 .card {{
         background: rgba(26,47,79,0.85); padding: 18px; border-radius: 12px;
@@ -134,6 +133,7 @@ st.markdown(f"""
 
 st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
 
+# ==================== بداية قسم الرئيسية ====================
 if st.session_state.page == "الرئيسية":
     st.markdown("<div class='section-title'>الأقسام</div>", unsafe_allow_html=True)
     r1c1, r1c2 = st.columns(2)
@@ -167,7 +167,9 @@ if st.session_state.page == "الرئيسية":
     st.markdown(f"<div class='small-stat s2'><p>📅 الجلسات القادمة</p><h2>18</h2></div>", unsafe_allow_html=True)
     st.markdown(f"<div class='small-stat s3'><p>✅ أحكام لصالح</p><h2>{أحكام_لصالح}</h2></div>", unsafe_allow_html=True)
     st.markdown(f"<div class='small-stat s4'><p>❌ أحكام ضد</p><h2>{أحكام_ضد}</h2></div>", unsafe_allow_html=True)
+# ==================== نهاية قسم الرئيسية ====================
 
+# ==================== بداية قسم التسجيل ====================
 elif st.session_state.page == "تسجيل":
     st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
     st.markdown("<h2 style='color:#C9A961; text-align:center'>تسجيل القضايا</h2>", unsafe_allow_html=True)
@@ -253,10 +255,12 @@ elif st.session_state.page == "تسجيل":
                 st.session_state.page = "الرئيسية"
                 st.rerun()
         if deleted: st.warning("ميزة الحذف سيتم تفعيلها لاحقا")
+# ==================== نهاية قسم التسجيل ====================
 
+# ==================== بداية قسم الحصر العام ====================
 elif st.session_state.page == "حصر":
     st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
-    st.markdown("<h2 style='color:#FFFFFF; text-align:center'>📊 الحصر العام</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='color:#FFFFFF; text-align:center'>📊 الحصر العام 📊</h2>", unsafe_allow_html=True)
     
     col1, col2 = st.columns([4,1])
     with col2:
@@ -304,7 +308,7 @@ elif st.session_state.page == "حصر":
             table_html += f"<td>{case.get('موضوع','')}</td>"
             table_html += f"<td>{case.get('تاريخ_جلسة','')}</td>"
             table_html += f"<td>{case.get('سبب','')}</td>"
-            table_html += f"<td><form><button formaction='?open={case.get('id')}' style='background:#C9A961;color:#0F1C2E;border:none;border-radius:5px;padding:5px 10px;font-weight:800;cursor:pointer'>فتح</button></form></td>"
+            table_html += f"<td><form method='get'><input type='hidden' name='open' value='{case.get('id')}'><button type='submit' style='background:#C9A961;color:#0F1C2E;border:none;border-radius:5px;padding:5px 15px;font-weight:800;cursor:pointer'>فتح</button></form></td>"
             table_html += "</tr>"
         
         table_html += "</table></div>"
@@ -316,7 +320,9 @@ elif st.session_state.page == "حصر":
             st.session_state.page = "تفاصيل"
             st.query_params.clear()
             st.rerun()
+# ==================== نهاية قسم الحصر العام ====================
 
+# ==================== بداية قسم التفاصيل ====================
 elif st.session_state.page == "تفاصيل":
     case = next((c for c in data["cases"] if c["id"] == st.session_state.selected_case_id), None)
     if case:
@@ -375,9 +381,4 @@ elif st.session_state.page == "تفاصيل":
         st.markdown("</div>", unsafe_allow_html=True)
 
         # ====== 5. الحكم ======
-        st.markdown("<div class='card'><div class='card-title card-title-5'>5- بيانات الحكم</div>", unsafe_allow_html=True)
-        with st.form("form_hokm"):
-            col1,col2 = st.columns(2)
-            with col1: تاريخ_حكم = st.date_input("تاريخ جلسة الحكم", value=datetime.now())
-            with col2: نتيجة_الحكم = st.selectbox("النتيجة", ["", "لصالح", "ضد"])
-            منطوق = st.text
+        st.markdown("<div class='card'><div class='card-title card-title-5'>5- بيانات ال
