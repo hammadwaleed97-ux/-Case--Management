@@ -207,3 +207,76 @@ elif st.session_state.page == "حصر":
             st.query_params.clear()
             st.rerun()
 # ==================== نهاية قسم 3: الحصر العام ====================
+# ==================== بداية قسم 4: تفاصيل القضية ====================
+elif st.session_state.page == "تفاصيل":
+    case = next((c for c in data["cases"] if c['id'] == st.session_state.selected_case_id), None)
+    if not case:
+        st.error("القضية غير موجودة")
+        st.session_state.page = "حصر"; st.rerun()
+
+    st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
+    st.markdown(f"<h2 style='color:#FFFFFF; text-align:center'>📄 تفاصيل القضية رقم {case.get('رقم')} لسنة {case.get('سنة')}</h2>", unsafe_allow_html=True)
+    st.markdown("<div class='btn-back'>", unsafe_allow_html=True)
+    if st.button("العودة للحصر", use_container_width=True): st.session_state.page = "حصر"; st.rerun()
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    # كارت 1: بيانات القضية الاساسية
+    st.markdown("<h3 style='color:#C9A961'>📌 بيانات القضية</h3>", unsafe_allow_html=True)
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown(f"<div class='info-box'><b>الرقم:</b> {case.get('رقم')}<br><b>السنة:</b> {case.get('سنة')}</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='info-box'><b>المحكمة:</b> {case.get('نوع')}<br>{case.get('محكمة_اسم')}<br>{'مأمورية ' + case.get('مأمورية') if case.get('مأمورية') else ''}</div>", unsafe_allow_html=True)
+    with col2:
+        st.markdown(f"<div class='info-box'><b>الدائرة:</b> {case.get('دائرة')} مدنى</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='info-box'><b>الموضوع:</b> {case.get('موضوع')}</div>", unsafe_allow_html=True)
+    
+    # كارت 2: الخصوم
+    st.markdown("<h3 style='color:#C9A961'>👥 الخصوم</h3>", unsafe_allow_html=True)
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown(f"<div class='info-box' style='background:#FFF8E1'><b>المدعي:</b><br>{case.get('مدعي')}</div>", unsafe_allow_html=True)
+    with col2:
+        st.markdown(f"<div class='info-box' style='background:#F0F4F8'><b>المدعى عليه:</b><br>{case.get('مدعي_عليه')}</div>", unsafe_allow_html=True)
+
+    # كارت 3: ادارة الجلسات
+    st.markdown("<h3 style='color:#C9A961'>📅 إدارة الجلسات</h3>", unsafe_allow_html=True)
+    
+    # اضافة جلسة جديدة
+    with st.expander("➕ اضافة جلسة جديدة"):
+        with st.form("new_session"):
+            c1, c2 = st.columns(2)
+            تاريخ = c1.date_input("تاريخ الجلسة")
+            سبب = c2.text_input("سبب الجلسة")
+            قرار = st.text_area("قرار الجلسة")
+            if st.form_submit_button("حفظ الجلسة"):
+                if "جلسات" not in case: case["جلسات"] = []
+                case["جلسات"].append({"تاريخ": str(تاريخ), "سبب": سبب, "قرار": قرار})
+                case["تاريخ_جلسة"] = str(تاريخ) # تحديث اخر جلسة
+                case["سبب"] = سبب
+                save_data(data)
+                st.success("تم حفظ الجلسة"); st.rerun()
+
+    # عرض الجلسات في جدول
+    if "جلسات" in case and case["جلسات"]:
+        st.markdown("<h4>سجل الجلسات</h4>", unsafe_allow_html=True)
+        جلسات_مرتبة = sorted(case["جلسات"], key=lambda x: x['تاريخ']) # من الاقدم للاحدث
+        table_html = "<table class='case-table'>"
+        table_html += "<tr><th>م</th><th>التاريخ</th><th>السبب</th><th>القرار</th></tr>"
+        for i, ج in enumerate(جلسات_مرتبة, 1):
+            table_html += f"<tr><td>{i}</td><td>{ج['تاريخ']}</td><td>{ج['سبب']}</td><td>{ج['قرار']}</td></tr>"
+        table_html += "</table>"
+        st.markdown(table_html, unsafe_allow_html=True)
+    else:
+        st.info("لا توجد جلسات مسجلة لهذه القضية")
+
+    # كارت 4: المذكرات والمستندات
+    st.markdown("<h3 style='color:#C9A961'>📎 المذكرات والمستندات</h3>", unsafe_allow_html=True)
+    st.info("سيتم اضافة رفع الملفات هنا في التحديث القادم")
+
+    # زرار الحذف
+    st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
+    if st.button("🗑️ حذف القضية نهائيا", type="primary"):
+        data["cases"] = [c for c in data["cases"] if c['id'] != case['id']]
+        save_data(data)
+        st.success("تم حذف القضية"); st.session_state.page = "حصر"; st.rerun()
+# ==================== نهاية قسم 4: تفاصيل القضية ====================
