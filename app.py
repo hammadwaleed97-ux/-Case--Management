@@ -1,5 +1,5 @@
 # ============================================================
-# ================== إدارة القضايا v3.5 =====================
+# ================== إدارة القضايا v3.5.1 ===================
 # ========== الإدارة العامة للشئون القانونية البحيرة ==========
 # ============================================================
 
@@ -26,18 +26,18 @@ st.markdown(f"""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap');
     html, body {{font-family: 'Cairo', sans-serif; direction: rtl;}}
-   .stApp {{background: linear-gradient(180deg, #0F1C2E 0%, #1A2F4F 100%);}}
-   .stApp::before {{
+  .stApp {{background: linear-gradient(180deg, #0F1C2E 0%, #1A2F4F 100%);}}
+  .stApp::before {{
         content: "⚖️"; position: fixed; top: 50%; left: 50%;
         transform: translate(-50%, -50%); font-size: 400px;
         opacity: 0.04; z-index: 0; color: #C9A961;
     }}
-   .marquee-container {{
+  .marquee-container {{
         background: linear-gradient(90deg, #C9A961, #D4B96A);
         padding: 10px; overflow: hidden; border-radius: 8px;
         margin-bottom: 15px; box-shadow: 0 0 10px rgba(201,169,97,0.4);
     }}
-   .marquee-text {{
+  .marquee-text {{
         color: #0F1C2E; font-weight: 800; font-size: 14px;
         white-space: nowrap; display: inline-block;
         animation: scroll-rtl 18s linear infinite;
@@ -46,15 +46,15 @@ st.markdown(f"""
         0% {{transform: translateX(-100%);}}
         100% {{transform: translateX(100%);}}
     }}
-   .header-calm {{
+  .header-calm {{
         background: linear-gradient(135deg, #1A2F4F, #2C4A73);
         padding: 18px; border-radius: 12px; text-align: center;
         border: 2px solid #C9A961; margin-bottom: 20px;
     }}
-   .header-calm h1 {{color: #D4B96A; font-size: 30px; font-weight: 800; margin: 0;}}
-   .header-calm p {{color: #E8E8E8; font-size: 13px; font-weight: 600; margin: 6px 0 0 0;}}
-   .section-title {{color: #C9A961; text-align: center; font-size: 22px; font-weight: 800; margin: 15px 0;}}
-   .section-divider {{height: 4px; background: linear-gradient(90deg, transparent, #C9A961, transparent); margin: 15px 0;}}
+  .header-calm h1 {{color: #D4B96A; font-size: 30px; font-weight: 800; margin: 0;}}
+  .header-calm p {{color: #E8E8E8; font-size: 13px; font-weight: 600; margin: 6px 0 0 0;}}
+  .section-title {{color: #C9A961; text-align: center; font-size: 22px; font-weight: 800; margin: 15px 0;}}
+  .section-divider {{height: 4px; background: linear-gradient(90deg, transparent, #C9A961, transparent); margin: 15px 0;}}
 
     label,.stTextInput label,.stSelectbox label,.stTextArea label,.stDateInput label {{
         color: #D4B96A!important;
@@ -69,38 +69,32 @@ st.markdown(f"""
         border: 2px solid #C9A961; font-weight: 700; font-size: 15px;
         height: 90px; margin: 5px 0;
     }}
-   .btn-save button {{background: linear-gradient(135deg, #C9A961, #D4B96A)!important; color: #0F1C2E!important; height: 50px!important; font-weight:800!important}}
-   .btn-delete button {{background: linear-gradient(135deg, #6E4A4A, #8A5A5A)!important; color: #E8E8E8!important; height: 50px!important; font-weight:800!important}}
-   .btn-open button {{background: linear-gradient(135deg, #2C4A73, #3A5F8A)!important; color: #C9A961!important; height: 38px!important; font-weight:700!important; border: 1px solid #C9A961!important}}
+  .btn-save button {{background: linear-gradient(135deg, #C9A961, #D4B96A)!important; color: #0F1C2E!important; height: 50px!important; font-weight:800!important}}
+  .btn-delete button {{background: linear-gradient(135deg, #6E4A4A, #8A5A5A)!important; color: #E8E8E8!important; height: 50px!important; font-weight:800!important}}
+  .btn-open button {{background: linear-gradient(135deg, #2C4A73, #3A5F8A)!important; color: #C9A961!important; height: 38px!important; font-weight:700!important; border: 1px solid #C9A961!important}}
 
-   .card {{
+  .card {{
         background: rgba(26,47,79,0.85); padding: 18px; border-radius: 12px;
         border: 2px solid #C9A961; margin-bottom: 18px; box-shadow: 0 0 10px rgba(201,169,97,0.2);
     }}
-   .card-title {{color: #D4B96A; font-weight: 800; font-size: 17px; margin-bottom: 12px; border-bottom: 1px solid #C9A961; padding-bottom: 8px;}}
+  .card-title {{color: #D4B96A; font-weight: 800; font-size: 17px; margin-bottom: 12px; border-bottom: 1px solid #C9A961; padding-bottom: 8px;}}
 
-   .case-row {{
-        background: rgba(26,47,79,0.6); padding: 12px; border-radius: 10px;
-        border: 1px solid #C9A961; margin-bottom: 8px;
-    }}
-   .case-row:hover {{background: rgba(201,169,97,0.1);}}
-
-   .small-stat {{
+  .small-stat {{
         padding: 14px; border-radius: 10px; text-align: center;
         border: 2px solid #C9A961; margin-bottom: 10px;
     }}
-   .small-stat p {{color: #E8E8E8; font-size: 12px; margin: 0; font-weight: 600;}}
-   .small-stat h2 {{color: #D4B96A; font-size: 28px; font-weight: 800; margin: 4px 0 0 0;}}
-   .s1 {{background: linear-gradient(135deg, #3A4F63, #4A6578);}}
-   .s2 {{background: linear-gradient(135deg, #2C4A73, #3A5F8A);}}
-   .s3 {{background: linear-gradient(135deg, #4A5A4A, #5A6E5A);}}
-   .s4 {{background: linear-gradient(135deg, #5A3A3A, #6E4A4A);}}
-   .case-detail {{
+  .small-stat p {{color: #E8E8E8; font-size: 12px; margin: 0; font-weight: 600;}}
+  .small-stat h2 {{color: #D4B96A; font-size: 28px; font-weight: 800; margin: 4px 0 0 0;}}
+  .s1 {{background: linear-gradient(135deg, #3A4F63, #4A6578);}}
+  .s2 {{background: linear-gradient(135deg, #2C4A73, #3A5F8A);}}
+  .s3 {{background: linear-gradient(135deg, #4A5A4A, #5A6E5A);}}
+  .s4 {{background: linear-gradient(135deg, #5A3A3A, #6E4A4A);}}
+  .case-detail {{
         background: #1A2F4F; padding: 20px; border-radius: 10px;
         border: 2px solid #C9A961; margin: 10px 0; color: white;
     }}
-   .case-detail h3 {{color: #D4B96A; text-align: center;}}
-   .stats-title {{color: #C9A961; font-size: 18px; font-weight: 800; margin: 20px 0 10px 0;}}
+  .case-detail h3 {{color: #D4B96A; text-align: center;}}
+  .stats-title {{color: #C9A961; font-size: 18px; font-weight: 800; margin: 20px 0 10px 0;}}
     h2, h3, h4, p {{color: #FFFFFF!important;}}
 </style>
 """, unsafe_allow_html=True)
@@ -141,7 +135,7 @@ if st.session_state.page == "الرئيسية":
     with r2c1:
         if st.button("🔍\nالبحث", use_container_width=True, key="btn_main_3"): st.session_state.page = "بحث"; st.rerun()
     with r2c2:
-        if st.button("🔔\nالتنبيهات", use_container-width=True, key="btn_main_4"): st.session_state.page = "تنبيهات"; st.rerun()
+        if st.button("🔔\nالتنبيهات", use_container_width=True, key="btn_main_4"): st.session_state.page = "تنبيهات"; st.rerun() # اتصلحت هنا
     with r2c3:
         if st.button("📑\nالتقارير", use_container_width=True, key="btn_main_5"): st.session_state.page = "تقارير"; st.rerun()
     with r2c4:
@@ -176,72 +170,53 @@ elif st.session_state.page == "تسجيل":
     نوع = st.selectbox("نوع الدعوى", ["دعوى", "استئناف", "طعن"], key="sel_type")
 
     with st.form("form_case"):
-        # كارت 1: بيانات المحكمة
         st.markdown("<div class='card'><div class='card-title'>1- بيانات المحكمة</div>", unsafe_allow_html=True)
         col1, col2 = st.columns(2)
         with col1:
             محكمة_نوع = st.selectbox("المحكمة", ["الابتدائية", "الاستئناف", "النقض", "الإدارية", "القضاء الإدارى", "الإدارية العليا"], key="sel_court_type")
         with col2:
             محكمة_اسم = st.text_input("اسم المحكمة", key="txt_court_name")
-
         if نوع == "استئناف":
             مأمورية = st.text_input("المأمورية", key="txt_mission")
         else:
             مأمورية = ""
         st.markdown("</div>", unsafe_allow_html=True)
 
-        # كارت 2: بيانات الدعوى
         st.markdown("<div class='card'><div class='card-title'>2- بيانات الدعوى</div>", unsafe_allow_html=True)
         col1, col2 = st.columns(2)
-        with col1:
-            رقم = st.text_input("رقم الدعوى / الاستئناف / الطعن", key="txt_num")
-        with col2:
-            سنة = st.text_input("السنة القضائية", key="txt_year")
-
+        with col1: رقم = st.text_input("رقم الدعوى / الاستئناف / الطعن", key="txt_num")
+        with col2: سنة = st.text_input("السنة القضائية", key="txt_year")
         col1, col2 = st.columns(2)
-        with col1:
-            دائرة = st.text_input("الدائرة", key="txt_circle")
-        with col2:
-            النوع_تفصيلي = st.text_input("النوع", key="txt_type_detail")
+        with col1: دائرة = st.text_input("الدائرة", key="txt_circle")
+        with col2: النوع_تفصيلي = st.text_input("النوع", key="txt_type_detail")
         st.markdown("</div>", unsafe_allow_html=True)
 
-        # كارت 3: الخصوم
         st.markdown("<div class='card'><div class='card-title'>3- بيانات الخصوم</div>", unsafe_allow_html=True)
         col1, col2 = st.columns(2)
-        with col1:
-            مدعي = st.text_input("اسم المدعى / المستأنف / الطاعن", key="txt_plaintiff")
-        with col2:
-            مدعي_عليه = st.text_input("اسم المدعى عليه / المستأنف ضده / المطعون ضده", key="txt_defendant")
+        with col1: مدعي = st.text_input("اسم المدعى / المستأنف / الطاعن", key="txt_plaintiff")
+        with col2: مدعي_عليه = st.text_input("اسم المدعى عليه / المستأنف ضده / المطعون ضده", key="txt_defendant")
         موضوع = st.text_area("موضوع الدعوى", key="txt_subject")
         st.markdown("</div>", unsafe_allow_html=True)
 
-        # كارت 4: الجلسة
         st.markdown("<div class='card'><div class='card-title'>4- بيانات الجلسة</div>", unsafe_allow_html=True)
         col1, col2 = st.columns(2)
-        with col1:
-            تاريخ_جلسة = st.date_input("تاريخ أول جلسة", value=datetime.now(), key="date_session")
-        with col2:
-            الرول = st.text_input("الرول", key="txt_role")
+        with col1: تاريخ_جلسة = st.date_input("تاريخ أول جلسة", value=datetime.now(), key="date_session")
+        with col2: الرول = st.text_input("الرول", key="txt_role")
         سبب = st.text_input("سبب الجلسة", key="txt_reason")
         ملاحظات = st.text_area("ملاحظات", key="txt_notes")
         st.markdown("</div>", unsafe_allow_html=True)
 
-        # كارت 5: التنبيهات والمستندات
         st.markdown("<div class='card'><div class='card-title'>5- التنبيهات والمستندات</div>", unsafe_allow_html=True)
         تنبيه = st.checkbox("تفعيل التنبيهات عبر الواتس اب", key="chk_whats")
         if تنبيه:
             واتس = st.text_input("رقم هاتف واتس اب", key="txt_whats")
         else:
             واتس = ""
-
         col1, col2 = st.columns(2)
-        with col1:
-            مستند_نوع = st.selectbox("تحميل المستندات", ["صحيفة الدعوى", "صحيفة الاستئناف", "صحيفة الطعن"], key="sel_doc")
-        with col2:
-            مستند_ملف = st.file_uploader("اختر الملف", key="file_upload")
+        with col1: مستند_نوع = st.selectbox("تحميل المستندات", ["صحيفة الدعوى", "صحيفة الاستئناف", "صحيفة الطعن"], key="sel_doc")
+        with col2: مستند_ملف = st.file_uploader("اختر الملف", key="file_upload")
         st.markdown("</div>", unsafe_allow_html=True)
 
-        # الازرار
         col1, col2 = st.columns(2)
         with col1:
             st.markdown("<div class='btn-save'>", unsafe_allow_html=True)
@@ -270,11 +245,10 @@ elif st.session_state.page == "تسجيل":
                 st.balloons()
                 st.session_state.page = "الرئيسية"
                 st.rerun()
-
         if deleted: st.warning("ميزة الحذف سيتم تفعيلها لاحقا")
 
 # ============================================================
-# =================== 2. الحصر العام جدول شيك ================
+# =================== 2. الحصر العام ========================
 # ============================================================
 elif st.session_state.page == "حصر":
     st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
@@ -293,16 +267,13 @@ elif st.session_state.page == "حصر":
                 updated = True
         if updated: save_data(data)
 
-        # نرتب من الاحدث للاقدم بالتاريخ
         sorted_cases = sorted(data["cases"], key=lambda x: x.get("تاريخ_جلسة","0000"), reverse=True)
 
-        # هيدر الجدول
         header_cols = st.columns([0.5,1,1,1.5,1,1.5,1.5,2,1,0.8])
         headers = ["م", "الرقم", "النوع", "المحكمة", "الدائرة", "المدعي", "المدعى عليه", "الموضوع", "الجلسة", ""]
         for col, h in zip(header_cols, headers):
             col.markdown(f"<b style='color:#C9A961'>{h}</b>", unsafe_allow_html=True)
 
-        # صفوف القضايا
         for case in sorted_cases:
             cols = st.columns([0.5,1,1,1.5,1,1.5,1.5,2,1,0.8])
             with cols[0]: st.write(case.get("id"))
@@ -334,7 +305,6 @@ elif st.session_state.page == "تفاصيل":
         if st.button("⬅️ العودة للحصر", key="btn_back_detail"):
             st.session_state.page = "حصر"
             st.rerun()
-
         st.markdown(f"""
         <div class='case-detail'>
             <h3>البيانات الأساسية</h3>
@@ -352,7 +322,6 @@ elif st.session_state.page == "تفاصيل":
         st.session_state.page = "حصر"
         st.rerun()
 
-# باقي الصفحات
 elif st.session_state.page == "بحث":
     st.markdown("<h2 style='color:#C9A961; text-align:center'>🔍 البحث عن دعوى</h2>", unsafe_allow_html=True)
     if st.button("⬅️ العودة للرئيسية", key="btn_back_3"): st.session_state.page = "الرئيسية"; st.rerun()
