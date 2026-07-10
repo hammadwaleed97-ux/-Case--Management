@@ -1,5 +1,5 @@
 # ============================================================
-# ================== إدارة القضايا v3.5.1 ===================
+# ================== إدارة القضايا v3.6 =====================
 # ========== الإدارة العامة للشئون القانونية البحيرة ==========
 # ============================================================
 
@@ -71,13 +71,27 @@ st.markdown(f"""
     }}
   .btn-save button {{background: linear-gradient(135deg, #C9A961, #D4B96A)!important; color: #0F1C2E!important; height: 50px!important; font-weight:800!important}}
   .btn-delete button {{background: linear-gradient(135deg, #6E4A4A, #8A5A5A)!important; color: #E8E8E8!important; height: 50px!important; font-weight:800!important}}
-  .btn-open button {{background: linear-gradient(135deg, #2C4A73, #3A5F8A)!important; color: #C9A961!important; height: 38px!important; font-weight:700!important; border: 1px solid #C9A961!important}}
+  .btn-open button {{background: linear-gradient(135deg, #C9A961, #D4B96A)!important; color: #0F1C2E!important; height: 38px!important; font-weight:800!important; border: 1px solid #C9A961!important}}
 
   .card {{
         background: rgba(26,47,79,0.85); padding: 18px; border-radius: 12px;
         border: 2px solid #C9A961; margin-bottom: 18px; box-shadow: 0 0 10px rgba(201,169,97,0.2);
     }}
   .card-title {{color: #D4B96A; font-weight: 800; font-size: 17px; margin-bottom: 12px; border-bottom: 1px solid #C9A961; padding-bottom: 8px;}}
+
+   /* جدول الحصر */
+  .table-header {{
+        background: linear-gradient(90deg, #C9A961, #D4B96A);
+        padding: 10px; border-radius: 8px 8px 0 0;
+        border: 2px solid #C9A961;
+   }}
+  .table-header div {{color: #0F1C2E!important; font-weight: 800!important; text-align: center;}}
+  .table-row {{
+        background: rgba(26,47,79,0.7);
+        padding: 10px; border-left: 2px solid #C9A961; border-right: 2px solid #C9A961; border-bottom: 1px solid #C9A961;
+   }}
+  .table-row div {{color: #E8E8E8!important; text-align: center; font-weight: 600;}}
+  .table-row:hover {{background: rgba(201,169,97,0.15);}}
 
   .small-stat {{
         padding: 14px; border-radius: 10px; text-align: center;
@@ -135,7 +149,7 @@ if st.session_state.page == "الرئيسية":
     with r2c1:
         if st.button("🔍\nالبحث", use_container_width=True, key="btn_main_3"): st.session_state.page = "بحث"; st.rerun()
     with r2c2:
-        if st.button("🔔\nالتنبيهات", use_container_width=True, key="btn_main_4"): st.session_state.page = "تنبيهات"; st.rerun() # اتصلحت هنا
+        if st.button("🔔\nالتنبيهات", use_container_width=True, key="btn_main_4"): st.session_state.page = "تنبيهات"; st.rerun()
     with r2c3:
         if st.button("📑\nالتقارير", use_container_width=True, key="btn_main_5"): st.session_state.page = "تقارير"; st.rerun()
     with r2c4:
@@ -248,11 +262,11 @@ elif st.session_state.page == "تسجيل":
         if deleted: st.warning("ميزة الحذف سيتم تفعيلها لاحقا")
 
 # ============================================================
-# =================== 2. الحصر العام ========================
+# =================== 2. الحصر العام RTL ====================
 # ============================================================
 elif st.session_state.page == "حصر":
     st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
-    st.markdown("<h2 style='color:#C9A961; text-align:center'>📊 الحصر العام</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='color:#C9A961; text-align:center'>الحصر العام 📊</h2>", unsafe_allow_html=True)
     if st.button("⬅️ العودة للرئيسية", key="btn_back_2"):
         st.session_state.page = "الرئيسية"
         st.rerun()
@@ -269,13 +283,18 @@ elif st.session_state.page == "حصر":
 
         sorted_cases = sorted(data["cases"], key=lambda x: x.get("تاريخ_جلسة","0000"), reverse=True)
 
-        header_cols = st.columns([0.5,1,1,1.5,1,1.5,1.5,2,1,0.8])
-        headers = ["م", "الرقم", "النوع", "المحكمة", "الدائرة", "المدعي", "المدعى عليه", "الموضوع", "الجلسة", ""]
+        # هيدر الجدول يبدأ من اليمين: م
+        st.markdown("<div class='table-header'>", unsafe_allow_html=True)
+        header_cols = st.columns([0.6,1,1,1.5,1,1.5,1.5,2,1,0.8])
+        headers = ["م", "الرقم", "النوع", "المحكمة", "الدائرة", "المدعي", "المدعى عليه", "الموضوع", "الجلسة", "الاجراء"]
         for col, h in zip(header_cols, headers):
-            col.markdown(f"<b style='color:#C9A961'>{h}</b>", unsafe_allow_html=True)
+            col.markdown(f"<div>{h}</div>", unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
 
+        # صفوف القضايا
         for case in sorted_cases:
-            cols = st.columns([0.5,1,1,1.5,1,1.5,1.5,2,1,0.8])
+            st.markdown("<div class='table-row'>", unsafe_allow_html=True)
+            cols = st.columns([0.6,1,1,1.5,1,1.5,1.5,2,1,0.8])
             with cols[0]: st.write(case.get("id"))
             with cols[1]: st.write(f"{case.get('رقم')}/{case.get('سنة')}")
             with cols[2]: st.write(case.get("نوع"))
@@ -292,7 +311,7 @@ elif st.session_state.page == "حصر":
                     st.session_state.page = "تفاصيل"
                     st.rerun()
                 st.markdown("</div>", unsafe_allow_html=True)
-            st.markdown("<hr style='border:1px dashed #C9A961; opacity:0.3'>", unsafe_allow_html=True)
+            st.markdown("</div>", unsafe_allow_html=True)
 
 # ============================================================
 # =================== 3. تفاصيل القضية ======================
