@@ -154,14 +154,13 @@ elif st.session_state.page == "حصر":
     else:
         sorted_cases = sorted(data["cases"], key=lambda x: x.get("تاريخ_جلسة","9999"))
 
-        # نجهز الجدول ك DataFrame عشان الالوان والفتح
         table_data = []
         for idx, case in enumerate(sorted_cases, 1):
             # تحديد اللون
             مدعى = case.get('مدعي','')
-            if "الهيئة" in مدعى: # الهيئة مدعية/مستانفة/طاعنة
+            if "الهيئة" in مدعى: # الهيئة مدعية/مستانفة/طاعنة = احمر
                 لون = "🔴"
-            else: # الهيئة مدعى عليها
+            else: # الهيئة مدعى عليها = اصفر ورمادي
                 لون = "🟡" if idx % 2 == 1 else "⚪"
 
             محكمة_كاملة = f"{case.get('نوع','')}\n{case.get('محكمة_اسم','')}"
@@ -171,19 +170,19 @@ elif st.session_state.page == "حصر":
                 "م": idx,
                 "الرقم": f"{case.get('رقم','')}\nلسنة {case.get('سنة','')}",
                 "المحكمة": محكمة_كاملة,
-                "الدائرة": f"{case.get('دائرة','')} مدنى",
+                "الدائرة": f"{case.get('دائرة','')} مدنى", # زي 41 مدنى
                 "المدعي": مدعى,
                 "المدعى عليه": case.get('مدعي_عليه',''),
                 "الموضوع": case.get('موضوع',''),
                 "اخر جلسة": case.get('تاريخ_جلسة',''),
                 "سببها": case.get('سبب',''),
                 "id": case['id'], # مخفي
-                " ": لون # عمود الالوان
+                "الحالة": لون # عمود الالوان
             })
 
         df = pd.DataFrame(table_data)
 
-        st.write("اضغط على اي صف لفتح تفاصيل القضية")
+        st.info("اضغط على اي صف لفتح تفاصيل القضية")
         event = st.dataframe(
             df.drop(columns=["id"]), # نخفي ال id
             use_container_width=True,
