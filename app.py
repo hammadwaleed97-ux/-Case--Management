@@ -146,10 +146,32 @@ elif st.session_state.page == "حصر":
     st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
     st.markdown("<h2 style='color:#FFFFFF; text-align:center'>📂 فتح القضايا المسجلة</h2>", unsafe_allow_html=True)
     
+    # CSS عشان نكبر القائمة ونصغر الخط
+    st.markdown("""
+    <style>
+    div[data-baseweb="select"] > div {
+        font-size: 12px !important;
+    }
+    div[data-baseweb="select"] ul {
+        font-size: 12px !important;
+        max-height: 400px !important; /* طول القائمة */
+        min-height: 400px !important;
+        overflow-x: auto !important;
+        overflow-y: auto !important;
+        white-space: nowrap !important;
+    }
+    div[data-baseweb="select"] li {
+        white-space: nowrap !important;
+        min-width: max-content !important;
+        padding: 8px 12px !important; /* تباعد بين السطور */
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
     if not data["cases"]:
         st.info("لا توجد قضايا مسجلة")
     else:
-        st.markdown("<p style='color:#C9A961; text-align:center'>اختار القضية من القائمة بالاسفل</p>", unsafe_allow_html=True)
+        st.markdown("<p style='color:#C9A961; text-align:center'>اختار القضية من القائمة بالاسفل - اسحب يمين وشمال</p>", unsafe_allow_html=True)
         
         case_ids = []
         case_labels = []
@@ -157,21 +179,27 @@ elif st.session_state.page == "حصر":
         for c in data["cases"]:
             case_ids.append(c['id'])
             
-            # الشكل الجديد: رقم-سنة نوع محكمة مأمورية مدعي ضد مدعي عليه موضوع اخر جلسة
             رقم_سنة = f"{c.get('رقم')}-{c.get('سنة')}"
-            نوع_محكمة = f"{c.get('دائرة')}{c.get('نوع')} {c.get('نوع')} {c.get('محكمة_اسم')}"
-            مأمورية = c.get('مأمورية') or ''
+            دائرة_نوع = f"{c.get('دائرة')}{c.get('نوع')} {c.get('نوع')} {c.get('محكمة_اسم')}"
+            مأمورية = f"مأمورية {c.get('مأمورية')}" if c.get('مأمورية') else ""
             خصوم = f"{c.get('مدعي')} ضد {c.get('مدعي_عليه')}"
-            موضوع = c.get('موضوع') or ''
-            جلسة = c.get('تاريخ_جلسة', '')
+            موضوع = c.get('موضوع', '')
+            تاريخ_جلسة = c.get('تاريخ_جلسة', '')
             سبب = c.get('سبب', '')
             
-            label = f"{رقم_سنة} {نوع_محكمة} {مأمورية} {خصوم} {موضوع} {جلسة} {سبب}"
+            parts = [رقم_سنة, دائرة_نوع, مأمورية, خصوم, موضوع, تاريخ_جلسة, سبب]
+            label = " ".join([p for p in parts if p])
             case_labels.append(label)
         
         c1, c2 = st.columns([4,1])
         with c1:
-            selected_label = st.selectbox("اختار القضية", options=case_labels, index=None, placeholder="دوس هنا واختار القضية...")
+            selected_label = st.selectbox(
+                "اختار القضية", 
+                options=case_labels, 
+                index=None, 
+                placeholder="دوس هنا واختار القضية...",
+                label_visibility="collapsed"
+            )
         with c2:
             فتح = st.button("فتح 📂", use_container_width=True, type="primary")
         
