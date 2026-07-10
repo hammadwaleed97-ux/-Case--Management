@@ -169,7 +169,7 @@ elif st.session_state.page == "حصر":
 
         st.markdown("<div class='table-container'>", unsafe_allow_html=True)
         table_html = "<table class='case-table'>"
-        table_html += "<tr><th>م</th><th>الرقم والسنة</th><th>المحكمة والدائرة</th><th>المأمورية</th><th>الخصوم</th><th>الموضوع</th><th>اخر جلسة</th><th>السبب</th><th>الاجراء</th></tr>"
+        table_html += "<tr><th>م</th><th>الرقم والسنة</th><th>المحكمة والدائرة</th><th>المأمورية</th><th>الخصوم</th><th>الموضوع</th><th>اخر جلسة</th><th>السبب</th><th>فتح</th></tr>"
 
         for idx, case in enumerate(sorted_cases, 1):
             رقم_كامل = f"{case.get('رقم','')} لسنة {case.get('سنة','')}"
@@ -196,30 +196,20 @@ elif st.session_state.page == "حصر":
             table_html += f"<td>{case.get('موضوع','')}</td>"
             table_html += f"<td>{case.get('تاريخ_جلسة','')}</td>"
             table_html += f"<td>{case.get('سبب','')}</td>"
-            # هنا القائمة المسندة مفعلة
-            table_html += f"<td><select onchange=\"window.location.href='?action='+this.value+'&id={case_id}'\" style='background:#C9A961;color:#0F1C2E;border:none;border-radius:5px;padding:5px 8px;font-weight:800'><option value=''>الاجراء</option><option value='open'>فتح</option><option value='del'>حذف</option></select></td>"
+            # زرار الفتح رجع ومتفعل
+            table_html += f"<td><form><button formaction='?open={case_id}' style='background:#C9A961;color:#0F1C2E;border:none;border-radius:5px;padding:5px 10px;font-weight:800;cursor:pointer'>فتح</button></form></td>"
             table_html += "</tr>"
 
         table_html += "</table></div>"
         st.markdown(table_html, unsafe_allow_html=True)
 
-        # ===== تفعيل القائمة المسندة =====
-        if "action" in st.query_params and "id" in st.query_params:
-            act = st.query_params["action"]
-            case_id = int(st.query_params["id"])
-            
-            if act == "open":
-                st.session_state.selected_case_id = case_id
-                st.session_state.page = "تفاصيل"
-                st.query_params.clear()
-                st.rerun()
-                
-            if act == "del":
-                data["cases"] = [c for c in data["cases"] if c["id"] != case_id]
-                save_data(data)
-                st.query_params.clear()
-                st.success("✅ تم حذف القضية")
-                st.rerun()
+        # ===== تفعيل زرار الفتح =====
+        if "open" in st.query_params:
+            case_id = int(st.query_params["open"])
+            st.session_state.selected_case_id = case_id
+            st.session_state.page = "تفاصيل"
+            st.query_params.clear()
+            st.rerun()
 # ==================== نهاية القسم 3: الحصر العام الخارجي ====================
 # ==================== بداية قسم 4: تفاصيل القضية ====================
 elif st.session_state.page == "تفاصيل":
