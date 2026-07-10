@@ -152,7 +152,6 @@ elif st.session_state.page == "حصر":
     if not data["cases"]:
         st.info("لا توجد قضايا مسجلة")
     else:
-        # ترتيب حسب تاريخ الجلسة
         sorted_cases = sorted(data["cases"], key=lambda x: x.get("تاريخ_جلسة","9999"))
 
         st.markdown("<div class='table-container'>", unsafe_allow_html=True)
@@ -162,22 +161,27 @@ elif st.session_state.page == "حصر":
         for idx, case in enumerate(sorted_cases, 1):
             رقم_كامل = f"{case.get('رقم','')}<br>لسنة {case.get('سنة','')}"
             
-            # المحكمة + المأمورية لو موجودة
-            محكمة_كاملة = f"{case.get('محكمة_اسم','')}"
-            if case.get('مأمورية',''):
-                محكمة_كاملة = f"{case.get('نوع','')}<br>مأمورية {case.get('مأمورية','')}<br>{محكمة_كاملة}"
-            # لو مش استئناف هيظهر الاسم بس
+            # ===== شكل المحكمة زي ما طلبت =====
+            نوع_المحكمة = case.get('نوع','') 
+            اسم_المحكمة = case.get('محكمة_اسم','')
+            مأمورية = case.get('مأمورية','')
             
+            محكمة_كاملة = f"{نوع_المحكمة}<br>{اسم_المحكمة}"
+            if مأمورية:
+                محكمة_كاملة += f"<br>مأمورية {مأمورية}"
+
             دائرة_كاملة = f"{case.get('دائرة','')}"
-            if "مدنى" in دائرة_كاملة or "عمال" in دائرة_كاملة or "جنح" in دائرة_كاملة:
-                pass
-            else:
-                دائرة_كاملة += " مدنى" # تقدر تغيرها
 
             اخر_جلسة = case.get('تاريخ_جلسة','')
             سببها = case.get('سبب','')
 
-            table_html += f"<tr>"
+            # تلوين صف الهيئة
+            if "الهيئة" in case.get('مدعي_عليه',''):
+                bg = "style='background:#FFCDD2;'"
+            else:
+                bg = "style='background:#FFF8E1;'" if idx % 2 == 1 else "style='background:#F0F4F8;'"
+
+            table_html += f"<tr {bg}>"
             table_html += f"<td>{idx}</td>"
             table_html += f"<td>{رقم_كامل}</td>"
             table_html += f"<td>{محكمة_كاملة}</td>"
@@ -187,13 +191,12 @@ elif st.session_state.page == "حصر":
             table_html += f"<td>{case.get('موضوع','')}</td>"
             table_html += f"<td>{اخر_جلسة}</td>"
             table_html += f"<td>{سببها}</td>"
-            table_html += f"<td><button onclick=\"window.location.href='?open={case.get('id')}'\" style='background:#C9A961;color:#0F1C2E;border:none;border-radius:5px;padding:5px 15px;font-weight:800;cursor:pointer'>فتح</button></td>"
+            table_html += f"<td><form><button formaction='?open={case.get('id')}' style='background:#C9A961;color:#0F1C2E;border:none;border-radius:5px;padding:8px 20px;font-weight:800;cursor:pointer'>فتح</button></form></td>"
             table_html += "</tr>"
         
         table_html += "</table></div>"
         st.markdown(table_html, unsafe_allow_html=True)
 
-        # تشغيل زر الفتح
         query_params = st.query_params
         if "open" in query_params:
             st.session_state.selected_case_id = int(query_params["open"])
@@ -201,3 +204,28 @@ elif st.session_state.page == "حصر":
             st.query_params.clear()
             st.rerun()
 # ==================== نهاية قسم 3: الحصر العام ====================
+
+# ==================== بداية قسم 4: التفاصيل ====================
+elif st.session_state.page == "تفاصيل":
+    case = next((c for c in data["cases"] if c["id"] == st.session_state.selected_case_id), None)
+    if case:
+        st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
+        st.markdown(f"<h2 style='color:#C9A961; text-align:center'>📄 تفاصيل القضية رقم {case['رقم']} لسنة {case['سنة']}</h2>", unsafe_allow_html=True)
+        if st.button("العودة للحصر"): st.session_state.page = "حصر"; st.rerun()
+        
+        st.markdown("<div class='card'><div class='card-title'>بيانات القضية</div>", unsafe_allow_html=True)
+        st.write(f"**نوع الدعوى:** {case['نوع']}")
+        st.write(f"**المحكمة:** {case['نوع']} {case['محكمة_اسم']}")
+        st.write(f"**المأمورية:** {case['مأمورية']}")
+        st.write(f"**الدائرة:** {case['دائرة']}")
+        st.write(f"**المدعي:** {case['مدعي']}")
+        st.write(f"**المدعى عليه:** {case['مدعي_عليه']}")
+        st.write(f"**الموضوع:** {case['موضوع']}")
+        st.write(f"**ملاحظات:** {case['ملاحظات']}")
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    else:
+        st.error("القضية غير موجودة")
+        st.session_state.page = "حصر"
+        st.rerun()
+# ==================== نهاية قسم 4: التفاصيل ====================
