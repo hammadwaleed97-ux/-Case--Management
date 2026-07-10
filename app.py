@@ -145,7 +145,7 @@ elif st.session_state.page == "تسجيل":
 elif st.session_state.page == "حصر":
     st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
     st.markdown("<h2 style='color:#FFFFFF; text-align:center'>📊 القسم 3: الحصر العام الخارجي</h2>", unsafe_allow_html=True)
-    
+
     col1, col2 = st.columns([4,1])
     with col2:
         st.markdown("<div class='btn-back'>", unsafe_allow_html=True)
@@ -154,40 +154,34 @@ elif st.session_state.page == "حصر":
             st.rerun()
         st.markdown("</div>", unsafe_allow_html=True)
 
-    st.markdown("<hr style='border:2px solid #C9A961'>", unsafe_allow_html=True)
-
     if not data["cases"]:
         st.info("لا توجد قضايا مسجلة")
     else:
         # ترقيم تلقائي
+        updated = False
         for i, case in enumerate(data["cases"]):
             if "id" not in case:
                 case["id"] = i + 1
-        save_data(data)
+                updated = True
+        if updated: save_data(data)
 
         sorted_cases = sorted(data["cases"], key=lambda x: x.get("تاريخ_جلسة","9999"))
-
-        st.markdown("""
-        <style>
-        .case-table td {line-height: 2; white-space: normal; word-wrap: break-word; padding: 12px 8px;}
-        .case-table th {padding: 12px 8px;}
-        .case-table select {background:#C9A961;color:#0F1C2E;border:none;border-radius:5px;padding:6px 10px;font-weight:800;width:90px}
-        </style>
-        """, unsafe_allow_html=True)
 
         st.markdown("<div class='table-container'>", unsafe_allow_html=True)
         table_html = "<table class='case-table'>"
         table_html += "<tr><th>م</th><th>الرقم والسنة</th><th>المحكمة والدائرة</th><th>المأمورية</th><th>الخصوم</th><th>الموضوع</th><th>اخر جلسة</th><th>السبب</th><th>الاجراء</th></tr>"
-        
+
         for idx, case in enumerate(sorted_cases, 1):
-            رقم_سنة = f"{case.get('رقم','')} لسنة {case.get('سنة','')}"
-            محكمة_دائرة = f"{case.get('دائرة','')} {case.get('نوع','')}<br>{case.get('محكمة_اسم','')}"
-            مأمورية = f"مأمورية {case.get('مأمورية','-')}" if case.get('مأمورية','') else "-"
+            رقم_كامل = f"{case.get('رقم','')} لسنة {case.get('سنة','')}"
+            محكمة_كاملة = f"{case.get('محكمة_نوع','')} {case.get('محكمة_اسم','')}"
+            if case.get('مأمورية',''):
+                محكمة_كاملة += f"<br>مأمورية {case.get('مأمورية','')}"
+            دائرة_كاملة = f"{case.get('دائرة','')} عمال" if case.get('دائرة','') else ""
+
             خصوم = f"{case.get('مدعي','')}<br>ضد<br>{case.get('مدعي_عليه','')}"
-            
+
             # اللون الاحمر لو الهيئة مدعية او مستأنفة او طاعنة
-            مدعي = str(case.get('مدعي',''))
-            if "الهيئة" in مدعي:
+            if "الهيئة" in str(case.get('مدعي','')):
                 row_class = "row-hey2a"
             else:
                 row_class = "row1" if idx % 2 == 1 else "row2"
@@ -195,33 +189,37 @@ elif st.session_state.page == "حصر":
             case_id = case.get('id')
             table_html += f"<tr class='{row_class}'>"
             table_html += f"<td>{idx}</td>"
-            table_html += f"<td>{رقم_سنة}</td>"
-            table_html += f"<td>{محكمة_دائرة}</td>"
-            table_html += f"<td>{مأمورية}</td>"
+            table_html += f"<td>{رقم_كامل}</td>"
+            table_html += f"<td>{محكمة_كاملة}</td>"
+            table_html += f"<td>{دائرة_كاملة}</td>"
             table_html += f"<td>{خصوم}</td>"
             table_html += f"<td>{case.get('موضوع','')}</td>"
             table_html += f"<td>{case.get('تاريخ_جلسة','')}</td>"
             table_html += f"<td>{case.get('سبب','')}</td>"
-            table_html += f"<td><select onchange=\"if(this.value=='open'){{window.location.href='?open={case_id}'}}else if(this.value=='del'){{if(confirm('هل انت متاكد من حذف القضية رقم {case.get('رقم','')} لسنة {case.get('سنة','')}؟')){{window.location.href='?del={case_id}'}}}};this.selectedIndex=0;\" ><option value=''>الاجراء</option><option value='open'>فتح</option><option value='del'>حذف</option></select></td>"
+            # هنا القائمة المسندة مفعلة
+            table_html += f"<td><select onchange=\"window.location.href='?action='+this.value+'&id={case_id}'\" style='background:#C9A961;color:#0F1C2E;border:none;border-radius:5px;padding:5px 8px;font-weight:800'><option value=''>الاجراء</option><option value='open'>فتح</option><option value='del'>حذف</option></select></td>"
             table_html += "</tr>"
-        
+
         table_html += "</table></div>"
         st.markdown(table_html, unsafe_allow_html=True)
 
-        # معالجة الاوامر
-        query_params = st.query_params
-        if "open" in query_params:
-            st.session_state.selected_case_id = int(query_params["open"])
-            st.session_state.page = "تفاصيل"
-            st.query_params.clear()
-            st.rerun()
-        if "del" in query_params:
-            del_id = int(query_params["del"])
-            data["cases"] = [c for c in data["cases"] if c["id"] != del_id]
-            save_data(data)
-            st.query_params.clear()
-            st.success("✅ تم حذف القضية بنجاح")
-            st.rerun()
+        # ===== تفعيل القائمة المسندة =====
+        if "action" in st.query_params and "id" in st.query_params:
+            act = st.query_params["action"]
+            case_id = int(st.query_params["id"])
+            
+            if act == "open":
+                st.session_state.selected_case_id = case_id
+                st.session_state.page = "تفاصيل"
+                st.query_params.clear()
+                st.rerun()
+                
+            if act == "del":
+                data["cases"] = [c for c in data["cases"] if c["id"] != case_id]
+                save_data(data)
+                st.query_params.clear()
+                st.success("✅ تم حذف القضية")
+                st.rerun()
 # ==================== نهاية القسم 3: الحصر العام الخارجي ====================
 # ==================== بداية قسم 4: تفاصيل القضية ====================
 elif st.session_state.page == "تفاصيل":
