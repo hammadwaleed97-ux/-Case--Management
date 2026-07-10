@@ -168,17 +168,24 @@ elif st.session_state.page == "حصر":
 
         sorted_cases = sorted(data["cases"], key=lambda x: x.get("تاريخ_جلسة","9999"))
 
+        st.markdown("""
+        <style>
+        .case-table td {line-height: 2; white-space: normal; word-wrap: break-word; padding: 12px 8px;}
+        .case-table th {padding: 12px 8px;}
+        </style>
+        """, unsafe_allow_html=True)
+
         st.markdown("<div class='table-container'>", unsafe_allow_html=True)
         table_html = "<table class='case-table'>"
         table_html += "<tr><th>م</th><th>الرقم والسنة</th><th>المحكمة والدائرة</th><th>المأمورية</th><th>الخصوم</th><th>الموضوع</th><th>اخر جلسة</th><th>السبب</th><th>فتح</th></tr>"
         
         for idx, case in enumerate(sorted_cases, 1):
-            رقم_سنة = f"{case.get('رقم','')}<br>سنة {case.get('سنة','')}"
-            محكمة_دائرة = f"{case.get('دائرة','')}{case.get('نوع','')}<br>{case.get('محكمة_اسم','')}"
+            رقم_سنة = f"{case.get('رقم','')} لسنة {case.get('سنة','')}"
+            محكمة_دائرة = f"{case.get('دائرة','')} {case.get('نوع','')}<br>{case.get('محكمة_اسم','')}"
             مأمورية = f"مأمورية {case.get('مأمورية','-')}" if case.get('مأمورية','') else "-"
-            خصوم = f"{case.get('مدعي','')} ضد {case.get('مدعي_عليه','')}"
+            خصوم = f"{case.get('مدعي','')}<br>ضد<br>{case.get('مدعي_عليه','')}"
             
-            if "الهيئة" in case.get('مدعي',''):
+            if "الهيئة" in str(case.get('مدعي','')):
                 row_class = "row-hey2a"
             else:
                 row_class = "row1" if idx % 2 == 1 else "row2"
@@ -192,7 +199,7 @@ elif st.session_state.page == "حصر":
             table_html += f"<td>{case.get('موضوع','')}</td>"
             table_html += f"<td>{case.get('تاريخ_جلسة','')}</td>"
             table_html += f"<td>{case.get('سبب','')}</td>"
-            table_html += f"<td><form><button formaction='?open={case.get('id')}' style='background:#C9A961;color:#0F1C2E;border:none;border-radius:5px;padding:5px 10px;font-weight:800;cursor:pointer'>فتح</button></form></td>"
+            table_html += f"<td><form><button formaction='?open={case.get('id')}' style='background:#C9A961;color:#0F1C2E;border:none;border-radius:5px;padding:6px 12px;font-weight:800;cursor:pointer'>فتح</button></form></td>"
             table_html += "</tr>"
         
         table_html += "</table></div>"
