@@ -68,35 +68,47 @@ def render_notification_center():
             else:
                 st.warning("من فضلك ادخل الايميل")
 
-    st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
-    st.markdown("### 📅 الجلسات خلال 7 ايام القادمة")
     today = datetime.now().date()
     week_later = today + timedelta(days=7)
     data = load_data()
 
+    def get_appeal_days(case):
+        درجة = str(case.get('درجة','')).strip()
+        نوع = str(case.get('نوع','')).strip()
+
+        # 60 يوم: استئنافي نقد - اداري - اداري استئنافي
+        if 'استئنافي' in درجة or 'استئناف' in درجة:
+            return 60
+        elif 'اداري' in نوع:
+            if 'استئنافية' in نوع or 'استئنافي' in نوع:
+                return 60
+            return 60
+        # 40 يوم: ابتدائي
+        else:
+            return 40
+
     # ========== ارسال تنبيهات تلقائية ==========
     if verified_emails and data["cases"]:
         for case in data["cases"]:
-
-            # 1. تنبيهات الجلسات - زي ما هي
+            # 1. الجلسات
             if case.get('تاريخ_جلسة'):
                 try:
                     session_date = datetime.strptime(case['تاريخ_جلسة'], '%Y-%m-%d').date()
-                    days_to_session = (session_date - today).days
-                    if days_to_session == 3: # قبل الجلسة ب 3 ايام
+                    if (session_date - today).days == 3:
                         for email in verified_emails:
                             send_case_alert_email(email, case, "جلسة")
                 except: pass
 
-            # 2. تنبيهات الاحكام - الاضافة الجديدة
-            if case.get('تاريخ_انتهاء_الطعن') and case.get('تاريخ_انتهاء_الطعن')!= '':
+            # 2. الاحكام
+            if case.get('تاريخ_جلسة') and 'حكم' in str(case.get('الإجراءات','')):
                 try:
-                    appeal_end_date = datetime.strptime(case['تاريخ_انتهاء_الطعن'], '%Y-%m-%d').date()
+                    days = get_appeal_days(case)
+                    judgment_date = datetime.strptime(case['تاريخ_جلسة'], '%Y-%m-%d').date()
+                    appeal_end_date = judgment_date + timedelta(days=days)
                     days_to_appeal = (appeal_end_date - today).days
-                    # نبعت قبل انتهاء الطعن ب 15 يوم و ب 7 ايام و ب 3 ايام و يوم الانتهاء
                     if days_to_appeal in [15, 7, 3, 0]:
                         for email in verified_emails:
-                            send_case_alert_email(email, case, "حكم")
+                            send_case_alert_email(email, case, f"حكم - طعن {days} يوم")
                 except: pass
 
     if not data["cases"]:
@@ -105,68 +117,76 @@ def render_notification_center():
 
     df = pd.DataFrame(data["cases"])
     df['تاريخ_جلسة'] = pd.to_datetime(df['تاريخ_جلسة'], errors='coerce').dt.date
+
+    # عرض الجلسات
+    st.markdown("### 📅 الجلسات خلال 7 ايام القادمة")
     upcoming = df[(df['تاريخ_جلسة'] >= today) & (df['تاريخ_جلسة'] <= week_later)]
     st.info(f"عدد المشتركين المفعلين: {len(verified_emails)}")
 
-    # عرض الجلسات - زي ما هي
     if not upcoming.empty:
         for idx, row in enumerate(upcoming.iterrows(), 1):
             case = row[1].to_dict()
             رقم_كامل = f"{case['رقم']} لسنة {case['سنة']}"
-            محكمة_كاملة = f"{case['نوع']} {case['محكمة_اسم']}"
-            if case.get('مأمورية',''): محكمة_كاملة += f"<br>مأمورية {case.get('مأمورية','')}"
-            دائرة_كاملة = f"{case.get('دائرة','')} عمال" if case.get('دائرة','') else ""
-            محكمة_كاملة += f"<br>{دائرة_كاملة}"
-            خصوم = f"{case.get('مدعي','')}<br>ضد<br>{case.get('مدعي_عليه','')}"
-
-            row_class = "row-judgment" if case.get('حالة') == 'منتهية' else "row1"
-
-            st.markdown("<div class='table-container'>", unsafe_allow_html=True)
-            table_html = f"<table class='case-table'><tr><th>م</th><th>الرقم والسنة</th><th>المحكمة والدائرة</th><th>الخصوم</th><th>الموضوع</th><th>اخر جلسة</th><th>السبب</th><th>الحالة</th></tr>"
-            table_html += f"<tr class='{row_class}'><td>{idx}</td><td>{رقم_كامل}</td><td>{محكمة_كاملة}</td><td>{خصوم}</td><td>{case.get('موضوع','')}</td><td>{case['تاريخ_جلسة']}</td><td>{case.get('سبب','')}</td><td>{case.get('حالة','متداولة')}</td></tr></table></div>"
-            st.markdown(table_html, unsafe_allow_html=True)
-
-            # ========== زر الفتح ==========
-            c1, c2, c3 = st.columns([4,1,4])
-            with c2:
-                if st.button("فتح", key=f"open_notif_{case['id']}"):
-                    st.session_state.selected_case_id = case['id']
-                    st.session_state.page = "تفاصيل"
-                    st.rerun()
-            st.markdown("<br>", unsafe_allow_html=True)
+            st.markdown(f"**{idx}. {رقم_كامل}** - جلسة {case['تاريخ_جلسة']}")
+            if st.button("فتح", key=f"open_notif_{case['id']}"):
+                st.session_state.selected_case_id = case['id']
+                st.session_state.page = "تفاصيل"
+                st.rerun()
     else:
         st.info("مفيش جلسات خلال 7 ايام")
 
-    # ========== عرض الاحكام الجديدة ==========
+    # ========== عرض الاحكام ==========
     st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
-    st.markdown("### ⚖️ الاحكام اللي الطعن بتاعها هيقفل خلال 15 يوم")
+    st.markdown("### ⚖️ متابعة مواعيد الطعن")
 
-    if 'تاريخ_انتهاء_الطعن' in df.columns:
-        df['تاريخ_انتهاء_الطعن'] = pd.to_datetime(df['تاريخ_انتهاء_الطعن'], errors='coerce').dt.date
-        appeals_soon = df[(df['تاريخ_انتهاء_الطعن'] >= today) & (df['تاريخ_انتهاء_الطعن'] <= today + timedelta(days=15))]
+    appeals_list = []
+    for case in data["cases"]:
+        if case.get('تاريخ_جلسة') and 'حكم' in str(case.get('الإجراءات','')):
+            try:
+                days = get_appeal_days(case)
+                judgment_date = datetime.strptime(case['تاريخ_جلسة'], '%Y-%m-%d').date()
+                appeal_end_date = judgment_date + timedelta(days=days)
+                days_left = (appeal_end_date - today).days
+                if -30 <= days_left <= 15:
+                    case['تاريخ_انتهاء_الطعن_محسوب'] = appeal_end_date
+                    case['متبقي_طعن'] = days_left
+                    case['مدة_الطعن'] = days
+                    appeals_list.append(case)
+            except: pass
 
-        if not appeals_soon.empty:
-            for idx, row in enumerate(appeals_soon.iterrows(), 1):
-                case = row[1].to_dict()
-                رقم_كامل = f"{case['رقم']} لسنة {case['سنة']}"
-                متبقي = (case['تاريخ_انتهاء_الطعن'] - today).days
-                لون = "red" if متبقي <= 3 else "orange" if متبقي <= 7 else "#D4AF37"
-                الحكم_لصالح = case.get('الحكم_لصالح','')
+    if appeals_list:
+        appeals_list.sort(key=lambda x: x['متبقي_طعن'])
+        for idx, case in enumerate(appeals_list, 1):
+            رقم_كامل = f"{case['رقم']} لسنة {case['سنة']}"
+            متبقي = case['متبقي_طعن']
+            مدة = case['مدة_الطعن']
+            درجة = case.get('درجة','')
 
-                st.markdown(f"<div style='border:2px solid {لون}; padding:10px; border-radius:10px; margin-bottom:10px;'>", unsafe_allow_html=True)
-                st.markdown(f"<h4 style='color:{لون};'> {idx}. {رقم_كامل} - الحكم {الحكم_لصالح}</h4>", unsafe_allow_html=True)
-                st.markdown(f"**متبقي:** {متبقي} يوم | **تاريخ انتهاء الطعن:** {case['تاريخ_انتهاء_الطعن']}")
-                st.markdown(f"**الخصوم:** {case.get('مدعي','')} ضد {case.get('مدعي_عليه','')}")
+            if متبقي < 0:
+                لون = "gray"
+                حالة = f"قفل من {-متبقي} يوم"
+            elif متبقي <= 3:
+                لون = "red"
+                حالة = f"متبقي {متبقي} يوم - خطر"
+            elif متبقي <= 7:
+                لون = "orange"
+                حالة = f"متبقي {متبقي} يوم"
+            else:
+                لون = "#D4AF37"
+                حالة = f"متبقي {متبقي} يوم"
 
-                c1, c2, c3 = st.columns([4,1,4])
-                with c2:
-                    if st.button("فتح", key=f"open_appeal_{case['id']}"):
-                        st.session_state.selected_case_id = case['id']
-                        st.session_state.page = "تفاصيل"
-                        st.rerun()
-                st.markdown("</div>", unsafe_allow_html=True)
-        else:
-            st.info("مفيش احكام الطعن بتاعها هيقفل خلال 15 يوم")
+            st.markdown(f"<div style='border:3px solid {لون}; padding:10px; border-radius:10px; margin-bottom:10px;'>", unsafe_allow_html=True)
+            st.markdown(f"<h4 style='color:{لون};'> {idx}. {رقم_كامل} - درجة {درجة}</h4>", unsafe_allow_html=True)
+            st.markdown(f"<b>الحالة:</b> {حالة} | <b>ينتهي الطعن:</b> {case['تاريخ_انتهاء_الطعن_محسوب']} | <b>المدة:</b> {مدة} يوم")
+            st.markdown(f"<b>الحكم:</b> {case.get('الإجراءات','')}")
+
+            if st.button("فتح القضية", key=f"open_appeal_{case['id']}"):
+                st.session_state.selected_case_id = case['id']
+                st.session_state.page = "تفاصيل"
+                st.rerun()
+            st.markdown("</div>", unsafe_allow_html=True)
+    else:
+        st.info("مفيش احكام قريبة")
 # ============= حط بياناتك هنا بالاحمر فقط =============
 SENDER_EMAIL = "hammadwaleed97@gmail.com" # <--- حط ايميل الجيميل بتاعك هنا
 SENDER_PASSWORD = "r v y q q a y j o n w h u o x r" # <--- حط باسورد التطبيق هنا
