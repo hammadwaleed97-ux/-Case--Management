@@ -191,6 +191,8 @@ elif st.session_state.page == "تنبيهات":  # <--- ده السطر اللي
 # ==================================================================
 
 elif st.session_state.page == "حصر":
+    elif st.session_state.page == "تنبيهات":
+    render_notification_center()
     st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
     st.markdown("<h2 style='color:#FFFFFF; text-align:center'>📊 الحصر العام الخارجي</h2>", unsafe_allow_html=True)
     if st.button("العودة للرئيسية", use_container_width=True): st.session_state.page = "الرئيسية"; st.rerun()
