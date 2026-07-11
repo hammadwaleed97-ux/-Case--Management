@@ -20,6 +20,34 @@ def load_data():
         with open(DATA_FILE, "r", encoding="utf-8") as f: return json.load(f)
     return {"cases": []}
 def save_data(data):
+    def render_notification_center():
+    st.markdown("---")
+    st.markdown("<h1 style='text-align: center; color: #D4AF37;'>📧 مركز التنبيهات</h1>", unsafe_allow_html=True)
+    if st.button("⬅️ العودة للرئيسية", use_container_width=True):
+        st.session_state.page = "الرئيسية"
+        st.rerun()
+    
+    with st.container(border=True):
+        st.markdown("<h3 style='color: #D4AF37;'>تنبيهات عبر البريد الالكتروني</h3>", unsafe_allow_html=True)
+        user_email = st.text_input("البريد الالكتروني", placeholder="example@domain.com", value=st.session_state.get('saved_email',''))
+        if st.button("حفظ الايميل", type="primary"):
+            st.session_state['saved_email'] = user_email
+            st.success("تم حفظ الايميل")
+    
+    st.markdown("### 📅 الجلسات خلال 7 ايام القادمة")
+    today = datetime.now().date()
+    week_later = today + timedelta(days=7)
+    df = pd.DataFrame(data["cases"])
+    if not df.empty:
+        df['تاريخ_جلسة'] = pd.to_datetime(df['تاريخ_جلسة'], errors='coerce').dt.date
+        upcoming = df[(df['تاريخ_جلسة'] >= today) & (df['تاريخ_جلسة'] <= week_later)]
+        if not upcoming.empty:
+            for i, row in upcoming.iterrows():
+                st.markdown(f"<div class='card'><b>رقم:</b> {row['رقم']} لسنة {row['سنة']}<br><b>المحكمة:</b> {row['محكمة_اسم']}<br><b>التاريخ:</b> {row['تاريخ_جلسة']}<br><b>السبب:</b> {row['سبب']}</div>", unsafe_allow_html=True)
+        else:
+            st.info("مفيش جلسات خلال 7 ايام القادمة")
+    else:
+        st.warning("لا توجد قضايا مسجلة")
     with open(DATA_FILE, "w", encoding="utf-8") as f: json.dump(data, f, ensure_ascii=False, indent=4)
 
 data = load_data()
