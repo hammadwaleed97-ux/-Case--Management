@@ -308,3 +308,58 @@ elif st.session_state.page == "تفاصيل":
 # ==================================================================
 # ================== نهاية الجزء 2: الحصر والتفاصيل ==================
 # ==================================================================
+# ==================================================================
+# ================== بداية الجزء 3: مركز التنبيهات ==================
+# ==================================================================
+
+elif st.session_state.page == "تنبيهات":
+    st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
+    st.markdown("<h2 style='color:#FFFFFF; text-align:center'>📧 مركز التنبيهات</h2>", unsafe_allow_html=True)
+    if st.button("العودة للرئيسية", use_container_width=True): st.session_state.page = "الرئيسية"; st.rerun()
+
+    st.info("يعرض القضايا التي لها جلسات خلال 7 ايام القادمة فقط")
+
+    if not data["cases"]:
+        st.warning("لا توجد قضايا مسجلة")
+    else:
+        # نجيب القضايا اللي جلستها خلال 7 ايام
+        today = datetime.now()
+        next_7_days = today + timedelta(days=7)
+        alert_cases = []
+        for case in data["cases"]:
+            if case.get("تاريخ_جلسة"):
+                session_date = datetime.strptime(case["تاريخ_جلسة"], '%Y-%m-%d')
+                if today <= session_date <= next_7_days:
+                    alert_cases.append(case)
+
+        if not alert_cases:
+            st.success("✅ لا توجد جلسات خلال ال 7 ايام القادمة")
+        else:
+            st.warning(f"⚠️ يوجد {len(alert_cases)} قضية لها جلسات قريبة")
+
+            # نفس جدول الحصر العام بالظبط
+            st.markdown("<div class='table-container'>", unsafe_allow_html=True)
+            st.markdown("<table class='case-table'><tr><th>م</th><th>الرقم والسنة</th><th>المحكمة والدائرة</th><th>الخصوم</th><th>الموضوع</th><th>اخر جلسة</th><th>السبب</th><th>الحالة</th><th>فتح</th></tr>", unsafe_allow_html=True)
+
+            for idx, case in enumerate(alert_cases, 1):
+                رقم_كامل = f"{case.get('رقم','')} لسنة {case.get('سنة','')}"
+                محكمة_كاملة = f"{case.get('نوع','')} {case.get('محكمة_اسم','')}"
+                if case.get('مأمورية',''): محكمة_كاملة += f"<br>مأمورية {case.get('مأمورية','')}"
+                دائرة_كاملة = f"{case.get('دائرة','')} عمال" if case.get('دائرة','') else ""
+                محكمة_كاملة += f"<br>{دائرة_كاملة}"
+                خصوم = f"{case.get('مدعي','')}<br>ضد<br>{case.get('مدعي_عليه','')}"
+
+                if case.get('حالة') == 'منتهية': row_class = "row-judgment"
+                elif "الهيئة" in str(case.get('مدعي','')): row_class = "row-hey2a"
+                else: row_class = "row1" if idx % 2 == 1 else "row2"
+
+                # نفس زر الفتح بتاع الحصر بالظبط
+                btn_html = f"<form action='' method='get'><button style='background:#8B0000; color:#FFD700; border:2px solid #FFD700; border-radius:8px; padding:5px 10px; font-weight:800;'>فتح</button><input type='hidden' name='page' value='تفاصيل'><input type='hidden' name='id' value='{case['id']}'></form>"
+
+                st.markdown(f"<tr class='{row_class}'><td>{idx}</td><td>{رقم_كامل}</td><td>{محكمة_كاملة}</td><td>{خصوم}</td><td>{case.get('موضوع','')}</td><td>{case.get('تاريخ_جلسة','')}</td><td>{case.get('سبب','')}</td><td>{case.get('حالة','متداولة')}</td><td>{btn_html}</td></tr>", unsafe_allow_html=True)
+
+            st.markdown("</table></div>", unsafe_allow_html=True)
+
+# ==================================================================
+# ================== نهاية الجزء 3: مركز التنبيهات ==================
+# ==================================================================
