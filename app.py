@@ -318,4 +318,4 @@ elif st.session_state.page == "تفاصيل":
                 case['تاريخ_جلسة']=str(t); case['سبب']=s
                 save_data(data); st.success("✅ تم الحفظ"); st.rerun()
     st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
-    st.markdown("<h3 style='color:#C9A961'>📎 مستندات الق
+    st.markdown("<h3 style='color:#C9A961'>📎 مستندات القضية</h3>", unsafe_allow_html=True)
