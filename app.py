@@ -202,46 +202,6 @@ elif st.session_state.page == "حصر":
                     st.rerun()
 
 # ==================== نهاية القسم 3: الحصر العام الخارجي ====================
-# لازم يكون ده جوه elif st.session_state.page == "تفاصيل":
-# وتحته على طول بعد بيانات القضية
-
-st.markdown("<hr style='border:1px solid #C9A961'>", unsafe_allow_html=True)
-st.markdown("<h3 style='color:#C9A961'>📅 متابعة الجلسات</h3>", unsafe_allow_html=True)
-
-# نأمن الاول
-if 'جلسات' not in case:
-    case['جلسات'] = []
-
-if len(case['جلسات']) > 0:
-    جلسات_مرتبة = sorted(case["جلسات"], key=lambda x: x['تاريخ'])
-    
-    st.markdown("""
-    <style>
-    .tbl {width:100%; border:2px solid #C9A961; background:#0A1428}
-    .tbl th {background:#C9A961; color:#000; padding:10px; border:1px solid #C9A961; font-weight:bold}
-    .tbl td {color:#FFF; padding:10px; border:1px solid #C9A961; text-align:center; font-weight:600}
-    </style>
-    """, unsafe_allow_html=True)
-
-    html = "<table class='tbl'><tr><th>م</th><th>الرول</th><th>الجلسات</th><th>الإجراءات</th><th>ملاحظات</th></tr>"
-    for i, ج in enumerate(جلسات_مرتبة, 1):
-        html += f"<tr><td>{i}</td><td style='color:#FFD700'>{ج.get('الرول','')}</td><td>{ج['تاريخ']}</td><td>{ج.get('سبب','')}</td><td>{ج.get('ملاحظات','')}</td></tr>"
-    html += "</table>"
-    st.markdown(html, unsafe_allow_html=True)
-else:
-    st.warning("لا توجد جلسات مسجلة")
-
-with st.expander("➕ اضافة جلسة"):
-    with st.form("add_session"):
-        c1,c2 = st.columns(2)
-        t = c1.date_input("تاريخ الجلسة")
-        r = c2.text_input("الرول")
-        s = st.text_input("سبب التأجيل")
-        m = st.text_area("ملاحظات")
-        if st.form_submit_button("حفظ"):
-            case['جلسات'].append({'تاريخ':str(t),'الرول':r,'سبب':s,'ملاحظات':m})
-            case['تاريخ_جلسة']=str(t); case['سبب']=s
-            save_data(data); st.rerun()
 
 # ==================== بداية قسم 4: تفاصيل القضية ====================
 elif st.session_state.page == "تفاصيل":
