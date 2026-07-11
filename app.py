@@ -28,14 +28,14 @@ def render_notification_center():
     if st.button("⬅️ العودة للرئيسية", use_container_width=True):
         st.session_state.page = "الرئيسية"
         st.rerun()
-
+    
     with st.container(border=True):
         st.markdown("<h3 style='color: #D4AF37;'>تنبيهات عبر البريد الالكتروني</h3>", unsafe_allow_html=True)
         user_email = st.text_input("البريد الالكتروني", placeholder="example@domain.com", value=st.session_state.get('saved_email',''))
         if st.button("حفظ الايميل", type="primary"):
             st.session_state['saved_email'] = user_email
             st.success("تم حفظ الايميل")
-
+    
     st.markdown("### 📅 الجلسات خلال 7 ايام القادمة")
     today = datetime.now().date()
     week_later = today + timedelta(days=7)
@@ -258,4 +258,34 @@ elif st.session_state.page == "تفاصيل":
                 case['مستندات'].append({'نوع': نوع_المستند, 'بيان': بيان_المستند, 'اسم': uploaded_file.name, 'مسار': file_path})
                 save_data(data); st.success("تم رفع المستند"); st.rerun()
 
-    # ========== ده الجزء 
+    if case['مستندات']:
+        for i, مستند in enumerate(case['مستندات']):
+            if 'مسار' in مستند and os.path.exists(مستند['مسار']):
+                c1, c2, c3, c4 = st.columns([2,2,2,1])
+                with c1: st.write(f"{i+1}. {مستند.get('نوع','')}")
+                with c2: st.write(مستند.get('بيان','-')) # <-- صلحت KeyError هنا
+                with c3: st.write(مستند.get('اسم',''))
+                with c4:
+                    with open(مستند['مسار'], "rb") as f: st.download_button("تحميل", f, file_name=مستند['اسم'], key=f"dl{i}")
+
+    st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
+    st.markdown("<h3 style='color:#FF6B6B'>⚖️ جلسة الحكم</h3>", unsafe_allow_html=True)
+    if 'حكم' not in case:
+        with st.form("judgment_form"):
+            c1, c2 = st.columns(2)
+            تاريخ_حكم = c1.date_input("تاريخ الحكم")
+            مسندة_ل = c2.selectbox("مسندة لـ", ["الصالح", "الضد"])
+            منطوق_الحكم = st.text_area("منطوق الحكم")
+            if st.form_submit_button("حفظ الحكم واغلاق القضية"):
+                case['حكم'] = {'تاريخ': str(تاريخ_حكم), 'المنطوق': منطوق_الحكم, 'مسندة': مسندة_ل}
+                case['حالة'] = 'منتهية'
+                case['جلسات'].append({'تاريخ':str(تاريخ_حكم),'الرول':'-','سبب':f'الحكم - مسندة لـ {مسندة_ل}','ملاحظات':منطوق_الحكم})
+                save_data(data); st.success("✅ تم حفظ الحكم"); st.rerun()
+    else:
+        st.success(f"✅ تم الحكم بتاريخ: {case['حكم']['تاريخ']} - مسندة لـ: {case['حكم']['مسندة']}")
+        st.info(f"المنطوق: {case['حكم']['المنطوق']}")
+
+    st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
+    if st.button("🗑️ حذف القضية نهائيا", type="primary"):
+        data["cases"] = [c for c in data["cases"] if c['id']!= case['id']]
+        save_data(data); st.success("تم حذف القضية"); st.session_state.page = "حصر"; st.rerun()
