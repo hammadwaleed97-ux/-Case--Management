@@ -10,6 +10,11 @@ import secrets
 from datetime import datetime, timedelta
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+# ============= حط بياناتك هنا بالاحمر فقط =============
+SENDER_EMAIL = "hammadwaleed97@gmail.com" # <--- حط ايميل الجيميل بتاعك هنا
+SENDER_PASSWORD = "r v y q q a y j o n w h u o x r" # <--- حط باسورد التطبيق هنا
+APP_URL = "https://qpyqpsmkqcvdou4imbfunp.streamlit.app/" # ده بتاعك
+# ==================================================
 
 st.set_page_config(page_title="إدارة القضايا", layout="wide", page_icon="⚖️")
 
@@ -91,11 +96,6 @@ check_and_send_alerts()
 
 data = load_data()
 if 'page' not in st.session_state: st.session_state.page = "الرئيسية"
-# ============= حط بياناتك هنا بالاحمر فقط =============
-SENDER_EMAIL = "hammadwaleed97@gmail.com" # <--- حط ايميل الجيميل بتاعك هنا
-SENDER_PASSWORD = "r v y q q a y j o n w h u o x r" # <--- حط باسورد التطبيق هنا
-APP_URL = "https://qpyqpsmkqcvdou4imbfunp.streamlit.app/" # ده بتاعك
-# ==================================================
 
 # ==================================================================
 # ================== بداية الجزء 1: الدوال والتسجيل ==================
