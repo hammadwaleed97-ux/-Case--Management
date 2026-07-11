@@ -1,4 +1,4 @@
-# ================== إدارة القضايا v5.37 =====================
+# ================== إدارة القضايا v5.38 =====================
 # ========== الإدارة العامة للشئون القانونية البحيرة ==========
 # ============================================================
 import streamlit as st
@@ -34,10 +34,10 @@ def load_data():
             loaded = json.load(f)
             data["cases"] = loaded.get("cases", [])
             data["emails"] = loaded.get("emails", {})
-            for c in data["cases"]:
+            for i, c in enumerate(data["cases"]):
                 if "جلسات" not in c: c["جلسات"] = []
                 if "مستندات" not in c: c["مستندات"] = []
-                if "id" not in c: c["id"] = data["cases"].index(c) + 1
+                if "id" not in c: c["id"] = i + 1
     return data
 
 def save_data(data):
@@ -45,12 +45,14 @@ def save_data(data):
 
 def send_activation_email(to_email, token):
     activation_link = f"{APP_URL}?activate={token}"
-    subject = Header("تفعيل التنبيهات - إدارة القضايا", 'utf-8') # ده حل مشكلة العربي
+    subject = Header("تفعيل التنبيهات - إدارة القضايا", 'utf-8')
     body = f"""
+    <html><body dir="rtl">
     <h2>مرحبا</h2>
     <p>لتفعيل تنبيهات الجلسات على هذا الايميل اضغط على الرابط التالي:</p>
     <a href='{activation_link}' style='background:#C9A961;color:#0F1C2E;padding:10px 20px;text-decoration:none;border-radius:5px;font-weight:bold;'>تفعيل الايميل</a>
     <p>اذا لم تطلب هذا التجاهل هذه الرسالة</p>
+    </body></html>
     """
     try:
         msg = MIMEMultipart()
@@ -61,7 +63,7 @@ def send_activation_email(to_email, token):
         server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
         server.starttls()
         server.login(SENDER_EMAIL, SENDER_PASSWORD)
-        server.sendmail(SENDER_EMAIL, to_email, msg.as_string())
+        server.sendmail(SENDER_EMAIL, to_email, msg.as_bytes()) # اتغيرت ل as_bytes عشان العربي
         server.quit()
         return True
     except Exception as e:
@@ -120,7 +122,7 @@ def render_notification_center():
                     <b>اخر جلسة:</b> {last_session.get('تاريخ')} - <b>السبب:</b> {last_session.get('سبب')}
                     </div>
                     """, unsafe_allow_html=True)
-                    if st.button(f"📂 عرض الملف كامل", key=f"view_{i}", use_container_width=True):
+                    if st.button(f"📂 عرض الملف كامل", key=f"view_{row['id']}", use_container_width=True): # صلحت ال key
                         st.session_state.selected_case_id = row['id']
                         st.session_state.page = "عرض_قضية"
                         st.rerun()
@@ -155,13 +157,14 @@ def render_case_details(case_id):
     else: st.info("لا توجد جلسات مسجلة")
 
     st.markdown("<h3 style='color:#D4B96A'>3- المستندات المرفقة</h3>", unsafe_allow_html=True)
-    if case.get("مستندات") and len(case["مستندات"]) > 0: # ده حل مشكلة KeyError
-        for doc in case["مستندات"]:
+    if case.get("مستندات") and len(case["مستندات"]) > 0:
+        for idx, doc in enumerate(case["مستندات"]): # ضفت idx
             col1, col2 = st.columns([3,1])
             with col1: st.write(f"**{doc.get('نوع','')}**: {doc.get('اسم','')}")
             with col2:
                 if os.path.exists(doc.get('مسار','')):
-                    with open(doc['مسار'], "rb") as f: st.download_button("تحميل", f, file_name=doc['اسم'], key=f"dl_{doc['اسم']}")
+                    with open(doc['مسار'], "rb") as f:
+                        st.download_button("تحميل", f, file_name=doc['اسم'], key=f"dl_{case_id}_{idx}") # صلحت ال key
     else: st.info("لا توجد مستندات مرفقة")
 
 data = load_data()
@@ -286,7 +289,7 @@ elif st.session_state.page == "تسجيل":
                 st.session_state.page = "حصر"; st.rerun()
         st.markdown("</div>", unsafe_allow_html=True)
 
-elif st.session_state.page == "حصر": # رجعتلك الحصر كامل زي ما كان
+elif st.session_state.page == "حصر":
     st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
     st.markdown("<h2 style='color:#FFFFFF; text-align:center'>📊 الحصر العام الخارجي</h2>", unsafe_allow_html=True)
     if st.button("العودة للرئيسية", use_container_width=True): st.session_state.page = "الرئيسية"; st.rerun()
