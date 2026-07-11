@@ -118,7 +118,6 @@ st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
 # ==================================================================
 # ================== بداية الجزء 1: الرئيسية والتسجيل ==================
 # ==================================================================
-
 if st.session_state.page == "الرئيسية":
     st.markdown("<h2 style='color:#C9A961; text-align:center'>الأقسام</h2>", unsafe_allow_html=True)
     col1, col2 = st.columns(2)
@@ -126,7 +125,7 @@ if st.session_state.page == "الرئيسية":
         if st.button("تسجيل القضايا", use_container_width=True): st.session_state.page = "تسجيل"; st.rerun()
     with col2:
         if st.button("الحصر العام", use_container_width=True): st.session_state.page = "حصر"; st.rerun()
-    if st.button("📧 مركز التنبيهات", type="secondary", use_container_width=True): st.session_state.page = "التنبيهات"; st.rerun()
+    if st.button("📧 مركز التنبيهات", type="secondary", use_container_width=True): st.session_state.page = "تنبيهات"; st.rerun()  # <--- شلت ال
 
 elif st.session_state.page == "تسجيل":
     st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
@@ -178,7 +177,6 @@ elif st.session_state.page == "تسجيل":
                 st.success(f"✅ تم حفظ القضية رقم {رقم} لسنة {سنة}")
                 st.session_state.page = "حصر"; st.rerun()
         st.markdown("</div>", unsafe_allow_html=True)
-
 # ==================================================================
 # ================== نهاية الجزء 1: الرئيسية والتسجيل ==================
 # =================================================================
