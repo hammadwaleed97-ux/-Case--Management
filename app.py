@@ -1,4 +1,4 @@
-#============== إدارة القضايا v5.38 =====================
+=========== إدارة القضايا v5.38 =====================
 # ========== الإدارة العامة للشئون القانونية البحيرة ==========
 # ============================================================
 import streamlit as st
@@ -53,7 +53,14 @@ def render_notification_center():
             except: pass
 
     if not upcoming_cases:
-        st.success("مفيش جلسات قريبة الحمد
+        st.success("مفيش جلسات قريبة الحمد لله")
+    else:
+        for case in upcoming_cases:
+            رقم_كامل = f"{case.get('رقم','')} لسنة {case.get('سنة','')}"
+            st.warning(f"**{رقم_كامل}** \n\n المحكمة: {case.get('محكمة_اسم')} \n\n التاريخ: {case.get('تاريخ_جلسة')}")
+
+data = load_data()
+if 'page' not in st.session_state: st.session_state.page = "الرئيسية"
 # ============= حط بياناتك هنا بالاحمر فقط =============
 SENDER_EMAIL = "hammadwaleed97@gmail.com" # <--- حط ايميل الجيميل بتاعك هنا
 SENDER_PASSWORD = "r v y q q a y j o n w h u o x r" # <--- حط باسورد التطبيق هنا
