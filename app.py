@@ -1,4 +1,3 @@
-# ==========================================================
 # ================== إدارة القضايا v5.37 =====================
 # ========== الإدارة العامة للشئون القانونية البحيرة ==========
 # ============================================================
@@ -29,6 +28,28 @@ def render_notification_center():
     if st.button("⬅️ العودة للرئيسية", use_container_width=True):
         st.session_state.page = "الرئيسية"
         st.rerun()
+    
+    with st.container(border=True):
+        st.markdown("<h3 style='color: #D4AF37;'>تنبيهات عبر البريد الالكتروني</h3>", unsafe_allow_html=True)
+        user_email = st.text_input("البريد الالكتروني", placeholder="example@domain.com", value=st.session_state.get('saved_email',''))
+        if st.button("حفظ الايميل", type="primary"):
+            st.session_state['saved_email'] = user_email
+            st.success("تم حفظ الايميل")
+    
+    st.markdown("### 📅 الجلسات خلال 7 ايام القادمة")
+    today = datetime.now().date()
+    week_later = today + timedelta(days=7)
+    df = pd.DataFrame(data["cases"])
+    if not df.empty:
+        df['تاريخ_جلسة'] = pd.to_datetime(df['تاريخ_جلسة'], errors='coerce').dt.date
+        upcoming = df[(df['تاريخ_جلسة'] >= today) & (df['تاريخ_جلسة'] <= week_later)]
+        if not upcoming.empty:
+            for i, row in upcoming.iterrows():
+                st.markdown(f"<div class='card'><b>رقم:</b> {row['رقم']} لسنة {row['سنة']}<br><b>المحكمة:</b> {row['محكمة_اسم']}<br><b>التاريخ:</b> {row['تاريخ_جلسة']}<br><b>السبب:</b> {row['سبب']}</div>", unsafe_allow_html=True)
+        else:
+            st.info("مفيش جلسات خلال 7 ايام القادمة")
+    else:
+        st.warning("لا توجد قضايا مسجلة")
     
     with st.container(border=True):
         st.markdown("<h3 style='color: #D4AF37;'>تنبيهات عبر البريد الالكتروني</h3>", unsafe_allow_html=True)
