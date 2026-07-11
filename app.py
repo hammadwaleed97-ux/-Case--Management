@@ -1,4 +1,4 @@
-# ========= إدارة القضايا v5.43 - النسخة النهائية =====================
+# ===== إدارة القضايا v5.39 =====================
 # ========== الإدارة العامة للشئون القانونية البحيرة ==========
 # ============================================================
 import streamlit as st
@@ -11,12 +11,6 @@ from datetime import datetime, timedelta
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
-# ============= حط بياناتك هنا بالاحمر فقط =============
-SENDER_EMAIL = "hammadwaleed97@gmail.com" # <--- حط ايميل الجيميل بتاعك هنا
-SENDER_PASSWORD = "r v y q q a y j o n w h u o x r" # <--- حط باسورد التطبيق هنا
-APP_URL = "https://qpyqapsmkqcvdo4imbfunp.streamlit.app"
-# ==================================================
-
 st.set_page_config(page_title="إدارة القضايا", layout="wide", page_icon="⚖️")
 
 DATA_FILE = "cases_data.json"
@@ -24,77 +18,118 @@ UPLOAD_FOLDER = "uploads"
 TOKENS_FILE = "tokens.json"
 if not os.path.exists(UPLOAD_FOLDER): os.makedirs(UPLOAD_FOLDER)
 
+# ============= دوال مساعدة =============
+
 def load_data():
     if os.path.exists(DATA_FILE):
-        with open(DATA_FILE, "r", encoding="utf-8") as f: return json.load(f)
+        with open(DATA_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
     return {"cases": []}
 
 def save_data(data):
-    with open(DATA_FILE, "w", encoding="utf-8") as f: json.dump(data, f, ensure_ascii=False, indent=4)
+    with open(DATA_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=4)
 
-def load_tokens():
-    if os.path.exists(TOKENS_FILE):
-        with open(TOKENS_FILE, "r", encoding="utf-8") as f: return json.load(f)
-    return {"tokens": []}
+# ============= دوال التنبيهات =============
+def render_notification_center():
+    st.markdown("---")
+    st.markdown("<h1 style='text-align: center; color: #D4AF37;'>📧 مركز التنبيهات</h1>", unsafe_allow_html=True)
+    if st.button("⬅️ العودة للرئيسية", use_container_width=True):
+        st.session_state.page = "الرئيسية"
+        st.rerun()
 
-def save_tokens(tokens_data):
-    with open(TOKENS_FILE, "w", encoding="utf-8") as f: json.dump(tokens_data, f, ensure_ascii=False, indent=4)
+    query_params = st.query_params
+    if "verify_token" in query_params:
+        email = verify_token(query_params["verify_token"])
+        if email:
+            st.success(f"✅ تم تفعيل الايميل {email} بنجاح. ستصلك التنبيهات الان")
+            st.session_state['saved_email'] = email
+        else:
+            st.error("❌ الرابط غير صالح او منتهي")
+        st.query_params.clear()
 
-def send_verification_email(recipient_email, token):
-    verify_link = f"{APP_URL}?verify_token={token}"
-    subject = "تفعيل تنبيهات القضايا - الشئون القانونية البحيرة"
-    body = f"مرحبا,\n\nلقد قمت بالتسجيل لتلقي تنبيهات الجلسات.\nمن فضلك فعل الاشتراك بالضغط على الرابط التالي:\n{verify_link}\n\nالرابط صالح لمدة 24 ساعة."
-    msg = MIMEMultipart(); msg["From"] = SENDER_EMAIL; msg["To"] = recipient_email; msg["Subject"] = subject
-    msg.attach(MIMEText(body, "plain", "utf-8"))
-    try:
-        server = smtplib.SMTP("smtp.gmail.com", 587); server.starttls()
-        server.login(SENDER_EMAIL, SENDER_PASSWORD); server.sendmail(SENDER_EMAIL, recipient_email, msg.as_string()); server.quit()
-        return True
-    except Exception as e: st.error(f"خطأ في ارسال الايميل: {e}"); return False
-
-def send_case_alert_email(recipient_email, case, alert_type):
-    if alert_type == "جلسة":
-        subject = f"تنبيه جلسة بعد 3 ايام - قضية رقم {case['رقم']} لسنة {case['سنة']}"
-        body = f"تنبيه: لديك جلسة بتاريخ {case['تاريخ_جلسة']}\nرقم القضية: {case['رقم']} لسنة {case['سنة']}\nالمحكمة: {case['محكمة_اسم']}\nالسبب: {case['سبب']}\nالخصوم: {case['مدعي']} ضد {case['مدعي_عليه']}"
-    elif alert_type == "حكم":
-        subject = f"صدور حكم - قضية رقم {case['رقم']} لسنة {case['سنة']}"
-        body = f"تنبيه: تم تحديث حالة القضية الى منتهية\nرقم القضية: {case['رقم']} لسنة {case['سنة']}"
-    msg = MIMEMultipart(); msg["From"] = SENDER_EMAIL; msg["To"] = recipient_email; msg["Subject"] = subject
-    msg.attach(MIMEText(body, "plain", "utf-8"))
-    try:
-        server = smtplib.SMTP("smtp.gmail.com", 587); server.starttls()
-        server.login(SENDER_EMAIL, SENDER_PASSWORD); server.sendmail(SENDER_EMAIL, recipient_email, msg.as_string()); server.quit()
-        return True
-    except: return False
-
-def check_and_send_alerts():
-    if not SENDER_EMAIL or not SENDER_PASSWORD: return
-    data = load_data(); tokens_data = load_tokens()
+    st.markdown("<h3 style='color:#FFFFFF; text-align:center'>📊 ادارة التنبيهات</h3>", unsafe_allow_html=True)
+    tokens_data = load_tokens()
     verified_emails = [t['email'] for t in tokens_data['tokens'] if t['verified']]
-    if not verified_emails: return
+
+    with st.container(border=True):
+        st.markdown("<div class='card-title'>تسجيل ايميل جديد للتنبيهات</div>", unsafe_allow_html=True)
+        user_email = st.text_input("البريد الالكتروني", placeholder="example@domain.com", value=st.session_state.get('saved_email',''))
+        if st.button("ارسال رابط التفعيل", type="primary", use_container_width=True):
+            if user_email:
+                token = secrets.token_urlsafe(32)
+                expires = datetime.now() + timedelta(days=1)
+                tokens_data["tokens"].append({"email": user_email, "token": token, "expires": expires.strftime("%Y-%m-%d %H:%M:%S"), "verified": False})
+                save_tokens(tokens_data)
+                if send_verification_email(user_email, token):
+                    st.success("تم ارسال رابط التفعيل للايميل. من فضلك افتح الايميل وفعل الاشتراك")
+                else:
+                    st.error("فشل ارسال الايميل. راجع الايميل والباسورد الاحمر")
+            else:
+                st.warning("من فضلك ادخل الايميل")
+
+    st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
+    st.markdown("### 📅 الجلسات خلال 7 ايام القادمة")
     today = datetime.now().date()
-    for case in data["cases"]:
-        if case.get('تاريخ_جلسة'):
-            try:
-                session_date = datetime.strptime(case['تاريخ_جلسة'], '%Y-%m-%d').date()
-                days_to_session = (session_date - today).days
-                if days_to_session == 3:
-                    for email in verified_emails: send_case_alert_email(email, case, "جلسة")
-                if case['حالة'] == 'منتهية':
-                    for email in verified_emails: send_case_alert_email(email, case, "حكم")
-            except: pass
+    week_later = today + timedelta(days=7)
+    data = load_data()
 
-def verify_token(token):
-    tokens_data = load_tokens(); now = datetime.now()
-    for t in tokens_data["tokens"]:
-        if t["token"] == token and datetime.strptime(t["expires"], "%Y-%m-%d %H:%M:%S") > now:
-            if not t["verified"]: t["verified"] = True; save_tokens(tokens_data); return t["email"]
-    return None
+    # ========== ارسال تنبيهات تلقائية ==========
+    if verified_emails and data["cases"]:
+        for case in data["cases"]:
+            if case.get('تاريخ_جلسة'):
+                try:
+                    session_date = datetime.strptime(case['تاريخ_جلسة'], '%Y-%m-%d').date()
+                    days_to_session = (session_date - today).days
+                    if days_to_session == 3: # قبل الجلسة ب 3 ايام
+                        for email in verified_emails:
+                            send_case_alert_email(email, case, "جلسة")
+                    if case['حالة'] == 'منتهية' and days_to_session <= 0: # صدور حكم
+                        for email in verified_emails:
+                            send_case_alert_email(email, case, "حكم")
+                except: pass
 
-data = load_data()
-if 'page' not in st.session_state: st.session_state.page = "الرئيسية"
+    if not data["cases"]:
+        st.warning("لا توجد قضايا مسجلة")
+        return
 
-# === شلنا التشيك التلقائي من هنا ===
+    df = pd.DataFrame(data["cases"])
+    df['تاريخ_جلسة'] = pd.to_datetime(df['تاريخ_جلسة'], errors='coerce').dt.date
+    upcoming = df[(df['تاريخ_جلسة'] >= today) & (df['تاريخ_جلسة'] <= week_later)]
+    st.info(f"عدد المشتركين المفعلين: {len(verified_emails)}")
+
+    if not upcoming.empty:
+        for idx, row in enumerate(upcoming.iterrows(), 1):
+            case = row[1].to_dict()
+            رقم_كامل = f"{case['رقم']} لسنة {case['سنة']}"
+            محكمة_كاملة = f"{case['نوع']} {case['محكمة_اسم']}"
+            if case.get('مأمورية',''): محكمة_كاملة += f"<br>مأمورية {case.get('مأمورية','')}"
+            دائرة_كاملة = f"{case.get('دائرة','')} عمال" if case.get('دائرة','') else ""
+            محكمة_كاملة += f"<br>{دائرة_كاملة}"
+            خصوم = f"{case.get('مدعي','')}<br>ضد<br>{case.get('مدعي_عليه','')}"
+
+            row_class = "row-judgment" if case.get('حالة') == 'منتهية' else "row1"
+
+            st.markdown("<div class='table-container'>", unsafe_allow_html=True)
+            table_html = f"<table class='case-table'><tr><th>م</th><th>الرقم والسنة</th><th>المحكمة والدائرة</th><th>الخصوم</th><th>الموضوع</th><th>اخر جلسة</th><th>السبب</th><th>الحالة</th></tr>"
+            table_html += f"<tr class='{row_class}'><td>{idx}</td><td>{رقم_كامل}</td><td>{محكمة_كاملة}</td><td>{خصوم}</td><td>{case.get('موضوع','')}</td><td>{case['تاريخ_جلسة']}</td><td>{case.get('سبب','')}</td><td>{case.get('حالة','متداولة')}</td></tr></table></div>"
+            st.markdown(table_html, unsafe_allow_html=True)
+
+            # ========== زر الفتح ==========
+            c1, c2, c3 = st.columns([4,1,4])
+            with c2:
+                if st.button("فتح", key=f"open_notif_{case['id']}"):
+                    st.session_state.selected_case_id = case['id']
+                    st.session_state.page = "تفاصيل"
+                    st.rerun()
+            st.markdown("<br>", unsafe_allow_html=True)
+    else:
+        st.info("مفيش جلسات خلال 7 ايام القادمة")
+# ============= حط بياناتك هنا بالاحمر فقط =============
+SENDER_EMAIL = "hammadwaleed97@gmail.com" # <--- حط ايميل الجيميل بتاعك هنا
+SENDER_PASSWORD = "r v y q q a y j o n w h u o x r" # <--- حط باسورد التطبيق هنا
+APP_URL = "https://qpyqpsmkqcvdou4imbfunp.streamlit.app/" # ده بتاعك
+# ==================================================
 # ==================================================================
 # ================== بداية الجزء 1: الدوال والتسجيل ==================
 # ==================================================================
