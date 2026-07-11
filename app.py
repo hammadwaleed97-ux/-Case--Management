@@ -297,7 +297,7 @@ if st.session_state.page == "الرئيسية":
     with col2:
         if st.button("الحصر العام", use_container_width=True): st.session_state.page = "حصر"; st.rerun()
     if st.button("📧 مركز التنبيهات", type="secondary", use_container_width=True): st.session_state.page = "تنبيهات"; st.rerun()
-        if st.button("🔍 البحث عن دعوى", type="secondary", use_container_width=True): st.session_state.page = "بحث"; st.rerun()
+    if st.button("🔍 البحث عن دعوى", type="secondary", use_container_width=True): st.session_state.page = "بحث"; st.rerun()
 
 elif st.session_state.page == "تسجيل":
     st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
