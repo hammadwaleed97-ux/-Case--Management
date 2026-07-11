@@ -191,8 +191,12 @@ elif st.session_state.page == "حصر":
     st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
     st.markdown("<h2 style='color:#FFFFFF; text-align:center'>📊 الحصر العام الخارجي</h2>", unsafe_allow_html=True)
     if st.button("العودة للرئيسية", use_container_width=True): st.session_state.page = "الرئيسية"; st.rerun()
-    if not data["cases"]: st.info("لا توجد قضايا مسجلة")
-    
+    if not data["cases"]: 
+        st.info("لا توجد قضايا مسجلة")
+    else:  # <-- ال else ده يرجع يبقى تحت ال if على طول
+        for i, case in enumerate(data["cases"]):
+            # باقي كود الحصر هنا
+
 elif st.session_state.page == "تنبيهات":
     render_notification_center()
     else:
