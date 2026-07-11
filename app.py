@@ -1,4 +1,4 @@
-# ========= إدارة القضايا v5.42 =====================
+# ========= إدارة القضايا v5.43 - النسخة النهائية =====================
 # ========== الإدارة العامة للشئون القانونية البحيرة ==========
 # ============================================================
 import streamlit as st
@@ -14,7 +14,7 @@ from email.mime.multipart import MIMEMultipart
 # ============= حط بياناتك هنا بالاحمر فقط =============
 SENDER_EMAIL = "hammadwaleed97@gmail.com" # <--- حط ايميل الجيميل بتاعك هنا
 SENDER_PASSWORD = "r v y q q a y j o n w h u o x r" # <--- حط باسورد التطبيق هنا
-APP_URL = "https://qpyqapsmkqcvdo4imbfunp.streamlit.app" # <--- ظبطتهولك
+APP_URL = "https://qpyqapsmkqcvdo4imbfunp.streamlit.app"
 # ==================================================
 
 st.set_page_config(page_title="إدارة القضايا", layout="wide", page_icon="⚖️")
@@ -24,7 +24,6 @@ UPLOAD_FOLDER = "uploads"
 TOKENS_FILE = "tokens.json"
 if not os.path.exists(UPLOAD_FOLDER): os.makedirs(UPLOAD_FOLDER)
 
-# ============= دوال مساعدة =============
 def load_data():
     if os.path.exists(DATA_FILE):
         with open(DATA_FILE, "r", encoding="utf-8") as f: return json.load(f)
@@ -33,7 +32,6 @@ def load_data():
 def save_data(data):
     with open(DATA_FILE, "w", encoding="utf-8") as f: json.dump(data, f, ensure_ascii=False, indent=4)
 
-# ============= دوال التنبيهات =============
 def load_tokens():
     if os.path.exists(TOKENS_FILE):
         with open(TOKENS_FILE, "r", encoding="utf-8") as f: return json.load(f)
@@ -67,10 +65,10 @@ def send_case_alert_email(recipient_email, case, alert_type):
         server = smtplib.SMTP("smtp.gmail.com", 587); server.starttls()
         server.login(SENDER_EMAIL, SENDER_PASSWORD); server.sendmail(SENDER_EMAIL, recipient_email, msg.as_string()); server.quit()
         return True
-    except Exception as e: return False
+    except: return False
 
 def check_and_send_alerts():
-    if not SENDER_EMAIL or not SENDER_PASSWORD: return # لو فاضيين ميعملش حاجة
+    if not SENDER_EMAIL or not SENDER_PASSWORD: return
     data = load_data(); tokens_data = load_tokens()
     verified_emails = [t['email'] for t in tokens_data['tokens'] if t['verified']]
     if not verified_emails: return
@@ -96,8 +94,7 @@ def verify_token(token):
 data = load_data()
 if 'page' not in st.session_state: st.session_state.page = "الرئيسية"
 
-# شغل التشيك التلقائي بعد ما الصفحة تحمل
-check_and_send_alerts()
+# === شلنا التشيك التلقائي من هنا ===
 # ==================================================================
 # ================== بداية الجزء 1: الدوال والتسجيل ==================
 # ==================================================================
