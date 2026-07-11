@@ -364,3 +364,44 @@ def render_notification_center():
 # ==================================================================
 # ================== نهاية دالة التنبيهات v5.40 ==================
 # ==================================================================
+from datetime import datetime, timedelta # اتأكد ان ده موجود فوق
+
+# حط دي اخر حاجة في الملف
+def render_notification_center():
+    st.markdown("---")
+    st.markdown("<h1 style='text-align: center; color: #D4AF37;'>📧 مركز التنبيهات</h1>", unsafe_allow_html=True)
+    if st.button("⬅️ العودة للرئيسية", key="back_from_center_v4", use_container_width=True):
+        st.session_state.page = "الرئيسية"
+        st.rerun()
+    
+    st.markdown("<h3 style='color:#FFFFFF; text-align:center'>📊 الجلسات خلال 7 ايام</h3>", unsafe_allow_html=True)
+    
+    today = datetime.now().date()
+    week_later = today + timedelta(days=7)
+    
+    alert_cases = []
+    for case in data["cases"]:
+        if case.get("تاريخ_جلسة"):
+            try:
+                session_date = datetime.strptime(case["تاريخ_جلسة"], '%Y-%m-%d').date()
+                if today <= session_date <= week_later:
+                    alert_cases.append(case)
+            except: pass
+
+    st.info(f"عدد الجلسات القريبة: {len(alert_cases)}")
+
+    if not alert_cases:
+        st.success("✅ مفيش جلسات خلال 7 ايام القادمة")
+    else:
+        for idx, case in enumerate(alert_cases, 1):
+            with st.container(border=True):
+                st.markdown(f"<h4 style='color:#C9A961'>القضية رقم {idx}</h4>", unsafe_allow_html=True)
+                رقم_كامل = f"{case.get('رقم','')} لسنة {case.get('سنة','')}"
+                st.write(f"**الرقم:** {رقم_كامل}")
+                st.write(f"**الخصوم:** {case.get('مدعي','')} ضد {case.get('مدعي_عليه','')}")
+                st.write(f"**تاريخ الجلسة:** {case.get('تاريخ_جلسة','')}")
+
+                if st.button("فتح التفاصيل", key=f"open_alert_{case['id']}", use_container_width=True):
+                    st.session_state.selected_case_id = case['id']
+                    st.session_state.page = "تفاصيل"
+                    st.rerun()
