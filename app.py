@@ -204,14 +204,23 @@ elif st.session_state.page == "حصر":
         df['تاريخ_جلسة'] = pd.to_datetime(df['تاريخ_جلسة'])
         df = df.sort_values(by='تاريخ_جلسة')
 
+        # ترتيب الاعمدة صح
+        df_display = df[['id', 'رقم', 'سنة', 'محكمة_اسم', 'مدعي', 'مدعي_عليه', 'تاريخ_جلسة', 'حالة']].copy()
+        df_display['رقم/سنة'] = df_display['رقم'] + '/' + df_display['سنة']
+        df_display['تاريخ_جلسة'] = df_display['تاريخ_جلسة'].dt.strftime('%Y-%m-%d')
+
         st.markdown("<div class='table-container'>", unsafe_allow_html=True)
         st.markdown("<table class='case-table'><thead><tr><th>#</th><th>رقم/سنة</th><th>المحكمة</th><th>المدعي</th><th>المدعي عليه</th><th>تاريخ الجلسة</th><th>الحالة</th><th>عرض</th></tr></thead><tbody>", unsafe_allow_html=True)
 
-        for i, row in df.iterrows():
+        for i, row in df_display.iterrows():
             row_class = "row1" if i%2==0 else "row2"
             if row['حالة'] == "هيئة": row_class = "row-hey2a"
             if row['حالة'] == "حكم": row_class = "row-judgment"
-            st.markdown(f"<tr class='{row_class}'><td>{row['id']}</td><td>{row['رقم']}/{row['سنة']}</td><td>{row['محكمة_اسم']}</td><td>{row['مدعي']}</td><td>{row['مدعي_عليه']}</td><td>{row['تاريخ_جلسة'].strftime('%Y-%m-%d')}</td><td>{row['حالة']}</td><td><button onclick=\"window.location.href='?page=عرض&id={row['id']}'\">عرض</button></td></tr>", unsafe_allow_html=True)
+
+            # زر احمر صغير
+            btn = f"<form action='' method='get'><button style='background:#8B0000; color:white; border:none; padding:5px 12px; border-radius:6px; font-weight:700; cursor:pointer;'>عرض</button><input type='hidden' name='page' value='عرض'><input type='hidden' name='id' value='{row['id']}'></form>"
+
+            st.markdown(f"<tr class='{row_class}'><td>{row['id']}</td><td>{row['رقم/سنة']}</td><td>{row['محكمة_اسم']}</td><td>{row['مدعي']}</td><td>{row['مدعي_عليه']}</td><td>{row['تاريخ_جلسة']}</td><td>{row['حالة']}</td><td>{btn}</td></tr>", unsafe_allow_html=True)
         st.markdown("</tbody></table></div>", unsafe_allow_html=True)
 
 elif st.session_state.page == "عرض":
