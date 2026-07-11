@@ -15,6 +15,8 @@ st.set_page_config(page_title="إدارة القضايا", layout="wide", page_i
 DATA_FILE = "cases_data.json"
 UPLOAD_FOLDER = "uploads"
 TOKENS_FILE = "tokens.json"
+if 'page' not in st.session_state: st.session_state.page = "الرئيسية"
+if 'selected_case_id' not in st.session_state: st.session_state.selected_case_id = None
 if not os.path.exists(UPLOAD_FOLDER): os.makedirs(UPLOAD_FOLDER)
 
 # ============= حط بياناتك هنا بالاحمر فقط =============
