@@ -266,4 +266,13 @@ elif st.session_state.page == "تفاصيل":
             m = st.text_area("ملاحظات", value=m_val)
             if st.form_submit_button("حفظ"):
                 session_data = {'تاريخ':str(t),'الرول':r,'سبب':s,'ملاحظات':m}
-                if
+                if edit_idx: 
+                    case['جلسات'][int(edit_idx)] = session_data
+                    st.query_params.clear()
+                else: 
+                    case['جلسات'].append(session_data)
+                case['تاريخ_جلسة']=str(t)
+                case['سبب']=s
+                save_data(data)
+                st.success("✅ تم الحفظ")
+                st.rerun()
