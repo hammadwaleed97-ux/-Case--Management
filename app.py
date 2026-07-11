@@ -467,4 +467,4 @@ def render_notification_center():
                     st.markdown(f"**النوع:** طعن {case.get('نوع_الحكم')}")
                     st.markdown(f"**الرقم:** {رقم_كامل}")
                     st.markdown(f"**تاريخ الحكم:** {case.get('تاريخ_الحكم')}")
-                    st.markdown(f"**اخر ميعاد:** {case.get('تاريخ_التنبيه')} - متبقي {case.get('ايام_متبقية')}
+st.markdown(f"**اخر ميعاد:** {case.get('تاريخ_التنبيه')} - متبقي {case.get('ايام_متبقية')} يوم")
