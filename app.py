@@ -300,34 +300,44 @@ elif st.session_state.page == "تفاصيل":
         data["cases"] = [c for c in data["cases"] if c['id'] != case['id']]
         save_data(data); st.success("تم حذف القضية"); st.session_state.page = "حصر"; st.rerun()
 # ==================== نهاية قسم 4: تفاصيل القضية ====================
+# ================= 1. متابعة الجلسات =================
 st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
 st.markdown("<h3 style='color:#C9A961'>📅 متابعة الجلسات</h3>", unsafe_allow_html=True)
 
-if "جلسات" not in case: case["جلسات"] = []
+# تأمين عشان ميعملش ايرور لو مفيش جلسات
+if "جلسات" not in case:
+    case["جلسات"] = []
 
 # الجدول الجديد 5 اعمدة
 if case["جلسات"]:
     جلسات_مرتبة = sorted(case["جلسات"], key=lambda x: x['تاريخ'])
-    st.markdown("""
-    <style>
-    .session-table {width:100%; border:3px solid #C9A961; border-radius:12px; background:#0A1428; border-collapse: collapse;}
-    .session-table th {padding:12px; border:2px solid #C9A961; background:#C9A961; color:#0F1C2E; font-weight:900; font-size:16px; text-align:center}
-    .session-table td {padding:12px; border:2px solid #C9A961; color:#FFFFFF; font-weight:700; font-size:15px; text-align:center}
-    </style>
-    """, unsafe_allow_html=True)
-    
-    table_html = "<table class='session-table'><tr><th>م</th><th>الرول</th><th>الجلسات</th><th>الإجراءات</th><th>ملاحظات</th></tr>"
+    table_html = """
+    <table style='width:100%; border:3px solid #C9A961; border-radius:12px; background:#0A1428; border-collapse: collapse; margin-bottom:20px'>
+    <tr style='background:#C9A961; color:#0F1C2E; font-weight:900; font-size:16px'>
+        <th style='padding:12px; border:2px solid #C9A961'>م</th>
+        <th style='padding:12px; border:2px solid #C9A961'>الرول</th>
+        <th style='padding:12px; border:2px solid #C9A961'>الجلسات</th>
+        <th style='padding:12px; border:2px solid #C9A961'>الإجراءات</th>
+        <th style='padding:12px; border:2px solid #C9A961'>ملاحظات</th>
+    </tr>"""
     for i, ج in enumerate(جلسات_مرتبة, 1):
         لون = "#1E2A47" if i % 2 == 0 else "#142038"
-        table_html += f"<tr style='background:{لون}'><td>{i}</td><td style='color:#FFD700'>{ج.get('الرول','-')}</td><td>{ج['تاريخ']}</td><td>{ج.get('سبب','-')}</td><td>{ج.get('ملاحظات','-')}</td></tr>"
+        table_html += f"""
+        <tr style='background:{لون}'>
+            <td style='text-align:center; padding:12px; border:2px solid #C9A961; color:#FFFFFF; font-weight:700; font-size:15px'>{i}</td>
+            <td style='text-align:center; padding:12px; border:2px solid #C9A961; color:#FFD700; font-weight:800; font-size:15px'>{ج.get('الرول','-')}</td>
+            <td style='text-align:center; padding:12px; border:2px solid #C9A961; color:#FFFFFF; font-weight:700; font-size:15px'>{ج['تاريخ']}</td>
+            <td style='text-align:center; padding:12px; border:2px solid #C9A961; color:#FFFFFF; font-weight:700; font-size:15px'>{ج.get('سبب','-')}</td>
+            <td style='text-align:center; padding:12px; border:2px solid #C9A961; color:#FFFFFF; font-weight:700; font-size:15px'>{ج.get('ملاحظات','-')}</td>
+        </tr>"""
     table_html += "</table>"
     st.markdown(table_html, unsafe_allow_html=True)
 else:
     st.info("لا توجد جلسات مسجلة")
 
-# فورم الاضافة الجديد
+# فورم الاضافة
 with st.expander("➕ اضافة جلسة"):
-    with st.form("add_session_v2"):
+    with st.form("add_session_final"):
         c1, c2 = st.columns(2)
         تاريخ_جديد = c1.date_input("تاريخ الجلسة")
         رول_جديد = c2.text_input("الرول")
