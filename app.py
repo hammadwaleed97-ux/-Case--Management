@@ -369,13 +369,48 @@ def render_notification_center():
     st.button("⬅️ العودة للرئيسية", on_click=lambda: st.session_state.update({"page":"الرئيسية"}))
     
     st.subheader("📧 ارسال بالايميل")
-    email_to = st.text_input("الايميل")
+    col1, col2 = st.columns([3,1])
+    with col1: email_to = st.text_input("اكتب الايميل")
+    with col2: send_btn = st.button("ارسال")
     
-    st.subheader("📅 جلسات قريبة")
-    st.info("هنا هتظهر الجلسات")
-    
-    st.subheader("⚖️ طعون قريبة") 
-    st.warning("هنا هتظهر الطعون")
-    
-    if st.button("ارسال"): 
-        st.success("تم")
+    today = datetime.now()
+    week_later = today + timedelta(days=7)
+    all_notifs = []
+
+    st.subheader("📅 جلسات ال 7 ايام الجايين")
+    found_session = False
+    for case in data["cases"]:
+        if case.get('تاريخ_جلسة'):
+            try:
+                d = datetime.strptime(case['تاريخ_جلسة'], '%Y-%m-%d')
+            except: 
+                d = datetime.strptime(case['تاريخ_جلسة'], '%d-%m-%Y')
+            if today <= d <= week_later:
+                found_session = True
+                all_notifs.append(case)
+                st.info(f"جلسة | {case.get('رقم')} لسنة {case.get('سنة')} | {case.get('محكمة_اسم')} | {case.get('تاريخ_جلسة')}")
+                if st.button("فتح", key=f"s{case['id']}"): 
+                    st.session_state.selected_case_id = case['id']; st.session_state.page="تعديل قضية"; st.rerun()
+    if not found_session: st.success("مفيش جلسات قريبة")
+
+    st.subheader("⚖️ مواعيد الطعون قربت")
+    found_appeal = False
+    for case in data["cases"]:
+        if case.get('تاريخ_الحكم') and case.get('نوع_الحكم'):
+            try:
+                rd = datetime.strptime(case['تاريخ_الحكم'], '%Y-%m-%d')
+            except: 
+                rd = datetime.strptime(case['تاريخ_الحكم'], '%d-%m-%Y')
+            days = 40 if 'استئناف' in case['نوع_الحكم'].lower() else 60
+            deadline = rd + timedelta(days=days)
+            if deadline - timedelta(days=15) <= today <= deadline:
+                found_appeal = True
+                all_notifs.append(case)
+                rem = (deadline - today).days
+                st.warning(f"طعن {case['نوع_الحكم']} | {case.get('رقم')} لسنة {case.get('سنة')} | فاضل {rem} يوم")
+                if st.button("فتح", key=f"a{case['id']}"): 
+                    st.session_state.selected_case_id = case['id']; st.session_state.page="تعديل قضية"; st.rerun()
+    if not found_appeal: st.success("مفيش طعون قربت")
+
+    if send_btn and email_to and all_notifs:
+        st.success(f"هيتبعت {len(all_notifs)} تنبيه لـ {email_to}")
