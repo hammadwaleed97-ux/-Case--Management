@@ -182,7 +182,7 @@ elif st.session_state.page == "تسجيل":
 
 # ==================================================================
 # ================== نهاية الجزء 1: الرئيسية والتسجيل ==================
-# ==================================================================
+# =================================================================
 # ==================================================================
 # ================== بداية الجزء 2: الحصر والتفاصيل ==================
 # ==================================================================
@@ -191,23 +191,20 @@ elif st.session_state.page == "حصر":
     st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
     st.markdown("<h2 style='color:#FFFFFF; text-align:center'>📊 الحصر العام الخارجي</h2>", unsafe_allow_html=True)
     if st.button("العودة للرئيسية", use_container_width=True): st.session_state.page = "الرئيسية"; st.rerun()
-    if not data["cases"]: 
-        st.info("لا توجد قضايا مسجلة")
-    else:  # <-- ال else ده يرجع يبقى تحت ال if على طول
-        for i, case in enumerate(data["cases"]):
-            # باقي كود الحصر هنا
 
-elif st.session_state.page == "تنبيهات":
-    render_notification_center()
+    if not data["cases"]:
+        st.info("لا توجد قضايا مسجلة")
     else:
         for i, case in enumerate(data["cases"]):
             if "id" not in case: case["id"] = i + 1
             if "مستندات" not in case: case["مستندات"] = []
+
         save_data(data)
         sorted_cases = sorted(data["cases"], key=lambda x: x.get("تاريخ_جلسة","9999"))
         total = len(sorted_cases)
         this_week = len([c for c in sorted_cases if c.get('تاريخ_جلسة') and datetime.strptime(c['تاريخ_جلسة'],'%Y-%m-%d') <= datetime.now() + timedelta(days=7)])
         st.info(f"📊 اجمالي القضايا: {total} | جلسات هذا الاسبوع: {this_week}")
+
         for idx, case in enumerate(sorted_cases, 1):
             رقم_كامل = f"{case.get('رقم','')} لسنة {case.get('سنة','')}"
             محكمة_كاملة = f"{case.get('نوع','')} {case.get('محكمة_اسم','')}"
@@ -215,21 +212,28 @@ elif st.session_state.page == "تنبيهات":
             دائرة_كاملة = f"{case.get('دائرة','')} عمال" if case.get('دائرة','') else ""
             محكمة_كاملة += f"<br>{دائرة_كاملة}"
             خصوم = f"{case.get('مدعي','')}<br>ضد<br>{case.get('مدعي_عليه','')}"
+
             if case.get('حالة') == 'منتهية': row_class = "row-judgment"
             elif "الهيئة" in str(case.get('مدعي','')): row_class = "row-hey2a"
             else: row_class = "row1" if idx % 2 == 1 else "row2"
+
             st.markdown("<div class='table-container'>", unsafe_allow_html=True)
             table_html = f"<table class='case-table'><tr><th>م</th><th>الرقم والسنة</th><th>المحكمة والدائرة</th><th>الخصوم</th><th>الموضوع</th><th>اخر جلسة</th><th>السبب</th><th>الحالة</th></tr><tr class='{row_class}'><td>{idx}</td><td>{رقم_كامل}</td><td>{محكمة_كاملة}</td><td>{خصوم}</td><td>{case.get('موضوع','')}</td><td>{case.get('تاريخ_جلسة','')}</td><td>{case.get('سبب','')}</td><td>{case.get('حالة','متداولة')}</td></tr></table></div>"
             st.markdown(table_html, unsafe_allow_html=True)
+
             c1, c2, c3 = st.columns([4,1,4])
             with c2:
                 if st.button("فتح", key=f"open_{case['id']}"): st.session_state.selected_case_id = case['id']; st.session_state.page = "تفاصيل"; st.rerun()
+
+elif st.session_state.page == "تنبيهات":
+    render_notification_center()
 
 elif st.session_state.page == "تفاصيل":
     case = next((c for c in data["cases"] if c['id'] == st.session_state.selected_case_id), None)
     if not case: st.error("القضية غير موجودة"); st.session_state.page = "حصر"; st.rerun()
     if 'جلسات' not in case: case['جلسات'] = []
     if 'مستندات' not in case: case['مستندات'] = []
+
     st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
     st.markdown(f"<h2 style='color:#FFFFFF; text-align:center'>📄 تفاصيل القضية رقم {case.get('رقم')} لسنة {case.get('سنة')}</h2>", unsafe_allow_html=True)
     if st.button("العودة للحصر", use_container_width=True): st.session_state.page = "حصر"; st.rerun()
@@ -286,7 +290,7 @@ elif st.session_state.page == "تفاصيل":
             if 'مسار' in مستند and os.path.exists(مستند['مسار']):
                 c1, c2, c3, c4 = st.columns([2,2,2,1])
                 with c1: st.write(f"{i+1}. {مستند.get('نوع','')}")
-                with c2: st.write(مستند.get('بيان','-')) # <-- صلحت KeyError هنا
+                with c2: st.write(مستند.get('بيان','-'))
                 with c3: st.write(مستند.get('اسم',''))
                 with c4:
                     with open(مستند['مسار'], "rb") as f: st.download_button("تحميل", f, file_name=مستند['اسم'], key=f"dl{i}")
@@ -311,10 +315,11 @@ elif st.session_state.page == "تفاصيل":
     st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
     if st.button("🗑️ حذف القضية نهائيا", type="primary"):
         data["cases"] = [c for c in data["cases"] if c['id']!= case['id']]
-        save_data(data); st.success("تم حذف")
+        save_data(data); st.success("تم الحذف")
 
 # ==================================================================
 # ================== نهاية الجزء 2: الحصر والتفاصيل ==================
+# ==================================================================
 # ==================================================================
 def render_notification_center():
     st.markdown("---")
