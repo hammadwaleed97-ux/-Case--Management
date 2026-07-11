@@ -30,7 +30,7 @@ def save_data(data):
     with open(DATA_FILE, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=4)
 
-# ============= دوال التنبيهات =============
+# ============ دوال التنبيهات =============
 def render_notification_center():
     st.markdown("---")
     st.markdown("<h1 style='text-align: center; color: #D4AF37;'>📧 مركز التنبيهات</h1>", unsafe_allow_html=True)
@@ -77,6 +77,8 @@ def render_notification_center():
     # ========== ارسال تنبيهات تلقائية ==========
     if verified_emails and data["cases"]:
         for case in data["cases"]:
+
+            # 1. تنبيهات الجلسات - زي ما هي
             if case.get('تاريخ_جلسة'):
                 try:
                     session_date = datetime.strptime(case['تاريخ_جلسة'], '%Y-%m-%d').date()
@@ -84,7 +86,15 @@ def render_notification_center():
                     if days_to_session == 3: # قبل الجلسة ب 3 ايام
                         for email in verified_emails:
                             send_case_alert_email(email, case, "جلسة")
-                    if case['حالة'] == 'منتهية' and days_to_session <= 0: # صدور حكم
+                except: pass
+
+            # 2. تنبيهات الاحكام - الاضافة الجديدة
+            if case.get('تاريخ_انتهاء_الطعن') and case.get('تاريخ_انتهاء_الطعن')!= '':
+                try:
+                    appeal_end_date = datetime.strptime(case['تاريخ_انتهاء_الطعن'], '%Y-%m-%d').date()
+                    days_to_appeal = (appeal_end_date - today).days
+                    # نبعت قبل انتهاء الطعن ب 15 يوم و ب 7 ايام و ب 3 ايام و يوم الانتهاء
+                    if days_to_appeal in [15, 7, 3, 0]:
                         for email in verified_emails:
                             send_case_alert_email(email, case, "حكم")
                 except: pass
@@ -98,6 +108,7 @@ def render_notification_center():
     upcoming = df[(df['تاريخ_جلسة'] >= today) & (df['تاريخ_جلسة'] <= week_later)]
     st.info(f"عدد المشتركين المفعلين: {len(verified_emails)}")
 
+    # عرض الجلسات - زي ما هي
     if not upcoming.empty:
         for idx, row in enumerate(upcoming.iterrows(), 1):
             case = row[1].to_dict()
@@ -124,7 +135,38 @@ def render_notification_center():
                     st.rerun()
             st.markdown("<br>", unsafe_allow_html=True)
     else:
-        st.info("مفيش جلسات خلال 7 ايام القادمة")
+        st.info("مفيش جلسات خلال 7 ايام")
+
+    # ========== عرض الاحكام الجديدة ==========
+    st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
+    st.markdown("### ⚖️ الاحكام اللي الطعن بتاعها هيقفل خلال 15 يوم")
+
+    if 'تاريخ_انتهاء_الطعن' in df.columns:
+        df['تاريخ_انتهاء_الطعن'] = pd.to_datetime(df['تاريخ_انتهاء_الطعن'], errors='coerce').dt.date
+        appeals_soon = df[(df['تاريخ_انتهاء_الطعن'] >= today) & (df['تاريخ_انتهاء_الطعن'] <= today + timedelta(days=15))]
+
+        if not appeals_soon.empty:
+            for idx, row in enumerate(appeals_soon.iterrows(), 1):
+                case = row[1].to_dict()
+                رقم_كامل = f"{case['رقم']} لسنة {case['سنة']}"
+                متبقي = (case['تاريخ_انتهاء_الطعن'] - today).days
+                لون = "red" if متبقي <= 3 else "orange" if متبقي <= 7 else "#D4AF37"
+                الحكم_لصالح = case.get('الحكم_لصالح','')
+
+                st.markdown(f"<div style='border:2px solid {لون}; padding:10px; border-radius:10px; margin-bottom:10px;'>", unsafe_allow_html=True)
+                st.markdown(f"<h4 style='color:{لون};'> {idx}. {رقم_كامل} - الحكم {الحكم_لصالح}</h4>", unsafe_allow_html=True)
+                st.markdown(f"**متبقي:** {متبقي} يوم | **تاريخ انتهاء الطعن:** {case['تاريخ_انتهاء_الطعن']}")
+                st.markdown(f"**الخصوم:** {case.get('مدعي','')} ضد {case.get('مدعي_عليه','')}")
+
+                c1, c2, c3 = st.columns([4,1,4])
+                with c2:
+                    if st.button("فتح", key=f"open_appeal_{case['id']}"):
+                        st.session_state.selected_case_id = case['id']
+                        st.session_state.page = "تفاصيل"
+                        st.rerun()
+                st.markdown("</div>", unsafe_allow_html=True)
+        else:
+            st.info("مفيش احكام الطعن بتاعها هيقفل خلال 15 يوم")
 # ============= حط بياناتك هنا بالاحمر فقط =============
 SENDER_EMAIL = "hammadwaleed97@gmail.com" # <--- حط ايميل الجيميل بتاعك هنا
 SENDER_PASSWORD = "r v y q q a y j o n w h u o x r" # <--- حط باسورد التطبيق هنا
