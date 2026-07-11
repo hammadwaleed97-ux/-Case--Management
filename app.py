@@ -313,47 +313,17 @@ elif st.session_state.page == "تفاصيل":
 # ================== نهاية الجزء 2: الحصر والتفاصيل ==================
 # ==================================================================
 # ==================================================================
-# ================== بداية دالة التنبيهات v5.39 شغالة ==================
+# ================== بداية دالة التنبيهات v5.40 ==================
 # ==================================================================
 
 def render_notification_center():
     st.markdown("---")
     st.markdown("<h1 style='text-align: center; color: #D4AF37;'>📧 مركز التنبيهات</h1>", unsafe_allow_html=True)
-    if st.button("⬅️ العودة للرئيسية", key="back_from_center_v2", use_container_width=True):
+    if st.button("⬅️ العودة للرئيسية", key="back_from_center_v3", use_container_width=True):
         st.session_state.page = "الرئيسية"
         st.rerun()
     
-    query_params = st.query_params
-    if "verify_token" in query_params:
-        email = verify_token(query_params["verify_token"])
-        if email:
-            st.success(f"✅ تم تفعيل الايميل {email} بنجاح. ستصلك التنبيهات الان")
-            st.session_state['saved_email'] = email
-        else:
-            st.error("❌ الرابط غير صالح او منتهي")
-        st.query_params.clear()
-
-    st.markdown("<h3 style='color:#FFFFFF; text-align:center'>📊 ادارة التنبيهات</h3>", unsafe_allow_html=True)
-    tokens_data = load_tokens()
-
-    with st.container(border=True):
-        st.markdown("<div class='card-title'>تسجيل ايميل جديد للتنبيهات</div>", unsafe_allow_html=True)
-        user_email = st.text_input("البريد الالكتروني", placeholder="example@domain.com", value=st.session_state.get('saved_email',''), key="notif_email_v2")
-        if st.button("ارسال رابط التفعيل", type="primary", use_container_width=True):
-            if user_email:
-                token = secrets.token_urlsafe(32)
-                expires = datetime.now() + timedelta(days=1)
-                tokens_data["tokens"].append({"email": user_email, "token": token, "expires": expires.strftime("%Y-%m-%d %H:%M:%S"), "verified": False})
-                save_tokens(tokens_data)
-                if send_verification_email(user_email, token):
-                    st.success("تم ارسال رابط التفعيل للايميل")
-                else:
-                    st.error("فشل ارسال الايميل. راجع الايميل والباسورد الاحمر")
-            else:
-                st.warning("من فضلك ادخل الايميل")
-
-    st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
-    st.markdown("### 📅 الجلسات خلال 7 ايام القادمة")
+    st.markdown("<h3 style='color:#FFFFFF; text-align:center'>📊 الجلسات خلال 7 ايام</h3>", unsafe_allow_html=True)
     
     today = datetime.now().date()
     week_later = today + timedelta(days=7)
@@ -367,8 +337,7 @@ def render_notification_center():
                     alert_cases.append(case)
             except: pass
 
-    verified_emails = [t['email'] for t in tokens_data['tokens'] if t['verified']]
-    st.info(f"عدد المشتركين المفعلين: {len(verified_emails)} | عدد الجلسات القريبة: {len(alert_cases)}")
+    st.info(f"عدد الجلسات القريبة: {len(alert_cases)}")
 
     if not alert_cases:
         st.success("✅ مفيش جلسات خلال 7 ايام القادمة")
@@ -379,23 +348,19 @@ def render_notification_center():
                 
                 رقم_كامل = f"{case.get('رقم','')} لسنة {case.get('سنة','')}"
                 محكمة_كاملة = f"{case.get('نوع','')} {case.get('محكمة_اسم','')}"
-                if case.get('مأمورية',''): محكمة_كاملة += f" - مأمورية {case.get('مأمورية','')}"
                 
-                col1, col2, col3 = st.columns(3)
+                col1, col2 = st.columns(2)
                 with col1: st.metric("الرقم والسنة", رقم_كامل)
                 with col2: st.metric("المحكمة", محكمة_كاملة)
-                with col3: st.metric("الدائرة", f"{case.get('دائرة','')} عمال")
                 
                 st.write(f"**الخصوم:** {case.get('مدعي','')} ضد {case.get('مدعي_عليه','')}")
-                st.write(f"**الموضوع:** {case.get('موضوع','')}")
-                st.write(f"**تاريخ الجلسة:** {case.get('تاريخ_جلسة','')} | **السبب:** {case.get('سبب','')}")
-                st.write(f"**الحالة:** {case.get('حالة','متداولة')}")
+                st.write(f"**تاريخ الجلسة:** {case.get('تاريخ_جلسة','')}")
 
-                if st.button("فتح التفاصيل", key=f"open_alert_final_{case['id']}", use_container_width=True, type="secondary"):
+                if st.button("فتح التفاصيل", key=f"open_alert_{case['id']}", use_container_width=True):
                     st.session_state.selected_case_id = case['id']
                     st.session_state.page = "تفاصيل"
                     st.rerun()
 
 # ==================================================================
-# ================== نهاية دالة التنبيهات v5.39 شغالة ==================
+# ================== نهاية دالة التنبيهات v5.40 ==================
 # ==================================================================
