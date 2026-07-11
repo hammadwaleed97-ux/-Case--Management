@@ -372,26 +372,31 @@ def render_notification_center():
         st.session_state.page = "الرئيسية"
         st.rerun()
 
-    # خانة الايميل وزرار الارسال
+    # خانة الايميل
     st.markdown("<h3 style='color:#C9A961'>📧 ارسال التنبيهات للايميل</h3>", unsafe_allow_html=True)
     col1, col2 = st.columns([3,1])
     with col1:
-        email_to = st.text_input("اكتب الايميل اللي عايز يجيله التنبيه", value="your_email@example.com", key="notif_email")
+        email_to = st.text_input("اكتب الايميل", value="", key="notif_email")
     with col2:
-        send_email_btn = st.button("ارسال التنبيهات", key="send_notif_email", type="primary")
+        send_email_btn = st.button("ارسال", key="send_notif_email", type="primary")
 
     today = datetime.now()
     week_later = today + timedelta(days=7)
-    notifications_list = [] # هنحط فيها كل التنبيهات عشان نبعتها في الايميل
+    notifications_list = []
 
-    # 1. جلسات ال 7 ايام الجايين
+    # 1. الجلسات
     st.markdown("<h3 style='color:#C9A961'>📅 جلسات ال 7 ايام الجايين</h3>", unsafe_allow_html=True)
     upcoming_cases = []
     
     for case in data["cases"]:
         if case.get('تاريخ_جلسة'):
             try:
-                session_date = datetime.strptime(case['تاريخ_جلسة'], '%Y-%m-%d')
+                # بنجرب الصيغتين عشان ما نبوظش الداتا القديمة
+                try:
+                    session_date = datetime.strptime(case['تاريخ_جلسة'], '%Y-%m-%d')
+                except:
+                    session_date = datetime.strptime(case['تاريخ_جلسة'], '%d-%m-%Y')
+                    
                 if today <= session_date <= week_later:
                     case['نوع_التنبيه'] = 'جلسة'
                     case['تاريخ_التنبيه'] = case['تاريخ_جلسة']
@@ -400,7 +405,7 @@ def render_notification_center():
             except: pass
 
     if not upcoming_cases:
-        st.success("مفيش جلسات قريبة الحمدلله 🎉")
+        st.success("مفيش جلسات قريبة 🎉")
     else:
         for case in upcoming_cases:
             رقم_كامل = f"{case.get('رقم','')} لسنة {case.get('سنة','')}"
@@ -412,21 +417,25 @@ def render_notification_center():
                     st.markdown(f"**المحكمة:** {case.get('محكمة_اسم','')}")
                     st.markdown(f"**التاريخ:** {case.get('تاريخ_جلسة','')}")
                 with c2:
-                    if st.button("فتح القضية", key=f"open_session_{case['id']}"):
+                    if st.button("فتح", key=f"open_session_{case['id']}"):
                         st.session_state.selected_case_id = case['id']
                         st.session_state.page = "تعديل قضية"
                         st.rerun()
 
     st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
 
-    # 2. مواعيد الطعون اللي قربت
+    # 2. الطعون
     st.markdown("<h3 style='color:#C9A961'>⚖️ مواعيد الطعون قربت</h3>", unsafe_allow_html=True)
     appeals_cases = []
 
     for case in data["cases"]:
         if case.get('تاريخ_الحكم') and case.get('نوع_الحكم'):
             try:
-                ruling_date = datetime.strptime(case['تاريخ_الحكم'], '%Y-%m-%d')
+                try:
+                    ruling_date = datetime.strptime(case['تاريخ_الحكم'], '%Y-%m-%d')
+                except:
+                    ruling_date = datetime.strptime(case['تاريخ_الحكم'], '%d-%m-%Y')
+                    
                 appeal_type = case.get('نوع_الحكم', '').lower()
                 
                 days_total = 0
@@ -441,7 +450,7 @@ def render_notification_center():
                     
                     if notify_start <= today <= deadline:
                         case['نوع_التنبيه'] = f'طعن {case.get("نوع_الحكم")}'
-                        case['تاريخ_التنبيه'] = deadline.strftime('%Y-%m-%d')
+                        case['تاريخ_التنبيه'] = deadline.strftime('%d-%m-%Y')
                         case['ايام_متبقية'] = (deadline - today).days
                         appeals_cases.append(case)
                         notifications_list.append(case)
@@ -458,31 +467,4 @@ def render_notification_center():
                     st.markdown(f"**النوع:** طعن {case.get('نوع_الحكم')}")
                     st.markdown(f"**الرقم:** {رقم_كامل}")
                     st.markdown(f"**تاريخ الحكم:** {case.get('تاريخ_الحكم')}")
-                    st.markdown(f"**اخر ميعاد للطعن:** {case.get('تاريخ_التنبيه')} - متبقي {case.get('ايام_متبقية')} يوم")
-                with c2:
-                    if st.button("فتح القضية", key=f"open_appeal_{case['id']}"):
-                        st.session_state.selected_case_id = case['id']
-                        st.session_state.page = "تعديل قضية"
-                        st.rerun()
-
-    # ارسال الايميل
-    if send_email_btn:
-        if email_to and notifications_list:
-            subject = f"تنبيهات القضايا - {today.strftime('%Y-%m-%d')}"
-            body = "مركز التنبيهات - القضايا القريبة:\n\n"
-            for n in notifications_list:
-                رقم_كامل = f"{n.get('رقم','')} لسنة {n.get('سنة','')}"
-                body += f"------------------------------------\n"
-                body += f"النوع: {n.get('نوع_التنبيه')}\n"
-                body += f"الرقم: {رقم_كامل}\n"
-                body += f"المحكمة: {n.get('محكمة_اسم','')}\n"
-                body += f"التاريخ: {n.get('تاريخ_التنبيه')}\n"
-                if n.get('ايام_متبقية'):
-                    body += f"متبقي: {n.get('ايام_متبقية')} يوم\n"
-            
-            if send_email(email_to, subject, body): # دي الدالة اللي انت مفعّلها
-                st.success(f"تم ارسال {len(notifications_list)} تنبيه للايميل {email_to} بنجاح")
-            else:
-                st.error("فشل ارسال الايميل. راجع بيانات الايميل")
-        else:
-            st.warning("اكتب الايميل الاول او مفيش تنبيهات للارسال")
+                    st.markdown(f"**اخر ميعاد:** {case.get('تاريخ_التنبيه')} - متبقي {case.get('ايام_متبقية')}
