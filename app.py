@@ -105,3 +105,66 @@ elif st.session_state.page == "حصر":
 # ==================================================================
 # ================== نهاية الجزء 2: الحصر العام =====================
 # ==================================================================
+# ==================================================================
+# ================== بداية الجزء 3: مركز التنبيهات ==================
+# ==================================================================
+def send_verification_email(recipient_email, token):
+    verify_link = f"{APP_URL}?verify_token={token}"
+    subject = "تفعيل تنبيهات القضايا - الشئون القانونية البحيرة"
+    body = f"مرحبا,\n\nلقد قمت بالتسجيل لتلقي تنبيهات الجلسات.\nمن فضلك فعل الاشتراك بالضغط على الرابط التالي:\n{verify_link}\n\nالرابط صالح لمدة 24 ساعة."
+    msg = MIMEMultipart(); msg["From"] = SENDER_EMAIL; msg["To"] = recipient_email; msg["Subject"] = subject
+    msg.attach(MIMEText(body, "plain", "utf-8"))
+    try: server = smtplib.SMTP("smtp.gmail.com", 587); server.starttls(); server.login(SENDER_EMAIL, SENDER_PASSWORD); server.sendmail(SENDER_EMAIL, recipient_email, msg.as_string()); server.quit(); return True
+    except Exception as e: st.error(f"خطأ في ارسال الايميل: {e}"); return False
+def send_session_alert_email(case_info, session_date, session_reason):
+    tokens_data = load_tokens()
+    verified_emails = [t['email'] for t in tokens_data['tokens'] if t['verified']]
+    if not verified_emails: return
+    subject = f"تنبيه جلسة جديدة - قضية رقم {case_info['رقم']} لسنة {case_info['سنة']}"
+    body = f"مرحبا,\n\nتم اضافة جلسة جديدة للقضية:\n\nالرقم: {case_info['رقم']} لسنة {case_info['سنة']}\nالمحكمة: {case_info['محكمة_اسم']}\nالخصوم: {case_info['مدعي']} ضد {case_info['مدعي_عليه']}\n\nالتاريخ: {session_date}\nالسبب: {session_reason}\n\nمع تحيات\nالادارة العامة للشئون القانونية - البحيرة\n"
+    for recipient_email in verified_emails:
+        msg = MIMEMultipart(); msg["From"] = SENDER_EMAIL; msg["To"] = recipient_email; msg["Subject"] = subject
+        msg.attach(MIMEText(body, "plain", "utf-8"))
+        try: server = smtplib.SMTP("smtp.gmail.com", 587); server.starttls(); server.login(SENDER_EMAIL, SENDER_PASSWORD); server.sendmail(SENDER_EMAIL, recipient_email, msg.as_string()); server.quit()
+        except Exception as e: st.error(f"خطأ في ارسال للايميل {recipient_email}: {e}")
+def load_tokens():
+    if os.path.exists(TOKENS_FILE):
+        with open(TOKENS_FILE, "r", encoding="utf-8") as f: return json.load(f)
+    return {"tokens": []}
+def save_tokens(tokens_data):
+    with open(TOKENS_FILE, "w", encoding="utf-8") as f: json.dump(tokens_data, f, ensure_ascii=False, indent=4)
+def verify_token(token):
+    tokens_data = load_tokens(); now = datetime.now()
+    for t in tokens_data["tokens"]:
+        if t["token"] == token and datetime.strptime(t["expires"], "%Y-%m-%d %H:%M:%S") > now:
+            if not t["verified"]: t["verified"] = True; save_tokens(tokens_data); return t["email"]
+    return None
+elif st.session_state.page == "التنبيهات":
+    st.markdown("---"); st.markdown("<h1 style='text-align: center; color: #D4AF37;'>📧 مركز التنبيهات</h1>", unsafe_allow_html=True)
+    if st.button("⬅️ العودة للرئيسية", use_container_width=True): st.session_state.page = "الرئيسية"; st.rerun()
+    query_params = st.query_params
+    if "verify_token" in query_params: email = verify_token(query_params["verify_token"]);
+    if email: st.success(f"✅ تم تفعيل الايميل {email} بنجاح. ستصلك التنبيهات الان"); st.session_state['saved_email'] = email
+    else: st.error("❌ الرابط غير صالح او منتهي"); st.query_params.clear()
+    st.markdown("<h3 style='color:#FFFFFF; text-align:center'>📊 ادارة التنبيهات</h3>", unsafe_allow_html=True)
+    tokens_data = load_tokens()
+    with st.container(border=True):
+        st.markdown("<div class='card-title'>تسجيل ايميل جديد للتنبيهات</div>", unsafe_allow_html=True)
+        user_email = st.text_input("البريد الالكتروني", placeholder="example@domain.com", value=st.session_state.get('saved_email',''))
+        if st.button("ارسال رابط التفعيل", type="primary", use_container_width=True):
+            if user_email:
+                token = secrets.token_urlsafe(32); expires = datetime.now() + timedelta(days=1); tokens_data["tokens"].append({"email": user_email, "token": token, "expires": expires.strftime("%Y-%m-%d %H:%M:%S"), "verified": False}); save_tokens(tokens_data)
+                if send_verification_email(user_email, token): st.success("تم ارسال رابط التفعيل للايميل. من فضلك افتح الايميل وفعل الاشتراك")
+                else: st.error("فشل ارسال الايميل. راجع الايميل والباسورد الاحمر")
+            else: st.warning("من فضلك ادخل الايميل")
+    st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True); st.markdown("### 📅 الجلسات خلال 7 ايام القادمة")
+    today = datetime.now().date(); week_later = today + timedelta(days=7); df = pd.DataFrame(data["cases"])
+    if not df.empty: df['تاريخ_جلسة'] = pd.to_datetime(df['تاريخ_جلسة'], errors='coerce').dt.date; upcoming = df[(df['تاريخ_جلسة'] >= today) & (df['تاريخ_جلسة'] <= week_later)]; verified_emails = [t['email'] for t in tokens_data['tokens'] if t['verified']]; st.info(f"عدد المشتركين المفعلين: {len(verified_emails)}")
+    if not upcoming.empty: st.markdown("<div class='table-container'>", unsafe_allow_html=True); table_html = "<table class='case-table'><tr><th>م</th><th>الرقم والسنة</th><th>المحكمة</th><th>تاريخ الجلسة</th><th>السبب</th></tr>"
+    for idx, row in enumerate(upcoming.iterrows(), 1): row = row[1]; رقم_كامل = f"{row['رقم']} لسنة {row['سنة']}"; محكمة = f"{row['محكمة_اسم']}"; table_html += f"<tr class='row1'><td>{idx}</td><td>{رقم_كامل}</td><td>{محكمة}</td><td>{row['تاريخ_جلسة']}</td><td>{row['سبب']}</td></tr>"
+    table_html += "</table></div>"; st.markdown(table_html, unsafe_allow_html=True)
+    else: st.info("مفيش جلسات خلال 7 ايام القادمة")
+    else: st.warning("لا توجد قضايا مسجلة")
+# ==================================================================
+# ================== نهاية الجزء 3: مركز التنبيهات ==================
+# ==================================================================
