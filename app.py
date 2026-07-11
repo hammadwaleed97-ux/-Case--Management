@@ -252,4 +252,9 @@ elif st.session_state.page == "تفاصيل":
                 save_data(data); st.success("✅ تم حفظ الحكم"); st.rerun()
     else:
         st.success(f"✅ تم الحكم بتاريخ: {case['حكم']['تاريخ']} - مسندة لـ: {case['حكم']['مسندة']}")
-        st.info(f"المنطوق: {case['حكم']['المنطوق']}"
+        st.info(f"المنطوق: {case['حكم']['المنطوق']}")
+
+    st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
+    if st.button("🗑️ حذف القضية نهائيا", type="primary"):
+        data["cases"] = [c for c in data["cases"] if c['id']!= case['id']]
+        save_data(data); st.success("تم حذف القضية"); st.session_state.page = "حصر"; st.rerun()
