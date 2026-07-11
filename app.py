@@ -1,12 +1,11 @@
 # ===========================================================
-# ================== إدارة القضايا v5.32 =====================
+# ================== إدارة القضايا v5.33 =====================
 # ========== الإدارة العامة للشئون القانونية البحيرة ==========
 # ============================================================
 import streamlit as st
 import pandas as pd
 import json
 import os
-import base64
 from datetime import datetime, timedelta
 st.set_page_config(page_title="إدارة القضايا", layout="wide", page_icon="⚖️")
 
@@ -14,7 +13,8 @@ DATA_FILE = "cases_data.json"
 UPLOAD_FOLDER = "uploads"
 if not os.path.exists(UPLOAD_FOLDER): os.makedirs(UPLOAD_FOLDER)
 
-ANWA3_MOSTANDAT = ["صحيفة الدعوى", "مذكرة دفاع", "حافظة مستندات", "تقرير خبير", "إنذار", "صورة رسمية", "توكيل", "أخرى"]
+# دي قائمة المستندات اللي في المعطيات بتاعتك
+ANWA3_MOSTANDAT = ["صحيفة الدعوى", "صحيفة الاستئناف", "صحيفة الطعن", "مذكرة", "حافظة مستندات", "إنذار", "صورة رسمية", "توكيل", "أخرى"]
 
 def load_data():
     if os.path.exists(DATA_FILE):
@@ -58,8 +58,6 @@ st.markdown("""
 .row2 {background:#FFFFFF}
 .row-hey2a {background:#FFE5E5; font-weight:800}
 .row-judgment {background:#FFDCDC; font-weight:800}
-.btn-open-small {background: linear-gradient(135deg, #8B0000, #A52A2A)!important; color: #FFFFFF!important; border:none!important; border-radius:6px!important; padding:4px 15px!important; font-size:12px!important; font-weight:700!important; height:28px!important; width:75px!important;}
-.info-box {background:#1E2A47; border:1px solid #C9A961; border-radius:8px; padding:15px; margin-bottom:10px; color:#FFFFFF}
     h2, h3, h4, p {color: #FFFFFF!important;}
 </style>
 """, unsafe_allow_html=True)
@@ -108,12 +106,23 @@ elif st.session_state.page == "تسجيل":
         سبب = st.text_input("سبب الجلسة")
         ملاحظات = st.text_area("ملاحظات")
         st.markdown("</div>", unsafe_allow_html=True)
+        st.markdown("<div class='card'><div class='card-title'>5- التنبيهات والمستندات</div>", unsafe_allow_html=True)
+        تنبيه = st.checkbox("تفعيل التنبيهات عبر الواتس اب")
+        واتس = st.text_input("رقم هاتف واتس اب") if تنبيه else ""
+        col1, col2 = st.columns(2)
+        with col1: مستند_نوع = st.selectbox("نوع المستند", ANWA3_MOSTANDAT)
+        with col2: مستند_ملف = st.file_uploader("اختر الملف")
+        st.markdown("</div>", unsafe_allow_html=True)
         st.markdown("<div class='btn-save'>", unsafe_allow_html=True)
         if st.form_submit_button("حفظ القضية", use_container_width=True):
             if not رقم or not سنة: st.error("❌ من فضلك ادخل رقم الدعوى والسنة")
             else:
-                new_case = {"id": len(data["cases"])+1, "نوع": نوع, "محكمة_اسم": محكمة_اسم, "مأمورية": مأمورية, "رقم": رقم, "سنة": سنة, "دائرة": دائرة, "مدعي": مدعي, "مدعي_عليه": مدعي_عليه, "موضوع": موضوع, "تاريخ_جلسة": str(تاريخ_جلسة), "الرول": الرول, "سبب": سبب, "ملاحظات": ملاحظات, "جلسات": [], "مستندات": [], "حالة": "متداولة"}
+                new_case = {"id": len(data["cases"])+1, "نوع": نوع, "محكمة_اسم": محكمة_اسم, "مأمورية": مأمورية, "رقم": رقم, "سنة": سنة, "دائرة": دائرة, "مدعي": مدعي, "مدعي_عليه": مدعي_عليه, "موضوع": موضوع, "تاريخ_جلسة": str(تاريخ_جلسة), "الرول": الرول, "سبب": سبب, "ملاحظات": ملاحظات, "تنبيه": تنبيه, "واتس": واتس, "جلسات": [], "مستندات": [], "حالة": "متداولة"}
                 if الرول or سبب: new_case["جلسات"].append({"تاريخ":str(تاريخ_جلسة),"الرول":الرول,"سبب":سبب,"ملاحظات":ملاحظات})
+                if مستند_ملف:
+                    file_path = os.path.join(UPLOAD_FOLDER, f"{new_case['id']}_{مستند_ملف.name}")
+                    with open(file_path, "wb") as f: f.write(مستند_ملف.getbuffer())
+                    new_case["مستندات"].append({'نوع': مستند_نوع, 'اسم': مستند_ملف.name, 'مسار': file_path})
                 data["cases"].append(new_case); save_data(data)
                 st.success(f"✅ تم حفظ القضية رقم {رقم} لسنة {سنة}")
                 st.session_state.page = "الرئيسية"; st.rerun()
@@ -174,7 +183,7 @@ elif st.session_state.page == "تفاصيل":
         st.markdown(html, unsafe_allow_html=True)
 
     edit_idx = st.query_params.get("edit")
-    with st.expander("➕ اضافة جلسة" if edit_idx is None else f"✏️ تعديل الجلسة رقم {int(edit_idx)+1}"):
+    with st.expander("➕ اضافة جلسة" if edit_idx is None else f"✏️ تعديل جلسة سابقة رقم {int(edit_idx)+1}"):
         with st.form("session_form"):
             t_val = datetime.strptime(case['جلسات'][int(edit_idx)]['تاريخ'], '%Y-%m-%d').date() if edit_idx else datetime.now().date()
             r_val = case['جلسات'][int(edit_idx)]['الرول'] if edit_idx else ""
@@ -202,35 +211,4 @@ elif st.session_state.page == "تفاصيل":
             if uploaded_file:
                 file_path = os.path.join(UPLOAD_FOLDER, f"{case['id']}_{uploaded_file.name}")
                 with open(file_path, "wb") as f: f.write(uploaded_file.getbuffer())
-                case['مستندات'].append({'نوع': نوع_المستند, 'اسم': uploaded_file.name, 'مسار': file_path})
-                save_data(data); st.success("تم رفع المستند"); st.rerun()
-
-    if case['مستندات']:
-        for i, مستند in enumerate(case['مستندات']):
-            c1, c2, c3 = st.columns([3,2,1])
-            with c1: st.write(f"{i+1}. {مستند['نوع']}")
-            with c2: st.write(مستند['اسم'])
-            with c3:
-                with open(مستند['مسار'], "rb") as f: st.download_button("تحميل", f, file_name=مستند['اسم'], key=f"dl{i}")
-
-    # ================= 4. جلسة الحكم =================
-    st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
-    st.markdown("<h3 style='color:#FF6B6B'>⚖️ جلسة الحكم</h3>", unsafe_allow_html=True)
-    if 'حكم' not in case:
-        with st.form("judgment_form"):
-            c1, c2 = st.columns(2)
-            تاريخ_حكم = c1.date_input("تاريخ الحكم")
-            مسندة_ل = c2.selectbox("مسندة لـ", ["الصالح", "الضد"])
-            منطوق_الحكم = st.text_area("منطوق الحكم")
-            if st.form_submit_button("حفظ الحكم واغلاق القضية"):
-                case['حكم'] = {'تاريخ': str(تاريخ_حكم), 'المنطوق': منطوق_الحكم, 'مسندة': مسندة_ل}
-                case['حالة'] = 'منتهية'
-                save_data(data); st.success("✅ تم حفظ الحكم"); st.rerun()
-    else:
-        st.success(f"✅ تم الحكم بتاريخ: {case['حكم']['تاريخ']} - مسندة لـ: {case['حكم']['مسندة']}")
-        st.info(f"المنطوق: {case['حكم']['المنطوق']}")
-
-    st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
-    if st.button("🗑️ حذف القضية نهائيا", type="primary"):
-        data["cases"] = [c for c in data["cases"] if c['id']!= case['id']]
-        save_data(data); st.success("تم حذف القضية"); st.session_state.page = "حصر"; st.rerun()
+                case['مستندات'].append({'نوع': نوع_المستند, 'اسم': uploaded_file.name,
