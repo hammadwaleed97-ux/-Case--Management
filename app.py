@@ -279,4 +279,14 @@ elif st.session_state.page == "تفاصيل":
     st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
     st.markdown("<h3 style='color:#C9A961'>📎 مستندات القضية</h3>", unsafe_allow_html=True)
     with st.form("upload_form"):
-     
+        نوع_المستند = st.selectbox("نوع المستند", ANWA3_MOSTANDAT)
+        بيان_المستند = st.text_input("بيان المستند")
+        uploaded_file = st.file_uploader("اختر الملف")
+        if st.form_submit_button("حفظ المستند"):
+            if uploaded_file:
+                file_path = os.path.join(UPLOAD_FOLDER, f"{case['id']}_{uploaded_file.name}")
+                with open(file_path, "wb") as f: f.write(uploaded_file.getbuffer())
+                case['مستندات'].append({'نوع': نوع_المستند, 'بيان': بيان_المستند, 'اسم': uploaded_file.name, 'مسار': file_path})
+                save_data(data)
+                st.success("تم رفع المستند")
+                st.rerun()
