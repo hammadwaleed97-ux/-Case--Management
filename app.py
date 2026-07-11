@@ -188,12 +188,13 @@ elif st.session_state.page == "تسجيل":
 # ==================================================================
 
 elif st.session_state.page == "حصر":
-elif st.session_state.page == "تنبيهات":
-    render_notification_center()
     st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
     st.markdown("<h2 style='color:#FFFFFF; text-align:center'>📊 الحصر العام الخارجي</h2>", unsafe_allow_html=True)
     if st.button("العودة للرئيسية", use_container_width=True): st.session_state.page = "الرئيسية"; st.rerun()
     if not data["cases"]: st.info("لا توجد قضايا مسجلة")
+    
+elif st.session_state.page == "تنبيهات":
+    render_notification_center()
     else:
         for i, case in enumerate(data["cases"]):
             if "id" not in case: case["id"] = i + 1
