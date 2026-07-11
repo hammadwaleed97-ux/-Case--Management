@@ -309,15 +309,16 @@ elif st.session_state.page == "تفاصيل":
 # ================== نهاية الجزء 2: الحصر والتفاصيل ==================
 # ==================================================================
 # ==================================================================
-# ================== بداية دالة التنبيهات المتعدلة ==================
+# ================== بداية دالة التنبيهات v5.39 شغالة ==================
 # ==================================================================
 
 def render_notification_center():
     st.markdown("---")
     st.markdown("<h1 style='text-align: center; color: #D4AF37;'>📧 مركز التنبيهات</h1>", unsafe_allow_html=True)
-    if st.button("⬅️ العودة للرئيسية", key="back_from_center", use_container_width=True):
+    if st.button("⬅️ العودة للرئيسية", key="back_from_center_v2", use_container_width=True):
         st.session_state.page = "الرئيسية"
         st.rerun()
+    
     query_params = st.query_params
     if "verify_token" in query_params:
         email = verify_token(query_params["verify_token"])
@@ -333,7 +334,7 @@ def render_notification_center():
 
     with st.container(border=True):
         st.markdown("<div class='card-title'>تسجيل ايميل جديد للتنبيهات</div>", unsafe_allow_html=True)
-        user_email = st.text_input("البريد الالكتروني", placeholder="example@domain.com", value=st.session_state.get('saved_email',''), key="notif_email")
+        user_email = st.text_input("البريد الالكتروني", placeholder="example@domain.com", value=st.session_state.get('saved_email',''), key="notif_email_v2")
         if st.button("ارسال رابط التفعيل", type="primary", use_container_width=True):
             if user_email:
                 token = secrets.token_urlsafe(32)
@@ -341,7 +342,7 @@ def render_notification_center():
                 tokens_data["tokens"].append({"email": user_email, "token": token, "expires": expires.strftime("%Y-%m-%d %H:%M:%S"), "verified": False})
                 save_tokens(tokens_data)
                 if send_verification_email(user_email, token):
-                    st.success("تم ارسال رابط التفعيل للايميل. من فضلك افتح الايميل وفعل الاشتراك")
+                    st.success("تم ارسال رابط التفعيل للايميل")
                 else:
                     st.error("فشل ارسال الايميل. راجع الايميل والباسورد الاحمر")
             else:
@@ -349,50 +350,48 @@ def render_notification_center():
 
     st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
     st.markdown("### 📅 الجلسات خلال 7 ايام القادمة")
+    
     today = datetime.now().date()
     week_later = today + timedelta(days=7)
-    df = pd.DataFrame(data["cases"])
-    if not df.empty:
-        df['تاريخ_جلسة'] = pd.to_datetime(df['تاريخ_جلسة'], errors='coerce').dt.date
-        upcoming = df[(df['تاريخ_جلسة'] >= today) & (df['تاريخ_جلسة'] <= week_later)]
-        verified_emails = [t['email'] for t in tokens_data['tokens'] if t['verified']]
-        st.info(f"عدد المشتركين المفعلين: {len(verified_emails)}")
-        if not upcoming.empty:
-            st.markdown("<div class='table-container'>", unsafe_allow_html=True)
-            # جدول زي الحصر العام بالظبط 9 اعمدة
-            table_html = "<table class='case-table'><tr><th>م</th><th>الرقم والسنة</th><th>المحكمة والدائرة</th><th>الخصوم</th><th>الموضوع</th><th>اخر جلسة</th><th>السبب</th><th>الحالة</th><th>فتح</th></tr>"
+    
+    alert_cases = []
+    for case in data["cases"]:
+        if case.get("تاريخ_جلسة"):
+            try:
+                session_date = datetime.strptime(case["تاريخ_جلسة"], '%Y-%m-%d').date()
+                if today <= session_date <= week_later:
+                    alert_cases.append(case)
+            except: pass
 
-            for idx, row in enumerate(upcoming.iterrows(), 1):
-                row = row[1]
-                رقم_كامل = f"{row['رقم']} لسنة {row['سنة']}"
-                محكمة_كاملة = f"{row['نوع']} {row['محكمة_اسم']}"
-                if row.get('مأمورية',''): محكمة_كاملة += f"<br>مأمورية {row.get('مأمورية','')}"
-                دائرة_كاملة = f"{row.get('دائرة','')} عمال" if row.get('دائرة','') else ""
-                محكمة_كاملة += f"<br>{دائرة_كاملة}"
-                خصوم = f"{row.get('مدعي','')}<br>ضد<br>{row.get('مدعي_عليه','')}"
+    verified_emails = [t['email'] for t in tokens_data['tokens'] if t['verified']]
+    st.info(f"عدد المشتركين المفعلين: {len(verified_emails)} | عدد الجلسات القريبة: {len(alert_cases)}")
 
-                if row.get('حالة') == 'منتهية': row_class = "row-judgment"
-                elif "الهيئة" in str(row.get('مدعي','')): row_class = "row-hey2a"
-                else: row_class = "row1" if idx % 2 == 1 else "row2"
+    if not alert_cases:
+        st.success("✅ مفيش جلسات خلال 7 ايام القادمة")
+    else:
+        for idx, case in enumerate(alert_cases, 1):
+            with st.container(border=True):
+                st.markdown(f"<h4 style='color:#C9A961'>القضية رقم {idx}</h4>", unsafe_allow_html=True)
+                
+                رقم_كامل = f"{case.get('رقم','')} لسنة {case.get('سنة','')}"
+                محكمة_كاملة = f"{case.get('نوع','')} {case.get('محكمة_اسم','')}"
+                if case.get('مأمورية',''): محكمة_كاملة += f" - مأمورية {case.get('مأمورية','')}"
+                
+                col1, col2, col3 = st.columns(3)
+                with col1: st.metric("الرقم والسنة", رقم_كامل)
+                with col2: st.metric("المحكمة", محكمة_كاملة)
+                with col3: st.metric("الدائرة", f"{case.get('دائرة','')} عمال")
+                
+                st.write(f"**الخصوم:** {case.get('مدعي','')} ضد {case.get('مدعي_عليه','')}")
+                st.write(f"**الموضوع:** {case.get('موضوع','')}")
+                st.write(f"**تاريخ الجلسة:** {case.get('تاريخ_جلسة','')} | **السبب:** {case.get('سبب','')}")
+                st.write(f"**الحالة:** {case.get('حالة','متداولة')}")
 
-                table_html += f"<tr class='{row_class}'><td>{idx}</td><td>{رقم_كامل}</td><td>{محكمة_كاملة}</td><td>{خصوم}</td><td>{row.get('موضوع','')}</td><td>{row['تاريخ_جلسة']}</td><td>{row.get('سبب','')}</td><td>{row.get('حالة','متداولة')}</td><td></td></tr>"
-
-            table_html += "</table></div>"
-            st.markdown(table_html, unsafe_allow_html=True)
-
-            # زرار الفتح تحت كل قضية عشان يوديك التفاصيل صح
-            st.markdown("<h4 style='color:#C9A961'>اضغط لفتح تفاصيل القضية:</h4>", unsafe_allow_html=True)
-            for idx, row in enumerate(upcoming.iterrows(), 1):
-                row = row[1]
-                if st.button(f"فتح القضية رقم {row['رقم']} لسنة {row['سنة']}", key=f"open_alert_{row['id']}", use_container_width=True):
-                    st.session_state.selected_case_id = row['id']
+                if st.button("فتح التفاصيل", key=f"open_alert_final_{case['id']}", use_container_width=True, type="secondary"):
+                    st.session_state.selected_case_id = case['id']
                     st.session_state.page = "تفاصيل"
                     st.rerun()
-        else:
-            st.info("مفيش جلسات خلال 7 ايام القادمة")
-    else:
-        st.warning("لا توجد قضايا مسجلة")
 
 # ==================================================================
-# ================== نهاية دالة التنبيهات المتعدلة ==================
+# ================== نهاية دالة التنبيهات v5.39 شغالة ==================
 # ==================================================================
