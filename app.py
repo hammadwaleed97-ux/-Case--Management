@@ -1,4 +1,4 @@
-#========= إدارة القضايا v5.38 =====================
+# ====== إدارة القضايا v5.39 =====================
 # ========== الإدارة العامة للشئون القانونية البحيرة ==========
 # ============================================================
 import streamlit as st
@@ -59,6 +59,59 @@ def send_verification_email(recipient_email, token):
         st.error(f"خطأ في ارسال الايميل: {e}")
         return False
 
+def send_case_alert_email(recipient_email, case, alert_type):
+    if alert_type == "جلسة":
+        subject = f"تنبيه جلسة قريبة - قضية رقم {case['رقم']} لسنة {case['سنة']}"
+        body = f"""السيد/ة {recipient_email}
+
+تنبيه: لديك جلسة خلال 3 ايام
+
+بيانات القضية:
+رقم القضية: {case['رقم']} لسنة {case['سنة']}
+نوع الدعوى: {case['نوع']}
+المحكمة: {case['محكمة_اسم']}
+المأمورية: {case.get('مأمورية','-')}
+الدائرة: {case['دائرة']}
+تاريخ الجلسة: {case['تاريخ_جلسة']}
+السبب: {case['سبب']}
+المدعي: {case['مدعي']}
+المدعي عليه: {case['مدعي_عليه']}
+الموضوع: {case['موضوع']}
+الحالة: {case['حالة']}
+
+مع تحيات الادارة العامة للشئون القانونية - البحيرة
+        """
+    elif alert_type == "حكم":
+        subject = f"صدور حكم - قضية رقم {case['رقم']} لسنة {case['سنة']}"
+        body = f"""السيد/ة {recipient_email}
+
+تنبيه: تم تحديث حالة القضية الى "منتهية"
+
+بيانات القضية:
+رقم القضية: {case['رقم']} لسنة {case['سنة']}
+المحكمة: {case['محكمة_اسم']}
+الخصوم: {case['مدعي']} ضد {case['مدعي_عليه']}
+الموضوع: {case['موضوع']}
+
+من فضلك راجع تفاصيل الحكم من النظام.
+        """
+
+    msg = MIMEMultipart()
+    msg["From"] = SENDER_EMAIL
+    msg["To"] = recipient_email
+    msg["Subject"] = subject
+    msg.attach(MIMEText(body, "plain", "utf-8"))
+    try:
+        server = smtplib.SMTP("smtp.gmail.com", 587)
+        server.starttls()
+        server.login(SENDER_EMAIL, SENDER_PASSWORD)
+        server.sendmail(SENDER_EMAIL, recipient_email, msg.as_string())
+        server.quit()
+        return True
+    except Exception as e:
+        print(f"خطأ في ارسال التنبيه: {e}")
+        return False
+
 def verify_token(token):
     tokens_data = load_tokens()
     now = datetime.now()
@@ -89,6 +142,7 @@ def render_notification_center():
 
     st.markdown("<h3 style='color:#FFFFFF; text-align:center'>📊 ادارة التنبيهات</h3>", unsafe_allow_html=True)
     tokens_data = load_tokens()
+    verified_emails = [t['email'] for t in tokens_data['tokens'] if t['verified']]
 
     with st.container(border=True):
         st.markdown("<div class='card-title'>تسجيل ايميل جديد للتنبيهات</div>", unsafe_allow_html=True)
@@ -110,20 +164,40 @@ def render_notification_center():
     st.markdown("### 📅 الجلسات خلال 7 ايام القادمة")
     today = datetime.now().date()
     week_later = today + timedelta(days=7)
+    data = load_data()
     df = pd.DataFrame(data["cases"])
+
+    # ارسال تنبيهات تلقائية
+    if verified_emails and not df.empty:
+        df['تاريخ_جلسة_dt'] = pd.to_datetime(df['تاريخ_جلسة'], errors='coerce')
+        for idx, case in df.iterrows():
+            if pd.notna(case['تاريخ_جلسة_dt']):
+                days_to_session = (case['تاريخ_جلسة_dt'].date() - today).days
+                if days_to_session == 3: # قبل الجلسة ب 3 ايام
+                    for email in verified_emails:
+                        send_case_alert_email(email, case.to_dict(), "جلسة")
+                if case['حالة'] == 'منتهية' and days_to_session <= 0: # صدور حكم
+                    for email in verified_emails:
+                        send_case_alert_email(email, case.to_dict(), "حكم")
+
     if not df.empty:
         df['تاريخ_جلسة'] = pd.to_datetime(df['تاريخ_جلسة'], errors='coerce').dt.date
         upcoming = df[(df['تاريخ_جلسة'] >= today) & (df['تاريخ_جلسة'] <= week_later)]
-        verified_emails = [t['email'] for t in tokens_data['tokens'] if t['verified']]
         st.info(f"عدد المشتركين المفعلين: {len(verified_emails)}")
         if not upcoming.empty:
             st.markdown("<div class='table-container'>", unsafe_allow_html=True)
-            table_html = "<table class='case-table'><tr><th>م</th><th>الرقم والسنة</th><th>المحكمة</th><th>تاريخ الجلسة</th><th>السبب</th></tr>"
+            # جدول زي الحصر العام بالظبط
+            table_html = "<table class='case-table'><tr><th>م</th><th>الرقم والسنة</th><th>المحكمة والدائرة</th><th>الخصوم</th><th>الموضوع</th><th>اخر جلسة</th><th>السبب</th><th>الحالة</th></tr>"
             for idx, row in enumerate(upcoming.iterrows(), 1):
                 row = row[1]
                 رقم_كامل = f"{row['رقم']} لسنة {row['سنة']}"
-                محكمة = f"{row['محكمة_اسم']}"
-                table_html += f"<tr class='row1'><td>{idx}</td><td>{رقم_كامل}</td><td>{محكمة}</td><td>{row['تاريخ_جلسة']}</td><td>{row['سبب']}</td></tr>"
+                محكمة_كاملة = f"{row['نوع']} {row['محكمة_اسم']}"
+                if row.get('مأمورية',''): محكمة_كاملة += f"<br>مأمورية {row.get('مأمورية','')}"
+                دائرة_كاملة = f"{row.get('دائرة','')} عمال" if row.get('دائرة','') else ""
+                محكمة_كاملة += f"<br>{دائرة_كاملة}"
+                خصوم = f"{row.get('مدعي','')}<br>ضد<br>{row.get('مدعي_عليه','')}"
+                row_class = "row-judgment" if row.get('حالة') == 'منتهية' else "row1"
+                table_html += f"<tr class='{row_class}'><td>{idx}</td><td>{رقم_كامل}</td><td>{محكمة_كاملة}</td><td>{خصوم}</td><td>{row.get('موضوع','')}</td><td>{row['تاريخ_جلسة']}</td><td>{row.get('سبب','')}</td><td>{row.get('حالة','متداولة')}</td></tr>"
             table_html += "</table></div>"
             st.markdown(table_html, unsafe_allow_html=True)
         else:
