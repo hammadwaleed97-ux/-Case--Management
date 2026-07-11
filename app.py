@@ -108,6 +108,16 @@ def render_notification_center():
     st.markdown("### 📅 الجلسات خلال 7 ايام القادمة")
     upcoming = df[(df['تاريخ_جلسة'] >= today) & (df['تاريخ_جلسة'] <= week_later)]
     st.info(f"عدد المشتركين المفعلين: {len(verified_emails)}")
+    # حطه تحت st.info بتاع عدد المشتركين في مركز التنبيهات
+
+if st.button("📧 اختبار ارسال ايميل الان", type="primary", use_container_width=True):
+    if verified_emails and data["cases"]:
+        case_test = data["cases"][0]
+        for email in verified_emails:
+            send_case_alert_email(email, case_test, "اختبار")
+        st.success(f"تم ارسال ايميل اختبار لـ {len(verified_emails)} ايميل")
+    else:
+        st.warning("مفيش قضايا او مفيش ايميلات مفعلة")
 
     if not upcoming.empty:
         for idx, row in enumerate(upcoming.iterrows(), 1):
