@@ -71,13 +71,13 @@ def verify_token(token):
                 save_tokens(tokens_data)
                 return t["email"]
     return None
-    def render_notification_center():
+
+def render_notification_center():
     st.markdown("---")
     st.markdown("<h1 style='text-align: center; color: #D4AF37;'>📧 مركز التنبيهات</h1>", unsafe_allow_html=True)
     if st.button("⬅️ العودة للرئيسية", use_container_width=True):
         st.session_state.page = "الرئيسية"
         st.rerun()
-
     query_params = st.query_params
     if "verify_token" in query_params:
         email = verify_token(query_params["verify_token"])
