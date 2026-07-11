@@ -393,56 +393,7 @@ elif st.session_state.page == "حصر":
             c1, c2, c3 = st.columns([4,1,4])
             with c2:
                 if st.button("فتح", key=f"open_{case['id']}"): st.session_state.selected_case_id = case['id']; st.session_state.page = "تفاصيل"; st.rerun()
-                    import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-import streamlit as st
-
-EMAIL_SENDER = "hammadwaleed97@gmail.com" 
-EMAIL_PASSWORD = "r v y q q a y j o n w h u o x r"
-
-def send_case_alert_email(to_email, case, نوع_التنبيه):
-    try:
-        رقم_كامل = f"{case['رقم']} لسنة {case['سنة']}"
-        subject = f"تنبيه: {نوع_التنبيه} - قضية {رقم_كامل}"
-        body = f"الرقم: {رقم_كامل}\nالمحكمة: {case.get('نوع','')} {case.get('محكمة_اسم','')}\nالموضوع: {case.get('موضوع','')}\nتاريخ الجلسة: {case.get('تاريخ_جلسة','')}"
-        msg = MIMEMultipart()
-        msg['From'] = EMAIL_SENDER
-        msg['To'] = to_email
-        msg['Subject'] = subject
-        msg.attach(MIMEText(body, 'plain', 'utf-8'))
-        server = smtplib.SMTP('smtp.gmail.com', 587)
-        server.starttls()
-        server.login(EMAIL_SENDER, EMAIL_PASSWORD)
-        server.send_message(msg)
-        server.quit()
-        return True
-    except Exception as e:
-        st.error(f"فشل ارسال الايميل: {e}")
-        return False
-
-def send_verification_email(user_email, token):
-    base_url = "https://qpyqapsmkqcvdu4imbfunp.streamlit.app"
-    verify_link = f"{base_url}?verify_token={token}"
-    subject = "تفعيل الاشتراك"
-    body = f"اضغط لتفعيل اشتراكك:\n{verify_link}"
-    msg = MIMEMultipart()
-    msg['From'] = EMAIL_SENDER
-    msg['To'] = user_email
-    msg['Subject'] = subject
-    msg.attach(MIMEText(body, 'plain', 'utf-8'))
-    try:
-        server = smtplib.SMTP('smtp.gmail.com', 587)
-        server.starttls()
-        server.login(EMAIL_SENDER, EMAIL_PASSWORD)
-        server.send_message(msg)
-        server.quit()
-        return True
-    except Exception as e:
-        st.error(f"فشل ارسال الايميل: {e}")
-        return False
-
-
+                    
 elif st.session_state.page == "تنبيهات":
     render_notification_center()
 
