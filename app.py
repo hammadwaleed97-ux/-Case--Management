@@ -1,25 +1,12 @@
-# ================== إدارة القضايا v5.38 =====================
+# ================== إدارة القضايا v5.37 =====================
 # ========== الإدارة العامة للشئون القانونية البحيرة ==========
 # ============================================================
 import streamlit as st
 import pandas as pd
 import json
 import os
-import smtplib
-import uuid
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-from email.header import Header
 from datetime import datetime, timedelta
 st.set_page_config(page_title="إدارة القضايا", layout="wide", page_icon="⚖️")
-
-# ========= اضبط الايميل بتاعك هنا =========
-SENDER_EMAIL = "حط_ايميلك_هنا@gmail.com"
-SENDER_PASSWORD = "حط_كلمة_السر_التطبيق_هنا"
-SMTP_SERVER = "smtp.gmail.com"
-SMTP_PORT = 587
-APP_URL = "حط_لينك_البرنامج_هنا"
-# ==========================================
 
 DATA_FILE = "cases_data.json"
 UPLOAD_FOLDER = "uploads"
@@ -28,47 +15,12 @@ if not os.path.exists(UPLOAD_FOLDER): os.makedirs(UPLOAD_FOLDER)
 ANWA3_MOSTANDAT = ["صحيفة دعوى", "صحيفة استئناف", "صحيفة طعن", "مذكرة دفاع", "حافظة مستندات", "تقرير خبير", "تقرير طب شرعى", "تقرير لجنة طبية", "صحيفة تجديد من الشطب", "صحيفة تعجيل من الوقف", "صورة حكم تمهيدى", "أخرى"]
 
 def load_data():
-    data = {"cases": [], "emails": {}}
     if os.path.exists(DATA_FILE):
-        with open(DATA_FILE, "r", encoding="utf-8") as f:
-            loaded = json.load(f)
-            data["cases"] = loaded.get("cases", [])
-            data["emails"] = loaded.get("emails", {})
-            for i, c in enumerate(data["cases"]):
-                if "جلسات" not in c: c["جلسات"] = []
-                if "مستندات" not in c: c["مستندات"] = []
-                if "id" not in c: c["id"] = i + 1
-    return data
+        with open(DATA_FILE, "r", encoding="utf-8") as f: return json.load(f)
+    return {"cases": []}
 
 def save_data(data):
     with open(DATA_FILE, "w", encoding="utf-8") as f: json.dump(data, f, ensure_ascii=False, indent=4)
-
-def send_activation_email(to_email, token):
-    activation_link = f"{APP_URL}?activate={token}"
-    subject = Header("تفعيل التنبيهات - إدارة القضايا", 'utf-8')
-    body = f"""
-    <html><body dir="rtl">
-    <h2>مرحبا</h2>
-    <p>لتفعيل تنبيهات الجلسات على هذا الايميل اضغط على الرابط التالي:</p>
-    <a href='{activation_link}' style='background:#C9A961;color:#0F1C2E;padding:10px 20px;text-decoration:none;border-radius:5px;font-weight:bold;'>تفعيل الايميل</a>
-    <p>اذا لم تطلب هذا التجاهل هذه الرسالة</p>
-    </body></html>
-    """
-    try:
-        msg = MIMEMultipart()
-        msg['From'] = SENDER_EMAIL
-        msg['To'] = to_email
-        msg['Subject'] = subject
-        msg.attach(MIMEText(body, 'html', 'utf-8'))
-        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
-        server.starttls()
-        server.login(SENDER_EMAIL, SENDER_PASSWORD)
-        server.sendmail(SENDER_EMAIL, to_email, msg.as_bytes()) # اتغيرت ل as_bytes عشان العربي
-        server.quit()
-        return True
-    except Exception as e:
-        st.error(f"فشل ارسال الايميل: {e}")
-        return False
 
 def render_notification_center():
     st.markdown("---")
@@ -77,29 +29,12 @@ def render_notification_center():
         st.session_state.page = "الرئيسية"
         st.rerun()
 
-    query_params = st.query_params
-    if "activate" in query_params:
-        token = query_params["activate"]
-        for email, info in data.get("emails", {}).items():
-            if info.get("token") == token:
-                data["emails"][email]["active"] = True
-                save_data(data)
-                st.success(f"✅ تم تفعيل الايميل {email} بنجاح. هتوصلك التنبيهات دلوقتي")
-                st.query_params.clear()
-
     with st.container(border=True):
-        st.markdown("<h3 style='color: #D4AF37;'>تفعيل التنبيهات عبر البريد الالكتروني</h3>", unsafe_allow_html=True)
-        user_email = st.text_input("اكتب الايميل", placeholder="example@domain.com")
-        if st.button("ارسال رابط التفعيل", type="primary"):
-            token = str(uuid.uuid4())
-            data["emails"][user_email] = {"token": token, "active": False}
-            save_data(data)
-            if send_activation_email(user_email, token):
-                st.info("تم ارسال رابط التفعيل. افتح الايميل ودوس على الرابط")
-
-    active_emails = [e for e, i in data.get("emails",{}).items() if i.get("active")]
-    if active_emails:
-        st.success(f"الايميلات المفعلة: {', '.join(active_emails)}")
+        st.markdown("<h3 style='color: #D4AF37;'>تنبيهات عبر البريد الالكتروني</h3>", unsafe_allow_html=True)
+        user_email = st.text_input("البريد الالكتروني", placeholder="example@domain.com", value=st.session_state.get('saved_email',''))
+        if st.button("حفظ الايميل", type="primary"):
+            st.session_state['saved_email'] = user_email
+            st.success("تم حفظ الايميل")
 
     st.markdown("### 📅 الجلسات خلال 7 ايام القادمة")
     today = datetime.now().date()
@@ -110,62 +45,11 @@ def render_notification_center():
         upcoming = df[(df['تاريخ_جلسة'] >= today) & (df['تاريخ_جلسة'] <= week_later)]
         if not upcoming.empty:
             for i, row in upcoming.iterrows():
-                جلسات_الموجودة = row.get('جلسات', [])
-                last_session = جلسات_الموجودة[-1] if جلسات_الموجودة else {"تاريخ":row.get('تاريخ_جلسة'), "سبب":row.get('سبب')}
-                with st.container(border=True):
-                    st.markdown(f"""
-                    <div style='color:white'>
-                    <b>رقم القضية:</b> {row.get('رقم')} لسنة {row.get('سنة')}<br>
-                    <b>نوع:</b> {row.get('نوع')} | <b>المحكمة:</b> {row.get('محكمة_اسم')} | <b>الدائرة:</b> {row.get('دائرة')}<br>
-                    <b>المدعي:</b> {row.get('مدعي')} | <b>المدعي عليه:</b> {row.get('مدعي_عليه')}<br>
-                    <b>الموضوع:</b> {row.get('موضوع')}<br>
-                    <b>اخر جلسة:</b> {last_session.get('تاريخ')} - <b>السبب:</b> {last_session.get('سبب')}
-                    </div>
-                    """, unsafe_allow_html=True)
-                    if st.button(f"📂 عرض الملف كامل", key=f"view_{row['id']}", use_container_width=True): # صلحت ال key
-                        st.session_state.selected_case_id = row['id']
-                        st.session_state.page = "عرض_قضية"
-                        st.rerun()
+                st.markdown(f"<div class='card'><b>رقم:</b> {row['رقم']} لسنة {row['سنة']}<br><b>المحكمة:</b> {row['محكمة_اسم']}<br><b>التاريخ:</b> {row['تاريخ_جلسة']}<br><b>السبب:</b> {row['سبب']}</div>", unsafe_allow_html=True)
         else:
             st.info("مفيش جلسات خلال 7 ايام القادمة")
     else:
         st.warning("لا توجد قضايا مسجلة")
-
-def render_case_details(case_id):
-    case = next((c for c in data["cases"] if c["id"] == case_id), None)
-    if not case:
-        st.error("القضية غير موجودة")
-        return
-
-    st.markdown("---")
-    st.markdown(f"<h1 style='text-align: center; color: #D4AF37;'>📁 ملف القضية رقم {case.get('رقم')} لسنة {case.get('سنة')}</h1>", unsafe_allow_html=True)
-    if st.button("⬅️ العودة للتنبيهات", use_container_width=True):
-        st.session_state.page = "التنبيهات"
-        st.rerun()
-
-    st.markdown("<h3 style='color:#D4B96A'>1- بيانات القضية كاملة</h3>", unsafe_allow_html=True)
-    case_data = {
-        "نوع الدعوى": [case.get("نوع","")], "المحكمة": [case.get("محكمة_اسم","")], "المأمورية": [case.get("مأمورية","")],
-        "الدائرة": [case.get("دائرة","")], "المدعي": [case.get("مدعي","")], "المدعي عليه": [case.get("مدعي_عليه","")],
-        "الموضوع": [case.get("موضوع","")], "الحالة": [case.get("حالة","")], "ملاحظات": [case.get("ملاحظات","")]
-    }
-    st.dataframe(pd.DataFrame(case_data), use_container_width=True, hide_index=True)
-
-    st.markdown("<h3 style='color:#D4B96A'>2- جدول الجلسات</h3>", unsafe_allow_html=True)
-    if case.get("جلسات"):
-        st.dataframe(pd.DataFrame(case["جلسات"]), use_container_width=True, hide_index=True)
-    else: st.info("لا توجد جلسات مسجلة")
-
-    st.markdown("<h3 style='color:#D4B96A'>3- المستندات المرفقة</h3>", unsafe_allow_html=True)
-    if case.get("مستندات") and len(case["مستندات"]) > 0:
-        for idx, doc in enumerate(case["مستندات"]): # ضفت idx
-            col1, col2 = st.columns([3,1])
-            with col1: st.write(f"**{doc.get('نوع','')}**: {doc.get('اسم','')}")
-            with col2:
-                if os.path.exists(doc.get('مسار','')):
-                    with open(doc['مسار'], "rb") as f:
-                        st.download_button("تحميل", f, file_name=doc['اسم'], key=f"dl_{case_id}_{idx}") # صلحت ال key
-    else: st.info("لا توجد مستندات مرفقة")
 
 data = load_data()
 today = datetime.now().strftime("%A, %d %B %Y")
@@ -228,16 +112,14 @@ if st.session_state.page == "الرئيسية":
         if st.button("تسجيل القضايا", use_container_width=True): st.session_state.page = "تسجيل"; st.rerun()
     with col2:
         if st.button("الحصر العام", use_container_width=True): st.session_state.page = "حصر"; st.rerun()
+
+    # الزرار الاحمر الجديد
     if st.button("📧 مركز التنبيهات", type="secondary", use_container_width=True):
         st.session_state.page = "التنبيهات"
         st.rerun()
 
 elif st.session_state.page == "التنبيهات":
     render_notification_center()
-
-elif st.session_state.page == "عرض_قضية":
-    render_case_details(st.session_state.selected_case_id)
-
 elif st.session_state.page == "تسجيل":
     st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
     st.markdown("<h2 style='color:#C9A961; text-align:center'>تسجيل القضايا</h2>", unsafe_allow_html=True)
@@ -295,10 +177,13 @@ elif st.session_state.page == "حصر":
     if st.button("العودة للرئيسية", use_container_width=True): st.session_state.page = "الرئيسية"; st.rerun()
     if not data["cases"]: st.info("لا توجد قضايا مسجلة")
     else:
+        for i, case in enumerate(data["cases"]):
+            if "id" not in case: case["id"] = i + 1
+            if "مستندات" not in case: case["مستندات"] = []
         save_data(data)
         sorted_cases = sorted(data["cases"], key=lambda x: x.get("تاريخ_جلسة","9999"))
         total = len(sorted_cases)
-        this_week = len([c for c in sorted_cases if c.get('تاريخ_جلسة') and datetime.strptime(c['تاريخ_جلسة'],'%Y-%m-%d').date() <= datetime.now().date() + timedelta(days=7)])
+        this_week = len([c for c in sorted_cases if c.get('تاريخ_جلسة') and datetime.strptime(c['تاريخ_جلسة'],'%Y-%m-%d') <= datetime.now() + timedelta(days=7)])
         st.info(f"📊 اجمالي القضايا: {total} | جلسات هذا الاسبوع: {this_week}")
         for idx, case in enumerate(sorted_cases, 1):
             رقم_كامل = f"{case.get('رقم','')} لسنة {case.get('سنة','')}"
@@ -320,7 +205,57 @@ elif st.session_state.page == "حصر":
 elif st.session_state.page == "تفاصيل":
     case = next((c for c in data["cases"] if c['id'] == st.session_state.selected_case_id), None)
     if not case: st.error("القضية غير موجودة"); st.session_state.page = "حصر"; st.rerun()
+    if 'جلسات' not in case: case['جلسات'] = []
+    if 'مستندات' not in case: case['مستندات'] = []
     st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
     st.markdown(f"<h2 style='color:#FFFFFF; text-align:center'>📄 تفاصيل القضية رقم {case.get('رقم')} لسنة {case.get('سنة')}</h2>", unsafe_allow_html=True)
     if st.button("العودة للحصر", use_container_width=True): st.session_state.page = "حصر"; st.rerun()
-    render_case_details(case['id'])
+
+    st.markdown("<h3 style='color:#C9A961'>📌 بيانات القضية</h3>", unsafe_allow_html=True)
+    table_html = f"<div style='background:linear-gradient(180deg, #0A1428 0%, #1E2A47 100%); padding:15px; border-radius:18px; border:2px solid #C9A961'><table style='width:100%; border-spacing:8px 8px'><tr><td style='background:linear-gradient(145deg, #1E3A6B 0%, #2C5282 100%); border:2px solid #C9A961; border-radius:12px; padding:12px; text-align:center'><div style='font-size:12px; color:#FFD700'>رقم القضية</div><div style='font-size:20px; color:#FFFFFF'>{case.get('رقم')}</div></td><td style='background:linear-gradient(145deg, #2C5282 0%, #1E3A6B 100%); border:2px solid #C9A961; border-radius:12px; padding:12px; text-align:center'><div style='font-size:12px; color:#FFD700'>السنة</div><div style='font-size:20px; color:#FFFFFF'>{case.get('سنة')}</div></td><td style='background:linear-gradient(145deg, #1E3A6B 0%, #2C5282 100%); border:2px solid #C9A961; border-radius:12px; padding:12px; text-align:center'><div style='font-size:12px; color:#FFD700'>الدائرة</div><div style='font-size:18px; color:#FFFFFF'>{case.get('دائرة')} عمال</div></td><td style='background:linear-gradient(145deg, #2C5282 0%, #1E3A6B 100%); border:2px solid #C9A961; border-radius:12px; padding:12px; text-align:center'><div style='font-size:12px; color:#FFD700'>النوع</div><div style='font-size:16px; color:#FFFFFF'>{case.get('نوع')}</div></td></tr><tr><td colspan='2' style='background:linear-gradient(145deg, #1E3A6B 0%, #2C5282 100%); border:2px solid #C9A961; border-radius:12px; padding:12px; text-align:center'><div style='font-size:12px; color:#FFD700'>المحكمة</div><div style='font-size:15px; color:#FFFFFF'>{case.get('محكمة_اسم')}</div></td><td colspan='2' style='background:linear-gradient(145deg, #2C5282 0%, #1E3A6B 100%); border:2px solid #C9A961; border-radius:12px; padding:12px; text-align:center'><div style='font-size:12px; color:#FFD700'>المأمورية</div><div style='font-size:15px; color:#FFFFFF'>{case.get('مأمورية') or '-'}</div></td></tr><tr><td colspan='2' style='background:linear-gradient(145deg, #FFF3CD 0%, #FFE69C 100%); border:2px solid #C9A961; border-radius:12px; padding:12px; text-align:center'><div style='font-size:12px; color:#8B6914'>المدعي</div><div style='font-size:15px; color:#1E3A6B'>{case.get('مدعي')}</div></td><td colspan='2' style='background:linear-gradient(145deg, #CFF4FC 0%, #9EEAF9 100%); border:2px solid #C9A961; border-radius:12px; padding:12px; text-align:center'><div style='font-size:12px; color:#055160'>المدعى عليه</div><div style='font-size:15px; color:#1E3A6B'>{case.get('مدعي_عليه')}</div></td></tr><tr><td colspan='4' style='background:linear-gradient(145deg, #1E3A6B 0%, #2C5282 100%); border:2px solid #C9A961; border-radius:12px; padding:12px; text-align:center'><div style='font-size:12px; color:#FFD700'>الموضوع</div><div style='font-size:15px; color:#FFFFFF'>{case.get('موضوع')}</div></td></tr></table></div>"
+    st.markdown(table_html, unsafe_allow_html=True)
+
+    st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
+    st.markdown("<h3 style='color:#C9A961'>📅 متابعة الجلسات</h3>", unsafe_allow_html=True)
+    if len(case['جلسات']) > 0:
+        جلسات_مرتبة = sorted(enumerate(case["جلسات"]), key=lambda x: x[1]['تاريخ'])
+        html = "<table style='width:100%; border:3px solid #C9A961; background:#0A1428; border-radius:12px'><tr style='background:#C9A961; color:#000'><th>م</th><th>الرول</th><th>الجلسات</th><th>الإجراءات</th><th>ملاحظات</th><th>تحكم</th></tr>"
+        for i, (idx, ج) in enumerate(جلسات_مرتبة, 1):
+            لون = "#1E2A47" if i % 2 == 0 else "#142038"
+            html += f"<tr style='background:{لون}; color:#FFF'><td>{i}</td><td style='color:#FFD700'>{ج.get('الرول','-')}</td><td>{ج['تاريخ']}</td><td>{ج.get('سبب','-')}</td><td>{ج.get('ملاحظات','-')}</td><td><button onclick=\"window.location.href='?edit={idx}'\">✏️ تعديل</button></td></tr>"
+        html += "</table>"
+        st.markdown(html, unsafe_allow_html=True)
+
+    edit_idx = st.query_params.get("edit")
+    with st.expander("➕ اضافة جلسة" if edit_idx is None else f"✏️ تعديل جلسة سابقة رقم {int(edit_idx)+1}"):
+        with st.form("session_form"):
+            t_val = datetime.strptime(case['جلسات'][int(edit_idx)]['تاريخ'], '%Y-%m-%d').date() if edit_idx else datetime.now().date()
+            r_val = case['جلسات'][int(edit_idx)]['الرول'] if edit_idx else ""
+            s_val = case['جلسات'][int(edit_idx)]['سبب'] if edit_idx else ""
+            m_val = case['جلسات'][int(edit_idx)]['ملاحظات'] if edit_idx else ""
+            c1,c2 = st.columns(2)
+            t = c1.date_input("تاريخ الجلسة", value=t_val)
+            r = c2.text_input("الرول", value=r_val)
+            s = st.text_input("سبب التأجيل", value=s_val)
+            m = st.text_area("ملاحظات", value=m_val)
+            if st.form_submit_button("حفظ"):
+                session_data = {'تاريخ':str(t),'الرول':r,'سبب':s,'ملاحظات':m}
+                if edit_idx: case['جلسات'][int(edit_idx)] = session_data; st.query_params.clear()
+                else: case['جلسات'].append(session_data)
+                case['تاريخ_جلسة']=str(t); case['سبب']=s
+                save_data(data); st.success("✅ تم الحفظ"); st.rerun()
+
+    st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
+    st.markdown("<h3 style='color:#C9A961'>📎 مستندات القضية</h3>", unsafe_allow_html=True)
+    with st.form("upload_form"):
+        نوع_المستند = st.selectbox("نوع المستند", ANWA3_MOSTANDAT)
+        بيان_المستند = st.text_input("بيان المستند")
+        uploaded_file = st.file_uploader("اختر الملف")
+        if st.form_submit_button("حفظ المستند"):
+            if uploaded_file:
+                file_path = os.path.join(UPLOAD_FOLDER, f"{case['id']}_{uploaded_file.name}")
+                with open(file_path, "wb") as f: f.write(uploaded_file.getbuffer())
+                case['مستندات'].append({'نوع': نوع_المستند, 'بيان': بيان_المستند, 'اسم': uploaded_file.name, 'مسار': file_path})
+                save_data(data); st.success("تم رفع المستند"); st.rerun()
+
+    # ========== ده الجزء 
