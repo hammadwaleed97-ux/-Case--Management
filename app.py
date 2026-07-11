@@ -364,53 +364,102 @@ elif st.session_state.page == "تفاصيل":
 # ================== نهاية الجزء 2: الحصر والتفاصيل ==================
 # ==================================================================
 # ===============================================================
+def load_tokens():
+    if os.path.exists(TOKENS_FILE):
+        with open(TOKENS_FILE, "r", encoding="utf-8") as f: return json.load(f)
+    return {"tokens": []}
+
+def save_tokens(tokens_data):
+    with open(TOKENS_FILE, "w", encoding="utf-8") as f: json.dump(tokens_data, f, ensure_ascii=False, indent=4)
+
+def send_verification_email(recipient_email, token):
+    verify_link = f"{APP_URL}?verify_token={token}"
+    subject = "تفعيل تنبيهات القضايا - الشئون القانونية البحيرة"
+    body = f"مرحبا,\n\nلقد قمت بالتسجيل لتلقي تنبيهات الجلسات.\nمن فضلك فعل الاشتراك بالضغط على الرابط التالي:\n{verify_link}\n\nالرابط صالح لمدة 24 ساعة."
+    msg = MIMEMultipart()
+    msg["From"] = SENDER_EMAIL
+    msg["To"] = recipient_email
+    msg["Subject"] = subject
+    msg.attach(MIMEText(body, "plain", "utf-8"))
+    try:
+        server = smtplib.SMTP("smtp.gmail.com", 587)
+        server.starttls()
+        server.login(SENDER_EMAIL, SENDER_PASSWORD)
+        server.sendmail(SENDER_EMAIL, recipient_email, msg.as_string())
+        server.quit()
+        return True
+    except Exception as e:
+        st.error(f"خطأ في ارسال الايميل: {e}")
+        return False
+
+def verify_token(token):
+    tokens_data = load_tokens()
+    now = datetime.now()
+    for t in tokens_data["tokens"]:
+        if t["token"] == token and datetime.strptime(t["expires"], "%Y-%m-%d %H:%M:%S") > now:
+            if not t["verified"]:
+                t["verified"] = True
+                save_tokens(tokens_data)
+                return t["email"]
+    return None
+
 def render_notification_center():
-    st.title("🔔 مركز التنبيهات")
-    st.button("⬅️ العودة للرئيسية", on_click=lambda: st.session_state.update({"page":"الرئيسية"}))
-    
-    st.subheader("📧 ارسال بالايميل")
-    col1, col2 = st.columns([3,1])
-    with col1: email_to = st.text_input("اكتب الايميل")
-    with col2: send_btn = st.button("ارسال")
-    
-    today = datetime.now()
+    st.markdown("---")
+    st.markdown("<h1 style='text-align: center; color: #D4AF37;'>📧 مركز التنبيهات</h1>", unsafe_allow_html=True)
+    if st.button("⬅️ العودة للرئيسية", use_container_width=True):
+        st.session_state.page = "الرئيسية"
+        st.rerun()
+
+    query_params = st.query_params
+    if "verify_token" in query_params:
+        email = verify_token(query_params["verify_token"])
+        if email:
+            st.success(f"✅ تم تفعيل الايميل {email} بنجاح. ستصلك التنبيهات الان")
+            st.session_state['saved_email'] = email
+        else:
+            st.error("❌ الرابط غير صالح او منتهي")
+        st.query_params.clear()
+
+    st.markdown("<h3 style='color:#FFFFFF; text-align:center'>📊 ادارة التنبيهات</h3>", unsafe_allow_html=True)
+    tokens_data = load_tokens()
+
+    with st.container(border=True):
+        st.markdown("<div class='card-title'>تسجيل ايميل جديد للتنبيهات</div>", unsafe_allow_html=True)
+        user_email = st.text_input("البريد الالكتروني", placeholder="example@domain.com", value=st.session_state.get('saved_email',''))
+        if st.button("ارسال رابط التفعيل", type="primary", use_container_width=True):
+            if user_email:
+                token = secrets.token_urlsafe(32)
+                expires = datetime.now() + timedelta(days=1)
+                tokens_data["tokens"].append({"email": user_email, "token": token, "expires": expires.strftime("%Y-%m-%d %H:%M:%S"), "verified": False})
+                save_tokens(tokens_data)
+                if send_verification_email(user_email, token):
+                    st.success("تم ارسال رابط التفعيل للايميل. من فضلك افتح الايميل وفعل الاشتراك")
+                else:
+                    st.error("فشل ارسال الايميل. راجع الايميل والباسورد الاحمر")
+            else:
+                st.warning("من فضلك ادخل الايميل")
+
+    st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
+    st.markdown("### 📅 الجلسات خلال 7 ايام القادمة")
+    today = datetime.now().date()
     week_later = today + timedelta(days=7)
-    all_notifs = []
-
-    st.subheader("📅 جلسات ال 7 ايام الجايين")
-    found_session = False
-    for case in data["cases"]:
-        if case.get('تاريخ_جلسة'):
-            try:
-                d = datetime.strptime(case['تاريخ_جلسة'], '%Y-%m-%d')
-            except: 
-                d = datetime.strptime(case['تاريخ_جلسة'], '%d-%m-%Y')
-            if today <= d <= week_later:
-                found_session = True
-                all_notifs.append(case)
-                st.info(f"جلسة | {case.get('رقم')} لسنة {case.get('سنة')} | {case.get('محكمة_اسم')} | {case.get('تاريخ_جلسة')}")
-                if st.button("فتح", key=f"s{case['id']}"): 
-                    st.session_state.selected_case_id = case['id']; st.session_state.page="تعديل قضية"; st.rerun()
-    if not found_session: st.success("مفيش جلسات قريبة")
-
-    st.subheader("⚖️ مواعيد الطعون قربت")
-    found_appeal = False
-    for case in data["cases"]:
-        if case.get('تاريخ_الحكم') and case.get('نوع_الحكم'):
-            try:
-                rd = datetime.strptime(case['تاريخ_الحكم'], '%Y-%m-%d')
-            except: 
-                rd = datetime.strptime(case['تاريخ_الحكم'], '%d-%m-%Y')
-            days = 40 if 'استئناف' in case['نوع_الحكم'].lower() else 60
-            deadline = rd + timedelta(days=days)
-            if deadline - timedelta(days=15) <= today <= deadline:
-                found_appeal = True
-                all_notifs.append(case)
-                rem = (deadline - today).days
-                st.warning(f"طعن {case['نوع_الحكم']} | {case.get('رقم')} لسنة {case.get('سنة')} | فاضل {rem} يوم")
-                if st.button("فتح", key=f"a{case['id']}"): 
-                    st.session_state.selected_case_id = case['id']; st.session_state.page="تعديل قضية"; st.rerun()
-    if not found_appeal: st.success("مفيش طعون قربت")
-
-    if send_btn and email_to and all_notifs:
-        st.success(f"هيتبعت {len(all_notifs)} تنبيه لـ {email_to}")
+    df = pd.DataFrame(data["cases"])
+    if not df.empty:
+        df['تاريخ_جلسة'] = pd.to_datetime(df['تاريخ_جلسة'], errors='coerce').dt.date
+        upcoming = df[(df['تاريخ_جلسة'] >= today) & (df['تاريخ_جلسة'] <= week_later)]
+        verified_emails = [t['email'] for t in tokens_data['tokens'] if t['verified']]
+        st.info(f"عدد المشتركين المفعلين: {len(verified_emails)}")
+        if not upcoming.empty:
+            st.markdown("<div class='table-container'>", unsafe_allow_html=True)
+            table_html = "<table class='case-table'><tr><th>م</th><th>الرقم والسنة</th><th>المحكمة</th><th>تاريخ الجلسة</th><th>السبب</th></tr>"
+            for idx, row in enumerate(upcoming.iterrows(), 1):
+                row = row[1]
+                رقم_كامل = f"{row['رقم']} لسنة {row['سنة']}"
+                محكمة = f"{row['محكمة_اسم']}"
+                table_html += f"<tr class='row1'><td>{idx}</td><td>{رقم_كامل}</td><td>{محكمة}</td><td>{row['تاريخ_جلسة']}</td><td>{row['سبب']}</td></tr>"
+            table_html += "</table></div>"
+            st.markdown(table_html, unsafe_allow_html=True)
+        else:
+            st.info("مفيش جلسات خلال 7 ايام القادمة")
+    else:
+        st.warning("لا توجد قضايا مسجلة")
