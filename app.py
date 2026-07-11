@@ -490,3 +490,68 @@ elif st.session_state.page == "تفاصيل":
 # ================== نهاية الجزء 2: الحصر والتفاصيل ==================
 # ==================================================================
 # ===============================================================
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+
+# ========== اعدادات الايميل ==========
+EMAIL_SENDER = "hammadwaleed97@gmail.com" # حط ايميلك هنا
+EMAIL_PASSWORD = "r v y q q a y j o n w h u o x r" # حط الباسورد بتاع التطبيقات هنا
+
+def send_case_alert_email(to_email, case, نوع_التنبيه):
+    """دالة ارسال الايميل"""
+    try:
+        رقم_كامل = f"{case['رقم']} لسنة {case['سنة']}"
+        subject = f"تنبيه: {نوع_التنبيه} - قضية {رقم_كامل}"
+        
+        body = f"""
+        مرحبا
+        هذا تنبيه بخصوص قضية:
+        الرقم: {رقم_كامل}
+        المحكمة: {case.get('نوع','')} {case.get('محكمة_اسم','')}
+        الموضوع: {case.get('موضوع','')}
+        تاريخ الجلسة: {case.get('تاريخ_جلسة','')}
+        الخصوم: {case.get('مدعي','')} ضد {case.get('مدعي_عليه','')}
+        نوع التنبيه: {نوع_التنبيه}
+        """
+        
+        msg = MIMEMultipart()
+        msg['From'] = EMAIL_SENDER
+        msg['To'] = to_email
+        msg['Subject'] = subject
+        msg.attach(MIMEText(body, 'plain', 'utf-8'))
+
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.starttls()
+        server.login(EMAIL_SENDER, EMAIL_PASSWORD)
+        server.send_message(msg)
+        server.quit()
+        return True
+    except Exception as e:
+        st.error(f"فشل ارسال الايميل: {e}")
+        return False
+
+def send_verification_email(user_email, token):
+    """دالة ارسال رابط التفعيل"""
+    base_url = "https://qpyqapsmkqcvdu4imbfunp.streamlit.app" # ده لينك موقعك
+    verify_link = f"{base_url}?verify_token={token}"
+    
+    subject = "تفعيل الاشتراك في تنبيهات القضايا"
+    body = f"مرحبا\nمن فضلك اضغط على الرابط التالي لتفعيل اشتراكك:\n{verify_link}\nالرابط صالح لمدة 24 ساعة"
+    
+    msg = MIMEMultipart()
+    msg['From'] = EMAIL_SENDER
+    msg['To'] = user_email
+    msg['Subject'] = subject
+    msg.attach(MIMEText(body, 'plain', 'utf-8'))
+
+    try:
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.starttls()
+        server.login(EMAIL_SENDER, EMAIL_PASSWORD)
+        server.send_message(msg)
+        server.quit()
+        return True
+    except Exception as e:
+        st.error(f"فشل ارسال الايميل: {e}")
+        return False
