@@ -397,8 +397,7 @@ elif st.session_state.page == "حصر":
                     
 elif st.session_state.page == "تنبيهات":
     render_notification_center()
-
-  elif st.session_state.page == "بحث":
+elif st.session_state.page == "بحث":
     render_search_section()
 
 elif st.session_state.page == "تفاصيل":
