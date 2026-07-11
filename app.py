@@ -75,6 +75,25 @@ if st.session_state.page == "الرئيسية":
         if st.button("تسجيل القضايا", use_container_width=True): st.session_state.page = "تسجيل"; st.rerun()
     with col2:
         if st.button("الحصر العام", use_container_width=True): st.session_state.page = "حصر"; st.rerun()
+            # زرار مركز التنبيهات - احمر غامق فخم
+st.markdown("""
+<style>
+.red-button button {
+    background-color: #8B0000 !important;
+    color: white !important;
+    border: 2px solid #D4AF37 !important;
+    font-size: 18px !important;
+    font-weight: bold !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
+with col1: # عشان يبقى تحت تسجيل القضايا
+    if st.button("📧 تنبيهات عبر البريد الالكتروني", key="notif_btn", use_container_width=True):
+        st.session_state.page = "التنبيهات"
+
+with col2: # سيبها فاضية او احذفها لو عايز زرار واحد بس
+    st.write("")
 
 elif st.session_state.page == "تسجيل":
     st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
