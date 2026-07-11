@@ -1,5 +1,5 @@
 # ===========================================================
-# ================== إدارة القضايا v5.33 =====================
+# ================== إدارة القضايا v5.34 =====================
 # ========== الإدارة العامة للشئون القانونية البحيرة ==========
 # ============================================================
 import streamlit as st
@@ -13,8 +13,8 @@ DATA_FILE = "cases_data.json"
 UPLOAD_FOLDER = "uploads"
 if not os.path.exists(UPLOAD_FOLDER): os.makedirs(UPLOAD_FOLDER)
 
-# دي قائمة المستندات اللي في المعطيات بتاعتك
-ANWA3_MOSTANDAT = ["صحيفة الدعوى", "صحيفة الاستئناف", "صحيفة الطعن", "مذكرة", "حافظة مستندات", "إنذار", "صورة رسمية", "توكيل", "أخرى"]
+# دي القائمة اللي في الصورة بتاعتك بالظبط
+ANWA3_MOSTANDAT = ["صحيفة الدعوى", "صحيفة الاستئناف", "صحيفة الطعن", "مذكرة دفاع", "حافظة مستندات", "تقرير خبير", "إنذار", "صورة رسمية", "توكيل", "أخرى"]
 
 def load_data():
     if os.path.exists(DATA_FILE):
@@ -136,6 +136,7 @@ elif st.session_state.page == "حصر":
     else:
         for i, case in enumerate(data["cases"]):
             if "id" not in case: case["id"] = i + 1
+            if "مستندات" not in case: case["مستندات"] = [] # عشان القضايا القديمة
         save_data(data)
         sorted_cases = sorted(data["cases"], key=lambda x: x.get("تاريخ_جلسة","9999"))
         total = len(sorted_cases)
@@ -211,4 +212,36 @@ elif st.session_state.page == "تفاصيل":
             if uploaded_file:
                 file_path = os.path.join(UPLOAD_FOLDER, f"{case['id']}_{uploaded_file.name}")
                 with open(file_path, "wb") as f: f.write(uploaded_file.getbuffer())
-                case['مستندات'].append({'نوع': نوع_المستند, 'اسم': uploaded_file.name,
+                case['مستندات'].append({'نوع': نوع_المستند, 'اسم': uploaded_file.name, 'مسار': file_path})
+                save_data(data); st.success("تم رفع المستند"); st.rerun()
+
+    if case['مستندات']:
+        for i, مستند in enumerate(case['مستندات']):
+            if 'مسار' in مستند and os.path.exists(مستند['مسار']): # <-- ده اللي كان عامل الايرور
+                c1, c2, c3 = st.columns([3,2,1])
+                with c1: st.write(f"{i+1}. {مستند['نوع']}")
+                with c2: st.write(مستند['اسم'])
+                with c3:
+                    with open(مستند['مسار'], "rb") as f: st.download_button("تحميل", f, file_name=مستند['اسم'], key=f"dl{i}")
+
+    # ================= 4. جلسة الحكم =================
+    st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
+    st.markdown("<h3 style='color:#FF6B6B'>⚖️ جلسة الحكم</h3>", unsafe_allow_html=True)
+    if 'حكم' not in case:
+        with st.form("judgment_form"):
+            c1, c2 = st.columns(2)
+            تاريخ_حكم = c1.date_input("تاريخ الحكم")
+            مسندة_ل = c2.selectbox("مسندة لـ", ["الصالح", "الضد"])
+            منطوق_الحكم = st.text_area("منطوق الحكم")
+            if st.form_submit_button("حفظ الحكم واغلاق القضية"):
+                case['حكم'] = {'تاريخ': str(تاريخ_حكم), 'المنطوق': منطوق_الحكم, 'مسندة': مسندة_ل}
+                case['حالة'] = 'منتهية'
+                save_data(data); st.success("✅ تم حفظ الحكم"); st.rerun()
+    else:
+        st.success(f"✅ تم الحكم بتاريخ: {case['حكم']['تاريخ']} - مسندة لـ: {case['حكم']['مسندة']}")
+        st.info(f"المنطوق: {case['حكم']['المنطوق']}")
+
+    st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
+    if st.button("🗑️ حذف القضية نهائيا", type="primary"):
+        data["cases"] = [c for c in data["cases"] if c['id']!= case['id']]
+        save_data(data); st.success("تم حذف القضية"); st.session_state.page = "حصر"; st.rerun()
