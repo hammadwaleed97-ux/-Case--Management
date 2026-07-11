@@ -397,6 +397,8 @@ elif st.session_state.page == "حصر":
                     
 elif st.session_state.page == "تنبيهات":
     render_notification_center()
+    elif st.session_state.page == "بحث":
+    render_search_section()
 
 elif st.session_state.page == "تفاصيل":
     case = next((c for c in data["cases"] if c['id'] == st.session_state.selected_case_id), None)
