@@ -315,7 +315,9 @@ elif st.session_state.page == "تفاصيل":
 elif st.session_state.page == "تنبيهات":
     st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
     st.markdown("<h2 style='color:#FFFFFF; text-align:center'>📧 مركز التنبيهات</h2>", unsafe_allow_html=True)
-    if st.button("العودة للرئيسية", use_container_width=True): st.session_state.page = "الرئيسية"; st.rerun()
+    if st.button("العودة للرئيسية", key="back_from_alerts", use_container_width=True): 
+        st.session_state.page = "الرئيسية"; 
+        st.rerun()
 
     st.info("يعرض القضايا التي لها جلسات خلال 7 ايام القادمة فقط")
 
@@ -328,9 +330,12 @@ elif st.session_state.page == "تنبيهات":
         alert_cases = []
         for case in data["cases"]:
             if case.get("تاريخ_جلسة"):
-                session_date = datetime.strptime(case["تاريخ_جلسة"], '%Y-%m-%d')
-                if today <= session_date <= next_7_days:
-                    alert_cases.append(case)
+                try:
+                    session_date = datetime.strptime(case["تاريخ_جلسة"], '%Y-%m-%d')
+                    if today <= session_date <= next_7_days:
+                        alert_cases.append(case)
+                except:
+                    pass
 
         if not alert_cases:
             st.success("✅ لا توجد جلسات خلال ال 7 ايام القادمة")
@@ -353,10 +358,15 @@ elif st.session_state.page == "تنبيهات":
                 elif "الهيئة" in str(case.get('مدعي','')): row_class = "row-hey2a"
                 else: row_class = "row1" if idx % 2 == 1 else "row2"
 
-                # نفس زر الفتح بتاع الحصر بالظبط
-                btn_html = f"<form action='' method='get'><button style='background:#8B0000; color:#FFD700; border:2px solid #FFD700; border-radius:8px; padding:5px 10px; font-weight:800;'>فتح</button><input type='hidden' name='page' value='تفاصيل'><input type='hidden' name='id' value='{case['id']}'></form>"
-
-                st.markdown(f"<tr class='{row_class}'><td>{idx}</td><td>{رقم_كامل}</td><td>{محكمة_كاملة}</td><td>{خصوم}</td><td>{case.get('موضوع','')}</td><td>{case.get('تاريخ_جلسة','')}</td><td>{case.get('سبب','')}</td><td>{case.get('حالة','متداولة')}</td><td>{btn_html}</td></tr>", unsafe_allow_html=True)
+                st.markdown(f"<tr class='{row_class}'><td>{idx}</td><td>{رقم_كامل}</td><td>{محكمة_كاملة}</td><td>{خصوم}</td><td>{case.get('موضوع','')}</td><td>{case.get('تاريخ_جلسة','')}</td><td>{case.get('سبب','')}</td><td>{case.get('حالة','متداولة')}</td><td>", unsafe_allow_html=True)
+                
+                # زر الفتح الجديد اللي بيودي على التفاصيل صح
+                if st.button("فتح", key=f"open_alert_{case['id']}"):
+                    st.session_state.selected_case_id = case['id']
+                    st.session_state.page = "تفاصيل"
+                    st.rerun()
+                
+                st.markdown("</td></tr>", unsafe_allow_html=True)
 
             st.markdown("</table></div>", unsafe_allow_html=True)
 
