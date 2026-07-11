@@ -315,8 +315,7 @@ elif st.session_state.page == "حصر":
             c1, c2, c3 = st.columns([4,1,4])
             with c2:
                 if st.button("فتح", key=f"open_{case['id']}"): st.session_state.selected_case_id = case['id']; st.session_state.page = "تفاصيل"; st.rerun()
-                    elif st.session_state.page == "تفاصيل":
-    case = next((c for c in data["cases"] if c['id'] == st.session_state.selected_case_id), None)
+                    elif st.session_state.page == "تفاصيل":case = next((c for c in data["cases"] if c['id'] == st.session_state.selected_case_id), None)
     if not case: st.error("القضية غير موجودة"); st.session_state.page = "حصر"; st.rerun()
     if 'جلسات' not in case: case['جلسات'] = []
     if 'مستندات' not in case: case['مستندات'] = []
