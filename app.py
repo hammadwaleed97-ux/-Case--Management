@@ -249,7 +249,7 @@ def render_notification_center():
     if not df.empty:
         df['تاريخ_جلسة'] = pd.to_datetime(df['تاريخ_جلسة'], errors='coerce').dt.date
         upcoming = df[(df['تاريخ_جلسة'] >= today) & (df['تاريخ_جلسة'] <= week_later)]
-                verified_emails = [t['email'] for t in tokens_data['tokens'] if t['verified']]
+        verified_emails = [t['email'] for t in tokens_data['tokens'] if t['verified']]
         st.info(f"عدد المشتركين المفعلين: {len(verified_emails)}")
         if not upcoming.empty:
             st.markdown("<div class='table-container'>", unsafe_allow_html=True)
