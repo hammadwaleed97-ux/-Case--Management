@@ -1,4 +1,4 @@
-# ====== إدارة القضايا v5.41 =====================
+# ========= إدارة القضايا v5.42 =====================
 # ========== الإدارة العامة للشئون القانونية البحيرة ==========
 # ============================================================
 import streamlit as st
@@ -10,10 +10,11 @@ import secrets
 from datetime import datetime, timedelta
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+
 # ============= حط بياناتك هنا بالاحمر فقط =============
 SENDER_EMAIL = "hammadwaleed97@gmail.com" # <--- حط ايميل الجيميل بتاعك هنا
 SENDER_PASSWORD = "r v y q q a y j o n w h u o x r" # <--- حط باسورد التطبيق هنا
-APP_URL = "https://qpyqpsmkqcvdou4imbfunp.streamlit.app/" # ده بتاعك
+APP_URL = "https://qpyqapsmkqcvdo4imbfunp.streamlit.app" # <--- ظبطتهولك
 # ==================================================
 
 st.set_page_config(page_title="إدارة القضايا", layout="wide", page_icon="⚖️")
@@ -66,9 +67,10 @@ def send_case_alert_email(recipient_email, case, alert_type):
         server = smtplib.SMTP("smtp.gmail.com", 587); server.starttls()
         server.login(SENDER_EMAIL, SENDER_PASSWORD); server.sendmail(SENDER_EMAIL, recipient_email, msg.as_string()); server.quit()
         return True
-    except: return False
+    except Exception as e: return False
 
 def check_and_send_alerts():
+    if not SENDER_EMAIL or not SENDER_PASSWORD: return # لو فاضيين ميعملش حاجة
     data = load_data(); tokens_data = load_tokens()
     verified_emails = [t['email'] for t in tokens_data['tokens'] if t['verified']]
     if not verified_emails: return
@@ -91,12 +93,11 @@ def verify_token(token):
             if not t["verified"]: t["verified"] = True; save_tokens(tokens_data); return t["email"]
     return None
 
-# شغل التشيك التلقائي اول ما البرنامج يفتح
-check_and_send_alerts()
-
 data = load_data()
 if 'page' not in st.session_state: st.session_state.page = "الرئيسية"
 
+# شغل التشيك التلقائي بعد ما الصفحة تحمل
+check_and_send_alerts()
 # ==================================================================
 # ================== بداية الجزء 1: الدوال والتسجيل ==================
 # ==================================================================
