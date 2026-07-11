@@ -5,8 +5,20 @@ import streamlit as st
 import pandas as pd
 import json
 import os
+import smtplib
+import uuid
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from datetime import datetime, timedelta
 st.set_page_config(page_title="إدارة القضايا", layout="wide", page_icon="⚖️")
+
+# ========= اضبط الايميل بتاعك هنا =========
+SENDER_EMAIL = "حط_ايميلك_هنا@gmail.com"
+SENDER_PASSWORD = "حط_كلمة_السر_التطبيق_هنا"
+SMTP_SERVER = "smtp.gmail.com"
+SMTP_PORT = 587
+APP_URL = "حط_لينك_البرنامج_هنا"
+# ==========================================
 
 DATA_FILE = "cases_data.json"
 UPLOAD_FOLDER = "uploads"
@@ -17,10 +29,35 @@ ANWA3_MOSTANDAT = ["صحيفة دعوى", "صحيفة استئناف", "صحيف
 def load_data():
     if os.path.exists(DATA_FILE):
         with open(DATA_FILE, "r", encoding="utf-8") as f: return json.load(f)
-    return {"cases": []}
+    return {"cases": [], "emails": {}}
 
 def save_data(data):
     with open(DATA_FILE, "w", encoding="utf-8") as f: json.dump(data, f, ensure_ascii=False, indent=4)
+
+def send_activation_email(to_email, token):
+    activation_link = f"{APP_URL}?activate={token}"
+    subject = "تفعيل التنبيهات - إدارة القضايا"
+    body = f"""
+    <h2>مرحبا</h2>
+    <p>لتفعيل تنبيهات الجلسات على هذا الايميل اضغط على الرابط التالي:</p>
+    <a href='{activation_link}' style='background:#C9A961;color:#0F1C2E;padding:10px 20px;text-decoration:none;border-radius:5px;font-weight:bold;'>تفعيل الايميل</a>
+    <p>اذا لم تطلب هذا التجاهل هذه الرسالة</p>
+    """
+    try:
+        msg = MIMEMultipart()
+        msg['From'] = SENDER_EMAIL
+        msg['To'] = to_email
+        msg['Subject'] = subject
+        msg.attach(MIMEText(body, 'html', 'utf-8'))
+        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+        server.starttls()
+        server.login(SENDER_EMAIL, SENDER_PASSWORD)
+        server.sendmail(SENDER_EMAIL, to_email, msg.as_string())
+        server.quit()
+        return True
+    except Exception as e:
+        st.error(f"فشل ارسال الايميل: {e}")
+        return False
 
 def render_notification_center():
     st.markdown("---")
@@ -28,14 +65,31 @@ def render_notification_center():
     if st.button("⬅️ العودة للرئيسية", use_container_width=True):
         st.session_state.page = "الرئيسية"
         st.rerun()
-    
+
+    query_params = st.query_params
+    if "activate" in query_params:
+        token = query_params["activate"]
+        for email, info in data.get("emails", {}).items():
+            if info.get("token") == token:
+                data["emails"][email]["active"] = True
+                save_data(data)
+                st.success(f"✅ تم تفعيل الايميل {email} بنجاح. هتوصلك التنبيهات دلوقتي")
+                st.query_params.clear()
+
     with st.container(border=True):
-        st.markdown("<h3 style='color: #D4AF37;'>تنبيهات عبر البريد الالكتروني</h3>", unsafe_allow_html=True)
-        user_email = st.text_input("البريد الالكتروني", placeholder="example@domain.com", value=st.session_state.get('saved_email',''))
-        if st.button("حفظ الايميل", type="primary"):
-            st.session_state['saved_email'] = user_email
-            st.success("تم حفظ الايميل")
-    
+        st.markdown("<h3 style='color: #D4AF37;'>تفعيل التنبيهات عبر البريد الالكتروني</h3>", unsafe_allow_html=True)
+        user_email = st.text_input("اكتب الايميل", placeholder="example@domain.com")
+        if st.button("ارسال رابط التفعيل", type="primary"):
+            token = str(uuid.uuid4())
+            data["emails"][user_email] = {"token": token, "active": False}
+            save_data(data)
+            if send_activation_email(user_email, token):
+                st.info("تم ارسال رابط التفعيل. افتح الايميل ودوس على الرابط")
+
+    active_emails = [e for e, i in data.get("emails",{}).items() if i.get("active")]
+    if active_emails:
+        st.success(f"الايميلات المفعلة: {', '.join(active_emails)}")
+
     st.markdown("### 📅 الجلسات خلال 7 ايام القادمة")
     today = datetime.now().date()
     week_later = today + timedelta(days=7)
@@ -45,11 +99,60 @@ def render_notification_center():
         upcoming = df[(df['تاريخ_جلسة'] >= today) & (df['تاريخ_جلسة'] <= week_later)]
         if not upcoming.empty:
             for i, row in upcoming.iterrows():
-                st.markdown(f"<div class='card'><b>رقم:</b> {row['رقم']} لسنة {row['سنة']}<br><b>المحكمة:</b> {row['محكمة_اسم']}<br><b>التاريخ:</b> {row['تاريخ_جلسة']}<br><b>السبب:</b> {row['سبب']}</div>", unsafe_allow_html=True)
+                last_session = row['جلسات'][-1] if row.get('جلسات') else {"تاريخ":row['تاريخ_جلسة'], "سبب":row['سبب']}
+                with st.container(border=True):
+                    st.markdown(f"""
+                    <div style='color:white'>
+                    <b>رقم القضية:</b> {row['رقم']} لسنة {row['سنة']}<br>
+                    <b>نوع:</b> {row['نوع']} | <b>المحكمة:</b> {row['محكمة_اسم']} | <b>الدائرة:</b> {row['دائرة']}<br>
+                    <b>المدعي:</b> {row['مدعي']} | <b>المدعي عليه:</b> {row['مدعي_عليه']}<br>
+                    <b>الموضوع:</b> {row['موضوع']}<br>
+                    <b>اخر جلسة:</b> {last_session['تاريخ']} - <b>السبب:</b> {last_session['سبب']}
+                    </div>
+                    """, unsafe_allow_html=True)
+                    if st.button(f"📂 عرض الملف كامل", key=f"view_{i}", use_container_width=True):
+                        st.session_state.selected_case_id = row['id']
+                        st.session_state.page = "عرض_قضية"
+                        st.rerun()
         else:
             st.info("مفيش جلسات خلال 7 ايام القادمة")
     else:
         st.warning("لا توجد قضايا مسجلة")
+
+def render_case_details(case_id):
+    case = next((c for c in data["cases"] if c["id"] == case_id), None)
+    if not case:
+        st.error("القضية غير موجودة")
+        return
+
+    st.markdown("---")
+    st.markdown(f"<h1 style='text-align: center; color: #D4AF37;'>📁 ملف القضية رقم {case['رقم']} لسنة {case['سنة']}</h1>", unsafe_allow_html=True)
+    if st.button("⬅️ العودة للتنبيهات", use_container_width=True):
+        st.session_state.page = "التنبيهات"
+        st.rerun()
+
+    st.markdown("<h3 style='color:#D4B96A'>1- بيانات القضية كاملة</h3>", unsafe_allow_html=True)
+    case_data = {
+        "نوع الدعوى": [case.get("نوع","")], "المحكمة": [case.get("محكمة_اسم","")], "المأمورية": [case.get("مأمورية","")],
+        "الدائرة": [case.get("دائرة","")], "المدعي": [case.get("مدعي","")], "المدعي عليه": [case.get("مدعي_عليه","")],
+        "الموضوع": [case.get("موضوع","")], "الحالة": [case.get("حالة","")], "ملاحظات": [case.get("ملاحظات","")]
+    }
+    st.dataframe(pd.DataFrame(case_data), use_container_width=True, hide_index=True)
+
+    st.markdown("<h3 style='color:#D4B96A'>2- جدول الجلسات</h3>", unsafe_allow_html=True)
+    if case.get("جلسات"):
+        st.dataframe(pd.DataFrame(case["جلسات"]), use_container_width=True, hide_index=True)
+    else: st.info("لا توجد جلسات مسجلة")
+
+    st.markdown("<h3 style='color:#D4B96A'>3- المستندات المرفقة</h3>", unsafe_allow_html=True)
+    if case.get("مستندات"):
+        for doc in case["مستندات"]:
+            col1, col2 = st.columns([3,1])
+            with col1: st.write(f"**{doc['نوع']}**: {doc['اسم']}")
+            with col2:
+                if os.path.exists(doc['مسار']):
+                    with open(doc['مسار'], "rb") as f: st.download_button("تحميل", f, file_name=doc['اسم'], key=f"dl_{doc['اسم']}")
+    else: st.info("لا توجد مستندات مرفقة")
 
 data = load_data()
 today = datetime.now().strftime("%A, %d %B %Y")
@@ -112,14 +215,16 @@ if st.session_state.page == "الرئيسية":
         if st.button("تسجيل القضايا", use_container_width=True): st.session_state.page = "تسجيل"; st.rerun()
     with col2:
         if st.button("الحصر العام", use_container_width=True): st.session_state.page = "حصر"; st.rerun()
-
-    # الزرار الاحمر الجديد
     if st.button("📧 مركز التنبيهات", type="secondary", use_container_width=True):
         st.session_state.page = "التنبيهات"
         st.rerun()
 
 elif st.session_state.page == "التنبيهات":
     render_notification_center()
+
+elif st.session_state.page == "عرض_قضية":
+    render_case_details(st.session_state.selected_case_id)
+
 elif st.session_state.page == "تسجيل":
     st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
     st.markdown("<h2 style='color:#C9A961; text-align:center'>تسجيل القضايا</h2>", unsafe_allow_html=True)
@@ -170,7 +275,6 @@ elif st.session_state.page == "تسجيل":
                 st.success(f"✅ تم حفظ القضية رقم {رقم} لسنة {سنة}")
                 st.session_state.page = "حصر"; st.rerun()
         st.markdown("</div>", unsafe_allow_html=True)
-
 elif st.session_state.page == "حصر":
     st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
     st.markdown("<h2 style='color:#FFFFFF; text-align:center'>📊 الحصر العام الخارجي</h2>", unsafe_allow_html=True)
