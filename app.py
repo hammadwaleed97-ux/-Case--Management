@@ -322,9 +322,29 @@ elif st.session_state.page == "تفاصيل":
 # ==================================================================
 # ==================================================================
 def render_notification_center():
-    st.markdown("---")
-    st.markdown("<h1 style='text-align: center; color: #D4AF37;'>📧 مركز التنبيهات</h1>", unsafe_allow_html=True)
-    if st.button("⬅️ العودة للرئيسية", key="back_final", use_container_width=True):
+    st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
+    st.markdown("<h2 style='color:#FFFFFF; text-align:center'>🔔 مركز التنبيهات</h2>", unsafe_allow_html=True)
+    if st.button("⬅️ العودة للرئيسية", key="back_notif"): 
         st.session_state.page = "الرئيسية"
         st.rerun()
-    st.success("اشتغلنا الحمدلله")
+
+    st.markdown("<h3 style='color:#C9A961'>📅 جلسات ال 7 ايام الجايين</h3>", unsafe_allow_html=True)
+    
+    today = datetime.now()
+    week_later = today + timedelta(days=7)
+    upcoming_cases = []
+    
+    for case in data["cases"]:
+        if case.get('تاريخ_جلسة'):
+            try:
+                session_date = datetime.strptime(case['تاريخ_جلسة'], '%Y-%m-%d')
+                if today <= session_date <= week_later:
+                    upcoming_cases.append(case)
+            except: pass
+
+    if not upcoming_cases:
+        st.success("مفيش جلسات قريبة الحمدلله 🎉")
+    else:
+        for case in upcoming_cases:
+            رقم_كامل = f"{case.get('رقم','')} لسنة {case.get('سنة','')}"
+            st.warning(f"**{رقم_كامل}** \n\n المحكمة: {case.get('محكمة_اسم')} \n\n التاريخ: {case.get('تاريخ_جلسة')}")
