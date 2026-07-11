@@ -212,3 +212,60 @@ elif st.session_state.page == "حصر":
 # ==================================================================
 # ================== نهاية الجزء 2: الحصر العام =====================
 # ==================================================================
+# ==================================================================
+# ================== بداية الجزء 3: مركز التنبيهات ==================
+# ==================================================================
+def render_notification_center():
+    st.markdown("---")
+    st.markdown("<h1 style='text-align: center; color: #D4AF37;'>📧 مركز التنبيهات</h1>", unsafe_allow_html=True)
+    if st.button("⬅️ العودة للرئيسية", use_container_width=True): st.session_state.page = "الرئيسية"; st.rerun()
+    query_params = st.query_params
+    if "verify_token" in query_params:
+        email = verify_token(query_params["verify_token"])
+        if email: st.success(f"✅ تم تفعيل الايميل {email} بنجاح. ستصلك التنبيهات الان"); st.session_state['saved_email'] = email
+        else: st.error("❌ الرابط غير صالح او منتهي")
+        st.query_params.clear()
+
+    st.markdown("<h3 style='color:#FFFFFF; text-align:center'>📊 ادارة التنبيهات</h3>", unsafe_allow_html=True)
+    tokens_data = load_tokens()
+    with st.container(border=True):
+        st.markdown("<div class='card-title'>تسجيل ايميل جديد للتنبيهات</div>", unsafe_allow_html=True)
+        user_email = st.text_input("البريد الالكتروني", placeholder="example@domain.com", value=st.session_state.get('saved_email',''))
+        if st.button("ارسال رابط التفعيل", type="primary", use_container_width=True):
+            if user_email:
+                token = secrets.token_urlsafe(32)
+                expires = datetime.now() + timedelta(days=1)
+                tokens_data["tokens"].append({"email": user_email, "token": token, "expires": expires.strftime("%Y-%m-%d %H:%M:%S"), "verified": False})
+                save_tokens(tokens_data)
+                if send_verification_email(user_email, token): st.success("تم ارسال رابط التفعيل للايميل. من فضلك افتح الايميل وفعل الاشتراك")
+                else: st.error("فشل ارسال الايميل. راجع الايميل والباسورد الاحمر")
+            else: st.warning("من فضلك ادخل الايميل")
+
+    st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
+    st.markdown("### 📅 الجلسات خلال 7 ايام القادمة")
+    today = datetime.now().date()
+    week_later = today + timedelta(days=7)
+    df = pd.DataFrame(data["cases"])
+    if not df.empty:
+        df['تاريخ_جلسة'] = pd.to_datetime(df['تاريخ_جلسة'], errors='coerce').dt.date
+        upcoming = df[(df['تاريخ_جلسة'] >= today) & (df['تاريخ_جلسة'] <= week_later)]
+        verified_emails = [t['email'] for t in tokens_data['tokens'] if t['verified']]
+        st.info(f"عدد المشتركين المفعلين: {len(verified_emails)}")
+        if not upcoming.empty:
+            st.markdown("<div class='table-container'>", unsafe_allow_html=True)
+            table_html = "<table class='case-table'><tr><th>م</th><th>الرقم والسنة</th><th>المحكمة</th><th>تاريخ الجلسة</th><th>السبب</th></tr>"
+            for idx, row in enumerate(upcoming.iterrows(), 1):
+                row = row[1]
+                رقم_كامل = f"{row['رقم']} لسنة {row['سنة']}"
+                محكمة = f"{row['محكمة_اسم']}"
+                table_html += f"<tr class='row1'><td>{idx}</td><td>{رقم_كامل}</td><td>{محكمة}</td><td>{row['تاريخ_جلسة']}</td><td>{row['سبب']}</td></tr>"
+            table_html += "</table></div>"
+            st.markdown(table_html, unsafe_allow_html=True)
+        else: st.info("مفيش جلسات خلال 7 ايام القادمة")
+    else: st.warning("لا توجد قضايا مسجلة")
+
+elif st.session_state.page == "التنبيهات":
+    render_notification_center()
+# ==================================================================
+# ================== نهاية الجزء 3: مركز التنبيهات ==================
+# ==================================================================
