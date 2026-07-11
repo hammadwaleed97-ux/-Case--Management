@@ -1,5 +1,5 @@
 # ==========================================================
-# ================== إدارة القضايا v5.36 =====================
+# ================== إدارة القضايا v5.37 =====================
 # ========== الإدارة العامة للشئون القانونية البحيرة ==========
 # ============================================================
 import streamlit as st
@@ -58,6 +58,14 @@ st.markdown("""
 .row-hey2a {background:#FFE5E5; font-weight:800}
 .row-judgment {background:#FFDCDC; font-weight:800}
     h2, h3, h4, p {color: #FFFFFF!important;}
+div[data-testid="stButton"] > button[kind="secondary"] {
+    background: linear-gradient(135deg, #8B0000, #A52A2A)!important;
+    color: #FFD700!important;
+    border: 3px solid #FFD700!important;
+    font-size: 18px!important;
+    font-weight: 800!important;
+    box-shadow: 0 0 15px #8B0000;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -75,6 +83,11 @@ if st.session_state.page == "الرئيسية":
         if st.button("تسجيل القضايا", use_container_width=True): st.session_state.page = "تسجيل"; st.rerun()
     with col2:
         if st.button("الحصر العام", use_container_width=True): st.session_state.page = "حصر"; st.rerun()
+
+    # الزرار الاحمر الجديد
+    if st.button("📧 مركز التنبيهات", type="secondary", use_container_width=True):
+        st.session_state.page = "التنبيهات"
+        st.rerun()
 
 elif st.session_state.page == "تسجيل":
     st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
@@ -239,9 +252,4 @@ elif st.session_state.page == "تفاصيل":
                 save_data(data); st.success("✅ تم حفظ الحكم"); st.rerun()
     else:
         st.success(f"✅ تم الحكم بتاريخ: {case['حكم']['تاريخ']} - مسندة لـ: {case['حكم']['مسندة']}")
-        st.info(f"المنطوق: {case['حكم']['المنطوق']}")
-
-    st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
-    if st.button("🗑️ حذف القضية نهائيا", type="primary"):
-        data["cases"] = [c for c in data["cases"] if c['id']!= case['id']]
-        save_data(data); st.success("تم حذف القضية"); st.session_state.page = "حصر"; st.rerun()
+        st.info(f"المنطوق: {case['حكم']['المنطوق']}"
