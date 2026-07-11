@@ -245,3 +245,119 @@ elif st.session_state.page == "تفاصيل":
     if st.button("🗑️ حذف القضية نهائيا", type="primary"):
         data["cases"] = [c for c in data["cases"] if c['id']!= case['id']]
         save_data(data); st.success("تم حذف القضية"); st.session_state.page = "حصر"; st.rerun()
+        # ===================== v5.37 مركز التنبيهات عبر البريد الالكتروني =====================
+import streamlit as st
+import pandas as pd
+from datetime import datetime, timedelta
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+
+# دالة ارسال الايميل - حط بياناتك هنا
+def send_email(to_email, subject, html_body):
+    try:
+        from_email = "your_email@gmail.com" # غيره لايميل الهيئة
+        from_password = "your_app_password" # كلمة سر التطبيق من جيميل
+        
+        msg = MIMEMultipart('alternative')
+        msg['From'] = from_email
+        msg['To'] = to_email
+        msg['Subject'] = subject
+        
+        msg.attach(MIMEText(html_body, 'html', 'utf-8'))
+        
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.starttls()
+        server.login(from_email, from_password)
+        server.sendmail(from_email, to_email, msg.as_string())
+        server.quit()
+        return True
+    except Exception as e:
+        st.error(f"خطأ في الارسال: {e}")
+        return False
+
+def render_notification_center():
+    st.markdown("---")
+    st.markdown("<h1 style='text-align: center; color: #D4AF37;'>📧 مركز التنبيهات عبر البريد الالكتروني</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; color: gray;'>متابعة تلقائية لكل الجلسات ومواعيد الطعن</p>", unsafe_allow_html=True)
+
+    # 1. كارد تفعيل الايميل - اول حاجة
+    with st.container(border=True):
+        st.markdown("<h3 style='color: #D4AF37;'>📮 تفعيل استلام التنبيهات</h3>", unsafe_allow_html=True)
+        st.write("ادخل البريد الالكتروني الخاص بك حتى تصلك تنبيهات بالجلسات ومواعيد الطعون تلقائياً")
+        
+        col1, col2, col3 = st.columns([4,1,1])
+        with col1:
+            user_email = st.text_input("البريد الالكتروني", placeholder="example@domain.com", key="notify_email")
+        with col2:
+            if st.button("حفظ الايميل", type="primary", use_container_width=True):
+                st.session_state['saved_email'] = user_email
+                st.success("تم حفظ الايميل بنجاح")
+        with col3:
+            if st.button("ارسال اختبار", use_container_width=True):
+                if 'saved_email' in st.session_state:
+                    test_html = "<h2 style='color:#D4AF37;'>هذا ايميل اختبار من نظام القضايا</h2><p>التنبيهات تعمل بنجاح</p>"
+                    if send_email(st.session_state['saved_email'], "اختبار تنبيهات القضايا", test_html):
+                        st.success("تم الارسال")
+                else:
+                    st.warning("احفظ الايميل اولاً")
+
+    if 'saved_email' not in st.session_state or not st.session_state['saved_email']:
+        st.info("من فضلك ادخل البريد الالكتروني اولاً لتفعيل المركز")
+        return
+
+    # 2. بطاقات الملخص
+    st.markdown("### 📊 الملخص السريع")
+    c1, c2, c3 = st.columns(3)
+    
+    today = datetime.now().date()
+    week_later = today + timedelta(days=7)
+    appeal_limit = today + timedelta(days=15)
+
+    # فلترة الجلسات
+    if 'df' in st.session_state:
+        df_sessions = st.session_state['df'].copy()
+        df_sessions['تاريخ الجلسة'] = pd.to_datetime(df_sessions['تاريخ الجلسة'], errors='coerce').dt.date
+        upcoming_sessions = df_sessions[(df_sessions['تاريخ الجلسة'] >= today) & (df_sessions['تاريخ الجلسة'] <= week_later)]
+        
+        # فلترة الطعون
+        df_sessions['تاريخ الحكم'] = pd.to_datetime(df_sessions['تاريخ الحكم'], errors='coerce').dt.date
+        df_sessions['اخر ميعاد طعن'] = df_sessions['تاريخ الحكم'] + timedelta(days=60)
+        upcoming_appeals = df_sessions[(df_sessions['اخر ميعاد طعن'] >= today) & (df_sessions['اخر ميعاد طعن'] <= appeal_limit)]
+    else:
+        upcoming_sessions = pd.DataFrame()
+        upcoming_appeals = pd.DataFrame()
+
+    with c1:
+        st.metric("عدد الجلسات هذا الاسبوع", len(upcoming_sessions))
+    with c2:
+        st.metric("قضايا قربت تقفل طعن", len(upcoming_appeals))
+    with c3:
+        st.metric("اخر ارسال", "لم يتم بعد")
+
+    # 3. جدول الجلسات
+    st.markdown("### 📅 الجلسات خلال 7 ايام القادمة")
+    if not upcoming_sessions.empty:
+        upcoming_sessions['فاضل كام يوم'] = (upcoming_sessions['تاريخ الجلسة'] - today).dt.days
+        def highlight(s):
+            return ['background-color: #ffcccc' if v <= 2 else '' for v in s]
+        st.dataframe(upcoming_sessions.style.apply(highlight, subset=['فاضل كام يوم']), use_container_width=True)
+    else:
+        st.info("لا توجد جلسات خلال 7 ايام")
+
+    # 4. جدول الطعون
+    st.markdown("### ⚖️ انذارات مواعيد الطعن - باقي 15 يوم")
+    if not upcoming_appeals.empty:
+        upcoming_appeals['فاضل كام يوم'] = (upcoming_appeals['اخر ميعاد طعن'] - today).dt.days
+        def highlight_appeal(s):
+            return ['background-color: #ffcccc' if v <= 3 else 'background-color: #fff3cd' if v <= 15 else '' for v in s]
+        st.dataframe(upcoming_appeals.style.apply(highlight_appeal, subset=['فاضل كام يوم']), use_container_width=True)
+    else:
+        st.info("لا توجد مواعيد طعن قريبة")
+
+    # 5. زرار تصدير
+    if st.button("📄 تصدير التنبيهات PDF"):
+        st.info("سيتم اضافة تصدير PDF في التحديث القادم")
+
+# عشان تشغله حط ده في الاخر خالص
+# render_notification_center()
