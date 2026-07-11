@@ -1,4 +1,4 @@
-# ============== إدارة القضايا v5.38 =====================
+#============== إدارة القضايا v5.38 =====================
 # ========== الإدارة العامة للشئون القانونية البحيرة ==========
 # ============================================================
 import streamlit as st
@@ -18,6 +18,42 @@ UPLOAD_FOLDER = "uploads"
 TOKENS_FILE = "tokens.json"
 if not os.path.exists(UPLOAD_FOLDER): os.makedirs(UPLOAD_FOLDER)
 
+# ============= دوال مساعدة =============
+
+def load_data():
+    if os.path.exists(DATA_FILE):
+        with open(DATA_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return {"cases": []}
+
+def save_data(data):
+    with open(DATA_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=4)
+
+def render_notification_center():
+    st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
+    st.markdown("<h2 style='color:#FFFFFF; text-align:center'>🔔 مركز التنبيهات</h2>", unsafe_allow_html=True)
+    if st.button("⬅️ العودة للرئيسية", key="back_notif", use_container_width=True): 
+        st.session_state.page = "الرئيسية"
+        st.rerun()
+
+    st.markdown("<h3 style='color:#C9A961'>📅 جلسات ال 7 ايام الجايين</h3>", unsafe_allow_html=True)
+    
+    data = load_data()
+    today = datetime.now()
+    week_later = today + timedelta(days=7)
+    upcoming_cases = []
+    
+    for case in data["cases"]:
+        if case.get('تاريخ_جلسة'):
+            try:
+                session_date = datetime.strptime(case['تاريخ_جلسة'], '%Y-%m-%d')
+                if today <= session_date <= week_later:
+                    upcoming_cases.append(case)
+            except: pass
+
+    if not upcoming_cases:
+        st.success("مفيش جلسات قريبة الحمد
 # ============= حط بياناتك هنا بالاحمر فقط =============
 SENDER_EMAIL = "hammadwaleed97@gmail.com" # <--- حط ايميل الجيميل بتاعك هنا
 SENDER_PASSWORD = "r v y q q a y j o n w h u o x r" # <--- حط باسورد التطبيق هنا
