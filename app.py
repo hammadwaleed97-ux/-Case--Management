@@ -364,14 +364,29 @@ today = datetime.now().strftime("%A, %d %B %Y")
 # ================== بداية الجزء 1: الرئيسية والتسجيل ==================
 # ==================================================================
 if st.session_state.page == "الرئيسية":
-    st.markdown("<h2 style='color:#C9A961; text-align:center'>الأقسام</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='color:#D4AF37; text-align:center'>الأقسام</h2>", unsafe_allow_html=True)
+    
     col1, col2 = st.columns(2)
     with col1:
-        if st.button("تسجيل القضايا", use_container_width=True): st.session_state.page = "تسجيل"; st.rerun()
+        st.markdown('<div class="btn-add">', unsafe_allow_html=True)
+        if st.button("➕ تسجيل القضايا", use_container_width=True): 
+            st.session_state.page = "تسجيل"; st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
     with col2:
-        if st.button("الحصر العام", use_container_width=True): st.session_state.page = "حصر"; st.rerun()
-    if st.button("📧 مركز التنبيهات", type="secondary", use_container_width=True): st.session_state.page = "تنبيهات"; st.rerun()
-    if st.button("🔍 البحث عن دعوى", type="secondary", use_container_width=True): st.session_state.page = "بحث"; st.rerun()
+        st.markdown('<div class="btn-list">', unsafe_allow_html=True)
+        if st.button("📋 الحصر العام", use_container_width=True): 
+            st.session_state.page = "حصر"; st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    st.markdown('<div class="btn-search">', unsafe_allow_html=True)
+    if st.button("🔍 البحث عن دعوى", use_container_width=True): 
+        st.session_state.page = "بحث"; st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    st.markdown('<div class="btn-alert">', unsafe_allow_html=True)
+    if st.button("🔴 مركز التنبيهات", use_container_width=True): 
+        st.session_state.page = "تنبيهات"; st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
 
 elif st.session_state.page == "تسجيل":
     st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
