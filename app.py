@@ -1,4 +1,5 @@
-#==== إدارة القضايا v5.39 ====================
+
+# == إدارة القضايا v5.39 ====================
 # ========== الإدارة العامة للشئون القانونية البحيرة ==========
 # ============================================================
 import streamlit as st
@@ -12,6 +13,103 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
 st.set_page_config(page_title="إدارة القضايا", layout="wide", page_icon="⚖️")
+
+# ============= التصميم الدهبي الكحلي + الوان الايقونات =============
+st.markdown("""
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap');
+    
+    html, body, [class*="st-"] {
+        font-family: 'Cairo', sans-serif;
+        direction: rtl;
+    }
+    
+    .stApp {
+        background: linear-gradient(180deg, #0A1428 0%, #1E2A47 100%);
+    }
+    
+    h1, h2, h3 {
+        color: #C9A961 !important;
+        text-align: center;
+        font-weight: 900;
+    }
+    
+    .stButton>button {
+        background: linear-gradient(145deg, #C9A961 0%, #FFD700 100%);
+        color: #0A1428;
+        border: none;
+        border-radius: 12px;
+        font-weight: 700;
+        padding: 12px 20px;
+        width: 100%;
+        font-size: 16px;
+    }
+    .stButton>button:hover {
+        background: linear-gradient(145deg, #FFD700 0%, #C9A961 100%);
+        transform: scale(1.02);
+    }
+    
+    .danger-button>button {
+        background: linear-gradient(145deg, #FF5252 0%, #D32F2F 100%) !important;
+        color: #FFFFFF !important;
+        animation: pulse 1.5s infinite;
+        border: 2px solid #FF5252 !important;
+    }
+    
+    @keyframes pulse {
+     0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 82, 82, 0.7); }
+      50% { transform: scale(1.03); box-shadow: 0 0 0 10px rgba(255, 82, 82, 0); }
+      100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 82, 82, 0); }
+    }
+    
+    .icon-add { color: #4DA8DA; font-size: 24px; }
+    .icon-list { color: #4CAF50; font-size: 24px; }
+    .icon-search { color: #9C27B0; font-size: 24px; }
+    .icon-alert { color: #FF5252; font-size: 24px; }
+    
+    .stTextInput>div>div>input, .stTextArea>div>div>textarea, .stSelectbox>div>div>select {
+        background-color: #1E2A47;
+        color: #FFFFFF;
+        border: 2px solid #C9A961;
+        border-radius: 10px;
+    }
+    
+    .table-container {
+        background: #0A1428;
+        border: 2px solid #C9A961;
+        border-radius: 15px;
+        padding: 10px;
+        margin: 10px 0;
+    }
+    
+    .case-table {
+        width: 100%;
+        border-collapse: collapse;
+        color: #FFFFFF;
+    }
+    .case-table th {
+        background: #C9A961;
+        color: #0A1428;
+        padding: 12px;
+        font-weight: 900;
+    }
+    .case-table td {
+        padding: 10px;
+        border-bottom: 1px solid #2C5282;
+    }
+    .row1 { background-color: #142038; }
+    .row2 { background-color: #1E2A47; }
+    .row-judgment { background-color: #3D1F1F; }
+    .row-hey2a { background-color: #1F3D2F; }
+    
+    .section-divider {
+        height: 3px;
+        background: linear-gradient(90deg, transparent, #C9A961, transparent);
+        margin: 20px 0;
+    }
+</style>
+""", unsafe_allow_html=True)
+# ====================================================================
 
 DATA_FILE = "cases_data.json"
 UPLOAD_FOLDER = "uploads"
@@ -36,7 +134,6 @@ def load_data():
 def save_data(data):
     with open(DATA_FILE, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=4)
-
 # ============ دوال التنبيهات ============
 def render_notification_center():
     st.markdown("<h2 style='color:#C9A961; text-align:center'>مركز التنبيهات</h2>", unsafe_allow_html=True)
