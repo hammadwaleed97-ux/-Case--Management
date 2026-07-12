@@ -1,4 +1,4 @@
-# ==== إدارة القضايا v5.39 ====================
+# == إدارة القضايا v5.39 ====================
 # ========== الإدارة العامة للشئون القانونية البحيرة ==========
 # ============================================================
 import streamlit as st
@@ -13,10 +13,96 @@ from email.mime.multipart import MIMEMultipart
 
 st.set_page_config(page_title="إدارة القضايا", layout="wide", page_icon="⚖️")
 
+# ============= التصميم القديم + الشريط المتحرك =============
+st.markdown("""
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap');
+    
+    html, body, [class*="st-"] {
+        font-family: 'Cairo', sans-serif;
+        direction: rtl;
+    }
+    
+    /* الشريط اللي بيجري فوق */
+    .marquee {
+        background: linear-gradient(90deg, #D4AF37 0%, #FFD700 0%, #D4AF37 100%);
+        color: #0B1120;
+        padding: 12px;
+        font-weight: 900;
+        font-size: 18px;
+        text-align: center;
+        border-radius: 0 0 15px 15px;
+        margin-bottom: 15px;
+        box-shadow: 0 4px 10px rgba(212, 175, 55, 0.4);
+    }
+    
+    .stApp {
+        background: linear-gradient(180deg, #0B1120 0%, #1A2342 100%);
+    }
+    
+    h1, h2, h3 {
+        color: #D4AF37 !important;
+        text-align: center;
+        font-weight: 900;
+        font-size: 32px;
+    }
+    
+    /* الوان الازرار */
+    .btn-add>button { background: linear-gradient(180deg, #4DA8DA 0%, #1E4A73 100%) !important; color: #FFFFFF !important; }
+    .btn-list>button { background: linear-gradient(180deg, #4CAF50 0%, #2E7D32 100%) !important; color: #FFFFFF !important; }
+    .btn-search>button { background: linear-gradient(180deg, #9C27B0 0%, #6A1B9A 100%) !important; color: #FFFFFF !important; }
+    .btn-alert>button { background: linear-gradient(180deg, #FF5252 0%, #B71C1C 100%) !important; color: #FFFFFF !important; animation: pulse 1.5s infinite; }
+    
+    .stButton>button {
+        border: none;
+        border-radius: 15px;
+        font-weight: 700;
+        font-size: 18px;
+        padding: 16px;
+        width: 100%;
+        margin: 10px 0;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    }
+    .stButton>button:hover {
+        transform: translateY(-3px);
+    }
+    
+    @keyframes pulse {
+     0% { box-shadow: 0 0 0 0 rgba(255, 82, 82, 0.7); }
+      50% { box-shadow: 0 0 0 10px rgba(255, 82, 82, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(255, 82, 82, 0); }
+    }
+    
+    .stTextInput>div>div>input, .stTextArea>div>div>textarea, .stSelectbox>div>div>select {
+        background-color: #1A2342;
+        color: #FFFFFF;
+        border: 2px solid #D4AF37;
+        border-radius: 12px;
+        padding: 12px;
+        text-align: right;
+    }
+    .stTextInput>div>label {
+        color: #D4AF37;
+        font-weight: 700;
+    }
+</style>
+""", unsafe_allow_html=True)
+# ===========================================================
+
+# الشريط العلوي
+st.markdown('<div class="marquee">مع تحيات وليد حماد - الإدارة العامة للشئون القانونية بديوان عام منطقة البحيرة بالهيئة القومية للتأمين الاجتماعي</div>', unsafe_allow_html=True)
+
 DATA_FILE = "cases_data.json"
 UPLOAD_FOLDER = "uploads"
 TOKENS_FILE = "tokens.json"
 if not os.path.exists(UPLOAD_FOLDER): os.makedirs(UPLOAD_FOLDER)
+
+# ============= لازم نعرف الـ session_state هنا =============
+if 'page' not in st.session_state: 
+    st.session_state.page = "الرئيسية"
+if 'selected_case_id' not in st.session_state: 
+    st.session_state.selected_case_id = None
+# ===========================================================
 
 # ============= دوال مساعدة =============
 
@@ -29,7 +115,6 @@ def load_data():
 def save_data(data):
     with open(DATA_FILE, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=4)
-
 # ============================================
 # ============ دوال التنبيهات ============
 def render_notification_center():
