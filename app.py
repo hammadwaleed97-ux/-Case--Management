@@ -385,12 +385,17 @@ today = datetime.now().strftime("%A, %d %B %Y")
 if st.session_state.page == "الرئيسية":
     st.markdown("<h2 style='color:#D4AF37; text-align:center'>الأقسام</h2>", unsafe_allow_html=True)
     
-    col1, col2 = st.columns(2)
-    with col1:
-        st.markdown('<div class="btn-add">', unsafe_allow_html=True)
-        if st.button("➕ تسجيل القضايا", use_container_width=True): 
-            st.session_state.page = "تسجيل"; st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
+    if st.button("➕ تسجيل القضايا", use_container_width=True): 
+        st.session_state.page = "تسجيل"; st.rerun()
+    
+    if st.button("📋 الحصر العام", use_container_width=True): 
+        st.session_state.page = "حصر"; st.rerun()
+    
+    if st.button("🔍 البحث عن دعوى", use_container_width=True): 
+        st.session_state.page = "بحث"; st.rerun()
+    
+    if st.button("🔴 مركز التنبيهات", use_container_width=True): 
+        st.session_state.page = "تنبيهات"; st.rerun()
     with col2:
         st.markdown('<div class="btn-list">', unsafe_allow_html=True)
         if st.button("📋 الحصر العام", use_container_width=True): 
