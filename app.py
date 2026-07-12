@@ -193,7 +193,7 @@ SENDER_EMAIL = "hammadwaleed97@gmail.com" # <--- حط ايميل الجيميل 
 SENDER_PASSWORD = "r v y q q a y j o n w h u o x r" # <--- حط باسورد التطبيق هنا
 APP_URL = "https://qpyqpsmkqcvdou4imbfunp.streamlit.app/" # ده بتاعك
 # ==================================================
-# ==================================================================
+# ===============================================================
 # ================== بداية الجزء 1: الدوال والتسجيل ==================
 # ==================================================================
 ANWA3_MOSTANDAT = ["صحيفة دعوى", "صحيفة استئناف", "صحيفة طعن", "مذكرة دفاع", "حافظة مستندات", "تقرير خبير", "تقرير طب شرعى", "تقرير لجنة طبية", "صحيفة تجديد من الشطب", "صحيفة تعجيل من الوقف", "صورة حكم تمهيدى", "أخرى"]
@@ -245,47 +245,28 @@ def verify_token(token):
                 return t["email"]
     return None
 
+# ====== دي الدالة الجديدة - حطيناها هنا ======
+def render_search_section():
+    st.markdown("<h2 style='color:#C9A961; text-align:center'>البحث عن دعوى</h2>", unsafe_allow_html=True)
+
+    col1, col2, col3 = st.columns(3)
+    with col1: 
+        اسم_المدعى = st.text_input("اسم المدعى")
+    with col2: 
+        رقم_القضية = st.text_input("رقم القضية")
+    with col3: 
+        سنة_القضية = st.text_input("سنة القضية")
+
+    if st.button("اضغط للبحث", type="primary"):
+        st.info("جاري البحث... لسه هنربطها بالداتا")
+        
+    if st.button("رجوع", key="back_search"):
+        st.session_state.page = "الرئيسية"
+        st.rerun()
+# ===============================================
+
 data = load_data()
 today = datetime.now().strftime("%A, %d %B %Y")
-
-st.markdown("""
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap');
-html, body {font-family: 'Cairo', sans-serif; direction: rtl;}
-.stApp {background: linear-gradient(180deg, #0F1C2E 0%, #1A2F4F 100%);}
-.marquee-container {background: linear-gradient(90deg, #C9A961, #D4B96A); padding: 10px; border-radius: 8px; margin-bottom: 15px;}
-.marquee-text {color: #0F1C2E; font-weight: 800; font-size: 14px; white-space: nowrap; display: inline-block; animation: scroll-rtl 18s linear infinite;}
-@keyframes scroll-rtl {0% {transform: translateX(-100%);} 100% {transform: translateX(100%);}}
-.header-calm {background: linear-gradient(135deg, #1A2F4F, #2C4A73); padding: 18px; border-radius: 12px; text-align: center; border: 2px solid #C9A961; margin-bottom: 20px;}
-.header-calm h1 {color: #D4B96A; font-size: 30px; font-weight: 800; margin: 0;}
-.header-calm p {color: #E8E8E8; font-size: 13px; font-weight: 600; margin: 6px 0 0 0;}
-.section-divider {height: 4px; background: linear-gradient(90deg, transparent, #C9A961, transparent); margin: 15px 0;}
-label,.stTextInput label,.stSelectbox label,.stTextArea label,.stDateInput label {color: #D4B96A!important; font-weight: 700!important; font-size: 15px!important; text-align: right;}
-input, textarea, select {color: #0F1C2E!important; font-weight: 600; background-color: #FFFFFF!important;}
-div[data-testid="stButton"] > button {background: linear-gradient(135deg, #2C4A73, #3A5F8A)!important; color: #E8E8E8!important; width: 100%; border-radius: 12px; border: 2px solid #C9A961; font-weight: 700; font-size: 15px; height: 90px;}
-.btn-back button {height: 55px!important;}
-.btn-save button {background: linear-gradient(135deg, #C9A961, #D4B96A)!important; color: #0F1C2E!important; height: 50px!important; font-weight:800!important}
-.card {background: rgba(26,47,79,0.85); padding: 18px; border-radius: 12px; border: 2px solid #C9A961; margin-bottom: 18px;}
-.card-title {color: #D4B96A; font-weight: 800; font-size: 18px; margin-bottom: 15px; border-bottom: 2px solid #C9A961; padding-bottom: 10px; text-align: right;}
-.table-container {overflow-x: auto; border: 3px solid #C9A961; border-radius: 10px; background: white; margin-bottom:15px}
-.case-table {width: 100%; border-collapse: collapse; background: #FFFFFF; color: #0F1C2E; font-size: 14px;}
-.case-table th {background: linear-gradient(90deg, #D4B96A, #C9A961); color: #0F1C2E; padding: 12px 8px; text-align: center; font-weight: 800;}
-.case-table td {padding: 10px 8px; text-align: center; border: 1px solid #DDD; font-weight: 600;}
-.row1 {background:#F9F9F9}.row2 {background:#FFFFFF}.row-hey2a {background:#FFE5E5; font-weight:800}.row-judgment {background:#FFDCDC; font-weight:800}
-h2, h3, h4, p {color: #FFFFFF!important;}
-div[data-testid="stButton"] > button[kind="secondary"] {background: linear-gradient(135deg, #8B0000, #A52A2A)!important; color: #FFD700!important; border: 3px solid #FFD700!important; font-size: 18px!important; font-weight: 800!important; box-shadow: 0 0 15px #8B0000;}
-</style>
-""", unsafe_allow_html=True)
-
-if 'page' not in st.session_state: st.session_state.page = "الرئيسية"
-if 'selected_case_id' not in st.session_state: st.session_state.selected_case_id = None
-
-st.markdown("<div class='marquee-container'><div class='marquee-text'>مع تحيات / وليد حماد - الإدارة العامة للشئون القانونية - ديوان عام منطقة البحيرة - الهيئة القومية للتأمين الاجتماعى</div></div>", unsafe_allow_html=True)
-st.markdown(f"<div class='header-calm'><div style='font-size:40px'>⚖️</div><h1>إدارة القضايا</h1><p>📅 {today}</p></div>", unsafe_allow_html=True)
-st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
-
-# ==================================================================
-# ===================================
 # ==================================================================
 # ================== بداية الجزء 1: الرئيسية والتسجيل ==================
 # ==================================================================
@@ -492,17 +473,3 @@ elif st.session_state.page == "تفاصيل":
 # ==================================================================
 # ================== نهاية الجزء 2: الحصر والتفاصيل ==================
 # ==================================================================
-# ========== بداية قسم البحث عن دعوى ==========
-def render_search_section():
-    st.markdown("<h2 style='color:#C9A961; text-align:center'>البحث عن دعوى</h2>", unsafe_allow_html=True)
-    
-    col1, col2, col3 = st.columns(3)
-    with col1: اسم_المدعى = st.text_input("اسم المدعى")
-    with col2: رقم_القضية = st.text_input("رقم القضية")
-    with col3: سنة_القضية = st.text_input("سنة القضية")
-    
-    if st.button("اضغط للبحث", type="primary", use_container_width=True):
-        st.info("لسه هنربط الدالة دي بالداتا بتاعتك")
-        
-# ========== نهاية قسم البحث عن دعوى ==========
-# ===============================================================
