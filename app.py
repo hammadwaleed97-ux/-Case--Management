@@ -1,4 +1,4 @@
-# ===== إدارة القضايا v5.39 ====================
+==== إدارة القضايا v5.39 ====================
 # ========== الإدارة العامة للشئون القانونية البحيرة ==========
 # ============================================================
 import streamlit as st
@@ -18,6 +18,13 @@ UPLOAD_FOLDER = "uploads"
 TOKENS_FILE = "tokens.json"
 if not os.path.exists(UPLOAD_FOLDER): os.makedirs(UPLOAD_FOLDER)
 
+# ============= لازم نعرف الـ session_state هنا =============
+if 'page' not in st.session_state: 
+    st.session_state.page = "الرئيسية"
+if 'selected_case_id' not in st.session_state: 
+    st.session_state.selected_case_id = None
+# ===========================================================
+
 # ============= دوال مساعدة =============
 
 def load_data():
@@ -30,6 +37,13 @@ def save_data(data):
     with open(DATA_FILE, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=4)
 
+# ============ دوال التنبيهات ============
+def render_notification_center():
+    st.markdown("<h2 style='color:#C9A961; text-align:center'>مركز التنبيهات</h2>", unsafe_allow_html=True)
+    st.info("لسه هتتربط بالداتا")
+    if st.button("رجوع"):
+        st.session_state.page = "الرئيسية"
+        st.rerun()
 # ============ دوال التنبيهات ============
 def render_notification_center():
     st.markdown("---")
