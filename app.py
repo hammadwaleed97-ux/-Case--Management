@@ -398,11 +398,6 @@ if st.session_state.page == "الرئيسية":
     if st.button("🔍 البحث عن دعوى", use_container_width=True): 
         st.session_state.page = "بحث"; st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
-    
-    st.markdown('<div class="btn-alert">', unsafe_allow_html=True)
-    if st.button("🔴 مركز التنبيهات", use_container_width=True): 
-        st.session_state.page = "تنبيهات"; st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
 
 elif st.session_state.page == "تسجيل":
     st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
