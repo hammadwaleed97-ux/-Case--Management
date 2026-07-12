@@ -1,4 +1,3 @@
-
 # == إدارة القضايا v5.39 ====================
 # ========== الإدارة العامة للشئون القانونية البحيرة ==========
 # ============================================================
@@ -14,7 +13,7 @@ from email.mime.multipart import MIMEMultipart
 
 st.set_page_config(page_title="إدارة القضايا", layout="wide", page_icon="⚖️")
 
-# ============= التصميم الدهبي الكحلي + الوان الايقونات =============
+# ============= التصميم القديم + الشريط =============
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap');
@@ -24,92 +23,81 @@ st.markdown("""
         direction: rtl;
     }
     
+    /* الشريط العلوي */
+    .header-bar {
+        background: linear-gradient(90deg, #D4AF37 0%, #FFD700 100%);
+        color: #0B1120;
+        text-align: center;
+        padding: 10px;
+        font-weight: 900;
+        font-size: 16px;
+        border-radius: 0 0 15px 15px;
+        margin-bottom: 20px;
+    }
+    
     .stApp {
-        background: linear-gradient(180deg, #0A1428 0%, #1E2A47 100%);
+        background-color: #0B1120;
     }
     
     h1, h2, h3 {
-        color: #C9A961 !important;
+        color: #D4AF37 !important;
         text-align: center;
         font-weight: 900;
+        font-size: 32px;
+        padding: 10px 0;
     }
+    
+    /* الازرار الملونة */
+    .btn-add>button { background: linear-gradient(180deg, #4DA8DA 0%, #2C5282 100%); color: #FFFFFF; }
+    .btn-list>button { background: linear-gradient(180deg, #4CAF50 0%, #2E7D32 100%); color: #FFFFFF; }
+    .btn-search>button { background: linear-gradient(180deg, #9C27B0 0%, #6A1B9A 100%); color: #FFFFFF; }
+    .btn-alert>button { background: linear-gradient(180deg, #FF5252 0%, #D32F2F 100%); color: #FFFFFF; animation: pulse 1.5s infinite; }
     
     .stButton>button {
-        background: linear-gradient(145deg, #C9A961 0%, #FFD700 100%);
-        color: #0A1428;
         border: none;
-        border-radius: 12px;
+        border-radius: 15px;
         font-weight: 700;
-        padding: 12px 20px;
+        font-size: 18px;
+        padding: 15px;
         width: 100%;
-        font-size: 16px;
+        margin: 8px 0;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.3);
     }
     .stButton>button:hover {
-        background: linear-gradient(145deg, #FFD700 0%, #C9A961 100%);
-        transform: scale(1.02);
-    }
-    
-    .danger-button>button {
-        background: linear-gradient(145deg, #FF5252 0%, #D32F2F 100%) !important;
-        color: #FFFFFF !important;
-        animation: pulse 1.5s infinite;
-        border: 2px solid #FF5252 !important;
+        transform: translateY(-2px);
     }
     
     @keyframes pulse {
-     0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 82, 82, 0.7); }
-      50% { transform: scale(1.03); box-shadow: 0 0 0 10px rgba(255, 82, 82, 0); }
-      100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 82, 82, 0); }
+     0% { transform: scale(1); }
+      50% { transform: scale(1.03); }
+      100% { transform: scale(1); }
     }
     
-    .icon-add { color: #4DA8DA; font-size: 24px; }
-    .icon-list { color: #4CAF50; font-size: 24px; }
-    .icon-search { color: #9C27B0; font-size: 24px; }
-    .icon-alert { color: #FF5252; font-size: 24px; }
-    
-    .stTextInput>div>div>input, .stTextArea>div>div>textarea, .stSelectbox>div>div>select {
-        background-color: #1E2A47;
+    .stTextInput>div>div>input {
+        background-color: #1A2342;
         color: #FFFFFF;
-        border: 2px solid #C9A961;
-        border-radius: 10px;
-    }
-    
-    .table-container {
-        background: #0A1428;
-        border: 2px solid #C9A961;
-        border-radius: 15px;
-        padding: 10px;
-        margin: 10px 0;
-    }
-    
-    .case-table {
-        width: 100%;
-        border-collapse: collapse;
-        color: #FFFFFF;
-    }
-    .case-table th {
-        background: #C9A961;
-        color: #0A1428;
+        border: 2px solid #D4AF37;
+        border-radius: 12px;
         padding: 12px;
-        font-weight: 900;
+        text-align: right;
     }
-    .case-table td {
-        padding: 10px;
-        border-bottom: 1px solid #2C5282;
+    .stTextInput>div>label {
+        color: #D4AF37;
+        font-weight: 700;
     }
-    .row1 { background-color: #142038; }
-    .row2 { background-color: #1E2A47; }
-    .row-judgment { background-color: #3D1F1F; }
-    .row-hey2a { background-color: #1F3D2F; }
     
-    .section-divider {
-        height: 3px;
-        background: linear-gradient(90deg, transparent, #C9A961, transparent);
-        margin: 20px 0;
+    .stAlert {
+        background-color: #1A2342;
+        border: 1px solid #D4AF37;
+        border-radius: 10px;
+        color: #4DA8DA;
     }
 </style>
 """, unsafe_allow_html=True)
-# ====================================================================
+# ================================================
+
+# الشريط العلوي
+st.markdown('<div class="header-bar">مع تحيات وليد حماد</div>', unsafe_allow_html=True)
 
 DATA_FILE = "cases_data.json"
 UPLOAD_FOLDER = "uploads"
@@ -134,6 +122,31 @@ def load_data():
 def save_data(data):
     with open(DATA_FILE, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=4)
+
+# ============= صفحة البحث مفعلة =============
+def render_search_section():
+    st.title("البحث عن دعوى")
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        plaintiff = st.text_input("اسم المدعى")
+        case_num = st.text_input("رقم القضية")
+    with col2:
+        case_year = st.text_input("سنة القضية")
+    
+    if st.button("اضغط للبحث"):
+        data = load_data()
+        results = [c for c in data['cases'] if plaintiff in c.get('plaintiff','') or case_num in c.get('case_number','')]
+        if results:
+            st.success(f"تم العثور على {len(results)} نتيجة")
+            st.dataframe(pd.DataFrame(results))
+        else:
+            st.warning("لا توجد نتائج")
+    
+    if st.button("رجوع"):
+        st.session_state.page = "الرئيسية"
+        st.rerun()
+# ============================================
 # ============ دوال التنبيهات ============
 def render_notification_center():
     st.markdown("<h2 style='color:#C9A961; text-align:center'>مركز التنبيهات</h2>", unsafe_allow_html=True)
