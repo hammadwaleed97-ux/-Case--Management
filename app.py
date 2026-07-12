@@ -369,19 +369,31 @@ today = datetime.now().strftime("%A, %d %B %Y")
 # ================== بداية الجزء 1: الرئيسية والتسجيل ==================
 # ==================================================================
 if st.session_state.page == "الرئيسية":
-    st.markdown("<h2 style='color:#D4AF37; text-align:center'>الأقسام</h2>", unsafe_allow_html=True)
+    st.markdown("<h2>الأقسام</h2>", unsafe_allow_html=True)
     
+    # 1. تسجيل = ازرق
     if st.button("➕ تسجيل القضايا", use_container_width=True): 
         st.session_state.page = "تسجيل"; st.rerun()
     
+    # 2. حصر = اخضر  
     if st.button("📋 الحصر العام", use_container_width=True): 
         st.session_state.page = "حصر"; st.rerun()
     
-    if st.button("🔍 البحث عن دعوى", use_container_width=True): 
-        st.session_state.page = "بحث"; st.rerun()
-    
+    # 3. تنبيهات = احمر وبينور
     if st.button("🔴 مركز التنبيهات", use_container_width=True): 
         st.session_state.page = "تنبيهات"; st.rerun()
+    
+    # 4. تقارير = برتقاني
+    if st.button("📊 التقارير", use_container_width=True): 
+        st.session_state.page = "تقارير"; st.rerun()
+    
+    # 5. المكتبة = كحلي
+    if st.button("📚 المكتبة القانونية", use_container_width=True): 
+        st.session_state.page = "مكتبة"; st.rerun()
+    
+    # 6. ارشيف = رمادي
+    if st.button("🗃️ الارشيف", use_container_width=True): 
+        st.session_state.page = "ارشيف"; st.rerun()
     with col2:
         st.markdown('<div class="btn-list">', unsafe_allow_html=True)
         if st.button("📋 الحصر العام", use_container_width=True): 
