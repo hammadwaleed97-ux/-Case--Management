@@ -13,7 +13,7 @@ from email.mime.multipart import MIMEMultipart
 
 st.set_page_config(page_title="إدارة القضايا", layout="wide", page_icon="⚖️")
 
-# ============= التصميم المصلح =============
+# ============= التصميم المصلح 100% =============
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap');
@@ -23,11 +23,9 @@ st.markdown("""
         direction: rtl;
     }
     
-    .stApp {
-        background: linear-gradient(180deg, #0A1428 0%, #1E2A47 100%);
-    }
+    .stApp { background: linear-gradient(180deg, #0A1428 0%, #1E2A47 100%); }
     
-    /* الشريط المتحرك */
+    /* الشريط المتحرك مصلح - يمشي من الشمال لليمين */
     .marquee {
         background: linear-gradient(90deg, #D4AF37 0%, #FFD700 50%, #D4AF37 100%);
         color: #0A1428;
@@ -40,54 +38,39 @@ st.markdown("""
     }
     .marquee span {
         display: inline-block;
-        padding-left: 100%;
         animation: marquee 15s linear infinite;
     }
     @keyframes marquee {
-        0% { transform: translateX(0); }
-        100% { transform: translateX(-100%); }
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(100%); }
     }
     
-    .main-title {
-        color: #D4AF37;
-        text-align: center;
-        font-size: 36px;
-        font-weight: 900;
-        padding: 15px 0;
-    }
+    .main-title { color: #D4AF37; text-align: center; font-size: 36px; font-weight: 900; padding: 15px 0; }
+    h2 { color: #D4AF37 !important; text-align: center; font-weight: 900; }
     
-    h2 {
-        color: #D4AF37 !important;
-        text-align: center;
-        font-weight: 900;
-    }
+    /* تلوين الازرار بالطريقة اللي بتشتغل */
+    .btn-add button { background: linear-gradient(180deg, #4DA8DA 0%, #2C5282 100%) !important; color: #FFFFFF !important; }
+    .btn-list button { background: linear-gradient(180deg, #4CAF50 0%, #2E7D32 100%) !important; color: #FFFFFF !important; }
+    .btn-alert button { background: linear-gradient(180deg, #FF5252 0%, #D32F2F 100%) !important; color: #FFFFFF !important; animation: pulse 1.5s infinite; }
+    .btn-report button { background: linear-gradient(180deg, #FF9800 0%, #F57C00 100%) !important; color: #FFFFFF !important; }
+    .btn-lib button { background: linear-gradient(180deg, #3F51B5 0%, #303F9F 100%) !important; color: #FFFFFF !important; }
+    .btn-arch button { background: linear-gradient(180deg, #9E9E9E 0%, #616161 100%) !important; color: #FFFFFF !important; }
     
-    /* الازرار */
     .stButton>button {
-        border: none;
-        border-radius: 15px;
-        font-weight: 700;
-        font-size: 18px;
-        padding: 16px;
-        width: 100%;
-        margin: 10px 0;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+        border: none; border-radius: 15px; font-weight: 700; font-size: 18px;
+        padding: 16px; width: 100%; margin: 10px 0; box-shadow: 0 4px 12px rgba(0,0,0,0.4);
     }
     
-    /* تصليح الوان الخط في الانبوت */
     .stTextInput>div>div>input, .stTextArea>div>div>textarea, .stSelectbox>div>div>select {
-        background-color: #FFFFFF;
-        color: #0A1428 !important;
-        border: 2px solid #D4AF37;
-        border-radius: 12px;
-        padding: 12px;
-        text-align: right;
-        font-weight: 700;
+        background-color: #FFFFFF; color: #0A1428 !important; border: 2px solid #D4AF37;
+        border-radius: 12px; padding: 12px; text-align: right; font-weight: 700;
     }
-    .stTextInput>div>label, .stTextArea>div>label, .stSelectbox>div>label {
-        color: #D4AF37 !important;
-        font-weight: 700;
-        font-size: 16px;
+    .stTextInput>div>label { color: #D4AF37 !important; font-weight: 700; font-size: 16px; }
+    
+    @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 rgba(255, 82, 82, 0.7); }
+        70% { box-shadow: 0 0 0 10px rgba(255, 82, 82, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(255, 82, 82, 0); }
     }
 </style>
 """, unsafe_allow_html=True)
