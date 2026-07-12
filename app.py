@@ -1,4 +1,4 @@
-# == إدارة القضايا v5.39 ====================
+# ==== إدارة القضايا v5.39 ====================
 # ========== الإدارة العامة للشئون القانونية البحيرة ==========
 # ============================================================
 import streamlit as st
@@ -13,103 +13,10 @@ from email.mime.multipart import MIMEMultipart
 
 st.set_page_config(page_title="إدارة القضايا", layout="wide", page_icon="⚖️")
 
-# ============= التصميم القديم + الشريط =============
-st.markdown("""
-<style>
-    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap');
-    
-    html, body, [class*="st-"] {
-        font-family: 'Cairo', sans-serif;
-        direction: rtl;
-    }
-    
-    /* الشريط العلوي */
-    .header-bar {
-        background: linear-gradient(90deg, #D4AF37 0%, #FFD700 100%);
-        color: #0B1120;
-        text-align: center;
-        padding: 10px;
-        font-weight: 900;
-        font-size: 16px;
-        border-radius: 0 0 15px 15px;
-        margin-bottom: 20px;
-    }
-    
-    .stApp {
-        background-color: #0B1120;
-    }
-    
-    h1, h2, h3 {
-        color: #D4AF37 !important;
-        text-align: center;
-        font-weight: 900;
-        font-size: 32px;
-        padding: 10px 0;
-    }
-    
-    /* الازرار الملونة */
-    .btn-add>button { background: linear-gradient(180deg, #4DA8DA 0%, #2C5282 100%); color: #FFFFFF; }
-    .btn-list>button { background: linear-gradient(180deg, #4CAF50 0%, #2E7D32 100%); color: #FFFFFF; }
-    .btn-search>button { background: linear-gradient(180deg, #9C27B0 0%, #6A1B9A 100%); color: #FFFFFF; }
-    .btn-alert>button { background: linear-gradient(180deg, #FF5252 0%, #D32F2F 100%); color: #FFFFFF; animation: pulse 1.5s infinite; }
-    
-    .stButton>button {
-        border: none;
-        border-radius: 15px;
-        font-weight: 700;
-        font-size: 18px;
-        padding: 15px;
-        width: 100%;
-        margin: 8px 0;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-    }
-    .stButton>button:hover {
-        transform: translateY(-2px);
-    }
-    
-    @keyframes pulse {
-     0% { transform: scale(1); }
-      50% { transform: scale(1.03); }
-      100% { transform: scale(1); }
-    }
-    
-    .stTextInput>div>div>input {
-        background-color: #1A2342;
-        color: #FFFFFF;
-        border: 2px solid #D4AF37;
-        border-radius: 12px;
-        padding: 12px;
-        text-align: right;
-    }
-    .stTextInput>div>label {
-        color: #D4AF37;
-        font-weight: 700;
-    }
-    
-    .stAlert {
-        background-color: #1A2342;
-        border: 1px solid #D4AF37;
-        border-radius: 10px;
-        color: #4DA8DA;
-    }
-</style>
-""", unsafe_allow_html=True)
-# ================================================
-
-# الشريط العلوي
-st.markdown('<div class="header-bar">مع تحيات وليد حماد</div>', unsafe_allow_html=True)
-
 DATA_FILE = "cases_data.json"
 UPLOAD_FOLDER = "uploads"
 TOKENS_FILE = "tokens.json"
 if not os.path.exists(UPLOAD_FOLDER): os.makedirs(UPLOAD_FOLDER)
-
-# ============= لازم نعرف الـ session_state هنا =============
-if 'page' not in st.session_state: 
-    st.session_state.page = "الرئيسية"
-if 'selected_case_id' not in st.session_state: 
-    st.session_state.selected_case_id = None
-# ===========================================================
 
 # ============= دوال مساعدة =============
 
@@ -123,29 +30,6 @@ def save_data(data):
     with open(DATA_FILE, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=4)
 
-# ============= صفحة البحث مفعلة =============
-def render_search_section():
-    st.title("البحث عن دعوى")
-    
-    col1, col2 = st.columns(2)
-    with col1:
-        plaintiff = st.text_input("اسم المدعى")
-        case_num = st.text_input("رقم القضية")
-    with col2:
-        case_year = st.text_input("سنة القضية")
-    
-    if st.button("اضغط للبحث"):
-        data = load_data()
-        results = [c for c in data['cases'] if plaintiff in c.get('plaintiff','') or case_num in c.get('case_number','')]
-        if results:
-            st.success(f"تم العثور على {len(results)} نتيجة")
-            st.dataframe(pd.DataFrame(results))
-        else:
-            st.warning("لا توجد نتائج")
-    
-    if st.button("رجوع"):
-        st.session_state.page = "الرئيسية"
-        st.rerun()
 # ============================================
 # ============ دوال التنبيهات ============
 def render_notification_center():
