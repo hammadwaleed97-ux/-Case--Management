@@ -354,29 +354,36 @@ today = datetime.now().strftime("%A, %d %B %Y")
 if st.session_state.page == "الرئيسية":
     st.markdown("<h2>الأقسام</h2>", unsafe_allow_html=True)
     
-    # 1. تسجيل = ازرق
+    st.markdown('<div class="btn-add">', unsafe_allow_html=True)
     if st.button("➕ تسجيل القضايا", use_container_width=True): 
         st.session_state.page = "تسجيل"; st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
     
-    # 2. حصر = اخضر  
+    st.markdown('<div class="btn-list">', unsafe_allow_html=True)
     if st.button("📋 الحصر العام", use_container_width=True): 
         st.session_state.page = "حصر"; st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
     
-    # 3. تنبيهات = احمر وبينور
+    st.markdown('<div class="btn-alert">', unsafe_allow_html=True)
     if st.button("🔴 مركز التنبيهات", use_container_width=True): 
         st.session_state.page = "تنبيهات"; st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
     
-    # 4. تقارير = برتقاني
+    st.markdown('<div class="btn-report">', unsafe_allow_html=True)
     if st.button("📊 التقارير", use_container_width=True): 
         st.session_state.page = "تقارير"; st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
     
-    # 5. المكتبة = كحلي
+    st.markdown('<div class="btn-lib">', unsafe_allow_html=True)
     if st.button("📚 المكتبة القانونية", use_container_width=True): 
         st.session_state.page = "مكتبة"; st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
     
-    # 6. ارشيف = رمادي
+    st.markdown('<div class="btn-arch">', unsafe_allow_html=True)
     if st.button("🗃️ الارشيف", use_container_width=True): 
         st.session_state.page = "ارشيف"; st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
+    
     with col2:
         st.markdown('<div class="btn-list">', unsafe_allow_html=True)
         if st.button("📋 الحصر العام", use_container_width=True): 
