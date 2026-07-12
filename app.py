@@ -384,6 +384,10 @@ if st.session_state.page == "الرئيسية":
         st.session_state.page = "ارشيف"; st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
     
+    st.markdown('<div class="btn-search">', unsafe_allow_html=True)
+    if st.button("🔍 البحث عن دعوى", use_container_width=True): 
+        st.session_state.page = "بحث"; st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
     with col2:
         st.markdown('<div class="btn-list">', unsafe_allow_html=True)
         if st.button("📋 الحصر العام", use_container_width=True): 
