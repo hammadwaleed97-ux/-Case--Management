@@ -13,7 +13,7 @@ from email.mime.multipart import MIMEMultipart
 
 st.set_page_config(page_title="إدارة القضايا", layout="wide", page_icon="⚖️")
 
-# ============= التصميم القديم الاصلي =============
+# ============= التصميم المصلح =============
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap');
@@ -23,12 +23,11 @@ st.markdown("""
         direction: rtl;
     }
     
-    /* الخلفية الازرق الداكن */
     .stApp {
         background: linear-gradient(180deg, #0A1428 0%, #1E2A47 100%);
     }
     
-    /* الشريط المتحرك رايح جاي */
+    /* الشريط المتحرك */
     .marquee {
         background: linear-gradient(90deg, #D4AF37 0%, #FFD700 50%, #D4AF37 100%);
         color: #0A1428;
@@ -49,7 +48,6 @@ st.markdown("""
         100% { transform: translateX(-100%); }
     }
     
-    /* عنوان البرنامج بالميزان */
     .main-title {
         color: #D4AF37;
         text-align: center;
@@ -58,8 +56,14 @@ st.markdown("""
         padding: 15px 0;
     }
     
-    /* الازرار الملونة */
-    div[data-testid="stButton"] > button {
+    h2 {
+        color: #D4AF37 !important;
+        text-align: center;
+        font-weight: 900;
+    }
+    
+    /* الازرار */
+    .stButton>button {
         border: none;
         border-radius: 15px;
         font-weight: 700;
@@ -70,45 +74,31 @@ st.markdown("""
         box-shadow: 0 4px 12px rgba(0,0,0,0.4);
     }
     
-    /* تسجيل = ازرق */
-    div[data-testid="stButton"]:nth-of-type(3) > button { 
-        background: linear-gradient(180deg, #4DA8DA 0%, #2C5282 100%); 
-        color: #FFFFFF; 
+    /* تصليح الوان الخط في الانبوت */
+    .stTextInput>div>div>input, .stTextArea>div>div>textarea, .stSelectbox>div>div>select {
+        background-color: #FFFFFF;
+        color: #0A1428 !important;
+        border: 2px solid #D4AF37;
+        border-radius: 12px;
+        padding: 12px;
+        text-align: right;
+        font-weight: 700;
     }
-    /* حصر = اخضر */
-    div[data-testid="stButton"]:nth-of-type(4) > button { 
-        background: linear-gradient(180deg, #4CAF50 0%, #2E7D32 100%); 
-        color: #FFFFFF; 
-    }
-    /* بحث = بنفسجي */
-    div[data-testid="stButton"]:nth-of-type(5) > button { 
-        background: linear-gradient(180deg, #9C27B0 0%, #6A1B9A 100%); 
-        color: #FFFFFF; 
-    }
-    /* تنبيهات = احمر بينور */
-    div[data-testid="stButton"]:nth-of-type(6) > button { 
-        background: linear-gradient(180deg, #FF5252 0%, #D32F2F 100%); 
-        color: #FFFFFF; 
-        animation: pulse 1.5s infinite;
-    }
-    
-    @keyframes pulse {
-        0% { box-shadow: 0 0 0 0 rgba(255, 82, 82, 0.7); }
-        70% { box-shadow: 0 0 0 10px rgba(255, 82, 82, 0); }
-        100% { box-shadow: 0 0 0 0 rgba(255, 82, 82, 0); }
+    .stTextInput>div>label, .stTextArea>div>label, .stSelectbox>div>label {
+        color: #D4AF37 !important;
+        font-weight: 700;
+        font-size: 16px;
     }
 </style>
 """, unsafe_allow_html=True)
 # ===========================================================
 
-# الشريط المتحرك
 st.markdown("""
 <div class="marquee">
 <span>مع تحيات وليد حماد - الإدارة العامة للشئون القانونية بديوان عام منطقة البحيرة بالهيئة القومية للتأمين الاجتماعي</span>
 </div>
 """, unsafe_allow_html=True)
 
-# عنوان البرنامج بالميزان
 st.markdown('<div class="main-title">⚖️ إدارة القضايا ⚖️</div>', unsafe_allow_html=True)
 
 DATA_FILE = "cases_data.json"
@@ -116,14 +106,10 @@ UPLOAD_FOLDER = "uploads"
 TOKENS_FILE = "tokens.json"
 if not os.path.exists(UPLOAD_FOLDER): os.makedirs(UPLOAD_FOLDER)
 
-# ============= لازم نعرف الـ session_state هنا =============
 if 'page' not in st.session_state: 
     st.session_state.page = "الرئيسية"
 if 'selected_case_id' not in st.session_state: 
     st.session_state.selected_case_id = None
-# ===========================================================
-
-# ============= دوال مساعدة =============
 
 def load_data():
     if os.path.exists(DATA_FILE):
