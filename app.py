@@ -1,4 +1,4 @@
-# =============================================
+
 # ============ الجزء الاول: الاساسيات ============
 # ================================================
 import streamlit as st
@@ -13,6 +13,9 @@ from email.mime.multipart import MIMEMultipart
 
 st.set_page_config(page_title="إدارة القضايا", layout="wide", page_icon="⚖️")
 
+# تحديد الصفحة الافتراضية اول ما نفتح البرنامج
+if "page" not in st.session_state:
+    st.session_state.page = "الرئيسية"
 # ============= التصميم النهائي المصلح =============
 st.markdown("""
 <style>
