@@ -1,5 +1,4 @@
-
-# ============ الجزء الاول: الاساسيات ============
+#========== الجزء الاول: الاساسيات ============
 # ================================================
 import streamlit as st
 import pandas as pd
@@ -13,9 +12,27 @@ from email.mime.multipart import MIMEMultipart
 
 st.set_page_config(page_title="إدارة القضايا", layout="wide", page_icon="⚖️")
 
-# تحديد الصفحة الافتراضية اول ما نفتح البرنامج
+# ========= دالة الحفظ =========
+def save_data(data):
+    with open("data.json", "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=4)
+
+# ========= تحميل البيانات =========
+def load_data():
+    if os.path.exists("data.json"):
+        with open("data.json", "r", encoding="utf-8") as f:
+            return json.load(f)
+    return {"cases": [], "library": [], "tasks": [], "users": []}
+
+# ========= تهيئة الـ Session State =========
 if "page" not in st.session_state:
     st.session_state.page = "الرئيسية"
+
+if "data" not in st.session_state:
+    st.session_state.data = load_data()  # يحمل من الملف او يعمل فاضي
+
+if "user" not in st.session_state:
+    st.session_state.user = "المستخدم"
 # ============= التصميم النهائي المصلح =============
 st.markdown("""
 <style>
