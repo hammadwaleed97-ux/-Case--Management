@@ -102,7 +102,6 @@ def save_tokens(tokens_data):
         json.dump(tokens_data, f, ensure_ascii=False, indent=4)
 # ============ الجزء الثالث: الحصر العام ============
 # ================================================
-
 elif st.session_state.page == "حصر":
     st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
     st.markdown("<h2 style='color:#FFFFFF; text-align:center'>📊 الحصر العام الخارجي</h2>", unsafe_allow_html=True)
