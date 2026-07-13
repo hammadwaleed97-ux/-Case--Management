@@ -12,19 +12,25 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
 st.set_page_config(page_title="إدارة القضايا", layout="wide", page_icon="⚖️")
-# ============= التصميم المصلح 100% =============
+# ============= التصميم المصلح 100% - نسخة نهائية =============
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap');
     
-    html, body, [class*="st-"] {
-        font-family: 'Cairo', sans-serif;
-        direction: rtl;
-        color: #FFFFFF !important;
+    * {
+        font-family: 'Cairo', sans-serif !important;
     }
     
-    .stApp { background: linear-gradient(180deg, #0A1428 0%, #1E2A47 100%); }
+    html, body {
+        direction: rtl;
+        color: #FFFFFF !important; /* الكلام بره ابيض */
+    }
     
+    .stApp { 
+        background: linear-gradient(180deg, #0A1428 0%, #1E2A47 100%); 
+    }
+    
+    /* الشريط المتحرك */
     .marquee {
         background: linear-gradient(90deg, #D4AF37 0%, #FFD700 50%, #D4AF37 100%);
         color: #0A1428;
@@ -35,20 +41,49 @@ st.markdown("""
         overflow: hidden;
         border-radius: 0 0 15px 15px;
     }
-    .marquee span { display: inline-block; animation: marquee 15s linear infinite; }
-    @keyframes marquee { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+    .marquee span {
+        display: inline-block;
+        animation: marquee 15s linear infinite;
+    }
+    @keyframes marquee {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(100%); }
+    }
     
-    .main-title { color: #D4AF37; text-align: center; font-size: 36px; font-weight: 900; padding: 15px 0; }
-    h2 { color: #D4AF37 !important; text-align: center; font-weight: 900; }
+    .main-title { 
+        color: #D4AF37; 
+        text-align: center; 
+        font-size: 36px; 
+        font-weight: 900; 
+        padding: 15px 0; 
+    }
+    h1, h2, h3 { 
+        color: #D4AF37 !important; 
+        text-align: center; 
+        font-weight: 900; 
+    }
     
-    .stExpander, .stMarkdown { color: #FFFFFF !important; }
-    .stExpanderHeader { color: #D4AF37 !important; font-weight: 900; }
-    
-    /* ضربة قاضية: نجبر لون الزر يبقى اسود */
-    .stButton > button {
-        color: #000 !important;
+    /* الاكسبندر */
+    [data-testid="stExpander"] {
+        color: #FFFFFF !important;
+    }
+    [data-testid="stExpander"] summary {
+        color: #D4AF37 !important;
         font-weight: 900 !important;
         font-size: 18px !important;
+    }
+    
+    /* الازرار كلها: خلفية ملونة والكلام اسود */
+    .stButton > button {
+        color: #000000 !important;
+        font-weight: 900 !important;
+        font-size: 18px !important;
+        border: none !important;
+        border-radius: 15px !important;
+        padding: 16px !important;
+        width: 100% !important;
+        margin: 10px 0 !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.4) !important;
     }
     
     .btn-add button { background: linear-gradient(180deg, #4DA8DA 0%, #2C5282 100%) !important; }
@@ -59,21 +94,47 @@ st.markdown("""
     .btn-arch button { background: linear-gradient(180deg, #9E9E9E 0%, #616161 100%) !important; }
     .btn-search button { background: linear-gradient(180deg, #9C27B0 0%, #6A1B9A 100%) !important; }
     
-    /* الحقول والقوايم اسود */
-    .stTextInput>div>div>input, .stTextArea>div>div>textarea, .stSelectbox>div>div>select {
-        background-color: #FFFFFF; color: #000 !important; border: 2px solid #D4AF37;
-        border-radius: 12px; padding: 12px; text-align: right; font-weight: 700;
-    }
-    .stTextInput>div>label, .stSelectbox>div>label, .stTextArea>div>label { 
-        color: #FFD700 !important; font-weight: 700; font-size: 16px;
+    /* الحقول والقوايم: خلفية بيضا والكلام اسود */
+    .stTextInput > div > div > input,
+    .stTextArea > div > div > textarea,
+    .stSelectbox > div > div > select {
+        background-color: #FFFFFF !important;
+        color: #000000 !important;
+        border: 2px solid #D4AF37 !important;
+        border-radius: 12px !important;
+        padding: 12px !important;
+        text-align: right !important;
+        font-weight: 700 !important;
     }
     
-    div[data-baseweb="select"] ul { background-color: #FFFFFF !important; }
-    div[data-baseweb="select"] li, div[data-baseweb="select"] span { color: #000 !important; font-weight: 700; }
+    /* الليبل بتاع الحقول */
+    .stTextInput > div > label,
+    .stSelectbox > div > label,
+    .stTextArea > div > label { 
+        color: #FFD700 !important; 
+        font-weight: 700 !important; 
+        font-size: 16px !important;
+    }
     
-    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 82, 82, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(255, 82, 82, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 82, 82, 0); } }
+    /* القايمة المنسدلة اللي بتفتح */
+    [data-baseweb="popover"] ul {
+        background-color: #FFFFFF !important;
+    }
+    [data-baseweb="popover"] li,
+    [data-baseweb="popover"] span {
+        color: #000 !important;
+        font-weight: 700 !important;
+    }
+    
+    /* النبض بتاع التنبيهات */
+    @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 rgba(255, 82, 82, 0.7); }
+        70% { box-shadow: 0 0 0 10px rgba(255, 82, 82, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(255, 82, 82, 0); }
+    }
 </style>
 """, unsafe_allow_html=True)
+# ===========================================================
 # ===========================================================
 # ========================================
 
