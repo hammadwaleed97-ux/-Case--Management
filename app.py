@@ -759,7 +759,8 @@ elif st.session_state.page == "تنبيهات":
                     st.rerun()
     else:
         st.success("✅ مفيش طعون قريبة")
-        elif st.session_state.page == "المكتبة":
+        # ========= صفحة المكتبة القانونية =========
+elif st.session_state.page == "المكتبة":
     st.title("📚 المكتبة القانونية")
 
     LIBRARY_SECTIONS = {
