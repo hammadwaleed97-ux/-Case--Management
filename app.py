@@ -772,7 +772,7 @@ elif st.session_state.page == "تنبيهات":
     cols = st.columns(2)
     for i, (section, info) in enumerate(LIBRARY_SECTIONS.items()):
         with cols[i % 2]:
-            if st.button(f'{info["icon"]} {section}\n{info["desc"]}', use_container_width=True):
+            if st.button(f'{info["icon"]} {section}\n{info["desc"]}', key=f"lib_{section}", use_container_width=True):
                 st.session_state.selected_section = section
                 st.rerun()
 
@@ -781,7 +781,6 @@ elif st.session_state.page == "تنبيهات":
         sec = st.session_state.selected_section
         st.subheader(f'{LIBRARY_SECTIONS[sec]["icon"]} {sec}')
 
-        # عرض الملفات بتاعت القسم
         library_data = st.session_state.data.get("library", [])
         files = [f for f in library_data if f.get("section") == sec]
 
@@ -791,15 +790,13 @@ elif st.session_state.page == "تنبيهات":
                 with col1:
                     st.write(f"📄 {f.get('name', 'ملف')}")
                 with col2:
-                    if st.button("تحميل", key=f"dl_{f.get('id')}"):
+                    if st.button("تحميل", key=f"dl_{f.get('id', sec)}"):
                         st.success("جاري التحميل...")
         else:
             st.info("مفيش ملفات في القسم ده لسه")
 
         st.divider()
-        # زر العودة للرئيسية
         if st.button("⬅️ العودة للصفحة الرئيسية", use_container_width=True):
             st.session_state.page = "الرئيسية"
-            if "selected_section" in st.session_state:
-                del st.session_state.selected_section
+            del st.session_state.selected_section
             st.rerun()
