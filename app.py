@@ -540,3 +540,71 @@ elif st.session_state.page == "تفاصيل":
             st.rerun()
             
     st.markdown("</div>", unsafe_allow_html=True)
+    # ================================================
+# ============ الجزء الخامس: الأرشيف ============
+# ================================================
+elif st.session_state.page == "الأرشيف":
+    data = load_data()
+    st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
+    st.markdown("<h2 style='color:#FF5252; text-align:center'>📁 أرشيف القضايا المنتهية</h2>", unsafe_allow_html=True)
+    if st.button("⬅️ العودة للرئيسية", use_container_width=True): st.session_state.page = "الرئيسية"; st.rerun()
+
+    # نجيب القضايا المنتهية بس
+    ended_cases = [c for c in data["cases"] if c.get('حالة') == 'منتهية']
+    
+    if not ended_cases:
+        st.info("لا توجد قضايا منتهية في الارشيف")
+    else:
+        sorted_ended = sorted(ended_cases, key=lambda x: x.get("تاريخ_الحكم","9999-12-31"), reverse=True)
+        total_ended = len(sorted_ended)
+        
+        st.markdown(f"<div style='background:#1E2A47; padding:20px; border-radius:15px; border:2px solid #FF5252; text-align:center; margin-bottom:20px'>", unsafe_allow_html=True)
+        st.markdown(f"<div style='font-size:28px; font-weight:900; color:#FF5252'>📁 {total_ended}</div><div style='font-size:18px; color:#FFF; font-weight:700'>عدد القضايا المنتهية</div>", unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+
+        for idx, case in enumerate(sorted_ended, 1):
+            رقم_كامل = f"{case.get('رقم','')} لسنة {case.get('سنة','')}"
+            محكمة_كاملة = f"{case.get('نوع','')} {case.get('محكمة_اسم','')}"
+            if case.get('مأمورية',''): محكمة_كاملة += f"<br>مأمورية {case.get('مأمورية','')}"
+            دائرة_كاملة = f"{case.get('دائرة','')} عمال" if case.get('دائرة','') else ""
+            if دائرة_كاملة: محكمة_كاملة += f"<br>{دائرة_كاملة}"
+            
+            خصوم = f"<div style='background:#FFF3CD; padding:8px; border-radius:8px; color:#000; margin-bottom:5px; text-align:center'><b>المدعى:</b><br>{case.get('مدعي','')}</div><div style='background:#CFF4FC; padding:8px; border-radius:8px; color:#000; text-align:center'><b>المدعى عليه:</b><br>{case.get('مدعي_عليه','')}</div>"
+            
+            # بيانات الحكم
+            مسندة = case.get('مسندة_ل_الحكم','')
+            لون_مسندة = "#4CAF50" if مسندة == "الصالح" else "#FF5252"
+            بيانات_الحكم = f"<div style='background:#142038; padding:8px; border-radius:8px; border:1px solid {لون_مسندة}; text-align:center'><b style='color:{لون_مسندة}'>تاريخ الحكم:</b><br>{case.get('تاريخ_الحكم','')}<br><b style='color:{لون_مسندة}'>مسندة لـ:</b> {مسندة}<br><b style='color:{لون_مسندة}'>المنطوق:</b><br>{case.get('منطوق_الحكم','')}</div>"
+
+            row_class = "row-judgment" # كله احمر عشان منتهي
+
+            st.markdown("<div class='table-container'>", unsafe_allow_html=True)
+            table_html = f"<table class='case-table'><tr><th>م</th><th>الرقم والسنة</th><th>المحكمة والدائرة</th><th>الخصوم</th><th>الموضوع</th><th>بيانات الحكم</th><th>حفظ</th><th>الاجراء</th></tr><tr class='{row_class}'><td>{idx}</td><td>{رقم_كامل}</td><td>{محكمة_كاملة}</td><td>{خصوم}</td><td>{case.get('موضوع','')}</td><td>{بيانات_الحكم}</td><td>"
+            
+            # زر الحفظ
+            with st.container():
+                سبب_الحفظ = st.text_input("سبب الحفظ", key=f"save_reason_{case['id']}", placeholder="اكتب سبب الحفظ...")
+                if st.button("💾 حفظ", key=f"save_btn_{case['id']}", use_container_width=True):
+                    if سبب_الحفظ:
+                        case['سبب_الحفظ'] = سبب_الحفظ
+                        save_data(data)
+                        st.success("تم حفظ سبب الحفظ")
+                        st.rerun()
+                    else:
+                        st.error("اكتب سبب الحفظ الاول")
+            
+            table_html += "</td><td>"
+            
+            # زر العودة للتداول
+            if st.button("↩️ عودة للتداول", key=f"return_{case['id']}", use_container_width=True):
+                case['حالة'] = 'متداولة'
+                case['تاريخ_الحكم'] = ""
+                case['منطوق_الحكم'] = ""
+                case['مسندة_ل_الحكم'] = ""
+                save_data(data)
+                st.success("تم ارجاع القضية للتداول")
+                st.session_state.page = "الحصر"
+                st.rerun()
+            
+            table_html += "</td></tr></table></div>"
+            st.markdown(table_html, unsafe_allow_html=True)
