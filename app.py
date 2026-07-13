@@ -556,7 +556,15 @@ elif st.session_state.page == "الأرشيف":
     data = load_data()
     st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
     st.markdown("<h2 style='color:#FF5252; text-align:center'>📁 أرشيف الأحكام النهائية</h2>", unsafe_allow_html=True)
-    
+    if st.button("⬅️ العودة للرئيسية", use_container_width=True): st.session_state.page = "الرئيسية"; st.rerun()
+
+    # ======= ده الجديد عشان زرار البحث =======
+    if st.session_state.get('open_from_search', False):
+        st.session_state.open_from_search = False
+        st.success("تم التحويل من البحث بنجاح")
+    # ==========================================
+
+    # ===== هنا باقي كود الارشيف بتاعك زي ما هو =====
     # بحث
     search_query = st.text_input("🔍 ابحث برقم القضية او الخصوم او رقم الطعن", key="search_archive")
     
