@@ -179,9 +179,12 @@ if st.session_state.page == "الرئيسية":
         st.markdown('<div class="btn-report">', unsafe_allow_html=True)
         if st.button("📊 التقارير", use_container_width=True): st.session_state.page = "تقارير"; st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
-    if st.button("📚 المكتبة القانونية", use_container_width=True): 
-    st.session_state.page = "المكتبة"  # زودت "ال"
-    st.rerun()
+    with col2:
+    st.markdown('<div class="btn-lib">', unsafe_allow_html=True)
+    if st.button("📚 المكتبة القانونية", use_container_width=True):
+        st.session_state.page = "المكتبة"
+        st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
         
     col1, col2, col3 = st.columns([1,2,1])
     with col2:
