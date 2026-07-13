@@ -12,7 +12,6 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
 st.set_page_config(page_title="إدارة القضايا", layout="wide", page_icon="⚖️")
-
 # ============= التصميم المصلح 100% =============
 st.markdown("""
 <style>
@@ -21,12 +20,11 @@ st.markdown("""
     html, body, [class*="st-"] {
         font-family: 'Cairo', sans-serif;
         direction: rtl;
-        color: #FFFFFF !important; /* الكلام بره ابيض */
+        color: #FFFFFF !important;
     }
     
     .stApp { background: linear-gradient(180deg, #0A1428 0%, #1E2A47 100%); }
     
-    /* الشريط المتحرك */
     .marquee {
         background: linear-gradient(90deg, #D4AF37 0%, #FFD700 50%, #D4AF37 100%);
         color: #0A1428;
@@ -37,14 +35,8 @@ st.markdown("""
         overflow: hidden;
         border-radius: 0 0 15px 15px;
     }
-    .marquee span {
-        display: inline-block;
-        animation: marquee 15s linear infinite;
-    }
-    @keyframes marquee {
-        0% { transform: translateX(-100%); }
-        100% { transform: translateX(100%); }
-    }
+    .marquee span { display: inline-block; animation: marquee 15s linear infinite; }
+    @keyframes marquee { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
     
     .main-title { color: #D4AF37; text-align: center; font-size: 36px; font-weight: 900; padding: 15px 0; }
     h2 { color: #D4AF37 !important; text-align: center; font-weight: 900; }
@@ -52,10 +44,11 @@ st.markdown("""
     .stExpander, .stMarkdown { color: #FFFFFF !important; }
     .stExpanderHeader { color: #D4AF37 !important; font-weight: 900; }
     
-    /* تعديل مهم: كلام الازرار اسود عشان الخلفية بيضا */
-    .btn-add button, .btn-list button, .btn-alert button, .btn-report button, .btn-lib button, .btn-arch button, .btn-search button { 
-        color: #000 !important; /* اسود */
+    /* ضربة قاضية: نجبر لون الزر يبقى اسود */
+    .stButton > button {
+        color: #000 !important;
         font-weight: 900 !important;
+        font-size: 18px !important;
     }
     
     .btn-add button { background: linear-gradient(180deg, #4DA8DA 0%, #2C5282 100%) !important; }
@@ -66,12 +59,7 @@ st.markdown("""
     .btn-arch button { background: linear-gradient(180deg, #9E9E9E 0%, #616161 100%) !important; }
     .btn-search button { background: linear-gradient(180deg, #9C27B0 0%, #6A1B9A 100%) !important; }
     
-    .stButton>button {
-        border: none; border-radius: 15px; font-size: 18px;
-        padding: 16px; width: 100%; margin: 10px 0; box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-    }
-    
-    /* الحقول والقوايم: الكلام اسود */
+    /* الحقول والقوايم اسود */
     .stTextInput>div>div>input, .stTextArea>div>div>textarea, .stSelectbox>div>div>select {
         background-color: #FFFFFF; color: #000 !important; border: 2px solid #D4AF37;
         border-radius: 12px; padding: 12px; text-align: right; font-weight: 700;
@@ -80,20 +68,14 @@ st.markdown("""
         color: #FFD700 !important; font-weight: 700; font-size: 16px;
     }
     
-    /* القايمة المنسدلة اللي بتتفتح: الكلام اسود */
     div[data-baseweb="select"] ul { background-color: #FFFFFF !important; }
-    div[data-baseweb="select"] li { color: #000 !important; font-weight: 700; }
-    div[data-baseweb="select"] span { color: #000 !important; } /* الكلام اللي ظاهر جوه القايمة */
+    div[data-baseweb="select"] li, div[data-baseweb="select"] span { color: #000 !important; font-weight: 700; }
     
-    @keyframes pulse {
-        0% { box-shadow: 0 0 0 0 rgba(255, 82, 82, 0.7); }
-        70% { box-shadow: 0 0 0 10px rgba(255, 82, 82, 0); }
-        100% { box-shadow: 0 0 0 0 rgba(255, 82, 82, 0); }
-    }
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 82, 82, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(255, 82, 82, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 82, 82, 0); } }
 </style>
 """, unsafe_allow_html=True)
 # ===========================================================
-# ===========================================================
+# ========================================
 
 st.markdown("""
 <div class="marquee">
