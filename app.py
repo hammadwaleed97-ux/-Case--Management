@@ -21,12 +21,12 @@ st.markdown("""
     html, body, [class*="st-"] {
         font-family: 'Cairo', sans-serif;
         direction: rtl;
-        color: #FFFFFF !important; /* الكلام بره ابيض عشان الخلفية كحلي */
+        color: #FFFFFF !important; /* الكلام بره ابيض */
     }
     
     .stApp { background: linear-gradient(180deg, #0A1428 0%, #1E2A47 100%); }
     
-    /* الشريط المتحرك مصلح - يمشي من الشمال لليمين */
+    /* الشريط المتحرك */
     .marquee {
         background: linear-gradient(90deg, #D4AF37 0%, #FFD700 50%, #D4AF37 100%);
         color: #0A1428;
@@ -49,36 +49,41 @@ st.markdown("""
     .main-title { color: #D4AF37; text-align: center; font-size: 36px; font-weight: 900; padding: 15px 0; }
     h2 { color: #D4AF37 !important; text-align: center; font-weight: 900; }
     
-    /* اضافة: الاكسبندر والعناوين الفرعية */
     .stExpander, .stMarkdown { color: #FFFFFF !important; }
     .stExpanderHeader { color: #D4AF37 !important; font-weight: 900; }
     
-    /* تلوين الازرار */
-    .btn-add button { background: linear-gradient(180deg, #4DA8DA 0%, #2C5282 100%) !important; color: #FFFFFF !important; }
-    .btn-list button { background: linear-gradient(180deg, #4CAF50 0%, #2E7D32 100%) !important; color: #FFFFFF !important; }
-    .btn-alert button { background: linear-gradient(180deg, #FF5252 0%, #D32F2F 100%) !important; color: #FFFFFF !important; animation: pulse 1.5s infinite; }
-    .btn-report button { background: linear-gradient(180deg, #FF9800 0%, #F57C00 100%) !important; color: #FFFFFF !important; }
-    .btn-lib button { background: linear-gradient(180deg, #3F51B5 0%, #303F9F 100%) !important; color: #FFFFFF !important; }
-    .btn-arch button { background: linear-gradient(180deg, #9E9E9E 0%, #616161 100%) !important; color: #FFFFFF !important; }
-    .btn-search button { background: linear-gradient(180deg, #9C27B0 0%, #6A1B9A 100%) !important; color: #FFFFFF !important; }
+    /* تعديل مهم: كلام الازرار اسود عشان الخلفية بيضا */
+    .btn-add button, .btn-list button, .btn-alert button, .btn-report button, .btn-lib button, .btn-arch button, .btn-search button { 
+        color: #000 !important; /* اسود */
+        font-weight: 900 !important;
+    }
+    
+    .btn-add button { background: linear-gradient(180deg, #4DA8DA 0%, #2C5282 100%) !important; }
+    .btn-list button { background: linear-gradient(180deg, #4CAF50 0%, #2E7D32 100%) !important; }
+    .btn-alert button { background: linear-gradient(180deg, #FF5252 0%, #D32F2F 100%) !important; animation: pulse 1.5s infinite; }
+    .btn-report button { background: linear-gradient(180deg, #FF9800 0%, #F57C00 100%) !important; }
+    .btn-lib button { background: linear-gradient(180deg, #3F51B5 0%, #303F9F 100%) !important; }
+    .btn-arch button { background: linear-gradient(180deg, #9E9E9E 0%, #616161 100%) !important; }
+    .btn-search button { background: linear-gradient(180deg, #9C27B0 0%, #6A1B9A 100%) !important; }
     
     .stButton>button {
-        border: none; border-radius: 15px; font-weight: 700; font-size: 18px;
+        border: none; border-radius: 15px; font-size: 18px;
         padding: 16px; width: 100%; margin: 10px 0; box-shadow: 0 4px 12px rgba(0,0,0,0.4);
     }
     
-    /* تعديل مهم: الحقول والقوايم خلفيتها بيضا يبقى الكلام اسود */
+    /* الحقول والقوايم: الكلام اسود */
     .stTextInput>div>div>input, .stTextArea>div>div>textarea, .stSelectbox>div>div>select {
-        background-color: #FFFFFF; color: #0A1428 !important; border: 2px solid #D4AF37;
+        background-color: #FFFFFF; color: #000 !important; border: 2px solid #D4AF37;
         border-radius: 12px; padding: 12px; text-align: right; font-weight: 700;
     }
     .stTextInput>div>label, .stSelectbox>div>label, .stTextArea>div>label { 
-        color: #FFD700 !important; font-weight: 700; font-size: 16px; /* الليبل ذهبي عشان يبان */
+        color: #FFD700 !important; font-weight: 700; font-size: 16px;
     }
     
-    /* تعديل مهم: القايمة المنسدلة اللي بتتفتح */
+    /* القايمة المنسدلة اللي بتتفتح: الكلام اسود */
     div[data-baseweb="select"] ul { background-color: #FFFFFF !important; }
-    div[data-baseweb="select"] li { color: #0A1428 !important; } /* الكلام جوه القايمة اسود */
+    div[data-baseweb="select"] li { color: #000 !important; font-weight: 700; }
+    div[data-baseweb="select"] span { color: #000 !important; } /* الكلام اللي ظاهر جوه القايمة */
     
     @keyframes pulse {
         0% { box-shadow: 0 0 0 0 rgba(255, 82, 82, 0.7); }
@@ -87,6 +92,7 @@ st.markdown("""
     }
 </style>
 """, unsafe_allow_html=True)
+# ===========================================================
 # ===========================================================
 
 st.markdown("""
