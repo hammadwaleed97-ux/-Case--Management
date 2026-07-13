@@ -362,47 +362,55 @@ today = datetime.now().strftime("%A, %d %B %Y")
 if st.session_state.page == "الرئيسية":
     st.markdown('<h2>الأقسام</h2>', unsafe_allow_html=True)
     
-    st.markdown('<div class="btn-add">', unsafe_allow_html=True)
-    if st.button("➕ تسجيل القضايا", key="btn_add_1"):
-        st.session_state.page = "تسجيل"
-        st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
-    
-    st.markdown('<div class="btn-list">', unsafe_allow_html=True)
-    if st.button("📋 الحصر العام", key="btn_list_1"):
-        st.session_state.page = "الحصر"
-        st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
+    # الصف الاول: 2 جنب بعض
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown('<div class="btn-add">', unsafe_allow_html=True)
+        if st.button("➕ تسجيل القضايا", key="btn_add_1", use_container_width=True):
+            st.session_state.page = "تسجيل"; st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
+    with col2:
+        st.markdown('<div class="btn-list">', unsafe_allow_html=True)
+        if st.button("📋 الحصر العام", key="btn_list_1", use_container_width=True):
+            st.session_state.page = "الحصر"; st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
 
-    st.markdown('<div class="btn-alert">', unsafe_allow_html=True)
-    if st.button("🔴 مركز التنبيهات", key="btn_alert_1"):
-        st.session_state.page = "التنبيهات"
-        st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
-    
-    st.markdown('<div class="btn-report">', unsafe_allow_html=True)
-    if st.button("📊 التقارير", key="btn_report_1"):
-        st.session_state.page = "التقارير"
-        st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
-    
-    st.markdown('<div class="btn-lib">', unsafe_allow_html=True)
-    if st.button("📚 المكتبة القانونية", key="btn_lib_1"):
-        st.session_state.page = "المكتبة"
-        st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
-    
-    st.markdown('<div class="btn-arch">', unsafe_allow_html=True)
-    if st.button("🗄️ الأرشيف", key="btn_arch_1"):
-        st.session_state.page = "الأرشيف"
-        st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
-    
-    st.markdown('<div class="btn-search">', unsafe_allow_html=True)
-    if st.button("🔍 البحث المتقدم", key="btn_search_1"):
-        st.session_state.page = "البحث"
-        st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
+    # الصف التاني: 1 في النص
+    col1, col2, col3 = st.columns([1,2,1])
+    with col2:
+        st.markdown('<div class="btn-alert">', unsafe_allow_html=True)
+        if st.button("🔴 مركز التنبيهات", key="btn_alert_1", use_container_width=True):
+            st.session_state.page = "التنبيهات"; st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    # الصف التالت: 2 جنب بعض
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown('<div class="btn-report">', unsafe_allow_html=True)
+        if st.button("📊 التقارير", key="btn_report_1", use_container_width=True):
+            st.session_state.page = "التقارير"; st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
+    with col2:
+        st.markdown('<div class="btn-lib">', unsafe_allow_html=True)
+        if st.button("📚 المكتبة القانونية", key="btn_lib_1", use_container_width=True):
+            st.session_state.page = "المكتبة"; st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+    # الصف الرابع: 1 في النص
+    col1, col2, col3 = st.columns([1,2,1])
+    with col2:
+        st.markdown('<div class="btn-arch">', unsafe_allow_html=True)
+        if st.button("🗄️ الأرشيف", key="btn_arch_1", use_container_width=True):
+            st.session_state.page = "الأرشيف"; st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    # الصف الخامس: 1 في النص
+    col1, col2, col3 = st.columns([1,2,1])
+    with col2:
+        st.markdown('<div class="btn-search">', unsafe_allow_html=True)
+        if st.button("🔍 البحث المتقدم", key="btn_search_1", use_container_width=True):
+            st.session_state.page = "البحث"; st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
 # ========== صفحة البحث ==========
 elif st.session_state.page == "بحث":
     st.markdown("<h2 style='color:#D4AF37; text-align:center'>البحث عن دعوى</h2>", unsafe_allow_html=True)
