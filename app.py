@@ -448,7 +448,7 @@ elif st.session_state.page == "بحث":
                 st.warning("لم يتم العثور على نتائج مطابقة")
     st.markdown('</div>', unsafe_allow_html=True)
 
-================ نهاية الجزء 1: الرئيسية والبحث ==================
+# ================ نهاية الجزء 1: الرئيسية والبحث ==================
 elif st.session_state.page == "تسجيل":
     st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
     st.markdown("<h2 style='color:#C9A961; text-align:center'>تسجيل القضايا</h2>", unsafe_allow_html=True)
