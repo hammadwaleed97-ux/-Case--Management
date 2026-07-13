@@ -98,8 +98,8 @@ def load_tokens():
     return {"tokens": []}
 
 def save_tokens(tokens_data):
-    with open(TOKENS_FILE, "w", encoding="utf-8") as f: json.dump(tokens_data, f, ensure_ascii=False, indent=4)
-        # ================================================
+    with open(TOKENS_FILE, "w", encoding="utf-8") as f: 
+        json.dump(tokens_data, f, ensure_ascii=False, indent=4)
 # ============ الجزء الثالث: الحصر العام ============
 # ================================================
 
