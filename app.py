@@ -338,3 +338,52 @@ elif st.session_state.page == "تسجيل":
 # ================================================
 # ========== نهاية الجزء الثاني ==========
 # ================================================
+elif st.session_state.page == "الحصر":
+    st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
+    st.markdown("<h2 style='color:#FFFFFF; text-align:center'>📊 الحصر العام الخارجي</h2>", unsafe_allow_html=True)
+    if st.button("العودة للرئيسية", use_container_width=True): 
+        st.session_state.page = "الرئيسية"; st.rerun()
+
+    data = load_data()
+    if not data["cases"]:
+        st.info("لا توجد قضايا مسجلة")
+    else:
+        for i, case in enumerate(data["cases"]):
+            if "id" not in case: case["id"] = i + 1
+            if "مستندات" not in case: case["مستندات"] = []
+
+        save_data(data)
+        sorted_cases = sorted(data["cases"], key=lambda x: x.get("تاريخ_جلسة","9999"))
+        total = len(sorted_cases)
+        today = datetime.now()
+        week_later = today + timedelta(days=7)
+        this_week = len([c for c in sorted_cases if c.get('تاريخ_جلسة') and datetime.strptime(c['تاريخ_جلسة'],'%Y-%m-%d') <= week_later])
+        
+        # الاحصائيات فوق
+        col1, col2, col3 = st.columns(3)
+        col1.metric("📊 اجمالي القضايا", total)
+        col2.metric("📅 جلسات هذا الاسبوع", this_week)
+        col3.metric("🚫 عدد الحظر", len([c for c in sorted_cases if c.get('حالة') == 'منتهية']))
+
+        st.markdown("---")
+
+        for idx, case in enumerate(sorted_cases, 1):
+            رقم_كامل = f"{case.get('رقم','')} لسنة {case.get('سنة','')}"
+            محكمة_كاملة = f"{case.get('نوع','')} {case.get('محكمة_اسم','')}"
+            if case.get('مأمورية',''): محكمة_كاملة += f"<br>مأمورية {case.get('مأمورية','')}"
+            دائرة_كاملة = f"{case.get('دائرة','')} عمال" if case.get('دائرة','') else ""
+            محكمة_كاملة += f"<br>{دائرة_كاملة}"
+            خصوم = f"{case.get('مدعي','')}<br>ضد<br>{case.get('مدعي_عليه','')}"
+
+            if case.get('حالة') == 'منتهية': row_class = "row-judgment" # ده الحظر
+            elif "الهيئة" in str(case.get('مدعي','')): row_class = "row-hey2a"
+            else: row_class = "row1" if idx % 2 == 1 else "row2"
+
+            st.markdown("<div class='table-container'>", unsafe_allow_html=True)
+            table_html = f"<table class='case-table'><tr><th>م</th><th>الرقم والسنة</th><th>المحكمة والدائرة</th><th>الخصوم</th><th>الموضوع</th><th>اخر جلسة</th><th>السبب</th><th>الحالة</th></tr><tr class='{row_class}'><td>{idx}</td><td>{رقم_كامل}</td><td>{محكمة_كاملة}</td><td>{خصوم}</td><td>{case.get('موضوع','')}</td><td>{case.get('تاريخ_جلسة','')}</td><td>{case.get('سبب','')}</td><td>{case.get('حالة','متداولة')}</td></tr></table></div>"
+            st.markdown(table_html, unsafe_allow_html=True)
+
+            c1, c2, c3 = st.columns([4,1,4])
+            with c2:
+                if st.button("فتح", key=f"open_{case['id']}"): 
+                    st.session_state.selected_case_id = case['id']; st.session_state.page = "تفاصيل"; st.rerun()
