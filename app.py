@@ -368,6 +368,14 @@ elif st.session_state.page == "الحصر":
     st.markdown("<h2 style='color:#FFFFFF; text-align:center'>📊 الحصر العام الخارجي</h2>", unsafe_allow_html=True)
     if st.button("⬅️ العودة للرئيسية", use_container_width=True): st.session_state.page = "الرئيسية"; st.rerun()
 
+    # ======= السطرين الجداد دول بس =======
+    if st.session_state.get('open_from_search', False):
+        st.session_state.open_from_search = False
+        st.info("جاري فتح القضية من البحث...")
+    # ======================================
+
+    # هنا باقي كود الحصر بتاعك زي ما هو
+    # ... عرض الجدول بتاع الحصر
     if not data["cases"]:
         st.info("لا توجد قضايا مسجلة")
     else:
