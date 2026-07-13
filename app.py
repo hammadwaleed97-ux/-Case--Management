@@ -550,44 +550,58 @@ elif st.session_state.page == "تفاصيل":
     st.markdown("<div style='color:#FF5252; font-size:20px; font-weight:900; text-align:center; margin-bottom:10px'>5- جلسة الحكم</div>", unsafe_allow_html=True)
     
     if case.get('حالة') != 'منتهية':
+        # ده الفورم اللي هيظهر قبل الحكم
         with st.form("judgment_form"):
-            col1, col2 = st.columns(2)
-            with col1: تاريخ_حكم = st.date_input("تاريخ الجلسة", value=datetime.now().date())
-            with col2: مسندة_ل = st.selectbox("مسندة لـ", ["الصالح", "الضد"])
-            منطوق_الحكم = st.text_area("منطوق الحكم", height=150)
+            st.markdown("<div style='background:#142038; padding:10px; border-radius:10px; margin-bottom:10px'>", unsafe_allow_html=True)
+            st.markdown("<label style='color:#FFD700; font-weight:900'>1- تاريخ الجلسة</label>", unsafe_allow_html=True)
+            تاريخ_حكم = st.date_input("تاريخ الجلسة", value=datetime.now().date(), label_visibility="collapsed")
+            st.markdown("</div>", unsafe_allow_html=True)
+
+            st.markdown("<div style='background:#142038; padding:10px; border-radius:10px; margin-bottom:10px'>", unsafe_allow_html=True)
+            st.markdown("<label style='color:#FFD700; font-weight:900'>2- منطوق الحكم</label>", unsafe_allow_html=True)
+            منطوق_الحكم = st.text_area("منطوق الحكم", height=150, placeholder="اكتب منطوق الحكم هنا...", label_visibility="collapsed")
+            st.markdown("</div>", unsafe_allow_html=True)
+
+            st.markdown("<div style='background:#142038; padding:10px; border-radius:10px; margin-bottom:10px'>", unsafe_allow_html=True)
+            st.markdown("<label style='color:#FFD700; font-weight:900'>3- مسندة لـ</label>", unsafe_allow_html=True)
+            مسندة_ل = st.selectbox("مسندة لـ", ["الصالح", "الضد"], label_visibility="collapsed")
+            st.markdown("</div>", unsafe_allow_html=True)
             
-            if st.form_submit_button("💾 حفظ الحكم واغلاق القضية", use_container_width=True, type="primary"):
-                # 1. نسجل الحكم
-                case['حالة'] = 'منتهية'
-                case['تاريخ_الحكم'] = str(تاريخ_حكم)
-                case['منطوق_الحكم'] = منطوق_الحكم
-                case['مسندة_ل_الحكم'] = مسندة_ل
-                
-                # 2. نضيفها كجلسة اخيرة
-                case['جلسات'].append({
-                    'تاريخ':str(تاريخ_حكم),
-                    'الرول':'-',
-                    'سبب':f'الحكم - مسندة لـ {مسندة_ل}',
-                    'ملاحظات':منطوق_الحكم
-                })
-                
-                # 3. نحدث اخر جلسة عشان تظهر في الحصر
-                case['تاريخ_جلسة'] = str(تاريخ_حكم)
-                case['سبب'] = f'الحكم - مسندة لـ {مسندة_ل}'
-                
-                save_data(data)
-                st.success(f"✅ تم حفظ الحكم واغلاق القضية. تم نقلها للارشيف")
-                st.session_state.page = "ارشيف" # <-- هنا بتروح الارشيف اوتوماتيك
-                st.rerun()
+            if st.form_submit_button("💾 حفظ الحكم", use_container_width=True, type="primary"):
+                if not منطوق_الحكم:
+                    st.error("❌ لازم تكتب منطوق الحكم")
+                else:
+                    # 1. نسجل الحكم
+                    case['حالة'] = 'منتهية'
+                    case['تاريخ_الحكم'] = str(تاريخ_حكم)
+                    case['منطوق_الحكم'] = منطوق_الحكم
+                    case['مسندة_ل_الحكم'] = مسندة_ل
+                    
+                    # 2. نضيفها كجلسة اخيرة
+                    case['جلسات'].append({
+                        'تاريخ':str(تاريخ_حكم),
+                        'الرول':'-',
+                        'سبب':f'الحكم - مسندة لـ {مسندة_ل}',
+                        'ملاحظات':منطوق_الحكم
+                    })
+                    
+                    # 3. نحدث اخر جلسة
+                    case['تاريخ_جلسة'] = str(تاريخ_حكم)
+                    case['سبب'] = f'الحكم - مسندة لـ {مسندة_ل}'
+                    
+                    save_data(data)
+                    st.success(f"✅ تم حفظ الحكم واغلاق القضية. تم نقلها للارشيف")
+                    st.session_state.page = "ارشيف" # بتروح الارشيف اوتوماتيك
+                    st.rerun()
     else:
+        # ده اللي بيظهر بعد الحفظ - زي الصورة بتاعتك
         st.success(f"✅ تم الحكم بتاريخ: {case.get('تاريخ_الحكم')}")
         st.info(f"**مسندة لـ:** {case.get('مسندة_ل_الحكم')}")
         st.warning(f"**المنطوق:** {case.get('منطوق_الحكم')}")
-        if st.button("ارجاع القضية للتداول"):
+        if st.button("↩️ ارجاع القضية للتداول", use_container_width=True):
             case['حالة'] = 'متداولة'
             save_data(data)
             st.session_state.page = "الحصر"
             st.rerun()
             
     st.markdown("</div>", unsafe_allow_html=True)
-              
