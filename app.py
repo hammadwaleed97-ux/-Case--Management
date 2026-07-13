@@ -558,13 +558,36 @@ elif st.session_state.page == "الأرشيف":
     st.markdown("<h2 style='color:#FF5252; text-align:center'>📁 أرشيف الأحكام النهائية</h2>", unsafe_allow_html=True)
     if st.button("⬅️ العودة للرئيسية", use_container_width=True): st.session_state.page = "الرئيسية"; st.rerun()
 
-    # ======= ده الجديد عشان زرار البحث =======
-    if st.session_state.get('open_from_search', False):
+    # ======= ده الجديد عشان يفتح القضية من البحث =======
+    if st.session_state.get('selected_case_id'):
+        case_id = st.session_state.selected_case_id
+        st.session_state.selected_case_id = None # امسحها
         st.session_state.open_from_search = False
-        st.success("تم التحويل من البحث بنجاح")
-    # ==========================================
-
-    # ===== هنا باقي كود الارشيف بتاعك زي ما هو =====
+        
+        case = next((c for c in data["cases"] if c['id'] == case_id), None)
+        if case:
+            st.success(f"تم فتح القضية رقم {case.get('رقم','')} لسنة {case.get('سنة','')}")
+            st.markdown("---")
+            st.markdown(f"### 📂 تفاصيل القضية")
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                st.markdown(f"**المدعي:** {case.get('مدعي','')}")
+                st.markdown(f"**نوع الدعوى:** {case.get('نوع_الدعوى','')}")
+                st.markdown(f"**المحكمة:** {case.get('محكمة_اسم','')}")
+                if case.get('مأمورية'): st.markdown(f"**المأمورية:** {case.get('مأمورية','')}")
+                if case.get('دائرة'): st.markdown(f"**الدائرة:** {case.get('دائرة','')}")
+            with col2:
+                st.markdown(f"**المدعى عليه:** {case.get('مدعي_عليه','')}")
+                st.markdown(f"**الموضوع:** {case.get('موضوع','')}")
+                st.markdown(f"**اخر جلسة:** {case.get('تاريخ_جلسة','')}")
+                st.markdown(f"**الحالة:** {case.get('حالة','')}")
+            
+            st.markdown("---")
+            if st.button("⬅️ الرجوع لجدول الارشيف", use_container_width=True):
+                st.rerun()
+            st.stop() # مهم عشان ميعرضش الجدول تحت
+    # =====================================
     # بحث
     search_query = st.text_input("🔍 ابحث برقم القضية او الخصوم او رقم الطعن", key="search_archive")
     
