@@ -154,7 +154,7 @@ LIBRARY_SECTIONS = {
     "فتاوى الجمعية العمومية": "#7B68EE", "صحف طعون": "#6A5ACD", "صحف استئنافات": "#483D8B",
     "صحف دعاوى": "#E6E6FA", "مذكرات دفاع": "#FFF0F5", "أخرى": "#808080"
 }
-# ========== الصفحة الرئيسية ==========
+#========= الصفحة الرئيسية ==========
 if st.session_state.page == "الرئيسية":
     st.markdown('<h2>الأقسام</h2>', unsafe_allow_html=True)
     
@@ -179,13 +179,12 @@ if st.session_state.page == "الرئيسية":
         st.markdown('<div class="btn-report">', unsafe_allow_html=True)
         if st.button("📊 التقارير", use_container_width=True): st.session_state.page = "تقارير"; st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
-    with col2:
-    st.markdown('<div class="btn-lib">', unsafe_allow_html=True)
-    if st.button("📚 المكتبة القانونية", use_container_width=True):
-        st.session_state.page = "المكتبة"
-        st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
+    with col2:  # <--- هنا كان الغلط. لازم نزح اللي تحته
+        st.markdown('<div class="btn-lib">', unsafe_allow_html=True)
+        if st.button("📚 المكتبة القانونية", use_container_width=True):
+            st.session_state.page = "المكتبة"
+            st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
         
     col1, col2, col3 = st.columns([1,2,1])
     with col2:
@@ -198,7 +197,6 @@ if st.session_state.page == "الرئيسية":
         st.markdown('<div class="btn-search">', unsafe_allow_html=True)
         if st.button("🔍 البحث عن دعوى", use_container_width=True): st.session_state.page = "بحث"; st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
-
 # ================================================
 # ========== نهاية الجزء الاول ==========
 # =======================================
