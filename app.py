@@ -408,7 +408,7 @@ if st.session_state.page == "الرئيسية":
     col1, col2, col3 = st.columns([1,2,1])
     with col2:
         st.markdown('<div class="btn-search">', unsafe_allow_html=True)
-        if st.button("🔍 البحث المتقدم", key="btn_search_1", use_container_width=True):
+        if st.button("🔍 البحث عن دعوى", key="btn_search_1", use_container_width=True):
             st.session_state.page = "البحث"; st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
 # ========== صفحة البحث ==========
