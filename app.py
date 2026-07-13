@@ -770,7 +770,6 @@ LIBRARY_SECTIONS = {
 
 # ========= صفحة المكتبة القانونية =========
 if st.session_state.page == "مكتبة":
-elif st.session_state.page == "مكتبة":
     st.title("📚 المكتبة القانونية")
     st.markdown("اختار القسم اللي عايز تشوفه")
 
