@@ -112,7 +112,7 @@ if st.session_state.page == "الرئيسية":
         st.markdown('</div>', unsafe_allow_html=True)
     with col2:
         st.markdown('<div class="btn-list">', unsafe_allow_html=True)
-        if st.button("📋 الحصر العام", use_container_width=True): st.session_state.page = "حصر"; st.rerun()
+        if st.button("📋 الحصر العام", use_container_width=True): st.session_state.page = "الحصر"; st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
 
     col1, col2, col3 = st.columns([1,2,1])
