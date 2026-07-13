@@ -701,4 +701,29 @@ elif st.session_state.page == "بحث":
                             st.session_state.page = الصفحة_المطلوبة
                             st.rerun()
                     st.markdown("</div>", unsafe_allow_html=True)
+                    # ========== الجزء السابع: مركز التنبيهات ==========
+elif st.session_state.page == "التنبيهات":
+    st.title("🔔 مركز التنبيهات")
+    
+    if st.button("⬅️ العودة للرئيسية", use_container_width=True): 
+        st.session_state.page = "الرئيسية"
+        st.rerun()
+
+    alerts = get_alert_cases() # دي الفنكشن اللي فوق سطر 140
+    
+    st.markdown(f"<h3 style='text-align:center;'>تاريخ اليوم: {datetime.now().date()}</h3>", unsafe_allow_html=True)
+    
+    st.subheader("⚖️ جلسات خلال 7 ايام")
+    if alerts["sessions"]:
+        for case in alerts["sessions"]:
+            st.error(f"⚠️ قضية {case['رقم']}/{case['سنة']} - {case['مدعي']} ضد {case['مدعي_عليه']} - فاضل {case['days_left']} يوم")
+    else:
+        st.success("مفيش جلسات قريبة")
+    
+    st.subheader("📄 طعون اليوم")
+    if alerts["appeals"]:
+        for case in alerts["appeals"]:
+            st.warning(f"⏰ اخر يوم للطعن في قضية {case['رقم']}/{case['سنة']}")
+    else:
+        st.success("مفيش طعون اليوم")
                     
