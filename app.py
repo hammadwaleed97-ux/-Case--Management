@@ -208,3 +208,84 @@ elif st.session_state.page == "تسجيل":
                 st.session_state.page = "الحصر"; st.rerun()
 
     st.markdown("<div style='height:2px; background:#D4AF37; margin:20px 0;'></div>", unsafe_allow_html=True)
+    # ===============================================
+# ============ الجزء الثالث: الحصر العام ============
+# ===============================================
+
+elif st.session_state.page == "الحصر":
+    st.markdown("<div style='height:2px; background:#D4AF37; margin:20px 0;'></div>", unsafe_allow_html=True)
+    st.markdown("<h2 style='color:#D4AF37; text-align:center'>📋 الحصر العام الخارجي</h2>", unsafe_allow_html=True)
+    
+    if st.button("⬅️ العودة للرئيسية", use_container_width=True): 
+        st.session_state.page = "الرئيسية"; st.rerun()
+
+    if not data["cases"]:
+        st.info("لا توجد قضايا مسجلة")
+    else:
+        # ظبط ال id والمستندات للقضايا القديمة
+        for i, case in enumerate(data["cases"]):
+            if "id" not in case: case["id"] = i + 1
+            if "مستندات" not in case: case["مستندات"] = []
+
+        save_data(data)
+        
+        # ترتيب حسب تاريخ الجلسة
+        sorted_cases = sorted(data["cases"], key=lambda x: x.get("تاريخ_جلسة","9999"))
+        total = len(sorted_cases)
+        this_week = len([c for c in sorted_cases if c.get('تاريخ_جلسة') and datetime.strptime(c['تاريخ_جلسة'],'%Y-%m-%d') <= datetime.now() + timedelta(days=7)])
+        
+        st.success(f"📊 اجمالي القضايا: {total} | جلسات هذا الاسبوع: {this_week}")
+
+        for idx, case in enumerate(sorted_cases, 1):
+            رقم_كامل = f"{case.get('رقم','')} لسنة {case.get('سنة','')}"
+            محكمة_كاملة = f"{case.get('نوع','')} {case.get('محكمة_اسم','')}"
+            if case.get('مأمورية',''): محكمة_كاملة += f"<br>مأمورية {case.get('مأمورية','')}"
+            دائرة_كاملة = f"{case.get('دائرة','')} عمال" if case.get('دائرة','') else ""
+            محكمة_كاملة += f"<br>{دائرة_كاملة}"
+            خصوم = f"{case.get('مدعي','')}<br>ضد<br>{case.get('مدعي_عليه','')}"
+
+            # تلوين الصفوف
+            if case.get('حالة') == 'منتهية': 
+                row_style = "background:#2F2F2F; color:#AAA;"
+            elif "الهيئة" in str(case.get('مدعي','')): 
+                row_style = "background:#1E3A6B; color:#FFF;"
+            else: 
+                row_style = "background:#1E2A47; color:#FFF;" if idx % 2 == 1 else "background:#142038; color:#FFF;"
+
+            # الجدول
+            st.markdown(f"""
+            <div style='border:2px solid #D4AF37; border-radius:12px; margin-bottom:15px; overflow-x:auto;'>
+                <table style='width:100%; border-collapse:collapse; font-size:14px;'>
+                    <tr style='background:#D4AF37; color:#000; font-weight:900;'>
+                        <th style='padding:10px;'>م</th>
+                        <th style='padding:10px;'>الرقم والسنة</th>
+                        <th style='padding:10px;'>المحكمة والدائرة</th>
+                        <th style='padding:10px;'>الخصوم</th>
+                        <th style='padding:10px;'>الموضوع</th>
+                        <th style='padding:10px;'>اخر جلسة</th>
+                        <th style='padding:10px;'>السبب</th>
+                        <th style='padding:10px;'>الحالة</th>
+                    </tr>
+                    <tr style='{row_style}'>
+                        <td style='padding:10px; text-align:center;'>{idx}</td>
+                        <td style='padding:10px; text-align:center;'>{رقم_كامل}</td>
+                        <td style='padding:10px; text-align:center;'>{محكمة_كاملة}</td>
+                        <td style='padding:10px; text-align:center;'>{خصوم}</td>
+                        <td style='padding:10px;'>{case.get('موضوع','')}</td>
+                        <td style='padding:10px; text-align:center;'>{case.get('تاريخ_جلسة','')}</td>
+                        <td style='padding:10px; text-align:center;'>{case.get('سبب','')}</td>
+                        <td style='padding:10px; text-align:center;'>{case.get('حالة','متداولة')}</td>
+                    </tr>
+                </table>
+            </div>
+            """, unsafe_allow_html=True)
+
+            # زرار الفتح
+            col1, col2, col3 = st.columns([4,1,4])
+            with col2:
+                if st.button("فتح", key=f"open_{case['id']}"): 
+                    st.session_state.selected_case_id = case['id']
+                    st.session_state.page = "تفاصيل"
+                    st.rerun()
+
+    st.markdown("<div style='height:2px; background:#D4AF37; margin:20px 0;'></div>", unsafe_allow_html=True)
