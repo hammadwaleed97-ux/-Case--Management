@@ -978,14 +978,24 @@ elif st.session_state.page == "اعدادات_الايميل":
 
     with st.form("email_settings"):
         st.warning("مهم: لو Gmail لازم تعمل 'كلمة مرور التطبيقات' من اعدادات جوجل مش الباسورد العادي")
-        global SENDER_EMAIL, SENDER_PASSWORD
-        email = st.text_input("الايميل المرسل Gmail", value=SENDER_EMAIL)
-        password = st.text_input("كلمة مرور التطبيق", value=SENDER_PASSWORD, type="password")
+        # ========== صفحة اعدادات الايميل ==========
+elif st.session_state.page == "اعدادات_الايميل":
+    st.markdown("<h2 style='color:#FFD700; text-align:center'>⚙️ اعدادات ارسال التنبيهات</h2>", unsafe_allow_html=True)
+    if st.button("⬅️ العودة للتنبيهات"): st.session_state.page = "التنبيهات"; st.rerun()
+
+    # نجيب القيم الحالية من session_state
+    if 'sender_email' not in st.session_state: st.session_state.sender_email = ""
+    if 'sender_password' not in st.session_state: st.session_state.sender_password = ""
+
+    with st.form("email_settings"):
+        st.warning("مهم: لو Gmail لازم تعمل 'كلمة مرور التطبيقات' من اعدادات جوجل مش الباسورد العادي")
+        email = st.text_input("الايميل المرسل Gmail", value=st.session_state.sender_email)
+        password = st.text_input("كلمة مرور التطبيق", value=st.session_state.sender_password, type="password")
         test_receiver = st.text_input("ايميل للاختبار", placeholder="اكتب ايميلك عشان نجرب")
 
         if st.form_submit_button("💾 حفظ واختبار الارسال"):
-            SENDER_EMAIL = email
-            SENDER_PASSWORD = password
-            ok, msg = send_email(test_receiver, "اختبار نظام التنبيهات", "<h3>مبروك النظام شغال</h3>")
+            st.session_state.sender_email = email
+            st.session_state.sender_password = password
+            ok, msg = send_email(test_receiver, "اختبار نظام التنبيهات", "<h3>مبروك النظام شغال</h3>", email, password)
             if ok: st.success(f"✅ {msg}")
             else: st.error(f"❌ خطأ: {msg}")
