@@ -550,20 +550,20 @@ elif st.session_state.page == "تفاصيل":
     st.markdown("<div style='color:#FF5252; font-size:20px; font-weight:900; text-align:center; margin-bottom:10px'>5- جلسة الحكم</div>", unsafe_allow_html=True)
     
     if case.get('حالة') != 'منتهية':
-        # ده الفورم اللي هيظهر قبل الحكم
+        # ده الفورم قبل الحكم
         with st.form("judgment_form"):
             st.markdown("<div style='background:#142038; padding:10px; border-radius:10px; margin-bottom:10px'>", unsafe_allow_html=True)
-            st.markdown("<label style='color:#FFD700; font-weight:900'>1- تاريخ الجلسة</label>", unsafe_allow_html=True)
+            st.markdown("<label style='color:#FFD700; font-weight:900; font-size:16px'>1- تاريخ الجلسة</label>", unsafe_allow_html=True)
             تاريخ_حكم = st.date_input("تاريخ الجلسة", value=datetime.now().date(), label_visibility="collapsed")
             st.markdown("</div>", unsafe_allow_html=True)
 
             st.markdown("<div style='background:#142038; padding:10px; border-radius:10px; margin-bottom:10px'>", unsafe_allow_html=True)
-            st.markdown("<label style='color:#FFD700; font-weight:900'>2- منطوق الحكم</label>", unsafe_allow_html=True)
+            st.markdown("<label style='color:#FFD700; font-weight:900; font-size:16px'>2- منطوق الحكم</label>", unsafe_allow_html=True)
             منطوق_الحكم = st.text_area("منطوق الحكم", height=150, placeholder="اكتب منطوق الحكم هنا...", label_visibility="collapsed")
             st.markdown("</div>", unsafe_allow_html=True)
 
             st.markdown("<div style='background:#142038; padding:10px; border-radius:10px; margin-bottom:10px'>", unsafe_allow_html=True)
-            st.markdown("<label style='color:#FFD700; font-weight:900'>3- مسندة لـ</label>", unsafe_allow_html=True)
+            st.markdown("<label style='color:#FFD700; font-weight:900; font-size:16px'>3- مسندة لـ</label>", unsafe_allow_html=True)
             مسندة_ل = st.selectbox("مسندة لـ", ["الصالح", "الضد"], label_visibility="collapsed")
             st.markdown("</div>", unsafe_allow_html=True)
             
@@ -591,15 +591,19 @@ elif st.session_state.page == "تفاصيل":
                     
                     save_data(data)
                     st.success(f"✅ تم حفظ الحكم واغلاق القضية. تم نقلها للارشيف")
-                    st.session_state.page = "ارشيف" # بتروح الارشيف اوتوماتيك
+                    st.session_state.page = "الأرشيف" # <-- مهم بالـ ال
                     st.rerun()
     else:
-        # ده اللي بيظهر بعد الحفظ - زي الصورة بتاعتك
+        # ده اللي بيظهر بعد الحفظ
         st.success(f"✅ تم الحكم بتاريخ: {case.get('تاريخ_الحكم')}")
         st.info(f"**مسندة لـ:** {case.get('مسندة_ل_الحكم')}")
         st.warning(f"**المنطوق:** {case.get('منطوق_الحكم')}")
+        
         if st.button("↩️ ارجاع القضية للتداول", use_container_width=True):
             case['حالة'] = 'متداولة'
+            case['تاريخ_الحكم'] = ""
+            case['منطوق_الحكم'] = ""
+            case['مسندة_ل_الحكم'] = ""
             save_data(data)
             st.session_state.page = "الحصر"
             st.rerun()
