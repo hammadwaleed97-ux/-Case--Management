@@ -855,3 +855,34 @@ elif st.session_state.page == "بحث":
                             st.session_state.page = الصفحة_المطلوبة
                             st.rerun()
                     st.markdown("</div>", unsafe_allow_html=True)
+                    # ========== صفحة مركز التنبيهات ==========
+elif st.session_state.page == "التنبيهات":
+    st.title("🔔 مركز التنبيهات")
+    if st.button("⬅️ الرجوع"): 
+        st.session_state.page = "الرئيسية"
+        st.rerun()
+
+    data = load_data()
+    today = datetime.now().date()
+    st.write(f"تاريخ اليوم: {today}")
+
+    # نجيب كل القضايا المتداولة اللي ليها جلسة
+    sessions = [c for c in data["cases"] if c.get('حالة')=='متداولة' and c.get('تاريخ_جلسة')]
+    
+    st.write(f"عدد القضايا المتداولة: {len(sessions)}")
+
+    found = False
+    for case in sessions:
+        try:
+            session_date = datetime.strptime(case['تاريخ_جلسة'], '%Y-%m-%d').date()
+            days_left = (session_date - today).days
+            st.write(f"قضية {case['رقم']}/{case['سنة']} - الجلسة: {session_date} - متبقي: {days_left} يوم")
+            
+            if 0 <= days_left <= 7:
+                st.success(f"✅ تنبيه: قضية {case['رقم']}/{case['سنة']} - {case['مدعي']} - فاضل {days_left} يوم")
+                found = True
+        except:
+            st.error(f"خطأ في تاريخ قضية {case['رقم']}")
+
+    if not found:
+        st.warning("لا توجد جلسات خلال 7 ايام")
