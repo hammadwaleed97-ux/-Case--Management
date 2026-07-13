@@ -670,3 +670,35 @@ elif st.session_state.page == "بحث":
                             st.session_state.page = الصفحة_المطلوبة
                             st.rerun()
                     st.markdown("</div>", unsafe_allow_html=True)
+                    
+# ========== الجزء السابع: مركز التنبيهات ==========
+elif st.session_state.page == "تنبيهات":
+    st.title("🔔 مركز التنبيهات")
+    
+    if st.button("⬅️ العودة للرئيسية", use_container_width=True): 
+        st.session_state.page = "الرئيسية"
+        st.rerun()
+    
+    alerts = get_alert_cases()
+    
+    st.markdown(f"<h3 style='text-align:center; color:#C9A961;'>📅 تاريخ اليوم: {datetime.now().strftime('%Y-%m-%d')}</h3>", unsafe_allow_html=True)
+    
+    st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
+    
+    st.subheader("⚖️ جلسات خلال 7 ايام القادمة")
+    if alerts["sessions"]:
+        for case in alerts["sessions"]:
+            رقم_كامل = f"{case['رقم']} لسنة {case['سنة']}"
+            st.error(f"⚠️ **{رقم_كامل}** - فاضل {case['days_left']} يوم - {case.get('محكمة_اسم','')}")
+    else:
+        st.success("✅ مفيش جلسات قريبة خلال 7 ايام")
+    
+    st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
+    
+    st.subheader("📄 طعون لازم تتعمل النهاردة")
+    if alerts["appeals"]:
+        for case in alerts["appeals"]:
+            رقم_كامل = f"{case['رقم']} لسنة {case['سنة']}"
+            st.warning(f"⏰ **{رقم_كامل}** - اخر يوم للطعن {case['appeal_days']} يوم")
+    else:
+        st.success("✅ مفيش طعون اليوم")
