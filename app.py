@@ -759,24 +759,20 @@ elif st.session_state.page == "تنبيهات":
                     st.rerun()
     else:
         st.success("✅ مفيش طعون قريبة")
-        # ========= قاموس اقسام المكتبة =========
-LIBRARY_SECTIONS = {
-    "قوانين": {"color": "#FF6B6B", "icon": "📜"},
-    "لوائح": {"color": "#4ECDC4", "icon": "📋"},
-    "قرارات": {"color": "#45B7D1", "icon": "⚖️"},
-    "احكام": {"color": "#96CEB4", "icon": "🏛️"}
-}
-# ========= نهاية قاموس المكتبة =========
-
-# ========= صفحة المكتبة القانونية =========
-if st.session_state.page == "مكتبة":
+        elif st.session_state.page == "المكتبة":
     st.title("📚 المكتبة القانونية")
-    st.markdown("اختار القسم اللي عايز تشوفه")
+
+    LIBRARY_SECTIONS = {
+        "قوانين": {"icon": "📜", "desc": "القوانين المصرية"},
+        "قرارات": {"icon": "📋", "desc": "القرارات الوزارية"},
+        "لوائح": {"icon": "📖", "desc": "اللوائح التنفيذية"},
+        "احكام": {"icon": "⚖️", "desc": "احكام محكمة النقض"}
+    }
 
     cols = st.columns(2)
     for i, (section, info) in enumerate(LIBRARY_SECTIONS.items()):
         with cols[i % 2]:
-            if st.button(f'{info["icon"]} {section}', key=f"lib_{section}", use_container_width=True):
+            if st.button(f'{info["icon"]} {section}\n{info["desc"]}', use_container_width=True):
                 st.session_state.selected_section = section
                 st.rerun()
 
@@ -785,19 +781,26 @@ if st.session_state.page == "مكتبة":
         sec = st.session_state.selected_section
         st.subheader(f'{LIBRARY_SECTIONS[sec]["icon"]} {sec}')
 
-        # هنا هنعرض الملفات بتاعت القسم
-        if "library" in st.session_state.data and st.session_state.data["library"]:
-            files = [f for f in st.session_state.data["library"] if f.get("section") == sec]
-            if files:
-                for f in files:
-                    st.write(f"📄 {f.get('name')}")
-            else:
-                st.info("مفيش ملفات في القسم ده لسه")
-        else:
-            st.info("مفيش ملفات في المكتبة لسه")
+        # عرض الملفات بتاعت القسم
+        library_data = st.session_state.data.get("library", [])
+        files = [f for f in library_data if f.get("section") == sec]
 
-    if st.button("⬅️ الرجوع للرئيسية"):
-        st.session_state.page = "الرئيسية"
-        if "selected_section" in st.session_state: del st.session_state.selected_section
-        st.rerun()
-# ========= نهاية صفحة المكتبة =========
+        if files:
+            for f in files:
+                col1, col2 = st.columns([4,1])
+                with col1:
+                    st.write(f"📄 {f.get('name', 'ملف')}")
+                with col2:
+                    if st.button("تحميل", key=f"dl_{f.get('id')}"):
+                        st.success("جاري التحميل...")
+        else:
+            st.info("مفيش ملفات في القسم ده لسه")
+
+        st.divider()
+        # زر العودة للرئيسية
+        if st.button("⬅️ العودة للصفحة الرئيسية", use_container_width=True):
+            st.session_state.page = "الرئيسية"
+            if "selected_section" in st.session_state:
+                del st.session_state.selected_section
+            st.rerun()
+    # ========= نهاية صفحة المكتبة =========
