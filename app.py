@@ -765,43 +765,130 @@ elif st.session_state.page == "تنبيهات":
         st.success("✅ مفيش طعون قريبة")
         # ========= صفحة المكتبة القانونية =========
 elif st.session_state.page == "المكتبة":
-    st.title("📚 المكتبة القانونية")
+    st.markdown('<h1 style="text-align: center; color: #FFD700;">المكتبة 📚<br>القانونية</h1>', unsafe_allow_html=True)
+    
+    # 1. البحث العام في كل المواد
+    st.markdown("### 🔍 البحث عن أي مادة قانونية")
+    search_query = st.text_input("ابحث باسم الموضوع")
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        search_number = st.text_input("رقم القانون / القرار / التعليمات")
+    with col2:
+        search_year = st.text_input("السنة")
+    
+    if st.button("بحث", use_container_width=True, type="primary"):
+        st.session_state.search_filters = {"q": search_query, "num": search_number, "year": search_year}
+        st.rerun()
 
+    st.divider()
+
+    # 2. ال 22 قسم بالالوان
     LIBRARY_SECTIONS = {
-        "قوانين": {"icon": "📜", "desc": "القوانين المصرية"},
-        "قرارات": {"icon": "📋", "desc": "القرارات الوزارية"},
-        "لوائح": {"icon": "📖", "desc": "اللوائح التنفيذية"},
-        "احكام": {"icon": "⚖️", "desc": "احكام محكمة النقض"}
+        "القوانين": "#FF6B6B", "القرارات الوزارية": "#4ECDC4", "قرارات الهيئة": "#45B7D1",
+        "المنشورات الوزارية": "#96CEB4", "منشورات الهيئة": "#FFEAA7", "الكتب الدورية": "#DDA0DD",
+        "تعليمات الهيئة": "#98D8C8", "رسائل الهيئة": "#F7DC6F", "المرصد الفني": "#BB8FCE",
+        "فتاوى لجنة الشئون القانونية بالوزارة": "#85C1E2", "فتاوى الادارة المركزية للشئون القانونية": "#F8B500",
+        "احكام المحكمة الدستورية العليا": "#E74C3C", "احكام محكمة النقض": "#3498DB",
+        "احكام المحكمة الإدارية العليا": "#2ECC71", "احكام المحاكم الاستئنافية": "#9B59B6",
+        "احكام محاكم القضاء الإدارى": "#1ABC9C", "احكام المحاكم الابتدائية": "#E67E22",
+        "احكام المحكمة الإدارية": "#34495E", "منشورات القضاء العادى": "#16A085",
+        "منشورات مجلس الدولة": "#8E44AD", "فتاوى الجمعية العمومية": "#27AE60",
+        "صحف طعون": "#C0392B", "صحف استئنافات": "#2980B9", "صحف دعاوى": "#8E44AD",
+        "مذكرات دفاع": "#D35400", "أخرى": "#7F8C8D"
     }
 
-    cols = st.columns(2)
-    for i, (section, info) in enumerate(LIBRARY_SECTIONS.items()):
-        with cols[i % 2]:
-            if st.button(f'{info["icon"]} {section}\n{info["desc"]}', key=f"lib_{section}", use_container_width=True):
+    # 3. عرض الاقسام كأزرار ملونة
+    st.markdown("### 📁 الاقسام")
+    cols = st.columns(4)
+    for i, (section, color) in enumerate(LIBRARY_SECTIONS.items()):
+        with cols[i % 4]:
+            if st.button(f"{section}", key=f"sec_{section}", use_container_width=True, 
+                        help=f"عرض {section}"):
                 st.session_state.selected_section = section
                 st.rerun()
+            st.markdown(f'<div style="background:{color};height:5px;border-radius:5px;"></div>', unsafe_allow_html=True)
 
-    if "selected_section" in st.session_state:
+    # 4. لو اختار قسم او بحث
+    if "selected_section" in st.session_state or "search_filters" in st.session_state:
         st.divider()
-        sec = st.session_state.selected_section
-        st.subheader(f'{LIBRARY_SECTIONS[sec]["icon"]} {sec}')
-
+        
         library_data = st.session_state.data.get("library", [])
-        files = [f for f in library_data if f.get("section") == sec]
-
-        if files:
-            for f in files:
-                col1, col2 = st.columns([4,1])
-                with col1:
-                    st.write(f"📄 {f.get('name', 'ملف')}")
-                with col2:
-                    if st.button("تحميل", key=f"dl_{f.get('id', sec)}"):
-                        st.success("جاري التحميل...")
+        
+        # فلترة
+        if "selected_section" in st.session_state:
+            sec = st.session_state.selected_section
+            st.subheader(f"📂 {sec}")
+            files = [f for f in library_data if f.get("section") == sec]
         else:
-            st.info("مفيش ملفات في القسم ده لسه")
+            sec = "نتائج البحث"
+            st.subheader("🔍 نتائج البحث")
+            f = st.session_state.search_filters
+            files = [item for item in library_data if 
+                     f["q"].lower() in item.get("name","").lower() and
+                     f["num"] in item.get("number","") and
+                     f["year"] in item.get("year","")]
+        
+        # زر الاضافة
+        if st.button("➕ اضافة مادة قانونية", key="add_doc", type="secondary"):
+            st.session_state.show_upload = True
+
+        # فورم الاضافة
+        if st.session_state.get("show_upload", False):
+            with st.form("form_add_doc"):
+                section_select = st.selectbox("اختر القسم", list(LIBRARY_SECTIONS.keys()))
+                doc_name = st.text_input("بيان المستند - الاسم اللي هيظهر في المكتبة")
+                doc_number = st.text_input("الرقم")
+                doc_year = st.text_input("السنة")
+                doc_link = st.text_input("رابط المستند")
+                
+                if st.form_submit_button("💾 حفظ بصفة دائمة"):
+                    new_doc = {
+                        "id": secrets.token_hex(6),
+                        "name": doc_name, 
+                        "section": section_select,
+                        "number": doc_number,
+                        "year": doc_year,
+                        "link": doc_link
+                    }
+                    st.session_state.data.setdefault("library", []).append(new_doc)
+                    save_data(st.session_state.data)
+                    st.success("تم الحفظ")
+                    st.session_state.show_upload = False
+                    st.rerun()
 
         st.divider()
-        if st.button("⬅️ العودة للصفحة الرئيسية", use_container_width=True):
-            st.session_state.page = "الرئيسية"
-            del st.session_state.selected_section
-            st.rerun()
+        # 5. عرض المستندات مع 4 ازرار
+        if files:
+            for doc in files:
+                color = LIBRARY_SECTIONS.get(doc.get("section"), "#7F8C8D")
+                st.markdown(f'<div style="border-left:5px solid {color}; padding:10px; margin:5px 0; background:#1e1e1e;">', unsafe_allow_html=True)
+                st.write(f"**{doc.get('name')}**")
+                st.caption(f"رقم: {doc.get('number','-')} | سنة: {doc.get('year','-')} | القسم: {doc.get('section')}")
+                
+                col1, col2, col3, col4 = st.columns(4)
+                with col1:
+                    if st.button("📖 فتح", key=f"open_{doc['id']}", use_container_width=True):
+                        st.info(f"الرابط: {doc.get('link')}")
+                with col2:
+                    if st.button("⬇️ تحميل", key=f"dl_{doc['id']}", use_container_width=True):
+                        st.info("التحميل متاح للعضو المشترك")
+                with col3:
+                    if st.button("✏️ تعديل", key=f"edit_{doc['id']}", use_container_width=True):
+                        st.warning("وظيفة التعديل قريبا")
+                with col4:
+                    if st.button("🗑️ حذف", key=f"del_{doc['id']}", use_container_width=True):
+                        st.session_state.data["library"] = [d for d in st.session_state.data["library"] if d["id"] != doc["id"]]
+                        save_data(st.session_state.data)
+                        st.rerun()
+                st.markdown('</div>', unsafe_allow_html=True)
+        else:
+            st.info("مفيش مستندات. دوس ➕ اضافة مادة قانونية")
+
+    st.divider()
+    # زر العودة
+    if st.button("⬅️ العودة للصفحة الرئيسية", use_container_width=True):
+        st.session_state.page = "الرئيسية"
+        for k in ["selected_section", "show_upload", "search_filters"]:
+            st.session_state.pop(k, None)
+        st.rerun()
