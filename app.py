@@ -388,17 +388,6 @@ if st.session_state.page == "الرئيسية":
     if st.button("🔍 البحث عن دعوى", use_container_width=True): 
         st.session_state.page = "بحث"; st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
-    with col2:
-        st.markdown('<div class="btn-list">', unsafe_allow_html=True)
-        if st.button("📋 الحصر العام", use_container_width=True): 
-            st.session_state.page = "حصر"; st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
-    
-    st.markdown('<div class="btn-search">', unsafe_allow_html=True)
-    if st.button("🔍 البحث عن دعوى", use_container_width=True): 
-        st.session_state.page = "بحث"; st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
-
 elif st.session_state.page == "تسجيل":
     st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
     st.markdown("<h2 style='color:#C9A961; text-align:center'>تسجيل القضايا</h2>", unsafe_allow_html=True)
