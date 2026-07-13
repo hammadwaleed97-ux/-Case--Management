@@ -130,3 +130,81 @@ if st.session_state.page == "الرئيسية":
         st.markdown('<div class="btn-search">', unsafe_allow_html=True)
         if st.button("🔍 البحث عن دعوى", use_container_width=True): st.session_state.page = "البحث"; st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
+        # ===============================================
+# ============ الجزء الثاني: التسجيل ============
+# ===============================================
+
+elif st.session_state.page == "تسجيل":
+    st.markdown("<div style='height:2px; background:#D4AF37; margin:20px 0;'></div>", unsafe_allow_html=True)
+    st.markdown("<h2 style='color:#D4AF37; text-align:center'>➕ تسجيل قضية جديدة</h2>", unsafe_allow_html=True)
+    
+    if st.button("⬅️ العودة للرئيسية", use_container_width=True): 
+        st.session_state.page = "الرئيسية"; st.rerun()
+
+    ANWA3_MOSTANDAT = ["صحيفة دعوى", "صحيفة استئناف", "صحيفة طعن", "مذكرة دفاع", "حافظة مستندات", "تقرير خبير", "تقرير طب شرعى", "تقرير لجنة طبية", "صحيفة تجديد من الشطب", "صحيفة تعجيل من الوقف", "صورة حكم تمهيدى", "أخرى"]
+    نوع = st.selectbox("نوع الدعوى", ["دعوى", "استئناف", "طعن"])
+
+    with st.form("form_case"):
+        st.markdown("<div style='border:2px solid #D4AF37; border-radius:15px; padding:15px; margin-bottom:15px;'><h4 style='color:#D4AF37;'>1- بيانات المحكمة</h4>", unsafe_allow_html=True)
+        محكمة_اسم = st.text_input("اسم المحكمة")
+        مأمورية = st.text_input("المأمورية") if نوع == "استئناف" else ""
+        st.markdown("</div>", unsafe_allow_html=True)
+
+        st.markdown("<div style='border:2px solid #D4AF37; border-radius:15px; padding:15px; margin-bottom:15px;'><h4 style='color:#D4AF37;'>2- بيانات الدعوى</h4>", unsafe_allow_html=True)
+        col1, col2 = st.columns(2)
+        with col1: رقم = st.text_input("رقم الدعوى / الاستئناف / الطعن")
+        with col2: سنة = st.text_input("السنة القضائية")
+        دائرة = st.text_input("الدائرة")
+        st.markdown("</div>", unsafe_allow_html=True)
+
+        st.markdown("<div style='border:2px solid #D4AF37; border-radius:15px; padding:15px; margin-bottom:15px;'><h4 style='color:#D4AF37;'>3- بيانات الخصوم</h4>", unsafe_allow_html=True)
+        col1, col2 = st.columns(2)
+        with col1: مدعي = st.text_input("اسم المدعى / المستأنف / الطاعن")
+        with col2: مدعي_عليه = st.text_input("اسم المدعى عليه / المستأنف ضده / المطعون ضده")
+        موضوع = st.text_area("موضوع الدعوى", height=100)
+        st.markdown("</div>", unsafe_allow_html=True)
+
+        st.markdown("<div style='border:2px solid #D4AF37; border-radius:15px; padding:15px; margin-bottom:15px;'><h4 style='color:#D4AF37;'>4- بيانات الجلسة</h4>", unsafe_allow_html=True)
+        col1, col2 = st.columns(2)
+        with col1: تاريخ_جلسة = st.date_input("تاريخ أول جلسة", value=datetime.now())
+        with col2: الرول = st.text_input("الرول")
+        سبب = st.text_input("سبب الجلسة")
+        ملاحظات = st.text_area("ملاحظات", height=80)
+        st.markdown("</div>", unsafe_allow_html=True)
+
+        st.markdown("<div style='border:2px solid #D4AF37; border-radius:15px; padding:15px; margin-bottom:15px;'><h4 style='color:#D4AF37;'>5- التنبيهات والمستندات</h4>", unsafe_allow_html=True)
+        تنبيه = st.checkbox("تفعيل التنبيهات عبر الواتس اب")
+        واتس = st.text_input("رقم هاتف واتس اب") if تنبيه else ""
+        col1, col2 = st.columns(2)
+        with col1: مستند_نوع = st.selectbox("نوع المستند", ANWA3_MOSTANDAT)
+        with col2: مستند_ملف = st.file_uploader("اختر الملف")
+        st.markdown("</div>", unsafe_allow_html=True)
+
+        st.markdown("<div class='btn-add'>", unsafe_allow_html=True)
+        submitted = st.form_submit_button("💾 حفظ القضية", use_container_width=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+
+        if submitted:
+            if not رقم or not سنة: 
+                st.error("❌ من فضلك ادخل رقم الدعوى والسنة")
+            else:
+                new_case = {
+                    "id": len(data["cases"])+1, "نوع": نوع, "محكمة_اسم": محكمة_اسم, "مأمورية": مأمورية, 
+                    "رقم": رقم, "سنة": سنة, "دائرة": دائرة, "مدعي": مدعي, "مدعي_عليه": مدعي_عليه, 
+                    "موضوع": موضوع, "تاريخ_جلسة": str(تاريخ_جلسة), "الرول": الرول, "سبب": سبب, 
+                    "ملاحظات": ملاحظات, "تنبيه": تنبيه, "واتس": واتس, "جلسات": [], "مستندات": [], "حالة": "متداولة"
+                }
+                if الرول or سبب: 
+                    new_case["جلسات"].append({"تاريخ":str(تاريخ_جلسة),"الرول":الرول,"سبب":سبب,"ملاحظات":ملاحظات})
+                
+                if مستند_ملف:
+                    file_path = os.path.join(UPLOAD_FOLDER, f"{new_case['id']}_{مستند_ملف.name}")
+                    with open(file_path, "wb") as f: f.write(مستند_ملف.getbuffer())
+                    new_case["مستندات"].append({'نوع': مستند_نوع, 'اسم': مستند_ملف.name, 'مسار': file_path})
+                
+                data["cases"].append(new_case)
+                save_data(data)
+                st.success(f"✅ تم حفظ القضية رقم {رقم} لسنة {سنة}")
+                st.session_state.page = "الحصر"; st.rerun()
+
+    st.markdown("<div style='height:2px; background:#D4AF37; margin:20px 0;'></div>", unsafe_allow_html=True)
