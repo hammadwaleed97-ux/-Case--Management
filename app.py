@@ -349,7 +349,7 @@ def render_search_section():
 data = load_data()
 today = datetime.now().strftime("%A, %d %B %Y")
 # ==================================================================
-# ================== بداية الجزء 1: الرئيسية والتسجيل ==================
+================ بداية الجزء 1: الرئيسية والبحث ==================
 # ==================================================================
 if st.session_state.page == "الرئيسية":
     st.markdown("<h2>الأقسام</h2>", unsafe_allow_html=True)
@@ -388,6 +388,67 @@ if st.session_state.page == "الرئيسية":
     if st.button("🔍 البحث عن دعوى", use_container_width=True): 
         st.session_state.page = "بحث"; st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
+
+# ========== صفحة البحث ==========
+elif st.session_state.page == "بحث":
+    st.markdown("<h2 style='color:#D4AF37; text-align:center'>البحث عن دعوى</h2>", unsafe_allow_html=True)
+    
+    if st.button("⬅️ العودة للرئيسية"): 
+        st.session_state.page = "الرئيسية"; st.rerun()
+    
+    data = load_data()
+    cases = data.get("cases", [])
+    
+    st.info("ممكن تبحث بـ اسم المدعى فقط ... او بـ رقم القضية + السنة")
+    
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        search_name = st.text_input("اسم المدعى")
+    with col2:
+        search_number = st.text_input("رقم القضية")
+    with col3:
+        search_year = st.text_input("سنة القضية")
+    
+    st.markdown('<div style="text-align:left">', unsafe_allow_html=True)
+    if st.button("🔴 اضغط للبحث", use_container_width=False):
+        
+        if not search_name and not (search_number and search_year):
+            st.error("من فضلك ادخل اسم المدعى او رقم القضية والسنة مع بعض")
+        else:
+            results = []
+            
+            for case in cases:
+                match = False
+                
+                # الحالة 1: بحث بالاسم
+                if search_name and search_name.strip() != "":
+                    if search_name.lower() in case.get("plaintiff_name", "").lower():
+                        match = True
+                
+                # الحالة 2: بحث بالرقم والسنة
+                elif search_number and search_year:
+                    if str(search_number) == str(case.get("case_number", "")) and str(search_year) == str(case.get("case_year", "")):
+                        match = True
+                
+                if match:
+                    results.append(case)
+            
+            if results:
+                st.success(f"تم العثور على {len(results)} نتيجة")
+                for r in results:
+                    with st.expander(f"⚖️ قضية رقم {r.get('case_number')} سنة {r.get('case_year')} - {r.get('plaintiff_name')}"):
+                        st.write(f"**المدعى:** {r.get('plaintiff_name')}")
+                        st.write(f"**المدعى عليه:** {r.get('defendant_name')}")
+                        st.write(f"**نوع الدعوى:** {r.get('case_type')}")
+                        st.write(f"**المحكمة:** {r.get('court_name')}")
+                        st.write(f"**تاريخ الجلسة:** {r.get('session_date')}")
+                        st.write(f"**الحالة:** {r.get('status')}")
+                        st.write(f"**ملاحظات:** {r.get('notes')}")
+            else:
+                st.warning("لم يتم العثور على نتائج مطابقة")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+================ نهاية الجزء 1: الرئيسية والبحث ==================
 elif st.session_state.page == "تسجيل":
     st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
     st.markdown("<h2 style='color:#C9A961; text-align:center'>تسجيل القضايا</h2>", unsafe_allow_html=True)
