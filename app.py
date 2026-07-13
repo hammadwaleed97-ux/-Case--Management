@@ -272,3 +272,89 @@ elif st.session_state.page == "الحصر":
             with c2:
                 if st.button("فتح", key=f"open_{case['id']}", use_container_width=True): 
                     st.session_state.selected_case_id = case['id']; st.session_state.page = "تفاصيل"; st.rerun()
+                    # ================================================
+# ============ الجزء الثالث: تفاصيل القضية ============
+# ================================================
+elif st.session_state.page == "تفاصيل":
+    data = load_data()
+    case = next((c for c in data["cases"] if c["id"] == st.session_state.selected_case_id), None)
+
+    if not case:
+        st.error("القضية غير موجودة")
+        st.session_state.page = "الحصر"; st.rerun()
+    
+    st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
+    st.markdown(f"<h2 style='color:#D4AF37; text-align:center'>تفاصيل القضية رقم {case.get('رقم')} لسنة {case.get('سنة')}</h2>", unsafe_allow_html=True)
+    
+    if st.button("⬅️ العودة للحصر العام", use_container_width=True): 
+        st.session_state.page = "الحصر"; st.rerun()
+
+    # 1- بيانات المحكمة والدعوى
+    st.markdown("<div style='background:#1E2A47; padding:15px; border-radius:15px; border:2px solid #D4AF37; margin-bottom:15px'>", unsafe_allow_html=True)
+    st.markdown("<div style='color:#D4AF37; font-size:20px; font-weight:900; text-align:center; margin-bottom:10px'>1- بيانات القضية</div>", unsafe_allow_html=True)
+    st.write(f"**نوع الدعوى:** {case.get('نوع')}")
+    st.write(f"**المحكمة:** {case.get('محكمة_اسم')} {case.get('مأمورية')}")
+    st.write(f"**الدائرة:** {case.get('دائرة')}")
+    st.write(f"**الموضوع:** {case.get('موضوع')}")
+    st.write(f"**الحالة:** {case.get('حالة')}")
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    # 2- بيانات الخصوم
+    st.markdown("<div style='background:#1E2A47; padding:15px; border-radius:15px; border:2px solid #D4AF37; margin-bottom:15px'>", unsafe_allow_html=True)
+    st.markdown("<div style='color:#D4AF37; font-size:20px; font-weight:900; text-align:center; margin-bottom:10px'>2- بيانات الخصوم</div>", unsafe_allow_html=True)
+    st.write(f"**المدعى / المستأنف:** {case.get('مدعي')}")
+    st.write(f"**المدعى عليه / المستأنف ضده:** {case.get('مدعي_عليه')}")
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    # 3- متابعة الجلسات
+    st.markdown("<div style='background:#1E2A47; padding:15px; border-radius:15px; border:2px solid #D4AF37; margin-bottom:15px'>", unsafe_allow_html=True)
+    st.markdown("<div style='color:#D4AF37; font-size:20px; font-weight:900; text-align:center; margin-bottom:10px'>3- متابعة الجلسات</div>", unsafe_allow_html=True)
+    
+    if case.get("جلسات"):
+        for i, جلسة in enumerate(case["جلسات"]):
+            st.markdown(f"<div style='background:#142038; padding:10px; border-radius:10px; margin-bottom:5px'>", unsafe_allow_html=True)
+            st.write(f"**جلسة {i+1}:** تاريخ {جلسة.get('تاريخ')} | الرول: {جلسة.get('الرول')} | السبب: {جلسة.get('سبب')}")
+            st.write(f"**ملاحظات:** {جلسة.get('ملاحظات')}")
+            st.markdown("</div>", unsafe_allow_html=True)
+    else:
+        st.info("لا توجد جلسات مسجلة")
+    
+    with st.expander("➕ اضافة جلسة جديدة"):
+        with st.form("add_session"):
+            تاريخ_جديد = st.date_input("تاريخ الجلسة", value=datetime.now())
+            رول_جديد = st.text_input("الرول")
+            سبب_جديد = st.text_input("سبب الجلسة")
+            ملاحظات_جديدة = st.text_area("ملاحظات")
+            if st.form_submit_button("حفظ الجلسة"):
+                case["جلسات"].append({"تاريخ":str(تاريخ_جديد),"الرول":رول_جديد,"سبب":سبب_جديد,"ملاحظات":ملاحظات_جديدة})
+                case["تاريخ_جلسة"] = str(تاريخ_جديد) # تحديث اخر جلسة
+                save_data(data)
+                st.success("تم اضافة الجلسة")
+                st.rerun()
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    # 4- المستندات
+    st.markdown("<div style='background:#1E2A47; padding:15px; border-radius:15px; border:2px solid #D4AF37; margin-bottom:15px'>", unsafe_allow_html=True)
+    st.markdown("<div style='color:#D4AF37; font-size:20px; font-weight:900; text-align:center; margin-bottom:10px'>4- المستندات</div>", unsafe_allow_html=True)
+    if case.get("مستندات"):
+        for مستند in case["مستندات"]:
+            st.write(f"- {مستند.get('نوع')}: {مستند.get('اسم')}")
+    else:
+        st.info("لا توجد مستندات مرفوعة")
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    # 5- جلسة الحكم
+    st.markdown("<div style='background:#1E2A47; padding:15px; border-radius:15px; border:2px solid #D4AF37; margin-bottom:15px'>", unsafe_allow_html=True)
+    st.markdown("<div style='color:#D4AF37; font-size:20px; font-weight:900; text-align:center; margin-bottom:10px'>5- جلسة الحكم</div>", unsafe_allow_html=True)
+    if case.get('حالة') == 'منتهية':
+        st.write(f"**تاريخ الحكم:** {case.get('تاريخ_الحكم','لم يحدد')}")
+        st.write(f"**منطوق الحكم:** {case.get('منطوق_الحكم','لم يحدد')}")
+    else:
+        if st.button("اغلاق القضية واصدار حكم"):
+            case['حالة'] = 'منتهية'
+            case['تاريخ_الحكم'] = str(datetime.now().date())
+            case['منطوق_الحكم'] = st.text_input("اكتب منطوق الحكم")
+            save_data(data)
+            st.success("تم اغلاق القضية")
+            st.rerun()
+    st.markdown("</div>", unsafe_allow_html=True)
