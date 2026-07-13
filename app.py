@@ -632,3 +632,4 @@ elif st.session_state.page == "الأرشيف":
                 st.markdown(بيانات_العودة, unsafe_allow_html=True)
             
             st.markdown("</tr></table></div>", unsafe_allow_html=True)
+            # ================================================
