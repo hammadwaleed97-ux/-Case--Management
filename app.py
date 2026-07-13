@@ -168,6 +168,33 @@ def get_alert_cases():
             except: pass
     return alerts
 # ========= نهاية دوال الايميل =========
+# ========== صفحة مركز التنبيهات ==========
+elif st.session_state.page == "التنبيهات":
+    st.title("🔔 مركز التنبيهات")
+    
+    if st.button("⬅️ العودة للرئيسية", use_container_width=True): 
+        st.session_state.page = "الرئيسية"
+        st.rerun()
+
+    alerts = get_alert_cases() # بنستخدم الفنكشن اللي فوق سطر 140
+    
+    st.markdown(f"<h3 style='text-align:center;'>تاريخ اليوم: {datetime.now().date()}</h3>", unsafe_allow_html=True)
+    
+    # تنبيهات الجلسات
+    st.subheader("⚖️ جلسات خلال 7 ايام")
+    if alerts["sessions"]:
+        for case in alerts["sessions"]:
+            st.error(f"⚠️ قضية {case['رقم']}/{case['سنة']} - {case['مدعي']} ضد {case['مدعي_عليه']} - فاضل {case['days_left']} يوم")
+    else:
+        st.success("مفيش جلسات قريبة")
+    
+    # تنبيهات الطعن
+    st.subheader("📄 طعون اليوم")
+    if alerts["appeals"]:
+        for case in alerts["appeals"]:
+            st.warning(f"⏰ اخر يوم للطعن في قضية {case['رقم']}/{case['سنة']}")
+    else:
+        st.success("مفيش طعون اليوم")
 
 # ========== الصفحة الرئيسية ==========
 if st.session_state.page == "الرئيسية":
