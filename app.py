@@ -66,6 +66,13 @@ st.markdown('<div class="main-title">⚖️ إدارة القضايا ⚖️</di
 DATA_FILE = "cases_data.json"
 UPLOAD_FOLDER = "uploads"
 TOKENS_FILE = "tokens.json"
+
+# ============= حط بياناتك هنا بالاحمر =============
+SENDER_EMAIL = "" # <--- حط ايميل الجيميل بتاعك هنا
+SENDER_PASSWORD = "" # <--- حط باسورد التطبيق هنا
+APP_URL = "https://qpyqpsmkqcvdou4imbfunp.streamlit.app/" # ده بتاعك
+# ==================================================
+
 if not os.path.exists(UPLOAD_FOLDER): os.makedirs(UPLOAD_FOLDER)
 
 if 'page' not in st.session_state: st.session_state.page = "الرئيسية"
