@@ -109,14 +109,14 @@ def load_tokens():
 def save_tokens(tokens_data):
     with open(TOKENS_FILE, "w", encoding="utf-8") as f:
         json.dump(tokens_data, f, ensure_ascii=False, indent=4)
-        
-# ========= دوال التنبيهات =========
+        # ========= دوال التنبيهات =========
 def get_alert_cases():
     data = load_data()
     today = datetime.now().date()
     all_cases = data["cases"]
     alerts = {"sessions": [], "appeals": []}
     for case in all_cases:
+        # 1. الجلسات: خلال 7 ايام
         if case.get('حالة') == 'متداولة' and case.get('تاريخ_جلسة'):
             try:
                 session_date = datetime.strptime(case['تاريخ_جلسة'], '%Y-%m-%d').date()
@@ -125,18 +125,22 @@ def get_alert_cases():
                     case['days_left'] = days_left
                     alerts["sessions"].append(case)
             except: pass
+        
+        # 2. الطعون: من 15 يوم قبل اخر ميعاد لحد اخر يوم
         if case.get('حالة') == 'منتهية' and case.get('مسندة_ل_الحكم') == 'الضد' and case.get('تاريخ_الحكم'):
             try:
                 judgment_date = datetime.strptime(case['تاريخ_الحكم'], '%Y-%m-%d').date()
                 appeal_days = 40 if case['نوع'] == 'دعوى' else 60
-                notify_on = judgment_date + timedelta(days=appeal_days - 15)
-                days_left = (notify_on - today).days
-                if days_left == 0:
-                    case['appeal_days'] = appeal_days
+                last_appeal_day = judgment_date + timedelta(days=appeal_days)
+                notify_start = last_appeal_day - timedelta(days=15)
+                days_left_appeal = (last_appeal_day - today).days
+                
+                if notify_start <= today <= last_appeal_day and days_left_appeal >= 0:
+                    case['days_left_appeal'] = days_left_appeal
                     alerts["appeals"].append(case)
             except: pass
     return alerts
-# =
+# ========= نهاية دوال التنبيهات =========
 # ========== الصفحة الرئيسية ==========
 if st.session_state.page == "الرئيسية":
     st.markdown('<h2>الأقسام</h2>', unsafe_allow_html=True)
