@@ -31,9 +31,6 @@ if "data" not in st.session_state:
     st.session_state.data = load_data()  # يحمل من الملف او يعمل فاضي
 if "user" not in st.session_state:
     st.session_state.user = "المستخدم"
-if 'selected_case_id' not in st.session_state: 
-    st.session_state.selected_case_id = None
-
 # ============= التصميم النهائي المصلح =============
 st.markdown("""
 <style>
@@ -49,7 +46,6 @@ st.markdown("""
     button[data-baseweb="tab"] { color: white !important; font-weight: bold !important; font-size: 16px !important; opacity: 0.7; }
     button[data-baseweb="tab"][aria-selected="true"] { color: white !important; border-bottom: 3px solid #FFD700 !important; opacity: 1; }
     label { color: #FFD700 !important; }
-    .stButton > button { color: #000 !important; font-weight: 900 !important; font-size: 18px !important; border: none !important; border-radius: 15px !important; padding: 16px !important; width: 100% !important; max-width: 400px !important; margin: 10px auto !important; box-shadow: 0 4px 12px rgba(0,0,0,0.4) !important; display: block; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -65,92 +61,38 @@ SENDER_EMAIL = ""
 SENDER_PASSWORD = "" 
 APP_URL = "https://qpyqpsmkqcvdou4imbfunp.streamlit.app/"
 if not os.path.exists(UPLOAD_FOLDER): os.makedirs(UPLOAD_FOLDER)
+if 'page' not in st.session_state: st.session_state.page = "الرئيسية"
+if 'selected_case_id' not in st.session_state: st.session_state.selected_case_id = None
 
-# ====== التبويبات الاربعة ======
+# ====== هنا ضفت التبويبات بس ======
 tab1, tab2, tab3, tab4 = st.tabs(["📝 إدارة القضايا", "📚 الأرشيف", "📑 التقارير", "📊 الاحصائيات"])
-
 data = st.session_state.data
 
-# ====================== تبويب 1: ادارة القضايا ======================
 with tab1:
     st.subheader("📝 إدارة القضايا")
-    if data.get("cases"):
-        st.dataframe(pd.DataFrame(data["cases"]), use_container_width=True, height=400)
-    else:
-        st.info("لا توجد قضايا مسجلة حاليا")
+    if data.get("cases"): st.dataframe(pd.DataFrame(data["cases"]), use_container_width=True)
+    else: st.info("لا توجد قضايا")
 
-# ====================== تبويب 2: الارشيف ======================
 with tab2:
     st.subheader("📚 الأرشيف")
-    if data.get("archive"):
-        st.dataframe(pd.DataFrame(data["archive"]), use_container_width=True, height=400)
-    else:
-        st.info("لا توجد احكام في الارشيف حاليا")
+    if data.get("archive"): st.dataframe(pd.DataFrame(data["archive"]), use_container_width=True)
+    else: st.info("لا توجد احكام")
 
-# ====================== تبويب 3: التقارير ======================
 with tab3:
-    st.markdown("<h2 style='color:#FFD700; text-align:center;'>📑 مركز التقارير</h2>", unsafe_allow_html=True)
-    
-    report_type = st.selectbox("اختر نوع التقرير", ["بيان بالدعاوى المتداولة","بيان بالاحكام","بيان الدعاوى المتداولة حسب الموضوع","بيان الاحكام حسب الموضوع"])
-    c1, c2, c3 = st.columns(3)
-    with c1: from_date = st.date_input("من تاريخ", datetime.now() - timedelta(days=30))
-    with c2: to_date = st.date_input("حتى تاريخ", datetime.now())
-    with c3: region = st.text_input("ديوان عام منطقة")
-    
-    topic = ""
-    الحكم_نوع = "جميع الاحكام"
-    if "حسب الموضوع" in report_type: topic = st.text_input("موضوع الدعوى للفلترة")
-    if "الاحكام" in report_type: الحكم_نوع = st.selectbox("تصنيف الاحكام", ["جميع الاحكام", "الاحكام للصالح", "الاحكام للضد"])
+    st.subheader("📑 التقارير")
+    from_date = st.date_input("من تاريخ", datetime.now() - timedelta(days=30))
+    to_date = st.date_input("حتى تاريخ", datetime.now())
+    if st.button("عرض تقرير الدعاوى"):
+        df = pd.DataFrame(data.get("cases",[]))
+        if not df.empty:
+            df['تاريخ الجلسة'] = pd.to_datetime(df['تاريخ الجلسة'], errors='coerce')
+            df = df[(df['تاريخ الجلسة'] >= pd.to_datetime(from_date)) & (df['تاريخ الجلسة'] <= pd.to_datetime(to_date))]
+            st.dataframe(df, use_container_width=True)
 
-    if st.button("عرض التقرير", use_container_width=True, type="primary"):
-        st.markdown(f"""<div style='text-align:center; color:#FFD700; border:3px double #FFD700; padding:15px; margin-bottom:20px;'><h2>الهيئة القومية للتأمين الاجتماعى</h2><h3>الإدارة العامة للقضايا</h3><h3>ديوان عام {region}</h3></div>""", unsafe_allow_html=True)
-        df_final = pd.DataFrame()
-        if "الدعاوى" in report_type:
-            df = pd.DataFrame(data.get("cases",[]))
-            if not df.empty:
-                df['تاريخ الجلسة'] = pd.to_datetime(df['تاريخ الجلسة'], errors='coerce')
-                df_final = df[(df['تاريخ الجلسة'] >= pd.to_datetime(from_date)) & (df['تاريخ الجلسة'] <= pd.to_datetime(to_date))]
-                if topic: df_final = df_final[df_final['موضوع الدعوى'].str.contains(topic, na=False)]
-                df_final = df_final.sort_values('تاريخ الجلسة', ascending=False).reset_index(drop=True)
-                df_final.index = df_final.index + 1
-                st.dataframe(df_final, use_container_width=True, height=400)
-            else: st.warning("مفيش قضايا متداولة في الفترة دي")
-        elif "الاحكام" in report_type:
-            df = pd.DataFrame(data.get("archive",[]))
-            if not df.empty:
-                df['تاريخ الحكم'] = pd.to_datetime(df['تاريخ الحكم'], errors='coerce')
-                df_final = df[(df['تاريخ الحكم'] >= pd.to_datetime(from_date)) & (df['تاريخ الحكم'] <= pd.to_datetime(to_date))]
-                if الحكم_نوع == "الاحكام للصالح": df_final = df_final[df_final['النتيجة'] == 'للصالح']
-                if الحكم_نوع == "الاحكام للضد": df_final = df_final[df_final['النتيجة'] == 'للضد']
-                if topic: df_final = df_final[df_final['موضوع الدعوى'].str.contains(topic, na=False)]
-                df_final = df_final.sort_values('تاريخ الحكم', ascending=False).reset_index(drop=True)
-                df_final.index = df_final.index + 1
-                st.dataframe(df_final, use_container_width=True, height=400)
-            else: st.warning("مفيش احكام في الفترة دي")
-        
-        if not df_final.empty:
-            st.markdown(f"<p style='text-align:right; color:#FFD700; margin-top:30px;'>تفضلوا بقبول وافر الاحترام<br><br>عضو الادارة.................. مدير الإدارة..................<br>تحر في {datetime.now().strftime('%Y-%m-%d')}</p>", unsafe_allow_html=True)
-            excel_data = df_final.to_csv(index=False).encode('utf-8-sig')
-            st.download_button("📊 تحميل Excel", data=excel_data, file_name="report.xlsx", use_container_width=True)
-
-# ====================== تبويب 4: الاحصائيات ======================
 with tab4:
-    st.markdown("<h2 style='color:#FFD700; text-align:center;'>📊 الاحصائيات</h2>", unsafe_allow_html=True)
-    c1, c2 = st.columns(2)
-    with c1: stat_from = st.date_input("من تاريخ", key="s1")
-    with c2: stat_to = st.date_input("حتى تاريخ", key="s2")
-    if st.button("استخراج الاحصائيات", use_container_width=True, type="primary"):
-        df_all = pd.DataFrame(data.get("cases",[]))
-        df_arc = pd.DataFrame(data.get("archive",[]))
-        متداولة = len(df_all)
-        احكام = len(df_arc)
-        للصالح = len(df_arc[df_arc['النتيجة'] == 'للصالح']) if not df_arc.empty else 0
-        للضد = len(df_arc[df_arc['النتيجة'] == 'للضد']) if not df_arc.empty else 0
-        col1,col2,col3,col4 = st.columns(4)
-        col1.metric("عدد القضايا المتداولة", متداولة)
-        col2.metric("عدد الاحكام الصادرة", احكام)
-        col3.metric("عدد الاحكام للصالح", للصالح)
-        col4.metric("عدد الاحكام للضد", للضد)
+    st.subheader("📊 الاحصائيات")
+    st.metric("عدد القضايا", len(data.get("cases",[])))
+    st.metric("عدد الاحكام", len(data.get("archive",[])))
 # ====== دوال التحميل والحفظ ======
 def load_data():
     if os.path.exists(DATA_FILE):
