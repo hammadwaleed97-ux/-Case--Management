@@ -913,49 +913,71 @@ elif st.session_state.page == "المكتبة":
             st.session_state.pop(k, None)
         st.rerun()
         # ================================================
+        # ================================================
 # ========== صفحة التقارير ==========
 elif st.session_state.page == "تقارير":
     st.markdown('<h1 style="text-align: center; color: #FFD700;">📊 مركز التقارير</h1>', unsafe_allow_html=True)
     
     tab1, tab2, tab3, tab4 = st.tabs(["الدعاوى المتداولة", "الاحكام", "تقارير حسب الموضوع", "الاحصائيات"])
 
-    def report_header(tab_id):
-        st.markdown('<div style="text-align:center; border:2px solid #FFD700; padding:10px; border-radius:10px;">', unsafe_allow_html=True)
-        st.markdown("### الهيئة القومية للتأمين الاجتماعى")
-        st.markdown("### الإدارة المركزية للإدارات القانونية")
-        st.markdown("### الإدارة العامة للقضايا")
-        region = st.text_input("ديوان عام منطقة", key=f"region_{tab_id}")
-        st.markdown('</div>', unsafe_allow_html=True)
-        return region
+    # ========= الهيدر الموحد دهبي كله =========
+    def report_header(tab_id, title_text):
+        st.markdown(f"""
+        <div style="text-align:center; border:2px solid #FFD700; padding:15px; border-radius:10px; color:#FFD700;">
+            <h3 style="color:#FFD700; margin:5px;">الهيئة القومية للتأمين الاجتماعى</h3>
+            <h3 style="color:#FFD700; margin:5px;">الإدارة المركزية للإدارات القانونية</h3>
+            <h3 style="color:#FFD700; margin:5px;">الإدارة العامة للقضايا</h3>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        region = st.text_input("ديوان عام منطقة", key=f"region_{tab_id}", label_visibility="visible")
+        
+        st.markdown(f'<h4 style="text-align:center; color:#FFD700; margin-top:15px;">{title_text}</h4>', unsafe_allow_html=True)
+        
+        col1, col2 = st.columns([3,1])
+        with col1: 
+            lawyer_name = st.text_input("", placeholder="اكتب اسم المحامي هنا", key=f"lawyer_{tab_id}", label_visibility="collapsed")
+        with col2: 
+            st.markdown('<p style="color:#FFD700; text-align:right; padding-top:8px;"><b>طرف الاستاذ/ المحامى</b></p>', unsafe_allow_html=True)
+            
+        return region, lawyer_name
 
+    # ========= الفوتر الموحد دهبي =========
     def report_footer():
         st.divider()
-        st.markdown("**وتفضلوا بقبول وافر الاحترام**")
+        st.markdown('<p style="color:#FFD700; text-align:right;"><b>وتفضلوا بقبول وافر الاحترام</b></p>', unsafe_allow_html=True)
         col1, col2 = st.columns(2)
-        with col1: st.write("عضو الادارة: ................")
-        with col2: st.write("مدير الإدارة: ................")
-        st.write(f"تحرر في: {datetime.now().strftime('%Y-%m-%d')}")
+        with col1: st.markdown('<p style="color:#FFD700;">عضو الادارة: ................</p>', unsafe_allow_html=True)
+        with col2: st.markdown('<p style="color:#FFD700;">مدير الإدارة: ................</p>', unsafe_allow_html=True)
+        st.markdown(f'<p style="color:#FFD700;">تحرر في: {datetime.now().strftime("%Y-%m-%d")}</p>', unsafe_allow_html=True)
 
     cases = st.session_state.data.get("cases", [])
     archive = st.session_state.data.get("archive", [])
 
+    # ========= TAB 1: الدعاوى المتداولة =========
     with tab1:
-        region = report_header("tab1")
-        st.info("دي صفحة التقارير اشتغلت خلاص 👌")
+        region, lawyer_name = report_header("tab1", "كشف بالدعاوى المتداولة")
+        st.write("") # مسافة
+        st.info("هنا هيظهر جدول الدعاوى المتداولة")
         report_footer()
 
+    # ========= TAB 2: الاحكام =========
     with tab2:
-        region = report_header("tab2")
-        st.info("هنا الاحكام")
+        region, lawyer_name = report_header("tab2", "كشف بالاحكام")
+        st.write("")
+        st.info("هنا هيظهر جدول الاحكام")
         report_footer()
 
+    # ========= TAB 3: حسب الموضوع =========
     with tab3:
-        region = report_header("tab3")
-        st.info("هنا حسب الموضوع")
+        region, lawyer_name = report_header("tab3", "كشف بالدعاوى حسب الموضوع")
+        st.write("")
+        st.info("هنا البحث حسب الموضوع")
         report_footer()
 
+    # ========= TAB 4: الاحصائيات =========
     with tab4:
-        st.subheader("📈 الاحصائيات")
+        st.markdown('<h3 style="color:#FFD700; text-align:center;">📈 الاحصائيات</h3>', unsafe_allow_html=True)
         st.metric("عدد القضايا", len(cases))
 
     if st.button("⬅️ العودة للصفحة الرئيسية", use_container_width=True, key="back_reports"):
