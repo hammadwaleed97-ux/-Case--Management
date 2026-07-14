@@ -1,5 +1,5 @@
-#========== الجزء الاول: الاساسيات ============
 # ================================================
+# ========= الجزء الاول: الاساسيات ============
 import streamlit as st
 import pandas as pd
 import json
@@ -12,6 +12,37 @@ from email.mime.multipart import MIMEMultipart
 
 st.set_page_config(page_title="إدارة القضايا", layout="wide", page_icon="⚖️")
 
+# ========= الـ CSS الموحد كله دهبي =========
+st.markdown("""
+<style>
+    .stApp { background-color: #1A1A2E; }
+    
+    .btn-add button { background-color: #28a745; color: white; font-weight: bold; }
+    .btn-list button { background-color: #17a2b8; color: white; font-weight: bold; }
+    .btn-alert button { background-color: #dc3545; color: white; font-weight: bold; }
+    .btn-report button { background-color: #FFD700; color: black; font-weight: bold; }
+    .btn-lib button { background-color: #6f42c1; color: white; font-weight: bold; }
+    .btn-arch button { background-color: #fd7e14; color: white; font-weight: bold; }
+    .btn-search button { background-color: #007bff; color: white; font-weight: bold; }
+
+    /* تلوين التبويبات دهبي */
+    button[data-baseweb="tab"] {
+        color: #FFD700 !important;
+        font-weight: bold !important;
+        font-size: 16px !important;
+    }
+    button[data-baseweb="tab"][aria-selected="true"] {
+        color: #FFD700 !important;
+        border-bottom: 3px solid #FFD700 !important;
+    }
+    
+    /* تلوين الليبل بتاع التاريخ والانبوت */
+    label { color: #FFD700 !important; }
+</style>
+""", unsafe_allow_html=True)
+# ================================================
+
+# ========= دالة الحفظ =========
 # ========= دالة الحفظ =========
 def save_data(data):
     with open("data.json", "w", encoding="utf-8") as f:
