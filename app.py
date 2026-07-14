@@ -1,4 +1,5 @@
 # ========= الجزء الاول: الاساسيات ============
+# ================================================
 import streamlit as st
 import pandas as pd
 import json
@@ -8,46 +9,30 @@ import secrets
 from datetime import datetime, timedelta
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from reportlab.lib.pagesizes import A4
-from reportlab.pdfgen import canvas
-from reportlab.lib import colors
-from reportlab.platypus import Table, TableStyle
-import io
 
 st.set_page_config(page_title="إدارة القضايا", layout="wide", page_icon="⚖️")
 
-# ========= الـ CSS الموحد =========
-st.markdown("""
-<style>
-    .stApp { background-color: #1A1A2E; }
-    .btn-add button { background-color: #28a745; color: white; font-weight: bold; }
-    .btn-list button { background-color: #17a2b8; color: white; font-weight: bold; }
-    .btn-alert button { background-color: #dc3545; color: white; font-weight: bold; }
-    .btn-report button { background-color: #FFD700; color: black; font-weight: bold; }
-    .btn-lib button { background-color: #6f42c1; color: white; font-weight: bold; }
-    .btn-arch button { background-color: #fd7e14; color: white; font-weight: bold; }
-    .btn-search button { background-color: #007bff; color: white; font-weight: bold; }
-    button[data-baseweb="tab"] { color: white !important; font-weight: bold !important; font-size: 16px !important; opacity: 0.7; }
-    button[data-baseweb="tab"][aria-selected="true"] { color: white !important; border-bottom: 3px solid #FFD700 !important; opacity: 1; }
-    label { color: #FFD700 !important; }
-</style>
-""", unsafe_allow_html=True)
-
-# ========= دوال تحميل وحفظ البيانات من الملف الاساسي =========
-DATA_FILE = "cases_data.json"
-UPLOAD_FOLDER = "uploads"
-if not os.path.exists(UPLOAD_FOLDER): os.makedirs(UPLOAD_FOLDER)
-
-def load_all_data():
-    if os.path.exists(DATA_FILE):
-        with open(DATA_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    return {"cases": [], "archive": []}
-
-def save_all_data(data):
-    with open(DATA_FILE, "w", encoding="utf-8") as f:
+# ========= دالة الحفظ =========
+def save_data(data):
+    with open("data.json", "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=4)
 
+# ========= تحميل البيانات =========
+def load_data():
+    if os.path.exists("data.json"):
+        with open("data.json", "r", encoding="utf-8") as f:
+            return json.load(f)
+    return {"cases": [], "library": [], "tasks": [], "users": []}
+
+# ========= تهيئة الـ Session State =========
+if "page" not in st.session_state:
+    st.session_state.page = "الرئيسية"
+
+if "data" not in st.session_state:
+    st.session_state.data = load_data()  # يحمل من الملف او يعمل فاضي
+
+if "user" not in st.session_state:
+    st.session_state.user = "المستخدم"
 # ============= التصميم النهائي المصلح =============
 st.markdown("""
 <style>
@@ -55,114 +40,78 @@ st.markdown("""
     * { font-family: 'Cairo', sans-serif !important; }
     html, body { direction: rtl; color: #FFFFFF !important; }
     .stApp { background: linear-gradient(180deg, #0A1428 0%, #1E2A47 100%); }
-    .marquee { background: linear-gradient(90deg, #D4AF37 0%, #FFD700 50%, #D4AF37 100%); color: #0A1428; padding: 12px; font-weight: 900; font-size: 16px; white-space: nowrap; overflow: hidden; border-radius: 0 0 15px 15px; }
+    
+    .marquee {
+        background: linear-gradient(90deg, #D4AF37 0%, #FFD700 50%, #D4AF37 100%);
+        color: #0A1428; padding: 12px; font-weight: 900; font-size: 16px;
+        white-space: nowrap; overflow: hidden; border-radius: 0 0 15px 15px;
+    }
     .marquee span { display: inline-block; animation: marquee 15s linear infinite; }
     @keyframes marquee { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+    
     .main-title { color: #D4AF37; text-align: center; font-size: 36px; font-weight: 900; padding: 15px 0; }
     h1, h2, h3 { color: #D4AF37 !important; text-align: center !important; font-weight: 900; }
+    
+    div[data-testid="column"] { display: flex; justify-content: center; }
+    [data-testid="stForm"] label, .stMarkdown { color: #FFFFFF !important; font-weight: 700; }
+    
+    .stButton > button {
+        color: #000 !important; font-weight: 900 !important; font-size: 18px !important;
+        border: none !important; border-radius: 15px !important; padding: 16px !important;
+        width: 100% !important; max-width: 400px !important; margin: 10px auto !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.4) !important; display: block;
+    }
+    
+    .btn-add button { background: linear-gradient(180deg, #4DA8DA 0%, #2C5282 100%) !important; }
+    .btn-list button { background: linear-gradient(180deg, #4CAF50 0%, #2E7D32 100%) !important; }
+    .btn-alert button { background: linear-gradient(180deg, #FF5252 0%, #D32F2F 100%) !important; animation: pulse 1.5s infinite; }
+    .btn-report button { background: linear-gradient(180deg, #FF9800 0%, #F57C00 100%) !important; }
+    .btn-lib button { background: linear-gradient(180deg, #3F51B5 0%, #303F9F 100%) !important; }
+    .btn-arch button { background: linear-gradient(180deg, #9E9E9E 0%, #616161 100%) !important; }
+    .btn-search button { background: linear-gradient(180deg, #9C27B0 0%, #6A1B9A 100%) !important; }
+    
+    .stTextInput > div > div > input, .stTextArea > div > div > textarea, .stSelectbox > div > div > select {
+        background-color: #FFFFFF !important; color: #000 !important;
+        border: 2px solid #D4AF37 !important; border-radius: 12px !important;
+        padding: 12px !important; text-align: right !important; font-weight: 700 !important;
+    }
+    
+    .case-table { width:100%; color:#FFFFFF; text-align:center; border-collapse: collapse; }
+    .case-table th { background:#D4AF37; color:#0A1428; padding:8px; font-weight:900; }
+    .case-table td { padding:8px; border-bottom: 1px solid #D4AF37; }
+    .table-container { background:#1E2A47; padding:10px; border-radius:15px; border:2px solid #D4AF37; margin-bottom:15px; }
+    .row1 { background: #142038; }
+    .row2 { background: #1E2A47; }
+    .row-hey2a { background: #1E3A6B; }
+    .row-judgment { background: #2C2F33; }
+    
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 82, 82, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(255, 82, 82, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 82, 82, 0); } }
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown("""<div class="marquee"><span>مع تحيات وليد حماد - الإدارة العامة للشئون القانونية بديوان عام منطقة البحيرة بالهيئة القومية للتأمين الاجتماعي</span></div>""", unsafe_allow_html=True)
+st.markdown("""
+<div class="marquee">
+<span>مع تحيات وليد حماد - الإدارة العامة للشئون القانونية بديوان عام منطقة البحيرة بالهيئة القومية للتأمين الاجتماعي</span>
+</div>
+""", unsafe_allow_html=True)
+
 st.markdown('<div class="main-title">⚖️ إدارة القضايا ⚖️</div>', unsafe_allow_html=True)
 
-# ====== التبويبات الاربعة ======
-tab1, tab2, tab3, tab4 = st.tabs(["📝 إدارة القضايا", "📚 الأرشيف", "📑 التقارير", "📊 الاحصائيات"])
+# ====== المتغيرات العامة ======
+DATA_FILE = "cases_data.json"
+UPLOAD_FOLDER = "uploads"
+TOKENS_FILE = "tokens.json"
+ANWA3_MOSTANDAT = ["صحيفة دعوى", "صحيفة استئناف", "صحيفة طعن", "مذكرة دفاع", "حافظة مستندات", "تقرير خبير", "تقرير طب شرعى", "تقرير لجنة طبية", "صحيفة تجديد من الشطب", "صحيفة تعجيل من الوقف", "صورة حكم تمهيدى", "أخرى"]
 
-# ====================== تبويب 1: ادارة القضايا ======================
-with tab1:
-    st.subheader("📝 إدارة القضايا")
-    data = load_all_data()
-    df_cases = pd.DataFrame(data["cases"])
-    if not df_cases.empty:
-        st.dataframe(df_cases, use_container_width=True)
-    else:
-        st.info("لا توجد قضايا مسجلة حاليا")
+SENDER_EMAIL = "" 
+SENDER_PASSWORD = "" 
+APP_URL = "https://qpyqpsmkqcvdou4imbfunp.streamlit.app/"
 
-# ====================== تبويب 2: الارشيف ======================
-with tab2:
-    st.subheader("📚 الأرشيف")
-    data = load_all_data()
-    df_archive = pd.DataFrame(data["archive"])
-    if not df_archive.empty:
-        st.dataframe(df_archive, use_container_width=True)
-    else:
-        st.info("لا توجد احكام في الارشيف حاليا")
+if not os.path.exists(UPLOAD_FOLDER): os.makedirs(UPLOAD_FOLDER)
 
-# ====================== تبويب 3: التقارير ======================
-with tab3:
-    st.markdown("<h2 style='color:#FFD700; text-align:center;'>📑 مركز التقارير</h2>", unsafe_allow_html=True)
+if 'page' not in st.session_state: st.session_state.page = "الرئيسية"
+if 'selected_case_id' not in st.session_state: st.session_state.selected_case_id = None
     
-    data = load_all_data() # بيسحب من الملف مباشرة
-    
-    report_type = st.selectbox("اختر نوع التقرير", ["بيان بالدعاوى المتداولة","بيان بالاحكام","بيان الدعاوى المتداولة حسب الموضوع","بيان الاحكام حسب الموضوع"], key="report_type")
-    c1, c2, c3 = st.columns(3)
-    with c1: from_date = st.date_input("من تاريخ", datetime.now() - timedelta(days=30))
-    with c2: to_date = st.date_input("حتى تاريخ", datetime.now())
-    with c3: region = st.text_input("ديوان عام منطقة")
-    
-    topic = ""
-    الحكم_نوع = "جميع الاحكام"
-    if "حسب الموضوع" in report_type: topic = st.text_input("موضوع الدعوى للفلترة")
-    if "الاحكام" in report_type: الحكم_نوع = st.selectbox("تصنيف الاحكام", ["جميع الاحكام", "الاحكام للصالح", "الاحكام للضد"])
-
-    if st.button("عرض التقرير", use_container_width=True, type="primary"):
-        st.markdown(f"""<div style='text-align:center; color:#FFD700; border:3px double #FFD700; padding:15px; background: linear-gradient(135deg, #1A1A2E 0%, #2A2A4E 100%); border-radius:15px; margin-bottom:20px;'><h2>الهيئة القومية للتأمين الاجتماعى</h2><h3>الإدارة المركزية للإدارات القانونية</h3><h3>الإدارة العامة للقضايا</h3><h3>ديوان عام {region}</h3></div>""", unsafe_allow_html=True)
-        
-        df_final = pd.DataFrame()
-        if "الدعاوى" in report_type:
-            df = pd.DataFrame(data["cases"])
-            if not df.empty:
-                df['تاريخ الجلسة'] = pd.to_datetime(df['تاريخ الجلسة'], errors='coerce')
-                df_final = df[(df['تاريخ الجلسة'] >= pd.to_datetime(from_date)) & (df['تاريخ الجلسة'] <= pd.to_datetime(to_date))]
-                if topic: df_final = df_final[df_final['موضوع الدعوى'].str.contains(topic, na=False)]
-                df_final = df_final.sort_values('تاريخ الجلسة', ascending=False).reset_index(drop=True)
-                df_final.index = df_final.index + 1
-                st.dataframe(df_final, use_container_width=True, height=400)
-            else: st.warning("مفيش قضايا متداولة")
-        
-        elif "الاحكام" in report_type:
-            df = pd.DataFrame(data["archive"])
-            if not df.empty:
-                df['تاريخ الحكم'] = pd.to_datetime(df['تاريخ الحكم'], errors='coerce')
-                df_final = df[df['حالة القضية'] == 'منتهية']
-                df_final = df_final[(df_final['تاريخ الحكم'] >= pd.to_datetime(from_date)) & (df_final['تاريخ الحكم'] <= pd.to_datetime(to_date))]
-                if الحكم_نوع == "الاحكام للصالح": df_final = df_final[df_final['النتيجة'] == 'للصالح']
-                if الحكم_نوع == "الاحكام للضد": df_final = df_final[df_final['النتيجة'] == 'للضد']
-                if topic: df_final = df_final[df_final['موضوع الدعوى'].str.contains(topic, na=False)]
-                df_final = df_final.sort_values('تاريخ الحكم', ascending=False).reset_index(drop=True)
-                df_final.index = df_final.index + 1
-                st.dataframe(df_final, use_container_width=True, height=400)
-            else: st.warning("مفيش احكام")
-
-        if not df_final.empty:
-            st.markdown(f"<p style='text-align:right; color:#FFD700; margin-top:30px;'>تفضلوا بقبول وافر الاحترام<br><br>عضو الادارة.................. مدير الإدارة..................<br>تحر في {datetime.now().strftime('%Y-%m-%d')}</p>", unsafe_allow_html=True)
-            excel_data = df_final.to_csv(index=False).encode('utf-8-sig')
-            st.download_button("📊 تحميل Excel", data=excel_data, file_name="report.xlsx", use_container_width=True)
-
-# ====================== تبويب 4: الاحصائيات ======================
-with tab4:
-    st.markdown("<h2 style='color:#FFD700; text-align:center;'>📊 الاحصائيات</h2>", unsafe_allow_html=True)
-    data = load_all_data()
-    c1, c2 = st.columns(2)
-    with c1: stat_from = st.date_input("من تاريخ", key="s1")
-    with c2: stat_to = st.date_input("حتى تاريخ", key="s2")
-    if st.button("استخراج الاحصائيات", use_container_width=True, type="primary"):
-        df_all = pd.DataFrame(data["cases"])
-        df_arc = pd.DataFrame(data["archive"])
-        if not df_all.empty: df_all['تاريخ الجلسة'] = pd.to_datetime(df_all['تاريخ الجلسة'], errors='coerce')
-        if not df_arc.empty: df_arc['تاريخ الحكم'] = pd.to_datetime(df_arc['تاريخ الحكم'], errors='coerce')
-        df_all_f = df_all[(df_all['تاريخ الجلسة'] >= pd.to_datetime(stat_from)) & (df_all['تاريخ الجلسة'] <= pd.to_datetime(stat_to))] if not df_all.empty else df_all
-        df_arc_f = df_arc[(df_arc['تاريخ الحكم'] >= pd.to_datetime(stat_from)) & (df_arc['تاريخ الحكم'] <= pd.to_datetime(stat_to))] if not df_arc.empty else df_arc
-        متداولة = len(df_all_f)
-        احكام = len(df_arc_f)
-        للصالح = len(df_arc_f[df_arc_f['النتيجة'] == 'للصالح']) if not df_arc_f.empty else 0
-        للضد = len(df_arc_f[df_arc_f['النتيجة'] == 'للضد']) if not df_arc_f.empty else 0
-        col1,col2,col3,col4 = st.columns(4)
-        col1.metric("عدد القضايا المتداولة", متداولة)
-        col2.metric("عدد الاحكام الصادرة", احكام)
-        col3.metric("عدد الاحكام للصالح", للصالح)
-        col4.metric("عدد الاحكام للضد", للضد)
 # ====== دوال التحميل والحفظ ======
 def load_data():
     if os.path.exists(DATA_FILE):
