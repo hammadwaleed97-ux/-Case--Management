@@ -116,7 +116,7 @@ if 'selected_case_id' not in st.session_state: st.session_state.selected_case_id
 def load_data():
     if os.path.exists(DATA_FILE):
         with open(DATA_FILE, "r", encoding="utf-8") as f: return json.load(f)
-    return {"cases": [], "archive": [], "library": []}
+        return {"cases": [], "library": []}
 def save_data(data):
     with open(DATA_FILE, "w", encoding="utf-8") as f: json.dump(data, f, ensure_ascii=False, indent=4)
 
@@ -128,8 +128,7 @@ def load_tokens():
 def save_tokens(tokens_data):
     with open(TOKENS_FILE, "w", encoding="utf-8") as f:
         json.dump(tokens_data, f, ensure_ascii=False, indent=4)
-
-# ========= دوال التنبيهات =========
+        # ========= دوال التنبيهات =========
 def get_alert_cases():
     data = load_data()
     today = datetime.now().date()
@@ -161,85 +160,6 @@ def get_alert_cases():
             except: pass
     return alerts
 # ========= نهاية دوال التنبيهات =========
-
-# ========= قسم التقارير الجديد - اضافة فقط =========
-st.markdown("<hr style='border: 2px solid #FFD700; margin-top: 40px;'>", unsafe_allow_html=True)
-st.markdown("<h2 style='color:#FFD700; text-align:center;'>📑 مركز التقارير</h2>", unsafe_allow_html=True)
-
-data = load_data()
-report_type = st.selectbox("اختر نوع التقرير", ["بيان بالدعاوى المتداولة","بيان بالاحكام"])
-c1, c2, c3 = st.columns(3)
-with c1: from_date = st.date_input("من تاريخ", datetime.now() - timedelta(days=30))
-with c2: to_date = st.date_input("حتى تاريخ", datetime.now())
-with c3: region = st.text_input("ديوان عام منطقة")
-
-if st.button("عرض التقرير", use_container_width=True, type="primary"):
-    st.markdown(f"""<div style='text-align:center; color:#FFD700; border:3px double #FFD700; padding:15px; margin:20px 0;'><h2>الهيئة القومية للتأمين الاجتماعى</h2><h3>الإدارة العامة للقضايا</h3><h3>ديوان عام {region}</h3></div>""", unsafe_allow_html=True)
-    df_final = pd.DataFrame()
-    if "الدعاوى" in report_type:
-        df = pd.DataFrame(data.get("cases",[]))
-        if not df.empty:
-            df['تاريخ_جلسة'] = pd.to_datetime(df['تاريخ_جلسة'], errors='coerce')
-            df_final = df[(df['تاريخ_جلسة'] >= pd.to_datetime(from_date)) & (df['تاريخ_جلسة'] <= pd.to_datetime(to_date))]
-            st.dataframe(df_final, use_container_width=True, height=400)
-        else: st.warning("مفيش قضايا متداولة")
-    elif "الاحكام" in report_type:
-        df = pd.DataFrame(data.get("archive",[]))
-        if not df.empty:
-            df['تاريخ_الحكم'] = pd.to_datetime(df['تاريخ_الحكم'], errors='coerce')
-            df_final = df[(df['تاريخ_الحكم'] >= pd.to_datetime(from_date)) & (df['تاريخ_الحكم'] <= pd.to_datetime(to_date))]
-            st.dataframe(df_final, use_container_width=True, height=400)
-        else: st.warning("مفيش احكام")
-    
-    if not df_final.empty:
-        excel_data = df_final.to_csv(index=False).encode('utf-8-sig')
-        st.download_button("📊 تحميل Excel", data=excel_data, file_name="report.xlsx", use_container_width=True)
-# ========= نهاية دوال التنبيهات ========
-# ====== التبويبات الجديدة - اضافة فقط ======
-tab1, tab2, tab3, tab4 = st.tabs(["📝 إدارة القضايا", "📚 الأرشيف", "📑 التقارير", "📊 الاحصائيات"])
-data = load_data()
-
-with tab1:
-    st.subheader("📝 إدارة القضايا")
-    if data.get("cases"): st.dataframe(pd.DataFrame(data["cases"]), use_container_width=True, height=400)
-    else: st.info("لا توجد قضايا مسجلة")
-
-with tab2:
-    st.subheader("📚 الأرشيف")
-    if data.get("archive"): st.dataframe(pd.DataFrame(data["archive"]), use_container_width=True, height=400)
-    else: st.info("لا توجد احكام في الارشيف")
-
-with tab3:
-    st.markdown("<h2 style='color:#FFD700; text-align:center;'>📑 مركز التقارير</h2>", unsafe_allow_html=True)
-    report_type = st.selectbox("اختر نوع التقرير", ["بيان بالدعاوى المتداولة","بيان بالاحكام"])
-    c1, c2, c3 = st.columns(3)
-    with c1: from_date = st.date_input("من تاريخ", datetime.now() - timedelta(days=30))
-    with c2: to_date = st.date_input("حتى تاريخ", datetime.now())
-    with c3: region = st.text_input("ديوان عام منطقة")
-    if st.button("عرض التقرير", use_container_width=True, type="primary"):
-        st.markdown(f"""<div style='text-align:center; color:#FFD700; border:3px double #FFD700; padding:15px;'><h2>الهيئة القومية للتأمين الاجتماعى</h2><h3>ديوان عام {region}</h3></div>""", unsafe_allow_html=True)
-        df_final = pd.DataFrame()
-        if "الدعاوى" in report_type:
-            df = pd.DataFrame(data.get("cases",[]))
-            if not df.empty:
-                df['تاريخ_جلسة'] = pd.to_datetime(df['تاريخ_جلسة'], errors='coerce')
-                df_final = df[(df['تاريخ_جلسة'] >= pd.to_datetime(from_date)) & (df['تاريخ_جلسة'] <= pd.to_datetime(to_date))]
-                st.dataframe(df_final, use_container_width=True, height=400)
-        elif "الاحكام" in report_type:
-            df = pd.DataFrame(data.get("archive",[]))
-            if not df.empty:
-                df['تاريخ_الحكم'] = pd.to_datetime(df['تاريخ_الحكم'], errors='coerce')
-                df_final = df[(df['تاريخ_الحكم'] >= pd.to_datetime(from_date)) & (df['تاريخ_الحكم'] <= pd.to_datetime(to_date))]
-                st.dataframe(df_final, use_container_width=True, height=400)
-        if not df_final.empty:
-            excel_data = df_final.to_csv(index=False).encode('utf-8-sig')
-            st.download_button("📊 تحميل Excel", data=excel_data, file_name="report.xlsx", use_container_width=True)
-
-with tab4:
-    st.markdown("<h2 style='color:#FFD700; text-align:center;'>📊 الاحصائيات</h2>", unsafe_allow_html=True)
-    col1,col2,col3,col4 = st.columns(4)
-    col1.metric("عدد القضايا المتداولة", len(data.get("cases",[])))
-    col2.metric("عدد الاحكام", len(data.get("archive",[])))
 # ========= نهاية دوال التنبيهات =========
 LIBRARY_SECTIONS = {
     "القوانين": "#FF4500", "القرارات الوزارية": "#FF8C00", "قرارات الهيئة": "#FFD700",
