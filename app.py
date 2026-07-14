@@ -9,11 +9,11 @@ import secrets
 from datetime import datetime, timedelta
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-#from reportlab.lib.pagesizes import A4
-#from reportlab.pdfgen import canvas
-#from reportlab.lib import colors
-#from reportlab.platypus import Table, TableStyle
-#import io
+from reportlab.lib.pagesizes import A4
+from reportlab.pdfgen import canvas
+from reportlab.lib import colors
+from reportlab.platypus import Table, TableStyle
+import io
 
 st.set_page_config(page_title="إدارة القضايا", layout="wide", page_icon="⚖️")
 
