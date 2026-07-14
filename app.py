@@ -912,3 +912,52 @@ elif st.session_state.page == "المكتبة":
         for k in ["selected_section", "show_upload", "search_filters"]:
             st.session_state.pop(k, None)
         st.rerun()
+        # ================================================
+# ========== صفحة التقارير ==========
+elif st.session_state.page == "تقارير":
+    st.markdown('<h1 style="text-align: center; color: #FFD700;">📊 مركز التقارير</h1>', unsafe_allow_html=True)
+    
+    tab1, tab2, tab3, tab4 = st.tabs(["الدعاوى المتداولة", "الاحكام", "تقارير حسب الموضوع", "الاحصائيات"])
+
+    def report_header(tab_id):
+        st.markdown('<div style="text-align:center; border:2px solid #FFD700; padding:10px; border-radius:10px;">', unsafe_allow_html=True)
+        st.markdown("### الهيئة القومية للتأمين الاجتماعى")
+        st.markdown("### الإدارة المركزية للإدارات القانونية")
+        st.markdown("### الإدارة العامة للقضايا")
+        region = st.text_input("ديوان عام منطقة", key=f"region_{tab_id}")
+        st.markdown('</div>', unsafe_allow_html=True)
+        return region
+
+    def report_footer():
+        st.divider()
+        st.markdown("**وتفضلوا بقبول وافر الاحترام**")
+        col1, col2 = st.columns(2)
+        with col1: st.write("عضو الادارة: ................")
+        with col2: st.write("مدير الإدارة: ................")
+        st.write(f"تحرر في: {datetime.now().strftime('%Y-%m-%d')}")
+
+    cases = st.session_state.data.get("cases", [])
+    archive = st.session_state.data.get("archive", [])
+
+    with tab1:
+        region = report_header("tab1")
+        st.info("دي صفحة التقارير اشتغلت خلاص 👌")
+        report_footer()
+
+    with tab2:
+        region = report_header("tab2")
+        st.info("هنا الاحكام")
+        report_footer()
+
+    with tab3:
+        region = report_header("tab3")
+        st.info("هنا حسب الموضوع")
+        report_footer()
+
+    with tab4:
+        st.subheader("📈 الاحصائيات")
+        st.metric("عدد القضايا", len(cases))
+
+    if st.button("⬅️ العودة للصفحة الرئيسية", use_container_width=True, key="back_reports"):
+        st.session_state.page = "الرئيسية"
+        st.rerun()
