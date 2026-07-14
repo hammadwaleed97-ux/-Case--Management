@@ -923,15 +923,18 @@ elif st.session_state.page == "تقارير":
     # ========= الهيدر الموحد دهبي كله =========
     def report_header(tab_id, title_text):
         st.markdown(f"""
-        <div style="text-align:center; border:2px solid #FFD700; padding:15px; border-radius:10px; color:#FFD700;">
+        <div style="text-align:center; border:2px solid #FFD700; padding:15px; border-radius:10px;">
             <h3 style="color:#FFD700; margin:5px;">الهيئة القومية للتأمين الاجتماعى</h3>
             <h3 style="color:#FFD700; margin:5px;">الإدارة المركزية للإدارات القانونية</h3>
             <h3 style="color:#FFD700; margin:5px;">الإدارة العامة للقضايا</h3>
         </div>
         """, unsafe_allow_html=True)
         
-        region = st.text_input("ديوان عام منطقة", key=f"region_{tab_id}", label_visibility="visible")
+        # خليت الليبل دهبي
+        st.markdown('<label style="color:#FFD700; font-weight:bold;">ديوان عام منطقة</label>', unsafe_allow_html=True)
+        region = st.text_input("", key=f"region_{tab_id}", label_visibility="collapsed")
         
+        # السطر دهبي
         st.markdown(f'<h4 style="text-align:center; color:#FFD700; margin-top:15px;">{title_text}</h4>', unsafe_allow_html=True)
         
         col1, col2 = st.columns([3,1])
@@ -951,31 +954,77 @@ elif st.session_state.page == "تقارير":
         with col2: st.markdown('<p style="color:#FFD700;">مدير الإدارة: ................</p>', unsafe_allow_html=True)
         st.markdown(f'<p style="color:#FFD700;">تحرر في: {datetime.now().strftime("%Y-%m-%d")}</p>', unsafe_allow_html=True)
 
+    # ========= ازرار التصدير =========
+    def export_buttons(df):
+        st.divider()
+        col1, col2, col3, col4, col5 = st.columns(5)
+        with col1: st.button("📄 فتح PDF", key="open_pdf")
+        with col2: st.button("📝 فتح Word", key="open_word") 
+        with col3: st.button("⬇️ تحميل PDF", key="down_pdf")
+        with col4: st.button("⬇️ تحميل Word", key="down_word")
+        with col5: st.download_button("⬇️ تحميل Excel", df.to_csv(index=False).encode('utf-8-sig'), "تقرير.csv", "text/csv", key="down_excel")
+
     cases = st.session_state.data.get("cases", [])
     archive = st.session_state.data.get("archive", [])
 
     # ========= TAB 1: الدعاوى المتداولة =========
     with tab1:
         region, lawyer_name = report_header("tab1", "كشف بالدعاوى المتداولة")
-        st.write("") # مسافة
-        st.info("هنا هيظهر جدول الدعاوى المتداولة")
+        
+        col1, col2, col3 = st.columns(3)
+        with col1: date_from = st.date_input("من تاريخ", key="d_from1")
+        with col2: date_to = st.date_input("حتى تاريخ", key="d_to1") 
+        
+        filtered = []
+        for c in cases:
+            if c.get("status") != "منتهية" and c.get("status") != "حكم نهائي":
+                try:
+                    d = datetime.strptime(c.get("last_session_date", "2000-01-01"), "%Y-%m-%d").date()
+                    if date_from <= d <= date_to: filtered.append(c)
+                except: pass
+        
+        df = pd.DataFrame([{
+            "م": i+1, "رقم القضية": c.get("case_no"), "السنة القضائية": c.get("year"),
+            "الدائرة والنوع": c.get("court_type"), "اسم المحكمة": c.get("court"),
+            "الخصوم": c.get("opponents"), "موضوع الدعوى": c.get("topic"),
+            "اخر جلسة": f"{c.get('last_session_date')} - {c.get('last_session_reason')}",
+        } for i,c in enumerate(filtered)])
+        
+        st.dataframe(df, use_container_width=True, hide_index=True, height=400)
         report_footer()
+        export_buttons(df)
 
     # ========= TAB 2: الاحكام =========
     with tab2:
         region, lawyer_name = report_header("tab2", "كشف بالاحكام")
-        st.write("")
-        st.info("هنا هيظهر جدول الاحكام")
-        report_footer()
+        col1, col2, col3, col4 = st.columns(4)
+        with col1: date_from = st.date_input("من تاريخ", key="d_from2")
+        with col2: date_to = st.date_input("حتى تاريخ", key="d_to2")
+        
+        filtered = []
+        for c in archive:
+            try:
+                d = datetime.strptime(c.get("judgment_date", "2000-01-01"), "%Y-%m-%d").date()
+                if date_from <= d <= date_to: filtered.append(c)
+            except: pass
 
-    # ========= TAB 3: حسب الموضوع =========
+        df = pd.DataFrame([{
+            "م": i+1, "رقم القضية": c.get("case_no"), "السنة": c.get("year"),
+            "المحكمة": c.get("court"), "الخصوم": c.get("opponents"),
+            "الموضوع": c.get("topic"), "تاريخ الحكم": c.get("judgment_date"),
+            "النتيجة": c.get("result"),
+        } for i,c in enumerate(filtered)])
+
+        st.dataframe(df, use_container_width=True, hide_index=True, height=400)
+        report_footer()
+        export_buttons(df)
+
     with tab3:
-        region, lawyer_name = report_header("tab3", "كشف بالدعاوى حسب الموضوع")
-        st.write("")
-        st.info("هنا البحث حسب الموضوع")
+        region, lawyer_name = report_header("tab3", "كشف حسب الموضوع")
+        st.info("هنكملها بعدين")
         report_footer()
+        export_buttons(pd.DataFrame())
 
-    # ========= TAB 4: الاحصائيات =========
     with tab4:
         st.markdown('<h3 style="color:#FFD700; text-align:center;">📈 الاحصائيات</h3>', unsafe_allow_html=True)
         st.metric("عدد القضايا", len(cases))
