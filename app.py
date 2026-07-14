@@ -949,7 +949,10 @@ elif st.session_state.page == "المكتبة":
             st.session_state.pop(k, None)
         st.rerun()
         # ================================================
-            with tab3:
+            # ======================
+    # تبويب التقارير
+    # ======================
+    with tab3:
         st.markdown("<h2 style='color:#FFD700; text-align:center;'>📑 مركز التقارير</h2>", unsafe_allow_html=True)
 
         report_type = st.selectbox("اختر نوع التقرير", [
@@ -960,9 +963,12 @@ elif st.session_state.page == "المكتبة":
         ], key="report_type")
 
         c1, c2, c3 = st.columns(3)
-        with c1: from_date = st.date_input("من تاريخ", datetime.now() - timedelta(days=30))
-        with c2: to_date = st.date_input("حتى تاريخ", datetime.now())
-        with c3: lawyer = st.text_input("طرف الاستاذ/ المحامي")
+        with c1: 
+            from_date = st.date_input("من تاريخ", datetime.now() - timedelta(days=30))
+        with c2: 
+            to_date = st.date_input("حتى تاريخ", datetime.now())
+        with c3: 
+            lawyer = st.text_input("طرف الاستاذ/ المحامي")
 
         region = st.text_input("ديوان عام منطقة")
 
@@ -975,6 +981,7 @@ elif st.session_state.page == "المكتبة":
 
         if st.button("عرض التقرير", use_container_width=True, type="primary"):
 
+            # الهيدر الرسمي
             st.markdown(f"""
             <div style='text-align:center; color:#FFD700; border:3px double #FFD700; padding:15px; background: linear-gradient(135deg, #1A1A2E 0%, #2A2A4E 100%); border-radius:15px; margin-bottom:20px;'>
             <h2>الهيئة القومية للتأمين الاجتماعى</h2>
@@ -986,39 +993,50 @@ elif st.session_state.page == "المكتبة":
 
             df_final = pd.DataFrame()
 
+            # 1. الدعاوى المتداولة
             if "الدعاوى" in report_type:
                 title = f"بيان بالدعاوى المتداولة خلال الفترة من {from_date} حتى {to_date} طرف الاستاذ/ {lawyer} المحامي"
-                if topic: title += f" - موضوع الدعوى: {topic}"
+                if topic: 
+                    title += f" - موضوع الدعوى: {topic}"
                 st.markdown(f"<h4 style='text-align:center; color:white;'>{title}</h4>", unsafe_allow_html=True)
 
                 df = pd.DataFrame(st.session_state.data)
                 if not df.empty:
                     df['تاريخ الجلسة'] = pd.to_datetime(df['تاريخ الجلسة'], errors='coerce')
                     df_final = df[(df['تاريخ الجلسة'] >= pd.to_datetime(from_date)) & (df['تاريخ الجلسة'] <= pd.to_datetime(to_date))]
-                    if topic: df_final = df_final[df_final['موضوع الدعوى'].str.contains(topic, na=False)]
+                    if topic: 
+                        df_final = df_final[df_final['موضوع الدعوى'].str.contains(topic, na=False)]
                     df_final = df_final.sort_values('تاريخ الجلسة', ascending=False).reset_index(drop=True)
                     df_final.index = df_final.index + 1
                     st.dataframe(df_final, use_container_width=True, height=400)
 
+            # 2. الاحكام
             elif "الاحكام" in report_type:
                 title = f"بيان ب{الحكم_نوع} خلال الفترة من {from_date} حتى {to_date} طرف الاستاذ/ {lawyer} المحامي"
-                if topic: title += f" - موضوع الدعوى: {topic}"
+                if topic: 
+                    title += f" - موضوع الدعوى: {topic}"
                 st.markdown(f"<h4 style='text-align:center; color:white;'>{title}</h4>", unsafe_allow_html=True)
 
                 df = pd.DataFrame(st.session_state.archive)
                 if not df.empty:
                     df['تاريخ الحكم'] = pd.to_datetime(df['تاريخ الحكم'], errors='coerce')
                     df_final = df[df['حالة القضية'] == 'منتهية']
-                    df_final = df_final[(df_final['تاريخ الحكم'] >= pd.to_datetime(stat_from)) & (df_final['تاريخ الحكم'] <= pd.to_datetime(stat_to))]
-                    if الحكم_نوع == "الاحكام للصالح": df_final = df_final[df_final['النتيجة'] == 'للصالح']
-                    if الحكم_نوع == "الاحكام للضد": df_final = df_final[df_final['النتيجة'] == 'للضد']
-                    if topic: df_final = df_final[df_final['موضوع الدعوى'].str.contains(topic, na=False)]
+                    df_final = df_final[(df_final['تاريخ الحكم'] >= pd.to_datetime(from_date)) & (df_final['تاريخ الحكم'] <= pd.to_datetime(to_date))]
+                    if الحكم_نوع == "الاحكام للصالح": 
+                        df_final = df_final[df_final['النتيجة'] == 'للصالح']
+                    if الحكم_نوع == "الاحكام للضد": 
+                        df_final = df_final[df_final['النتيجة'] == 'للضد']
+                    if topic: 
+                        df_final = df_final[df_final['موضوع الدعوى'].str.contains(topic, na=False)]
                     df_final = df_final.sort_values('تاريخ الحكم', ascending=False).reset_index(drop=True)
                     df_final.index = df_final.index + 1
                     st.dataframe(df_final, use_container_width=True, height=400)
 
+            # الخاتمة
             st.markdown(f"<p style='text-align:right; color:#FFD700; margin-top:30px; font-size:16px;'>تفضلوا بقبول وافر الاحترام<br><br>عضو الادارة.................. مدير الإدارة..................<br>تحرر في {datetime.now().strftime('%Y-%m-%d')}</p>", unsafe_allow_html=True)
 
+            # ازرار التصدير
+            st.markdown("<hr style='border:1px solid #FFD700;'>", unsafe_allow_html=True)
             c1,c2,c3,c4,c5 = st.columns(5)
             with c1: st.button("📄 فتح PDF", use_container_width=True, disabled=True)
             with c2: st.button("📝 فتح Word", use_container_width=True, disabled=True)
@@ -1028,19 +1046,26 @@ elif st.session_state.page == "المكتبة":
                 excel_data = df_final.to_csv(index=False).encode('utf-8-sig')
                 st.download_button("📊 تحميل Excel", data=excel_data, file_name="report.xlsx", use_container_width=True)
 
+    # ======================
+    # تبويب الاحصائيات
+    # ======================
     with tab4:
         st.markdown("<h2 style='color:#FFD700; text-align:center;'>📊 الاحصائيات</h2>", unsafe_allow_html=True)
 
         c1, c2 = st.columns(2)
-        with c1: stat_from = st.date_input("من تاريخ", key="s1")
-        with c2: stat_to = st.date_input("حتى تاريخ", key="s2")
+        with c1: 
+            stat_from = st.date_input("من تاريخ", key="s1")
+        with c2: 
+            stat_to = st.date_input("حتى تاريخ", key="s2")
 
         if st.button("استخراج الاحصائيات", use_container_width=True, type="primary"):
             df_all = pd.DataFrame(st.session_state.data)
             df_arc = pd.DataFrame(st.session_state.archive)
 
-            if not df_all.empty: df_all['تاريخ الجلسة'] = pd.to_datetime(df_all['تاريخ الجلسة'], errors='coerce')
-            if not df_arc.empty: df_arc['تاريخ الحكم'] = pd.to_datetime(df_arc['تاريخ الحكم'], errors='coerce')
+            if not df_all.empty: 
+                df_all['تاريخ الجلسة'] = pd.to_datetime(df_all['تاريخ الجلسة'], errors='coerce')
+            if not df_arc.empty: 
+                df_arc['تاريخ الحكم'] = pd.to_datetime(df_arc['تاريخ الحكم'], errors='coerce')
 
             df_all_f = df_all[(df_all['تاريخ الجلسة'] >= pd.to_datetime(stat_from)) & (df_all['تاريخ الجلسة'] <= pd.to_datetime(stat_to))] if not df_all.empty else df_all
             df_arc_f = df_arc[(df_arc['تاريخ الحكم'] >= pd.to_datetime(stat_from)) & (df_arc['تاريخ الحكم'] <= pd.to_datetime(stat_to))] if not df_arc.empty else df_arc
