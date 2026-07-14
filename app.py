@@ -12,7 +12,7 @@ from email.mime.multipart import MIMEMultipart
 
 st.set_page_config(page_title="إدارة القضايا", layout="wide", page_icon="⚖️")
 
-# ========= الـ CSS الموحد كله دهبي =========
+# ========= الـ CSS الموحد =========
 st.markdown("""
 <style>
     .stApp { background-color: #1A1A2E; }
@@ -25,24 +25,24 @@ st.markdown("""
     .btn-arch button { background-color: #fd7e14; color: white; font-weight: bold; }
     .btn-search button { background-color: #007bff; color: white; font-weight: bold; }
 
-    /* تلوين التبويبات دهبي */
+    /* التبويبات بقت بيضا عشان تبان */
     button[data-baseweb="tab"] {
-        color: #FFD700 !important;
+        color: white !important;
         font-weight: bold !important;
         font-size: 16px !important;
+        opacity: 0.7;
     }
     button[data-baseweb="tab"][aria-selected="true"] {
-        color: #FFD700 !important;
+        color: white !important;
         border-bottom: 3px solid #FFD700 !important;
+        opacity: 1;
     }
     
     /* تلوين الليبل بتاع التاريخ والانبوت */
     label { color: #FFD700 !important; }
 </style>
 """, unsafe_allow_html=True)
-# ================================================
-
-# ========= دالة الحفظ =========
+# ==============================================
 # ========= دالة الحفظ =========
 def save_data(data):
     with open("data.json", "w", encoding="utf-8") as f:
