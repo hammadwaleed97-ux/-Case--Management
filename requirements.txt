@@ -1,7 +1,6 @@
 streamlit
 pandas
-openpyxl
 python-docx
-fpdf2
-arabic-reshaper
-python-bidi
+reportlab
+plotly
+xlsxwriter
