@@ -287,7 +287,7 @@ elif st.session_state.page == "الحصر":
         st.info("جاري فتح القضية من البحث...")
     # ======================================
     if not data.get("cases", []):
-    st.info("لا توجد قضايا مسجلة")
+        st.info("لا توجد قضايا مسجلة") # <-- زودت 4 مسافات بس هنا
     else:
         for i, case in enumerate(data["cases"]):
             if "id" not in case: case["id"] = i + 1
@@ -328,6 +328,7 @@ elif st.session_state.page == "الحصر":
                 if st.button("فتح", key=f"open_{case['id']}", use_container_width=True): 
                     st.session_state.selected_case_id = case['id']; st.session_state.page = "تفاصيل"; st.rerun()
 
+# =================================
 # ================================================
 # ============ الجزء الرابع: تفاصيل القضية ============
 # ================================================
