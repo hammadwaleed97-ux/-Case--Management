@@ -962,7 +962,12 @@ elif st.session_state.page == "تقارير":
     from docx.oxml.ns import qn
 
     # تسجيل الخط العربي - اهم سطر
-    pdfmetrics.registerFont(TTFont('Cairo', 'Cairo-Regular.ttf'))
+    from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+import os
+
+font_path = os.path.join(os.path.dirname(__file__), 'Cairo-Regular.ttf')
+pdfmetrics.registerFont(TTFont('Cairo', font_path))
 
     def arabic(text):
         if not text: return ""
