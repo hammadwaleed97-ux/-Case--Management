@@ -1,10 +1,11 @@
-# =============================================
+# ===========================================
 # ============ الجزء الاول: الاساسيات ============
 # ================================================
 import streamlit as st
 import pandas as pd
 import json
 import os
+import io
 import smtplib
 import secrets
 from datetime import datetime, timedelta
@@ -17,6 +18,46 @@ st.set_page_config(
     page_icon="⚖️"
 )
 
+# ====== دالة التصدير للاكسل ======
+def to_excel(df):
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='التقرير')
+    return output.getvalue()
+
+# ============= التصميم النهائي =======
+st.markdown("""
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap');
+    * { font-family: 'Cairo', sans-serif !important; }
+    html, body { direction: rtl; color: #FFFFFF !important; }
+    .stApp { background: linear-gradient(180deg, #0A1428 0%, #1E2A47 100%); }
+    
+    .marquee {
+        background: linear-gradient(90deg, #D4AF37 0%, #FFD700 50%, #D4AF37 100%);
+        color: #0A1428; padding: 12px; font-weight: 900; font-size: 16px;
+        white-space: nowrap; overflow: hidden; border-radius: 0 0 15px 15px;
+        text-align: center;
+    }
+    
+    .main-title { color: #D4AF37; text-align: center; font-size: 36px; font-weight: 900; padding: 15px 0; }
+    
+    .stButton > button {
+        color: #000 !important; font-weight: 900 !important; font-size: 18px !important;
+        border: none !important; border-radius: 15px !important; padding: 16px !important;
+        width: 100% !important; max-width: 400px !important; margin: 10px auto !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.4) !important; display: block;
+        background-color: #FFFFFF !important;
+    }
+    
+    .case-table { width:100%; color:#FFFFFF; text-align:center; border-collapse: collapse; }
+    .case-table th { background:#D4AF37; color:#0A1428; padding:8px; font-weight:900; }
+    .case-table td { padding:8px; border-bottom: 1px solid #D4AF37; }
+    .table-container { background:#1E2A47; padding:10px; border-radius:15px; border:2px solid #D4AF37; margin-bottom:15px; }
+    .row1 { background: #142038; }
+    .row-judgment { background: #2C2F33; }
+</style>
+""", unsafe_allow_html=True)
 # ============= التصميم النهائي =============
 st.markdown("""
 <style>
