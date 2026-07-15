@@ -289,7 +289,7 @@ elif st.session_state.page == "الحصر":
 
     # هنا باقي كود الحصر بتاعك زي ما هو
     # ... عرض الجدول بتاع الحصر
-    if not data["cases"]:
+    if not data.get("cases", []):
         st.info("لا توجد قضايا مسجلة")
     else:
         for i, case in enumerate(data["cases"]):
