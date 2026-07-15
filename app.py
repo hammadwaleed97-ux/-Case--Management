@@ -1316,7 +1316,7 @@ if st.session_state.page == "تقارير":
         color: #FFFFFF;
     }
     .fancy-table tbody tr:nth-child(even) td {
-        background-color: #253355; /* لون مختلف للسطور الزوجية */
+        background-color: #253355;
     }
     .fancy-table tbody tr:hover td {
         background-color: #D4AF37;
@@ -1357,31 +1357,38 @@ if st.session_state.page == "تقارير":
             if topic: cases = [c for c in cases if topic in str(c.get('موضوع',''))]
             cases = sorted(cases, key=lambda x: x.get("تاريخ_جلسة","9999-12-31"), reverse=True)
 
-            title = f"بيان بالدعاوى المتداولة خلال الفترة من {from_date} حتى {to_date} طرف الاستاذ/ {lawyer} المحامي"
+            export_data = []
+            for i, c in enumerate(cases, 1):
+                export_data.append({
+                    "م": i, "رقم القضية": c.get('رقم',''), "السنة": c.get('سنة',''), "الدائرة": c.get('دائرة',''), "النوع": c.get('نوع',''),
+                    "المحكمة": c.get('محكمة_اسم',''), "المأمورية": c.get('مأمورية',''), "المدعي": c.get('مدعي',''), "المدعي عليه": c.get('مدعي_عليه',''),
+                    "الموضوع": c.get('موضوع',''), "تاريخ الجلسة": c.get('تاريخ_جلسة',''), "السبب": c.get('سبب',''), "ملاحظات": c.get('ملاحظات','')
+                })
+            # نخزن النتيجة في الميموري
+            st.session_state.df_tab1 = pd.DataFrame(export_data)
+            st.session_state.title_tab1 = f"بيان بالدعاوى المتداولة خلال الفترة من {from_date} حتى {to_date} طرف الاستاذ/ {lawyer} المحامي"
+            st.session_state.region_tab1 = region
 
-            if not cases: st.warning("لا توجد دعاوى متداولة")
-            else:
-                export_data = []
-                for i, c in enumerate(cases, 1):
-                    export_data.append({
-                        "م": i, "رقم القضية": c.get('رقم',''), "السنة": c.get('سنة',''), "الدائرة": c.get('دائرة',''), "النوع": c.get('نوع',''),
-                        "المحكمة": c.get('محكمة_اسم',''), "المأمورية": c.get('مأمورية',''), "المدعي": c.get('مدعي',''), "المدعي عليه": c.get('مدعي_عليه',''),
-                        "الموضوع": c.get('موضوع',''), "تاريخ الجلسة": c.get('تاريخ_جلسة',''), "السبب": c.get('سبب',''), "ملاحظات": c.get('ملاحظات','')
-                    })
-                df_export = pd.DataFrame(export_data)
+        # نعرض الجدول وازرار التصدير من المخزن
+        if 'df_tab1' in st.session_state and not st.session_state.df_tab1.empty:
+            df_export = st.session_state.df_tab1
+            title = st.session_state.title_tab1
+            region = st.session_state.region_tab1
+            
+            html = f"<div class='table-container'>"
+            html += df_export.to_html(index=False, classes='fancy-table', border=0)
+            html += "</div>"
+            st.markdown(html, unsafe_allow_html=True)
 
-                # الجدول الفخم
-                html = f"<div class='table-container'>"
-                html += df_export.to_html(index=False, classes='fancy-table', border=0)
-                html += "</div>"
-                st.markdown(html, unsafe_allow_html=True)
-
-                st.markdown("<hr>", unsafe_allow_html=True)
-                c1, c2, c3, c4 = st.columns(4)
-                with c1: st.download_button("⬇️ Excel", data=to_excel(df_export), file_name=f"بيان_المتداولة_{datetime.now().strftime('%Y%m%d')}.xlsx", use_container_width=True)
-                with c2: st.download_button("📄 Word", data=to_word(df_export, title, region), file_name=f"بيان_المتداولة_{datetime.now().strftime('%Y%m%d')}.docx", use_container_width=True)
-                with c3: st.download_button("📕 PDF", data=to_pdf(df_export, title, region), file_name=f"بيان_المتداولة_{datetime.now().strftime('%Y%m%d')}.pdf", use_container_width=True)
-                with c4: st.download_button("🖨️ HTML", data=html.encode('utf-8-sig'), file_name=f"بيان_المتداولة_{datetime.now().strftime('%Y%m%d')}.html", use_container_width=True)
+            st.markdown("<hr>", unsafe_allow_html=True)
+            c1, c2, c3, c4 = st.columns(4)
+            with c1: st.download_button("⬇️ Excel", data=to_excel(df_export), file_name=f"بيان_المتداولة_{datetime.now().strftime('%Y%m%d')}.xlsx", use_container_width=True, key="dl1_x")
+            with c2: st.download_button("📄 Word", data=to_word(df_export, title, region), file_name=f"بيان_المتداولة_{datetime.now().strftime('%Y%m%d')}.docx", use_container_width=True, key="dl1_w")
+            with c3: st.download_button("📕 PDF", data=to_pdf(df_export, title, region), file_name=f"بيان_المتداولة_{datetime.now().strftime('%Y%m%d')}.pdf", use_container_width=True, key="dl1_p")
+            with c4: st.download_button("🖨️ HTML", data=html.encode('utf-8-sig'), file_name=f"بيان_المتداولة_{datetime.now().strftime('%Y%m%d')}.html", use_container_width=True, key="dl1_h")
+        
+        elif 'df_tab1' in st.session_state:
+            st.warning("لا توجد دعاوى متداولة بالمعايير المحددة")
 
     # ====== تبويب 2: الاحكام ======
     with tab2:
@@ -1400,31 +1407,36 @@ if st.session_state.page == "تقارير":
             if topic2: cases = [c for c in cases if topic2 in str(c.get('موضوع',''))]
             cases = sorted(cases, key=lambda x: x.get("تاريخ_جلسة","9999-12-31"), reverse=True)
 
-            title = f"بيان بالاحكام الصادرة خلال الفترة من {from_date2} حتى {to_date2} طرف الاستاذ/ {lawyer2} المحامي"
+            export_data = []
+            for i, c in enumerate(cases, 1):
+                export_data.append({
+                    "م": i, "رقم القضية": c.get('رقم',''), "السنة": c.get('سنة',''), "الدائرة": c.get('دائرة',''), "النوع": c.get('نوع',''),
+                    "المحكمة": c.get('محكمة_اسم',''), "المأمورية": c.get('مأمورية',''), "المدعي": c.get('مدعي',''), "المدعي عليه": c.get('مدعي_عليه',''),
+                    "الموضوع": c.get('موضوع',''), "تاريخ الجلسة": c.get('تاريخ_جلسة',''), "الحكم": c.get('الحكم',''), "ملاحظات": c.get('ملاحظات','')
+                })
+            st.session_state.df_tab2 = pd.DataFrame(export_data)
+            st.session_state.title_tab2 = f"بيان بالاحكام الصادرة خلال الفترة من {from_date2} حتى {to_date2} طرف الاستاذ/ {lawyer2} المحامي"
+            st.session_state.region_tab2 = region2
 
-            if not cases: st.warning("لا توجد احكام")
-            else:
-                export_data = []
-                for i, c in enumerate(cases, 1):
-                    export_data.append({
-                        "م": i, "رقم القضية": c.get('رقم',''), "السنة": c.get('سنة',''), "الدائرة": c.get('دائرة',''), "النوع": c.get('نوع',''),
-                        "المحكمة": c.get('محكمة_اسم',''), "المأمورية": c.get('مأمورية',''), "المدعي": c.get('مدعي',''), "المدعي عليه": c.get('مدعي_عليه',''),
-                        "الموضوع": c.get('موضوع',''), "تاريخ الجلسة": c.get('تاريخ_جلسة',''), "الحكم": c.get('الحكم',''), "ملاحظات": c.get('ملاحظات','')
-                    })
-                df_export = pd.DataFrame(export_data)
+        if 'df_tab2' in st.session_state and not st.session_state.df_tab2.empty:
+            df_export = st.session_state.df_tab2
+            title = st.session_state.title_tab2
+            region = st.session_state.region_tab2
+            
+            html = f"<div class='table-container'>"
+            html += df_export.to_html(index=False, classes='fancy-table', border=0)
+            html += "</div>"
+            st.markdown(html, unsafe_allow_html=True)
 
-                # الجدول الفخم
-                html = f"<div class='table-container'>"
-                html += df_export.to_html(index=False, classes='fancy-table', border=0)
-                html += "</div>"
-                st.markdown(html, unsafe_allow_html=True)
-
-                st.markdown("<hr>", unsafe_allow_html=True)
-                c1, c2, c3, c4 = st.columns(4)
-                with c1: st.download_button("⬇️ Excel", data=to_excel(df_export), file_name=f"بيان_الاحكام_{datetime.now().strftime('%Y%m%d')}.xlsx", use_container_width=True)
-                with c2: st.download_button("📄 Word", data=to_word(df_export, title, region2), file_name=f"بيان_الاحكام_{datetime.now().strftime('%Y%m%d')}.docx", use_container_width=True)
-                with c3: st.download_button("📕 PDF", data=to_pdf(df_export, title, region2), file_name=f"بيان_الاحكام_{datetime.now().strftime('%Y%m%d')}.pdf", use_container_width=True)
-                with c4: st.download_button("🖨️ HTML", data=html.encode('utf-8-sig'), file_name=f"بيان_الاحكام_{datetime.now().strftime('%Y%m%d')}.html", use_container_width=True)
+            st.markdown("<hr>", unsafe_allow_html=True)
+            c1, c2, c3, c4 = st.columns(4)
+            with c1: st.download_button("⬇️ Excel", data=to_excel(df_export), file_name=f"بيان_الاحكام_{datetime.now().strftime('%Y%m%d')}.xlsx", use_container_width=True, key="dl2_x")
+            with c2: st.download_button("📄 Word", data=to_word(df_export, title, region), file_name=f"بيان_الاحكام_{datetime.now().strftime('%Y%m%d')}.docx", use_container_width=True, key="dl2_w")
+            with c3: st.download_button("📕 PDF", data=to_pdf(df_export, title, region), file_name=f"بيان_الاحكام_{datetime.now().strftime('%Y%m%d')}.pdf", use_container_width=True, key="dl2_p")
+            with c4: st.download_button("🖨️ HTML", data=html.encode('utf-8-sig'), file_name=f"بيان_الاحكام_{datetime.now().strftime('%Y%m%d')}.html", use_container_width=True, key="dl2_h")
+        
+        elif 'df_tab2' in st.session_state:
+            st.warning("لا توجد احكام بالمعايير المحددة")
 
     with tab3: 
         st.info("الاحصائيات قريباً")
