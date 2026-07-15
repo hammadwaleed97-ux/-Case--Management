@@ -1,5 +1,5 @@
-
-# ========== الجزء الاول: الاساسيات ============
+# ============================================
+# ========== الجزء الاول: الاساسيات ==========
 # ================================================
 import streamlit as st
 import pandas as pd
@@ -7,13 +7,27 @@ import json
 import os
 import smtplib
 import secrets
+import io
+import requests # <--- ضيف دي
 from datetime import datetime, timedelta
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
+# مكتبات الـ PDF والتقارير
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.pagesizes import A4
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+
+# مكتبات العربي
+import arabic_reshaper
+from bidi.algorithm import get_display
+
 st.set_page_config(page_title="إدارة القضايا", layout="wide", page_icon="⚖️")
 
-# ====== اضافة خط Cairo من جوجل ======
+# ====== 1- اضافة خط Cairo من جوجل للويب ======
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');
@@ -23,11 +37,50 @@ html, body, [class*="css"]  {
 h1, h2, h3, h4, h5, h6 {
     font-family: 'Cairo', sans-serif;
 }
+.case-table {width:100%; border-collapse:collapse; font-family:Cairo; font-size:13px}
+.case-table th {background:#D4AF37; color:#0A1428; padding:10px; border:1px solid #D4AF37}
+.case-table td {padding:8px; border:1px solid #3A4A6B; background:#1E2A47; color:white}
+.table-container {overflow-x:auto; margin:20px 0}
 </style>
 """, unsafe_allow_html=True)
-# =====================================
 
-# ====== دوال التحميل والحفظ
+# ====== 2- تحميل خط Cairo للـ PDF اوتوماتيك من النت ======
+FONT_FILE = "Cairo-Regular.ttf"
+FONT_URL = "https://github.com/googlefonts/cairo/releases/download/v2.4.0/Cairo-Regular.ttf"
+
+if not os.path.exists(FONT_FILE):
+    try:
+        with st.spinner("جاري تحميل خط التقرير العربي اول مرة..."):
+            r = requests.get(FONT_URL)
+            with open(FONT_FILE, "wb") as f:
+                f.write(r.content)
+    except:
+        st.error("فشل تحميل خط Cairo. اتأكد من النت")
+
+if os.path.exists(FONT_FILE):
+    pdfmetrics.registerFont(TTFont('Cairo', FONT_FILE))
+
+# ====== 3- دالة معالجة العربي للـ PDF ======
+def arabic(text):
+    if not text: return ""
+    try:
+        reshaped_text = arabic_reshaper.reshape(str(text))
+        return get_display(reshaped_text)
+    except:
+        return str(text)
+
+# ====== 4- دوال التحميل والحفظ ======
+DATA_FILE = "cases_data.json"
+
+def load_data():
+    if os.path.exists(DATA_FILE):
+        with open(DATA_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return {"cases": [], "users": {}}
+
+def save_data(data):
+    with open(DATA_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=4)
 # ====== دوال التحميل والحفظ ======
 DATA_FILE = "cases_data.json" # <-- السطر ده كان ناقص
 
