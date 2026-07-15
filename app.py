@@ -286,13 +286,12 @@ elif st.session_state.page == "تسجيل":
                 st.success(f"✅ تم حفظ القضية رقم {رقم} لسنة {سنة}")
                 st.session_state.page = "الحصر"; st.rerun()
 # ================================
-# ================================================
-    # ================================================
-# ========== الجزء الثالث: الحصر العام ============
+# ===============================================
+======= الجزء الثالث: الحصر العام ============
 # ================================================
 elif st.session_state.page == "الحصر":
-    data = st.session_state.get('data', load_data()) # <-- متغير
-    st.session_state.data = data # <-- سطر جديد
+    data = load_data() # <-- اتغير
+    st.session_state.data = data # <-- فضل زي ما هو
     st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
     st.markdown("<h2 style='color:#FFFFFF; text-align:center'>📊 الحصر العام الخارجي</h2>", unsafe_allow_html=True)
     if st.button("⬅️ العودة للرئيسية", use_container_width=True): st.session_state.page = "الرئيسية"; st.rerun()
@@ -300,6 +299,7 @@ elif st.session_state.page == "الحصر":
     if st.session_state.get('open_from_search', False):
         st.session_state.open_from_search = False
         st.info("جاري فتح القضية من البحث...")
+    # =======================
     # ======================================
     if not data or not data.get("cases", []):
         st.info("لا توجد قضايا مسجلة") # <-- زودت 4 مسافات بس هنا
