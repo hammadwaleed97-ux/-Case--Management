@@ -1283,7 +1283,7 @@ elif st.session_state.page == "المكتبة":
 if st.session_state.page == "تقارير":
     data = load_data()
     
-    # ====== استايل الجدول الفخم المسطر ======
+    # ====== استايل الجدول الفخم المسطر بدون كارت ======
     st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');
@@ -1292,10 +1292,10 @@ if st.session_state.page == "تقارير":
         width: 100%;
         font-family: 'Cairo', sans-serif;
         font-size: 13px;
-        box-shadow: 0 4px 15px rgba(212, 175, 55, 0.2);
         border-radius: 12px;
         overflow: hidden;
         direction: rtl;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3); /* شادو على الجدول نفسه */
     }
     .fancy-table thead {
         background: linear-gradient(135deg, #D4AF37 0%, #B8860B 100%);
@@ -1325,10 +1325,10 @@ if st.session_state.page == "تقارير":
         font-weight: bold;
     }
     .table-container {
-        background: #0A1428;
-        padding: 15px;
-        border-radius: 15px;
-        border: 2px solid #D4AF37;
+        background: transparent; /* شلنا الخلفية */
+        padding: 0; /* شلنا البادنج */
+        border-radius: 0; /* شلنا التدوير */
+        border: none; /* شلنا البرواز */
         margin-top: 15px;
     }
     </style>
@@ -1364,12 +1364,10 @@ if st.session_state.page == "تقارير":
                     "المحكمة": c.get('محكمة_اسم',''), "المأمورية": c.get('مأمورية',''), "المدعي": c.get('مدعي',''), "المدعي عليه": c.get('مدعي_عليه',''),
                     "الموضوع": c.get('موضوع',''), "تاريخ الجلسة": c.get('تاريخ_جلسة',''), "السبب": c.get('سبب',''), "ملاحظات": c.get('ملاحظات','')
                 })
-            # نخزن النتيجة في الميموري
             st.session_state.df_tab1 = pd.DataFrame(export_data)
             st.session_state.title_tab1 = f"بيان بالدعاوى المتداولة خلال الفترة من {from_date} حتى {to_date} طرف الاستاذ/ {lawyer} المحامي"
             st.session_state.region_tab1 = region
 
-        # نعرض الجدول وازرار التصدير من المخزن
         if 'df_tab1' in st.session_state and not st.session_state.df_tab1.empty:
             df_export = st.session_state.df_tab1
             title = st.session_state.title_tab1
