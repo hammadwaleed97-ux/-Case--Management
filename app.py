@@ -1222,19 +1222,11 @@ elif st.session_state.page == "المكتبة":
         for k in ["selected_section", "show_upload", "search_filters"]:
             st.session_state.pop(k, None)
         st.rerun()
-        # =============================================
-        # ================================================
+        # =========================================
+        # ==============================================
 # ============ الجزء الثامن: التقارير ============
 # ================================================
-import io
-
-def to_excel(df):
-    output = io.BytesIO()
-    with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        df.to_excel(writer, index=False, sheet_name='التقرير')
-    return output.getvalue()
-
-elif st.session_state.page == "تقارير":
+if st.session_state.page == "تقارير":
     data = load_data()
     st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
     st.markdown("<h2 style='color:#D4AF37; text-align:center'>📑 مركز التقارير الحكومية</h2>", unsafe_allow_html=True)
@@ -1267,7 +1259,7 @@ elif st.session_state.page == "تقارير":
         st.markdown("</div>", unsafe_allow_html=True)
 
         if st.button("🔍 عرض بيان الدعاوى المتداولة", use_container_width=True, type="primary", key="show1"):
-            cases = [c for c in data["cases"] if c.get('حالة') == 'متداولة']
+            cases = [c for c in data.get("cases", []) if c.get('حالة') == 'متداولة']
             
             if cases:
                 cases = [c for c in cases if c.get('تاريخ_جلسة') and from_date <= datetime.strptime(c['تاريخ_جلسة'], '%Y-%m-%d').date() <= to_date]
@@ -1314,7 +1306,7 @@ elif st.session_state.page == "تقارير":
         st.markdown("</div>", unsafe_allow_html=True)
 
         if st.button("🔍 عرض بيان الاحكام", use_container_width=True, type="primary", key="show2"):
-            cases = [c for c in data["cases"] if c.get('حالة') == 'منتهية' and c.get('مسندة_ل_الحكم') in ['الصالح','الضد']]
+            cases = [c for c in data.get("cases", []) if c.get('حالة') == 'منتهية' and c.get('مسندة_ل_الحكم') in ['الصالح','الضد']]
             
             if الحكم_نوع == "الاحكام للصالح": cases = [c for c in cases if c.get('مسندة_ل_الحكم') == 'الصالح']
             if الحكم_نوع == "الاحكام للضد": cases = [c for c in cases if c.get('مسندة_ل_الحكم') == 'الضد']
@@ -1361,7 +1353,7 @@ elif st.session_state.page == "تقارير":
         st.markdown("</div>", unsafe_allow_html=True)
         
         if st.button("استخراج الإحصائيات", use_container_width=True, type="primary"):
-            all_cases = data["cases"]
+            all_cases = data.get("cases", [])
             متداولة = [c for c in all_cases if c.get('حالة') == 'متداولة' and c.get('تاريخ_جلسة') and stat_from <= datetime.strptime(c['تاريخ_جلسة'], '%Y-%m-%d').date() <= stat_to]
             احكام = [c for c in all_cases if c.get('حالة') == 'منتهية' and c.get('تاريخ_الحكم') and stat_from <= datetime.strptime(c['تاريخ_الحكم'], '%Y-%m-%d').date() <= stat_to]
             للصالح = [c for c in احكام if c.get('مسندة_ل_الحكم') == 'الصالح']
