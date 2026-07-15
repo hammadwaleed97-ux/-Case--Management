@@ -20,14 +20,16 @@ st.markdown("""
         background: linear-gradient(90deg, #D4AF37 0%, #FFD700 50%, #D4AF37 100%);
         color: #0A1428; padding: 12px; font-weight: 900; font-size: 16px;
         white-space: nowrap; overflow: hidden; border-radius: 0 0 15px 15px;
+        direction: ltr;
     }
     .marquee span { 
         display: inline-block; 
+        direction: rtl;
         animation: marquee 18s linear infinite; 
     }
     @keyframes marquee { 
-        0% { transform: translateX(100%); } 
-        100% { transform: translateX(-100%); } 
+        0% { transform: translateX(-100%); } 
+        100% { transform: translateX(100%); } 
     }
     
     .main-title { color: #D4AF37; text-align: center; font-size: 36px; font-weight: 900; padding: 15px 0; }
@@ -59,13 +61,14 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# الماركيه رايحه جايه وتبدا من اليمين
+# الماركيه مظبوطة
 st.markdown("""
 <div class="marquee">
 <span>مع تحيات وليد حماد - الإدارة العامة للشئون القانونية بديوان عام منطقة البحيرة بالهيئة القومية للتأمين الاجتماعي</span>
 </div>
 """, unsafe_allow_html=True)
 
+# رجعت الميزانين
 st.markdown('<div class="main-title">⚖️ إدارة القضايا ⚖️</div>', unsafe_allow_html=True)
 
 # ====== المتغيرات العامة بتاعتنا ======
@@ -132,6 +135,33 @@ def get_alert_cases():
             except: pass
     return alerts
 
+# ========== الصفحة الرئيسية =========
+alerts = get_alert_cases()
+total_alerts = len(alerts['sessions']) + len(alerts['appeals'])
+
+col1, col2 = st.columns(2)
+with col1:
+    st.markdown('<div class="btn-add">', unsafe_allow_html=True)
+    if st.button("اضافة قضية جديدة"): st.session_state.page = "اضافة" # شلت +
+    st.markdown('</div>', unsafe_allow_html=True)
+with col2:
+    st.markdown('<div class="btn-list">', unsafe_allow_html=True)
+    if st.button("عرض كل القضايا"): st.session_state.page = "عرض" # شلت 📋
+    st.markdown('</div>', unsafe_allow_html=True)
+
+col3, col4 = st.columns(2)
+with col3:
+    st.markdown('<div class="btn-alert">', unsafe_allow_html=True)
+    if st.button(f"التنبيهات ({total_alerts})"): st.session_state.page = "تنبيهات" # شلت 🚨
+    st.markdown('</div>', unsafe_allow_html=True)
+with col4:
+    st.markdown('<div class="btn-report">', unsafe_allow_html=True)
+    if st.button("طباعة تقرير"): st.session_state.page = "تقرير"
+    st.markdown('</div>', unsafe_allow_html=True)
+
+st.markdown('<div class="btn-search">', unsafe_allow_html=True)
+if st.button("بحث"): st.session_state.page = "بحث" # شلت 🔍
+st.markdown('</div>', unsafe_allow_html=True)
 # ========== الصفحة الرئيسية =========
 alerts = get_alert_cases()
 total_alerts = len(alerts['sessions']) + len(alerts['appeals'])
