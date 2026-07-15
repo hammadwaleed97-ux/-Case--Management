@@ -927,7 +927,7 @@ elif st.session_state.page == "المكتبة":
             st.session_state.pop(k, None)
         st.rerun()
         # ===============================================
-# ================================================
+        # ================================================
 # ============ الجزء الثامن: التقارير ============
 # ================================================
 elif st.session_state.page == "تقارير":
@@ -939,26 +939,21 @@ elif st.session_state.page == "تقارير":
     from reportlab.platypus import Table, TableStyle, Paragraph, SimpleDocTemplate, Spacer
     from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
     from reportlab.lib.enums import TA_CENTER, TA_RIGHT
+    from reportlab.pdfbase import pdfmetrics
+    from reportlab.pdfbase.ttfonts import TTFont
     from docx import Document
     from docx.shared import Pt, RGBColor
     from docx.enum.text import WD_ALIGN_PARAGRAPH
     from docx.oxml import OxmlElement
     from docx.oxml.ns import qn
 
+    # تسجيل الخط العربي - اهم سطر
+    pdfmetrics.registerFont(TTFont('Cairo', 'Cairo-Regular.ttf'))
+
     def arabic(text):
         if not text: return ""
         reshaped_text = arabic_reshaper.reshape(str(text))
         return get_display(reshaped_text)
-
-    def set_cell_border(cell, **kwargs):
-        tc = cell._tc
-        tcPr = tc.get_or_add_tcPr()
-        for border in ['top', 'left', 'bottom', 'right']:
-            edge = OxmlElement(f'w:{border}')
-            edge.set(qn('w:val'), 'single')
-            edge.set(qn('w:sz'), '6')
-            edge.set(qn('w:color'), 'D4AF37')
-            tcPr.append(edge)
 
     data = load_data()
     st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
@@ -979,15 +974,15 @@ elif st.session_state.page == "تقارير":
         </div>
         """, unsafe_allow_html=True)
 
-    # ===== دالة انشاء PDF فخم =====
+    # ===== دالة انشاء PDF بالخط العربي =====
     def create_pdf(cases_list, filename, report_type, region, title):
         buffer = io.BytesIO()
         doc = SimpleDocTemplate(buffer, pagesize=landscape(A4), rightMargin=30, leftMargin=30, topMargin=30, bottomMargin=18)
         elements = []
 
         styles = getSampleStyleSheet()
-        styleH = ParagraphStyle('Header', fontSize=16, alignment=TA_CENTER, textColor=colors.HexColor('#D4AF37'))
-        styleN = ParagraphStyle('Normal', fontSize=9, alignment=TA_RIGHT, textColor=colors.white)
+        styleH = ParagraphStyle('Header', fontName='Cairo', fontSize=16, alignment=TA_CENTER, textColor=colors.HexColor('#D4AF37'))
+        styleN = ParagraphStyle('Normal', fontName='Cairo', fontSize=9, alignment=TA_RIGHT, textColor=colors.white)
 
         elements.append(Paragraph(arabic("الهيئة القومية للتأمين الاجتماعى"), styleH))
         elements.append(Paragraph(arabic("الإدارة المركزية للإدارات القانونية"), styleN))
@@ -1022,6 +1017,7 @@ elif st.session_state.page == "تقارير":
                 ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#D4AF37')),
                 ('TEXTCOLOR',(0,0),(-1,0), colors.black),
                 ('ALIGN',(0,0),(-1,-1),'CENTER'),
+                ('FONTNAME', (0,0), (-1,-1), 'Cairo'),
                 ('FONTSIZE', (0,0), (-1,0), 11),
                 ('BOTTOMPADDING', (0,0), (-1,0), 12),
                 ('BACKGROUND',(0,1),(-1,-1), colors.HexColor('#0A1428')),
@@ -1039,7 +1035,7 @@ elif st.session_state.page == "تقارير":
         buffer.seek(0)
         return buffer
 
-    # ===== دالة انشاء Word فخم بجدول ملون =====
+    # ===== باقي الكود زي ما هو Word و Excel و التبويبات =====
     def create_word(cases_list, filename, report_type, region, title):
         doc = Document()
         p = doc.add_paragraph(); p.alignment = WD_ALIGN_PARAGRAPH.CENTER; run = p.add_run('الهيئة القومية للتأمين الاجتماعى'); run.font.size = Pt(16); run.bold = True; run.font.color.rgb = RGBColor(212, 175, 55)
@@ -1060,9 +1056,6 @@ elif st.session_state.page == "تقارير":
             for i, h in enumerate(headers):
                 hdr[i].text = h
                 hdr[i].paragraphs[0].runs[0].font.bold = True
-                shading = OxmlElement('w:shd')
-                shading.set(qn('w:fill'), 'D4AF37')
-                hdr[i]._tc.get_or_add_tcPr().append(shading)
 
             for i, c in enumerate(cases_list, 1):
                 row = table.add_row().cells
@@ -1079,7 +1072,6 @@ elif st.session_state.page == "تقارير":
         buffer.seek(0)
         return buffer
 
-    # ===== دالة ازرار التصدير =====
     def export_buttons(cases_list, filename, report_type, region, title):
         st.markdown("<hr style='border:1px solid #D4AF37; margin:20px 0;'>", unsafe_allow_html=True)
         st.markdown("<h4 style='color:#D4AF37; text-align:center'>📄 تصدير التقرير</h4>", unsafe_allow_html=True)
@@ -1123,7 +1115,7 @@ elif st.session_state.page == "تقارير":
         with c5:
             st.download_button("📊 تحميل Excel", data=excel_buffer, file_name=f"{filename}.xlsx", use_container_width=True, key=f"dl_excel_{filename}", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
-    # ========= تبويب 1: الدعاوى المتداولة =========
+    # ========= التبويبات 1 و 2 و 3 زي ما هما =========
     with tab1:
         st.markdown("<div style='background:#1E2A47; padding:20px; border-radius:15px; border:2px solid #D4AF37; margin-bottom:15px'>", unsafe_allow_html=True)
         region = st.text_input("ديوان عام منطقة", key="region1")
@@ -1160,7 +1152,6 @@ elif st.session_state.page == "تقارير":
             st.markdown(f"<p style='text-align:right; color:#D4AF37; margin-top:30px; font-size:16px;'>تفضلوا بقبول وافر الاحترام<br><br>عضو الادارة.................. مدير الإدارة..................<br>تحر في {datetime.now().strftime('%Y-%m-%d')}</p>", unsafe_allow_html=True)
             export_buttons(cases, f"بيان_الدعاوى_المتداولة_{from_date}_{to_date}", "متداولة", region, title)
 
-    # ========= تبويب 2: الاحكام =========
     with tab2:
         st.markdown("<div style='background:#1E2A47; padding:20px; border-radius:15px; border:2px solid #FF5252; margin-bottom:15px'>", unsafe_allow_html=True)
         region2 = st.text_input("ديوان عام منطقة", key="region2")
@@ -1199,7 +1190,6 @@ elif st.session_state.page == "تقارير":
             st.markdown(f"<p style='text-align:right; color:#FF5252; margin-top:30px; font-size:16px;'>تفضلوا بقبول وافر الاحترام<br><br>عضو الادارة.................. مدير الإدارة..................<br>تحر في {datetime.now().strftime('%Y-%m-%d')}</p>", unsafe_allow_html=True)
             export_buttons(cases, f"بيان_الاحكام_{الحكم_نوع}_{from_date2}_{to_date2}", "احكام", region2, title)
 
-    # ========= تبويب 3: الاحصائيات =========
     with tab3:
         st.markdown("<h3 style='color:#D4AF37; text-align:center'>📊 الإحصائيات العددية</h3>", unsafe_allow_html=True)
         st.markdown("<div style='background:#1E2A47; padding:20px; border-radius:15px; border:2px solid #D4AF37; margin-bottom:15px'>", unsafe_allow_html=True)
@@ -1210,26 +1200,15 @@ elif st.session_state.page == "تقارير":
 
         if st.button("استخراج الإحصائيات", use_container_width=True, type="primary"):
             all_cases = data["cases"]
-            
+
             متداولة = []
             for c in all_cases:
                 if c.get('حالة') == 'متداولة' and c.get('تاريخ_جلسة'):
                     تاريخ = datetime.strptime(c['تاريخ_جلسة'], '%Y-%m-%d').date()
                     if stat_from <= تاريخ <= stat_to:
                         متداولة.append(c)
-            
+
             احكام = []
             for c in all_cases:
                 if c.get('حالة') == 'منتهية' and c.get('تاريخ_الحكم'):
-                    تاريخ = datetime.strptime(c['تاريخ_الحكم'], '%Y-%m-%d').date()
-                    if stat_from <= تاريخ <= stat_to:
-                        احكام.append(c)
-            
-            للصالح = [c for c in احكام if c.get('مسندة_ل_الحكم') == 'الصالح']
-            للضد = [c for c in احكام if c.get('مسندة_ل_الحكم') == 'الضد']
-            
-            c1,c2,c3,c4 = st.columns(4)
-            c1.metric("عدد القضايا المتداولة", len(متداولة))
-            c2.metric("عدد الاحكام الصادرة", len(احكام))
-            c3.metric("عدد الاحكام للصالح", len(للصالح))
-            c4.metric("عدد الاحكام للضد", len(للضد))
+                    تاريخ
