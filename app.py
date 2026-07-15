@@ -35,7 +35,6 @@ def save_data(data): # <-- الدالة دي كانت ناقصة
     with open(DATA_FILE, "w", encoding="utf-8") as f: json.dump(data, f, ensure_ascii=False, indent=4)
 # =============================
 # ================================================
-"archive": [], "library": [], "tasks": [], "users": []}
 # ==================================
 # ========= تهيئة الـ Session State =========
 if "page" not in st.session_state:
