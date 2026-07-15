@@ -1283,7 +1283,7 @@ elif st.session_state.page == "المكتبة":
 if st.session_state.page == "تقارير":
     data = load_data()
     
-    # ====== استايل الجدول + التابات حمرا + كله ابيض ======
+    # ====== استايل الجدول + التابات بيضا ======
     st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap');
@@ -1296,27 +1296,27 @@ if st.session_state.page == "تقارير":
         font-size: 15px !important;
     }
     
-    /* عنوان الصفحة ابيض بشادو احمر */
+    /* عنوان الصفحة ابيض */
     h2 {
         color: #FFFFFF !important;
         font-weight: 900 !important;
-        text-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
     }
     
     /* اسماء التابات فوق - كلهم ابيض */
     .stTabs [data-baseweb="tab-list"] button [data-testid="stMarkdownContainer"] p {
         color: #FFFFFF !important;
         font-weight: 700 !important;
-        font-size: 15px !important;
+        font-size: 16px !important;
     }
     
-    /* التاب النشط يبقى احمر + خط احمر تحته */
+    /* التاب النشط يبقى ابيض برضو بس بخط اتقل + خط ابيض تحته */
     .stTabs [data-baseweb="tab-list"] button[aria-selected="true"] [data-testid="stMarkdownContainer"] p {
-        color: #FF0000 !important;
+        color: #FFFFFF !important;
         font-weight: 900 !important;
     }
     .stTabs [data-baseweb="tab-highlight"] {
-        background-color: #FF0000 !important; /* الخط الاحمر اللي تحت التاب */
+        background-color: #FFFFFF !important; /* الخط الابيض اللي تحت التاب */
+        height: 3px !important;
     }
 
     .fancy-table {
@@ -1330,13 +1330,13 @@ if st.session_state.page == "تقارير":
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
     }
     .fancy-table thead {
-        background: linear-gradient(135deg, #FF0000 0%, #B22222 100%); /* هيدر احمر */
-        color: #FFFFFF; /* الكلام ابيض */
+        background: linear-gradient(135deg, #FFFFFF 0%, #E0E0E0 100%); /* هيدر ابيض */
+        color: #0A1428; /* الكلام كحلي */
         font-weight: bold;
         font-size: 14px;
     }
     .fancy-table th {
-        border: 1.5px solid #FF0000;
+        border: 1.5px solid #FFFFFF;
         padding: 12px 8px;
         text-align: center;
     }
@@ -1351,8 +1351,8 @@ if st.session_state.page == "تقارير":
         background-color: #253355;
     }
     .fancy-table tbody tr:hover td {
-        background-color: #FF0000; /* الهوفر احمر */
-        color: #FFFFFF;
+        background-color: #FFFFFF; /* الهوفر ابيض */
+        color: #0A1428;
         transition: 0.3s;
         font-weight: bold;
     }
@@ -1366,7 +1366,7 @@ if st.session_state.page == "تقارير":
     
     /* الخط الفاصل */
     hr {
-        border-top: 2px solid #FF0000;
+        border-top: 2px solid #FFFFFF;
         margin: 20px 0;
     }
     </style>
@@ -1380,7 +1380,7 @@ if st.session_state.page == "تقارير":
 
     # ====== تبويب 1: المتداولة ======
     with tab1:
-        st.markdown("<div style='background:#1E2A47; padding:20px; border-radius:15px; border:2px solid #FF0000; margin-bottom:15px'>", unsafe_allow_html=True) # البرواز بقى احمر
+        st.markdown("<div style='background:#1E2A47; padding:20px; border-radius:15px; border:2px solid #FFFFFF; margin-bottom:15px'>", unsafe_allow_html=True) # البرواز ابيض
         region = st.text_input("ديوان عام منطقة", key="region1")
         col1, col2, col3 = st.columns(3)
         with col1: from_date = st.date_input("من الفترة", key="from1")
@@ -1428,7 +1428,7 @@ if st.session_state.page == "تقارير":
 
     # ====== تبويب 2: الاحكام ======
     with tab2:
-        st.markdown("<div style='background:#1E2A47; padding:20px; border-radius:15px; border:2px solid #FF0000; margin-bottom:15px'>", unsafe_allow_html=True) # البرواز بقى احمر
+        st.markdown("<div style='background:#1E2A47; padding:20px; border-radius:15px; border:2px solid #FFFFFF; margin-bottom:15px'>", unsafe_allow_html=True) # البرواز ابيض
         region2 = st.text_input("ديوان عام منطقة", key="region2")
         col1, col2, col3 = st.columns(3)
         with col1: from_date2 = st.date_input("من الفترة", key="from2")
