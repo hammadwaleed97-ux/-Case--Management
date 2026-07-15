@@ -649,3 +649,130 @@ elif st.session_state.page == "تسجيل":
                 "الرول",
                 key="roll_add"
         )
+                    سبب = st.text_input(
+            "سبب الجلسة",
+            key="reason_add"
+        )
+
+        ملاحظات = st.text_area(
+            "ملاحظات",
+            height=100,
+            key="notes_add"
+        )
+
+        st.markdown(
+            "</div>",
+            unsafe_allow_html=True
+        )
+
+        # =====================================
+        # صحيفة الدعوى
+        # =====================================
+
+        st.markdown(
+            "<div style='background:#1E2A47;padding:15px;border-radius:15px;border:2px solid #D4AF37;margin-bottom:15px'>",
+            unsafe_allow_html=True
+        )
+
+        st.markdown(
+            "<div style='color:#D4AF37;font-size:20px;font-weight:900;text-align:center;margin-bottom:10px'>5- صحيفة الدعوى</div>",
+            unsafe_allow_html=True
+        )
+
+        مسندة_ل = st.selectbox(
+            "نوع الصحيفة",
+            ["صحيفة الدعوى"],
+            key="paper_type_add"
+        )
+
+        st.markdown(
+            "</div>",
+            unsafe_allow_html=True
+        )
+
+        # =====================================
+        # حفظ القضية
+        # =====================================
+
+        submit_case = st.form_submit_button(
+            "💾 حفظ القضية",
+            use_container_width=True,
+            type="primary"
+        )
+
+    if submit_case:
+
+        if رقم.strip() == "":
+            st.error("❌ أدخل رقم الدعوى")
+            st.stop()
+
+        if سنة.strip() == "":
+            st.error("❌ أدخل السنة القضائية")
+            st.stop()
+
+        new_case = {
+
+            "id": len(data.get("cases", [])) + 1,
+
+            "نوع": نوع,
+
+            "محكمة_اسم": محكمة_اسم,
+
+            "مأمورية": مأمورية,
+
+            "رقم": رقم.strip(),
+
+            "سنة": سنة.strip(),
+
+            "دائرة": دائرة.strip(),
+
+            "مدعي": مدعي.strip(),
+
+            "مدعي_عليه": مدعي_عليه.strip(),
+
+            "موضوع": موضوع.strip(),
+
+            "تاريخ_جلسة": str(تاريخ_جلسة),
+
+            "الرول": الرول.strip(),
+
+            "سبب": سبب.strip(),
+
+            "ملاحظات": ملاحظات.strip(),
+
+            "جلسات": [],
+
+            "مستندات": [],
+
+            "حالة": "متداولة",
+
+            "مسندة_ل": مسندة_ل
+        }
+
+        if الرول or سبب or ملاحظات:
+
+            new_case["جلسات"].append({
+
+                "تاريخ": str(تاريخ_جلسة),
+
+                "الرول": الرول.strip(),
+
+                "سبب": سبب.strip(),
+
+                "ملاحظات": ملاحظات.strip()
+
+            })
+
+        data.setdefault("cases", [])
+
+        data["cases"].append(new_case)
+
+        save_data(data)
+
+        st.success(
+            f"✅ تم حفظ القضية رقم {رقم} لسنة {سنة}"
+        )
+
+        st.session_state.page = "الحصر"
+
+        st.rerun()
