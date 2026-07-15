@@ -1288,17 +1288,16 @@ if st.session_state.page == "تقارير":
 
     tab1, tab2, tab3 = st.tabs(["📊 بيان الدعاوى المتداولة", "⚖️ بيان الاحكام", "📈 الإحصائيات"])
 
-    def report_header(region, title):
-        # استخدمنا fix_arabic عشان الهيدر يطلع متصل
-        st.markdown(f"<div dir='rtl' style='text-align:center; color:#D4AF37; border:4px double #D4AF37; padding:20px; background: linear-gradient(135deg, #0A1428 0%, #1E2A47 100%); border-radius:15px; margin-bottom:20px;'><h2>{fix_arabic('الهيئة القومية للتأمين الاجتماعى')}</h2><h3>{fix_arabic('الإدارة المركزية للإدارات القانونية')}</h3><h3>{fix_arabic('الإدارة العامة للقضايا')}</h3><h3>{fix_arabic(f'ديوان عام {region}')}</h3><hr><h3>{fix_arabic(title)}</h3></div>", unsafe_allow_html=True)
+    # شيلنا report_header من هنا عشان متظهرش في الصفحة
+    # الهيدر هيظهر بس جوه دوال التصدير to_pdf و to_word
 
     with tab1:
         st.markdown("<div style='background:#1E2A47; padding:20px; border-radius:15px; border:2px solid #D4AF37; margin-bottom:15px'>", unsafe_allow_html=True)
-        region = st.text_input("ديوان عام منطقة", key="region1")
+        region = st.text_input("ديوان عام منطقة", key="region1") # سيبناها
         col1, col2, col3 = st.columns(3)
         with col1: from_date = st.date_input("من الفترة", key="from1")
         with col2: to_date = st.date_input("حتى الفترة", key="to1")
-        with col3: lawyer = st.text_input("طرف الاستاذ/ المحامي", key="lawyer1")
+        with col3: lawyer = st.text_input("طرف الاستاذ/ المحامي", key="lawyer1") # سيبناها
         topic = st.text_input("موضوع الدعوى للفلترة", key="topic1")
         st.markdown("</div>", unsafe_allow_html=True)
 
@@ -1309,7 +1308,6 @@ if st.session_state.page == "تقارير":
             cases = sorted(cases, key=lambda x: x.get("تاريخ_جلسة","9999-12-31"), reverse=True)
 
             title = f"بيان بالدعاوى المتداولة خلال الفترة من {from_date} حتى {to_date} طرف الاستاذ/ {lawyer} المحامي"
-            report_header(region, title)
 
             if not cases: st.warning("لا توجد دعاوى متداولة")
             else:
@@ -1322,6 +1320,7 @@ if st.session_state.page == "تقارير":
                     })
                 df_export = pd.DataFrame(export_data)
 
+                # العرض في الصفحة بسيط بدون هيدر
                 html = f"<div dir='rtl' style='font-family:Cairo; text-align:right'>"
                 html += df_export.to_html(index=False, classes='case-table')
                 html += "</div>"
@@ -1330,12 +1329,11 @@ if st.session_state.page == "تقارير":
                 st.markdown("<hr>", unsafe_allow_html=True)
                 c1, c2, c3, c4 = st.columns(4)
                 with c1: st.download_button("⬇️ Excel", data=to_excel(df_export), file_name=f"بيان_المتداولة_{datetime.now().strftime('%Y%m%d')}.xlsx")
-                with c2: st.download_button("📄 Word", data=to_word(df_export, title, region), file_name=f"بيان_المتداولة_{datetime.now().strftime('%Y%m%d')}.docx")
-                with c3: st.download_button("📕 PDF", data=to_pdf(df_export, title, region), file_name=f"بيان_المتداولة_{datetime.now().strftime('%Y%m%d')}.pdf")
+                with c2: st.download_button("📄 Word", data=to_word(df_export, title, region), file_name=f"بيان_المتداولة_{datetime.now().strftime('%Y%m%d')}.docx") # الهيدر هنا
+                with c3: st.download_button("📕 PDF", data=to_pdf(df_export, title, region), file_name=f"بيان_المتداولة_{datetime.now().strftime('%Y%m%d')}.pdf") # الهيدر هنا
                 with c4: st.download_button("🖨️ HTML", data=html.encode('utf-8-sig'), file_name=f"بيان_المتداولة_{datetime.now().strftime('%Y%m%d')}.html")
 
-                st.markdown(f"<p dir='rtl' style='text-align:right; color:#D4AF37; margin-top:30px;'>{fix_arabic('تفضلوا بقبول وافر الاحترام')}<br><br>{fix_arabic('عضو الادارة.................. مدير الإدارة..................')}<br>{fix_arabic(f'تحرر في {datetime.now().strftime('%Y-%m-%d')}')}</p>", unsafe_allow_html=True)
-
-    with tab2: # نفس الفكرة للاحكام
+                # شيلنا برضو "تفضلوا بقبول" من هنا عشان تطلع بس في التقرير
+    with tab2: 
         st.info("نفس كود تبويب المتداولة بس فلتر الاحكام")
     with tab3: st.info("الاحصائيات")
