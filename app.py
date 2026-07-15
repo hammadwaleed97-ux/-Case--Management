@@ -1,4 +1,4 @@
-# ===========================================
+# ========================================
 # ============ الجزء الاول: الاساسيات ============
 # ================================================
 import streamlit as st
@@ -25,6 +25,28 @@ def to_excel(df):
         df.to_excel(writer, index=False, sheet_name='التقرير')
     return output.getvalue()
 
+# ====== دوال التحميل والحفظ ======
+DATA_FILE = "data.json"
+
+def load_data():
+    if os.path.exists(DATA_FILE):
+        with open(DATA_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return {"cases": [], "library": [], "tasks": [], "users": []}
+
+def save_data(data):
+    with open(DATA_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=4)
+
+# ========= تهيئة الـ Session State =========
+if "page" not in st.session_state:
+    st.session_state.page = "الرئيسية"
+
+if "data" not in st.session_state:
+    st.session_state.data = load_data()
+
+if "user" not in st.session_state:
+    st.session_state.user = "المستخدم"
 # ============= التصميم النهائي =======
 st.markdown("""
 <style>
