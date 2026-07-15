@@ -286,11 +286,8 @@ elif st.session_state.page == "الحصر":
         st.session_state.open_from_search = False
         st.info("جاري فتح القضية من البحث...")
     # ======================================
-
-    # هنا باقي كود الحصر بتاعك زي ما هو
-    # ... عرض الجدول بتاع الحصر
     if not data.get("cases", []):
-        st.info("لا توجد قضايا مسجلة")
+    st.info("لا توجد قضايا مسجلة")
     else:
         for i, case in enumerate(data["cases"]):
             if "id" not in case: case["id"] = i + 1
