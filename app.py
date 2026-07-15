@@ -21,8 +21,8 @@ st.markdown("""
         color: #0A1428; padding: 12px; font-weight: 900; font-size: 16px;
         white-space: nowrap; overflow: hidden; border-radius: 0 0 15px 15px;
     }
-    .marquee span { display: inline-block; animation: marquee 15s linear infinite; }
-    @keyframes marquee { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
+    .marquee span { display: inline-block; padding-right: 100%; animation: marquee 20s linear infinite; }
+    @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
     
     .main-title { color: #D4AF37; text-align: center; font-size: 36px; font-weight: 900; padding: 15px 0; }
     h1, h2, h3 { color: #D4AF37 !important; text-align: center !important; font-weight: 900; }
@@ -84,19 +84,24 @@ LIBRARY_SECTIONS = {
     "صحف دعاوى": "#E6E6FA", "مذكرات دفاع": "#FFF0F5", "أخرى": "#808080"
 }
 
-if not os.path.exists(UPLOAD_FOLDER): os.makedirs(UPLOAD_FOLDER)
+if not os.path.exists(UPLOAD_FOLDER): 
+    os.makedirs(UPLOAD_FOLDER)
 
-if 'page' not in st.session_state: st.session_state.page = "الرئيسية"
-if 'selected_case_id' not in st.session_state: st.session_state.selected_case_id = None
+if 'page' not in st.session_state: 
+    st.session_state.page = "الرئيسية"
+if 'selected_case_id' not in st.session_state: 
+    st.session_state.selected_case_id = None
 
 # ====== دوال التحميل والحفظ ======
 def load_data():
     if os.path.exists(DATA_FILE):
-        with open(DATA_FILE, "r", encoding="utf-8") as f: return json.load(f)
+        with open(DATA_FILE, "r", encoding="utf-8") as f: 
+            return json.load(f)
     return {"cases": []}
 
 def save_data(data):
-    with open(DATA_FILE, "w", encoding="utf-8") as f: json.dump(data, f, ensure_ascii=False, indent=4)
+    with open(DATA_FILE, "w", encoding="utf-8") as f: 
+        json.dump(data, f, ensure_ascii=False, indent=4)
 
 # ========= دوال التنبيهات =========
 def get_alert_cases():
@@ -105,6 +110,7 @@ def get_alert_cases():
     all_cases = data["cases"]
     alerts = {"sessions": [], "appeals": []}
     for case in all_cases:
+        # 1. الجلسات: خلال 7 ايام
         if case.get('حالة') == 'متداولة' and case.get('تاريخ_جلسة'):
             try:
                 session_date = datetime.strptime(case['تاريخ_جلسة'], '%Y-%m-%d').date()
@@ -112,8 +118,10 @@ def get_alert_cases():
                 if 0 <= days_left <= 7:
                     case['days_left'] = days_left
                     alerts["sessions"].append(case)
-            except: pass
+            except: 
+                pass
         
+        # 2. الطعون: من 15 يوم قبل اخر ميعاد لحد اخر يوم
         if case.get('حالة') == 'منتهية' and case.get('مسندة_ل_الحكم') == 'الضد' and case.get('تاريخ_الحكم'):
             try:
                 judgment_date = datetime.strptime(case['تاريخ_الحكم'], '%Y-%m-%d').date()
@@ -125,9 +133,43 @@ def get_alert_cases():
                 if notify_start <= today <= last_appeal_day and days_left_appeal >= 0:
                     case['days_left_appeal'] = days_left_appeal
                     alerts["appeals"].append(case)
-            except: pass
+            except: 
+                pass
     return alerts
 # ========= نهاية دوال التنبيهات =========
+
+# ========== الصفحة الرئيسية =========
+alerts = get_alert_cases()
+total_alerts = len(alerts['sessions']) + len(alerts['appeals'])
+
+col1, col2 = st.columns(2)
+with col1:
+    st.markdown('<div class="btn-add">', unsafe_allow_html=True)
+    if st.button("➕ اضافة قضية جديدة"): 
+        st.session_state.page = "اضافة"
+    st.markdown('</div>', unsafe_allow_html=True)
+with col2:
+    st.markdown('<div class="btn-list">', unsafe_allow_html=True)
+    if st.button("📋 عرض كل القضايا"): 
+        st.session_state.page = "عرض"
+    st.markdown('</div>', unsafe_allow_html=True)
+
+col3, col4 = st.columns(2)
+with col3:
+    st.markdown('<div class="btn-alert">', unsafe_allow_html=True)
+    if st.button(f"🚨 التنبيهات ({total_alerts})"): 
+        st.session_state.page = "تنبيهات"
+    st.markdown('</div>', unsafe_allow_html=True)
+with col4:
+    st.markdown('<div class="btn-report">', unsafe_allow_html=True)
+    if st.button("📄 طباعة تقرير"): 
+        st.session_state.page = "تقرير"
+    st.markdown('</div>', unsafe_allow_html=True)
+
+st.markdown('<div class="btn-search">', unsafe_allow_html=True)
+if st.button("🔍 بحث"): 
+    st.session_state.page = "بحث"
+st.markdown('</div>', unsafe_allow_html=True)
 # ================================================
 # ========== الصفحة الرئيسية ==========
 if st.session_state.page == "الرئيسية":
