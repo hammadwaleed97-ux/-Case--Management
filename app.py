@@ -1,4 +1,4 @@
-# ================================================
+
 # ========== الجزء الاول: الاساسيات ============
 # ================================================
 import streamlit as st
@@ -12,8 +12,22 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
 st.set_page_config(page_title="إدارة القضايا", layout="wide", page_icon="⚖️")
-st.set_page_config(page_title="إدارة القضايا", layout="wide")
 
+# ====== اضافة خط Cairo من جوجل ======
+st.markdown("""
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');
+html, body, [class*="css"]  {
+    font-family: 'Cairo', sans-serif;
+}
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Cairo', sans-serif;
+}
+</style>
+""", unsafe_allow_html=True)
+# =====================================
+
+# ====== دوال التحميل والحفظ
 # ====== دوال التحميل والحفظ ======
 DATA_FILE = "cases_data.json" # <-- السطر ده كان ناقص
 
