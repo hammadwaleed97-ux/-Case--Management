@@ -1210,4 +1210,26 @@ elif st.session_state.page == "تقارير":
 
         if st.button("استخراج الإحصائيات", use_container_width=True, type="primary"):
             all_cases = data["cases"]
-            متداولة = [c for c in all_cases if c.get('حالة') == 'متداولة' and c.get('تاريخ_جلسة') and stat_from <= datetime
+            
+            متداولة = []
+            for c in all_cases:
+                if c.get('حالة') == 'متداولة' and c.get('تاريخ_جلسة'):
+                    تاريخ = datetime.strptime(c['تاريخ_جلسة'], '%Y-%m-%d').date()
+                    if stat_from <= تاريخ <= stat_to:
+                        متداولة.append(c)
+            
+            احكام = []
+            for c in all_cases:
+                if c.get('حالة') == 'منتهية' and c.get('تاريخ_الحكم'):
+                    تاريخ = datetime.strptime(c['تاريخ_الحكم'], '%Y-%m-%d').date()
+                    if stat_from <= تاريخ <= stat_to:
+                        احكام.append(c)
+            
+            للصالح = [c for c in احكام if c.get('مسندة_ل_الحكم') == 'الصالح']
+            للضد = [c for c in احكام if c.get('مسندة_ل_الحكم') == 'الضد']
+            
+            c1,c2,c3,c4 = st.columns(4)
+            c1.metric("عدد القضايا المتداولة", len(متداولة))
+            c2.metric("عدد الاحكام الصادرة", len(احكام))
+            c3.metric("عدد الاحكام للصالح", len(للصالح))
+            c4.metric("عدد الاحكام للضد", len(للضد))
