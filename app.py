@@ -1,4 +1,3 @@
-# =============================================
 # ========== الجزء الاول: الاساسيات ============
 # ================================================
 import streamlit as st
@@ -12,7 +11,6 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
 st.set_page_config(page_title="إدارة القضايا", layout="wide", page_icon="⚖️")
-st.set_page_config(page_title="إدارة القضايا", layout="wide")
 
 # ====== دوال التحميل والحفظ ======
 DATA_FILE = "cases_data.json" # <-- السطر ده كان ناقص
@@ -124,8 +122,6 @@ if not os.path.exists(UPLOAD_FOLDER): os.makedirs(UPLOAD_FOLDER)
 if 'page' not in st.session_state: st.session_state.page = "الرئيسية"
 if 'selected_case_id' not in st.session_state: st.session_state.selected_case_id = None
 
-# ====== دوال التحميل والحفظ ======
-
 def load_tokens():
     if os.path.exists(TOKENS_FILE):
         with open(TOKENS_FILE, "r", encoding="utf-8") as f: return json.load(f)
@@ -134,7 +130,7 @@ def load_tokens():
 def save_tokens(tokens_data):
     with open(TOKENS_FILE, "w", encoding="utf-8") as f:
         json.dump(tokens_data, f, ensure_ascii=False, indent=4)
-        # ========= دوال التنبيهات =========
+# ========= دوال التنبيهات =========
 def get_alert_cases():
     data = load_data()
     today = datetime.now().date()
@@ -166,7 +162,6 @@ def get_alert_cases():
             except: pass
     return alerts
 # ========= نهاية دوال التنبيهات =========
-# ========= نهاية دوال التنبيهات =========
 LIBRARY_SECTIONS = {
     "القوانين": "#FF4500", "القرارات الوزارية": "#FF8C00", "قرارات الهيئة": "#FFD700",
     "المنشورات الوزارية": "#ADFF2F", "منشورات الهيئة": "#32CD32", "الكتب الدورية": "#20B2AA",
@@ -178,6 +173,8 @@ LIBRARY_SECTIONS = {
     "فتاوى الجمعية العمومية": "#7B68EE", "صحف طعون": "#6A5ACD", "صحف استئنافات": "#483D8B",
     "صحف دعاوى": "#E6E6FA", "مذكرات دفاع": "#FFF0F5", "أخرى": "#808080"
 }
+# ================================================
+# ========== الصفحة الرئيسية =======
 # ================================
 # ================================================
 # ========== الصفحة الرئيسية =========
