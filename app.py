@@ -1279,57 +1279,7 @@ elif st.session_state.page == "المكتبة":
         st.rerun()
         # =========================================
         #======== الجزء الثامن: التقارير ========== #
-import streamlit as st
-import pandas as pd
-from datetime import datetime
-import json
-import os
-from io import BytesIO
-from docx import Document
-from docx.shared import Pt
-from docx.enum.text import WD_ALIGN_PARAGRAPH
-from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import A4
-
-DATA_FILE = "data.json"
-
-def load_data():
-    if os.path.exists(DATA_FILE):
-        with open(DATA_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    return {"cases": [], "library": []}
-
-def save_data(data):
-    with open(DATA_FILE, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
-
-def to_excel(df):
-    output = BytesIO()
-    with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        df.to_excel(writer, index=False, sheet_name='تقرير')
-    return output.getvalue()
-
-def to_word(df, title, region, member, manager, general):
-    doc = Document()
-    doc.add_paragraph(f"ديوان عام منطقة: {region}").alignment = WD_ALIGN_PARAGRAPH.CENTER
-    doc.add_paragraph(title).alignment = WD_ALIGN_PARAGRAPH.CENTER
-    if not df.empty:
-        table = doc.add_table(rows=1, cols=len(df.columns))
-        hdr_cells = table.rows[0].cells
-        for i, col in enumerate(df.columns):
-            hdr_cells[i].text = str(col)
-        for _, row in df.iterrows():
-            row_cells = table.add_row().cells
-            for i, val in enumerate(row):
-                row_cells[i].text = str(val)
-    doc.add_paragraph(f"\nعضو الادارة: {member}")
-    doc.add_paragraph(f"مدير الادارة: {manager}")
-    doc.add_paragraph(f"مدير عام: {general}")
-    f = BytesIO()
-    doc.save(f)
-    return f.getvalue()
-
-def to_pdf(df, title, region, member, manager, general):
+        def to_pdf(df, title, region, member, manager, general):
     buffer = BytesIO()
     p = canvas.Canvas(buffer, pagesize=A4)
     p.setFont("Helvetica", 10)
@@ -1346,13 +1296,14 @@ def to_pdf(df, title, region, member, manager, general):
     p.save()
     return buffer.getvalue()
 
+# سيب سطرين فاضيين هنا
 elif st.session_state.page == "تقارير":
     data = load_data()
     all_cases = data.get("cases", [])
 
     # 1. التعديل الاول: فصل الارشيف صح
     active_cases = [c for c in all_cases if c.get('الحالة') == 'متداولة']
-    archive_cases = [c for c in all_cases if c.get('الحالة') == 'منتهية'] # شلت شرط الحكم من هنا
+    archive_cases = [c for c in all_cases if c.get('الحالة') == 'منتهية']
 
     st.markdown("<h2 style='text-align:center; color:#D4AF37;'>📑 مركز التقارير القضائية</h2>", unsafe_allow_html=True)
     if st.button("⬅️ العودة للرئيسية", key="back_reports", use_container_width=True):
@@ -1405,7 +1356,6 @@ elif st.session_state.page == "تقارير":
 
     # ====== 3 4 5 6 8: الاحكام ======
     elif report_type.startswith("3") or report_type.startswith("4") or report_type.startswith("5") or report_type.startswith("6") or report_type.startswith("8"):
-        # 2. التعديل الثاني: نفلتر الاحكام اللي فيها حكم فقط هنا
         cases = [c for c in archive_cases if c.get('مسندة_الى_الحكم') in ['للصالح', 'للضد']]
         col1, col2 = st.columns(2)
         with col1: from_date = st.date_input("من الفترة", key="from_archive")
@@ -1440,7 +1390,7 @@ elif st.session_state.page == "تقارير":
     elif report_type.startswith("7"):
         st.markdown("<h3 style='text-align:center; color:white;'>📊 الاحصائيات العامة</h3>", unsafe_allow_html=True)
         total_active = len(active_cases)
-        total_archive = len([c for c in archive_cases if c.get('مسندة_الى_الحكم') in ['للصالح', 'للضد']]) # 3. التعديل الثالث
+        total_archive = len([c for c in archive_cases if c.get('مسندة_الى_الحكم') in ['للصالح', 'للضد']])
         saleh = len([c for c in archive_cases if c.get('مسندة_الى_الحكم') == 'للصالح'])
         ded = len([c for c in archive_cases if c.get('مسندة_الى_الحكم') == 'للضد'])
         col1, col2, col3, col4 = st.columns(4)
