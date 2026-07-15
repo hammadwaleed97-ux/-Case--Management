@@ -1283,23 +1283,40 @@ elif st.session_state.page == "المكتبة":
 if st.session_state.page == "تقارير":
     data = load_data()
     
-    # ====== استايل الجدول الفخم المسطر بدون كارت + خط ابيض ======
+    # ====== استايل الجدول + التابات حمرا + كله ابيض ======
     st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap');
     
-    /* تخلي كل الليبل والعناوين ابيض */
+    /* الليبلات ابيض وتخين */
     [data-testid="stTextInput"] label, 
     [data-testid="stDateInput"] label {
         color: #FFFFFF !important;
-        font-weight: bold;
-        font-size: 15px;
+        font-weight: 700 !important;
+        font-size: 15px !important;
     }
     
-    /* عنوان الصفحة */
+    /* عنوان الصفحة ابيض بشادو احمر */
     h2 {
         color: #FFFFFF !important;
-        text-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
+        font-weight: 900 !important;
+        text-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+    }
+    
+    /* اسماء التابات فوق - كلهم ابيض */
+    .stTabs [data-baseweb="tab-list"] button [data-testid="stMarkdownContainer"] p {
+        color: #FFFFFF !important;
+        font-weight: 700 !important;
+        font-size: 15px !important;
+    }
+    
+    /* التاب النشط يبقى احمر + خط احمر تحته */
+    .stTabs [data-baseweb="tab-list"] button[aria-selected="true"] [data-testid="stMarkdownContainer"] p {
+        color: #FF0000 !important;
+        font-weight: 900 !important;
+    }
+    .stTabs [data-baseweb="tab-highlight"] {
+        background-color: #FF0000 !important; /* الخط الاحمر اللي تحت التاب */
     }
 
     .fancy-table {
@@ -1313,13 +1330,13 @@ if st.session_state.page == "تقارير":
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
     }
     .fancy-table thead {
-        background: linear-gradient(135deg, #D4AF37 0%, #B8860B 100%);
-        color: #0A1428;
+        background: linear-gradient(135deg, #FF0000 0%, #B22222 100%); /* هيدر احمر */
+        color: #FFFFFF; /* الكلام ابيض */
         font-weight: bold;
         font-size: 14px;
     }
     .fancy-table th {
-        border: 1.5px solid #D4AF37;
+        border: 1.5px solid #FF0000;
         padding: 12px 8px;
         text-align: center;
     }
@@ -1334,8 +1351,8 @@ if st.session_state.page == "تقارير":
         background-color: #253355;
     }
     .fancy-table tbody tr:hover td {
-        background-color: #D4AF37;
-        color: #0A1428;
+        background-color: #FF0000; /* الهوفر احمر */
+        color: #FFFFFF;
         transition: 0.3s;
         font-weight: bold;
     }
@@ -1346,18 +1363,24 @@ if st.session_state.page == "تقارير":
         border: none;
         margin-top: 15px;
     }
+    
+    /* الخط الفاصل */
+    hr {
+        border-top: 2px solid #FF0000;
+        margin: 20px 0;
+    }
     </style>
     """, unsafe_allow_html=True)
     
     st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
-    st.markdown("<h2 style='color:#FFFFFF; text-align:center'>📑 مركز التقارير الحكومية</h2>", unsafe_allow_html=True)  # غيرت اللون لابيض
+    st.markdown("<h2 style='color:#FFFFFF; text-align:center'>📑 مركز التقارير الحكومية</h2>", unsafe_allow_html=True)
     if st.button("⬅️ العودة للرئيسية", use_container_width=True): st.session_state.page = "الرئيسية"; st.rerun()
 
     tab1, tab2, tab3 = st.tabs(["📊 بيان الدعاوى المتداولة", "⚖️ بيان الاحكام", "📈 الإحصائيات"])
 
     # ====== تبويب 1: المتداولة ======
     with tab1:
-        st.markdown("<div style='background:#1E2A47; padding:20px; border-radius:15px; border:2px solid #D4AF37; margin-bottom:15px'>", unsafe_allow_html=True)
+        st.markdown("<div style='background:#1E2A47; padding:20px; border-radius:15px; border:2px solid #FF0000; margin-bottom:15px'>", unsafe_allow_html=True) # البرواز بقى احمر
         region = st.text_input("ديوان عام منطقة", key="region1")
         col1, col2, col3 = st.columns(3)
         with col1: from_date = st.date_input("من الفترة", key="from1")
@@ -1405,7 +1428,7 @@ if st.session_state.page == "تقارير":
 
     # ====== تبويب 2: الاحكام ======
     with tab2:
-        st.markdown("<div style='background:#1E2A47; padding:20px; border-radius:15px; border:2px solid #D4AF37; margin-bottom:15px'>", unsafe_allow_html=True)
+        st.markdown("<div style='background:#1E2A47; padding:20px; border-radius:15px; border:2px solid #FF0000; margin-bottom:15px'>", unsafe_allow_html=True) # البرواز بقى احمر
         region2 = st.text_input("ديوان عام منطقة", key="region2")
         col1, col2, col3 = st.columns(3)
         with col1: from_date2 = st.date_input("من الفترة", key="from2")
