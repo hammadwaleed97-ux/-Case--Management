@@ -1,4 +1,167 @@
+# ========== الجزء الاول: الاساسيات ============
+# ================================================
+import streamlit as st
+import pandas as pd
+import json
+import os
+import smtplib
+import secrets
+from datetime import datetime, timedelta
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
+st.set_page_config(page_title="إدارة القضايا", layout="wide", page_icon="⚖️")
+
+# ====== دوال التحميل والحفظ ======
+DATA_FILE = "cases_data.json"
+
+def load_data():
+    if os.path.exists(DATA_FILE):
+        try:
+            with open(DATA_FILE, "r", encoding="utf-8") as f: 
+                data = json.load(f)
+                if not data or "cases" not in data:
+                    return {"cases": [], "archive": [], "library": [], "tasks": [], "users": []}
+                return data
+        except:
+            return {"cases": [], "archive": [], "library": [], "tasks": [], "users": []}
+    return {"cases": [], "archive": [], "library": [], "tasks": [], "users": []}
+
+def save_data(data):
+    with open(DATA_FILE, "w", encoding="utf-8") as f: json.dump(data, f, ensure_ascii=False, indent=4)
+
+# ==================================
+# ========= تهيئة الـ Session State =========
+if "page" not in st.session_state:
+    st.session_state.page = "الرئيسية"
+if "data" not in st.session_state:
+    st.session_state.data = load_data()
+if "user" not in st.session_state:
+    st.session_state.user = "المستخدم"
+
+# ============= التصميم النهائي المصلح =============
+st.markdown("""
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap');
+    * { font-family: 'Cairo', sans-serif !important; }
+    html, body { direction: rtl; color: #FFFFFF !important; }
+    .stApp { background: linear-gradient(180deg, #0A1428 0%, #1E2A47 100%); }
+    
+    .marquee {
+        background: linear-gradient(90deg, #D4AF37 0%, #FFD700 50%, #D4AF37 100%);
+        color: #0A1428; padding: 12px; font-weight: 900; font-size: 16px;
+        white-space: nowrap; overflow: hidden; border-radius: 0 0 15px 15px;
+        text-align: center;
+    }
+    
+    .main-title { color: #D4AF37; text-align: center; font-size: 36px; font-weight: 900; padding: 15px 0; }
+    
+    .stButton > button {
+        color: #000 !important; font-weight: 900 !important; font-size: 18px !important;
+        border: none !important; border-radius: 15px !important; padding: 16px !important;
+        width: 100% !important; max-width: 400px !important; margin: 10px auto !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.4) !important; display: block;
+        background-color: #FFFFFF !important;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+st.markdown("""
+<div class="marquee">
+<span>مع تحيات وليد حماد - الإدارة العامة للشئون القانونية بديوان عام منطقة البحيرة بالهيئة القومية للتأمين الاجتماعي</span>
+</div>
+""", unsafe_allow_html=True)
+
+st.markdown('<div class="main-title">⚖️ إدارة القضايا ⚖️</div>', unsafe_allow_html=True)
+
+# ====== المتغيرات العامة ======
+DATA_FILE = "cases_data.json"
+UPLOAD_FOLDER = "uploads"
+TOKENS_FILE = "tokens.json"
+ANWA3_MOSTANDAT = ["صحيفة دعوى", "صحيفة استئناف", "صحيفة طعن", "مذكرة دفاع", "حافظة مستندات", "تقرير خبير", "تقرير طب شرعى", "تقرير لجنة طبية", "صحيفة تجديد من الشطب", "صحيفة تعجيل من الوقف", "صورة حكم تمهيدى", "أخرى"]
+
+SENDER_EMAIL = "" 
+SENDER_PASSWORD = "" 
+APP_URL = "https://qpyqpsmkqcvdou4imbfunp.streamlit.app/"
+
+if not os.path.exists(UPLOAD_FOLDER): os.makedirs(UPLOAD_FOLDER)
+if 'page' not in st.session_state: st.session_state.page = "الرئيسية"
+if 'selected_case_id' not in st.session_state: st.session_state.selected_case_id = None
+
+def load_tokens():
+    if os.path.exists(TOKENS_FILE):
+        with open(TOKENS_FILE, "r", encoding="utf-8") as f: return json.load(f)
+    return {"tokens": []}
+
+def save_tokens(tokens_data):
+    with open(TOKENS_FILE, "w", encoding="utf-8") as f:
+        json.dump(tokens_data, f, ensure_ascii=False, indent=4)
+        
+def get_alert_cases():
+    data = load_data()
+    today = datetime.now().date()
+    all_cases = data["cases"]
+    alerts = {"sessions": [], "appeals": []}
+    for case in all_cases:
+        if case.get('حالة') == 'متداولة' and case.get('تاريخ_جلسة'):
+            try:
+                session_date = datetime.strptime(case['تاريخ_جلسة'], '%Y-%m-%d').date()
+                days_left = (session_date - today).days
+                if 0 <= days_left <= 7:
+                    case['days_left'] = days_left
+                    alerts["sessions"].append(case)
+            except: pass
+        if case.get('حالة') == 'منتهية' and case.get('مسندة_ل_الحكم') == 'الضد' and case.get('تاريخ_الحكم'):
+            try:
+                judgment_date = datetime.strptime(case['تاريخ_الحكم'], '%Y-%m-%d').date()
+                appeal_days = 40 if case['نوع'] == 'دعوى' else 60
+                last_appeal_day = judgment_date + timedelta(days=appeal_days)
+                notify_start = last_appeal_day - timedelta(days=15)
+                days_left_appeal = (last_appeal_day - today).days
+                if notify_start <= today <= last_appeal_day and days_left_appeal >= 0:
+                    case['days_left_appeal'] = days_left_appeal
+                    alerts["appeals"].append(case)
+            except: pass
+    return alerts
+
+LIBRARY_SECTIONS = {
+    "القوانين": "#FF4500", "القرارات الوزارية": "#FF8C00", "قرارات الهيئة": "#FFD700",
+    "المنشورات الوزارية": "#ADFF2F", "منشورات الهيئة": "#32CD32", "الكتب الدورية": "#20B2AA",
+    "تعليمات الهيئة": "#00CED1", "رسائل الهيئة": "#1E90FF", "المرصد الفنى": "#4169E1",
+    "فتاوى لجنة الشئون القانونية بالوزارة": "#8A2BE2", "فتاوى الادارة المركزية للشئون القانونية": "#9400D3",
+    "احكام المحكمة الدستورية العليا": "#DC143C", "احكام محكمة النقض": "#B22222", "احكام المحكمة الإدارية العليا": "#8B0000",
+    "احكام المحاكم الاستئنافية": "#A0522D", "احكام محاكم القضاء الإدارى": "#D2691E", "احكام المحاكم الابتدائية": "#CD853F",
+    "احكام المحكمة الإدارية": "#DEB887", "منشورات القضاء العادى": "#5F9EA0", "منشورات مجلس الدولة": "#4682B4",
+    "فتاوى الجمعية العمومية": "#7B68EE", "صحف طعون": "#6A5ACD", "صحف استئنافات": "#483D8B",
+    "صحف دعاوى": "#E6E6FA", "مذكرات دفاع": "#FFF0F5", "أخرى": "#808080"
+}
+
+# ================================================
+# ========== الصفحة الرئيسية =======
+if st.session_state.page == "الرئيسية":
+    alerts = get_alert_cases()
+    total_alerts = len(alerts["sessions"]) + len(alerts["appeals"])
+    
+    if st.button("➕ اضافة قضية جديدة", key="btn1"):
+        st.session_state.page = "اضافة قضية"
+    
+    if st.button("📋 عرض جميع القضايا", key="btn2"):
+        st.session_state.page = "عرض القضايا"
+        
+    if st.button(f"🔔 التنبيهات ({total_alerts})", key="btn3"):
+        st.session_state.page = "التنبيهات"
+        
+    if st.button("📊 التقارير", key="btn4"):
+        st.session_state.page = "التقارير"
+        
+    if st.button("📚 المكتبة القانونية", key="btn5"):
+        st.session_state.page = "المكتبة"
+        
+    if st.button("📦 الارشيف", key="btn6"):
+        st.session_state.page = "الارشيف"
+        
+    if st.button("🔍 بحث متقدم", key="btn7"):
+        st.session_state.page = "بحث"
 # ================================================
 # ========== الصفحة الرئيسية =======
 # ================================================
