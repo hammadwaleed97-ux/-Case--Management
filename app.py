@@ -1,50 +1,22 @@
-# =# ============================================
+# ============================================
 # ========== الجزء الاول: الاساسيات ==========
 # ================================================
 import streamlit as st
 import pandas as pd
 import json
 import os
-import smtplib
-import secrets
 import io
 from datetime import datetime, timedelta
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 
-# بتاعت الـ HTML to PDF
+# بتاعت الـ HTML to PDF - مش محتاجين reportlab
 import streamlit.components.v1 as components
 
 st.set_page_config(page_title="إدارة القضايا", layout="wide", page_icon="⚖️")
 
-# ====== 1- دوال التحميل والحفظ الاول ======
-DATA_FILE = "cases_data.json"
-
-def load_data():
-    if os.path.exists(DATA_FILE):
-        with open(DATA_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    return {"cases": [], "users": {}}
-
-def save_data(data):
-    with open(DATA_FILE, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=4)
-
-# ====== 2- تعريف الـ session_state بعد الدوال ======
-if 'page' not in st.session_state:
-    st.session_state.page = 'login'
-if 'logged_in' not in st.session_state:
-    st.session_state.logged_in = False
-if 'username' not in st.session_state:
-    st.session_state.username = ''
-if 'data' not in st.session_state:
-    st.session_state.data = load_data() # كده load_data موجودة خلاص
-
-# ====== 3- اضافة خط Cairo من جوجل للويب + الخلفية ======
+# ====== 1- خط Cairo من جوجل + الخلفية ======
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');
-
 html, body, [class*="css"]  {
     font-family: 'Cairo', sans-serif;
 }
@@ -53,6 +25,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 .stApp { 
     background: linear-gradient(180deg, #0A1428 0%, #1E2A47 100%); 
+    color: white;
 }
 .case-table {width:100%; border-collapse:collapse; font-family:Cairo; font-size:13px}
 .case-table th {background:#D4AF37; color:#0A1428; padding:10px; border:1px solid #D4AF37}
@@ -60,6 +33,7 @@ h1, h2, h3, h4, h5, h6 {
 .table-container {overflow-x:auto; margin:20px 0}
 </style>
 """, unsafe_allow_html=True)
+
 # ====== 2- دوال التحميل والحفظ ======
 DATA_FILE = "cases_data.json"
 
@@ -67,11 +41,47 @@ def load_data():
     if os.path.exists(DATA_FILE):
         with open(DATA_FILE, "r", encoding="utf-8") as f:
             return json.load(f)
-    return {"cases": [], "users": {}}
+    return {"cases": []}
 
 def save_data(data):
     with open(DATA_FILE, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=4)
+
+# ====== 3- تعريف session_state ======
+if 'data' not in st.session_state:
+    st.session_state.data = load_data()
+if 'show_form' not in st.session_state:
+    st.session_state.show_form = False
+
+# ====== 4- دالة التقرير HTML بدل PDF ======
+def generate_html_report(case):
+    html = f"""
+    <html dir="rtl" lang="ar">
+    <head>
+        <meta charset="UTF-8">
+        <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+        <style>
+            body {{ font-family: 'Cairo', sans-serif; direction: rtl; padding: 20px; color: #0A1428; }}
+            .header {{ text-align: center; border-bottom: 3px solid #D4AF37; padding-bottom: 10px; }}
+            .info {{ margin: 20px 0; }}
+            .info p {{ margin: 8px 0; font-size: 16px; }}
+            .label {{ font-weight: 700; color: #D4AF37; }}
+        </style>
+    </head>
+    <body>
+        <div class="header">
+            <h1>تقرير القضية</h1>
+        </div>
+        <div class="info">
+            <p><span class="label">رقم القضية:</span> {case.get('رقم القضية','')}</p>
+            <p><span class="label">اسم الموكل:</span> {case.get('اسم الموكل','')}</p>
+            <p><span class="label">نوع القضية:</span> {case.get('النوع','')}</p>
+            <p><span class="label">التاريخ:</span> {case.get('التاريخ','')}</p>
+        </div>
+    </body>
+    </html>
+    """
+    return html
 # ====== دوال التحميل والحفظ ====
 def load_data():
     if os.path.exists(DATA_FILE):
