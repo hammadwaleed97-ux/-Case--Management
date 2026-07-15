@@ -3,3 +3,6 @@ pandas
 reportlab
 python-docx
 openpyxl
+arabic-reshaper
+python-bidi
+requests
