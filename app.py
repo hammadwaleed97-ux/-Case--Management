@@ -1183,4 +1183,4 @@ elif st.session_state.page == "تقارير":
     # ========= تبويب 3: الاحصائيات =========
     with tab3:
         st.markdown("<h3 style='color:#D4AF37; text-align:center'>📊 الإحصائيات العددية</h3>", unsafe_allow_html=True)
-        st.markdown("<div style='background:#1E2A47; padding:20px; border-radius:15px;
+st.markdown("<div style='background:#1E2A47; padding:20px; border-radius:15px; border:2px solid #D4AF37; margin-bottom:15px'>", unsafe_allow_html=True)
