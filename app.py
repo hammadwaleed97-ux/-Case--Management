@@ -8,7 +8,7 @@ import os
 import smtplib
 import secrets
 import io
-import requests # <--- ضيف دي
+import requests
 from datetime import datetime, timedelta
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -44,21 +44,28 @@ h1, h2, h3, h4, h5, h6 {
 </style>
 """, unsafe_allow_html=True)
 
-# ====== 2- تحميل خط Cairo للـ PDF اوتوماتيك من النت ======
+# ====== 2- تحميل خط Cairo للـ PDF اوتوماتيك من النت - النسخة الصح ======
 FONT_FILE = "Cairo-Regular.ttf"
-FONT_URL = "https://github.com/googlefonts/cairo/releases/download/v2.4.0/Cairo-Regular.ttf"
+FONT_URL = "https://raw.githubusercontent.com/google/fonts/main/ofl/cairo/Cairo-Regular.ttf" # اللينك المباشر الصح
 
 if not os.path.exists(FONT_FILE):
     try:
         with st.spinner("جاري تحميل خط التقرير العربي اول مرة..."):
-            r = requests.get(FONT_URL)
+            r = requests.get(FONT_URL, timeout=30)
+            r.raise_for_status()
             with open(FONT_FILE, "wb") as f:
                 f.write(r.content)
-    except:
-        st.error("فشل تحميل خط Cairo. اتأكد من النت")
+        st.success("تم تحميل خط Cairo بنجاح ✅")
+    except Exception as e:
+        st.error(f"فشل تحميل خط Cairo: {e}")
 
 if os.path.exists(FONT_FILE):
-    pdfmetrics.registerFont(TTFont('Cairo', FONT_FILE))
+    try:
+        pdfmetrics.registerFont(TTFont('Cairo', FONT_FILE))
+    except:
+        st.warning("الخط كان بايظ. جاري اعادة تحميله")
+        os.remove(FONT_FILE)
+        st.rerun()
 
 # ====== 3- دالة معالجة العربي للـ PDF ======
 def arabic(text):
