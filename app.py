@@ -1,4 +1,4 @@
-# ============================================
+# =# ============================================
 # ========== الجزء الاول: الاساسيات ==========
 # ================================================
 import streamlit as st
@@ -17,7 +17,20 @@ import streamlit.components.v1 as components
 
 st.set_page_config(page_title="إدارة القضايا", layout="wide", page_icon="⚖️")
 
-# ====== تعريف الـ session_state عشان ميضربش AttributeError ======
+# ====== 1- دوال التحميل والحفظ الاول ======
+DATA_FILE = "cases_data.json"
+
+def load_data():
+    if os.path.exists(DATA_FILE):
+        with open(DATA_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return {"cases": [], "users": {}}
+
+def save_data(data):
+    with open(DATA_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=4)
+
+# ====== 2- تعريف الـ session_state بعد الدوال ======
 if 'page' not in st.session_state:
     st.session_state.page = 'login'
 if 'logged_in' not in st.session_state:
@@ -25,9 +38,9 @@ if 'logged_in' not in st.session_state:
 if 'username' not in st.session_state:
     st.session_state.username = ''
 if 'data' not in st.session_state:
-    st.session_state.data = load_data()
+    st.session_state.data = load_data() # كده load_data موجودة خلاص
 
-# ====== 1- اضافة خط Cairo من جوجل للويب + الخلفية ======
+# ====== 3- اضافة خط Cairo من جوجل للويب + الخلفية ======
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');
@@ -47,7 +60,6 @@ h1, h2, h3, h4, h5, h6 {
 .table-container {overflow-x:auto; margin:20px 0}
 </style>
 """, unsafe_allow_html=True)
-
 # ====== 2- دوال التحميل والحفظ ======
 DATA_FILE = "cases_data.json"
 
