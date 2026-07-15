@@ -1283,10 +1283,25 @@ elif st.session_state.page == "المكتبة":
 if st.session_state.page == "تقارير":
     data = load_data()
     
-    # ====== استايل الجدول الفخم المسطر بدون كارت ======
+    # ====== استايل الجدول الفخم المسطر بدون كارت + خط ابيض ======
     st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');
+    
+    /* تخلي كل الليبل والعناوين ابيض */
+    [data-testid="stTextInput"] label, 
+    [data-testid="stDateInput"] label {
+        color: #FFFFFF !important;
+        font-weight: bold;
+        font-size: 15px;
+    }
+    
+    /* عنوان الصفحة */
+    h2 {
+        color: #FFFFFF !important;
+        text-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
+    }
+
     .fancy-table {
         border-collapse: collapse;
         width: 100%;
@@ -1295,7 +1310,7 @@ if st.session_state.page == "تقارير":
         border-radius: 12px;
         overflow: hidden;
         direction: rtl;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3); /* شادو على الجدول نفسه */
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
     }
     .fancy-table thead {
         background: linear-gradient(135deg, #D4AF37 0%, #B8860B 100%);
@@ -1325,17 +1340,17 @@ if st.session_state.page == "تقارير":
         font-weight: bold;
     }
     .table-container {
-        background: transparent; /* شلنا الخلفية */
-        padding: 0; /* شلنا البادنج */
-        border-radius: 0; /* شلنا التدوير */
-        border: none; /* شلنا البرواز */
+        background: transparent;
+        padding: 0;
+        border-radius: 0;
+        border: none;
         margin-top: 15px;
     }
     </style>
     """, unsafe_allow_html=True)
     
     st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
-    st.markdown("<h2 style='color:#D4AF37; text-align:center'>📑 مركز التقارير الحكومية</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='color:#FFFFFF; text-align:center'>📑 مركز التقارير الحكومية</h2>", unsafe_allow_html=True)  # غيرت اللون لابيض
     if st.button("⬅️ العودة للرئيسية", use_container_width=True): st.session_state.page = "الرئيسية"; st.rerun()
 
     tab1, tab2, tab3 = st.tabs(["📊 بيان الدعاوى المتداولة", "⚖️ بيان الاحكام", "📈 الإحصائيات"])
