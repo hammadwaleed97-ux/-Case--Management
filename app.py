@@ -1277,9 +1277,70 @@ elif st.session_state.page == "المكتبة":
         for k in ["selected_section", "show_upload", "search_filters"]:
             st.session_state.pop(k, None)
         st.rerun()
-        # =========================================
-        #======== الجزء الثامن: التقارير ========== #
-        def to_pdf(df, title, region, member, manager, general):
+        # ===================التقارير======================
+        import streamlit as st
+import pandas as pd
+import json
+import os
+from datetime import datetime
+from io import BytesIO
+from docx import Document
+from docx.shared import Pt
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import A4
+
+st.set_page_config(page_title="ادارة القضايا", layout="wide", initial_sidebar_state="collapsed")
+
+# ========== الالوان والستايل ========== #
+st.markdown("""
+<style>
+  .stApp {background-color: #0A1A2F; color: white;}
+  .stButton>button {background-color: #D4AF37; color: #0A1A2F; border-radius: 10px; border: none; font-weight: bold;}
+  .stTextInput>div>div>input {background-color: #1E2A47; color: white; border: 1px solid #D4AF37;}
+  .stSelectbox>div>div>div {background-color: #1E2A47; color: white;}
+</style>
+""", unsafe_allow_html=True)
+
+DATA_FILE = "data.json"
+
+def load_data():
+    if os.path.exists(DATA_FILE):
+        with open(DATA_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return {"cases": [], "library": []}
+
+def save_data(data):
+    with open(DATA_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+def to_excel(df):
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='تقرير')
+    return output.getvalue()
+
+def to_word(df, title, region, member, manager, general):
+    doc = Document()
+    doc.add_paragraph(f"ديوان عام منطقة: {region}").alignment = WD_ALIGN_PARAGRAPH.CENTER
+    doc.add_paragraph(title).alignment = WD_ALIGN_PARAGRAPH.CENTER
+    if not df.empty:
+        table = doc.add_table(rows=1, cols=len(df.columns))
+        hdr_cells = table.rows[0].cells
+        for i, col in enumerate(df.columns):
+            hdr_cells[i].text = str(col)
+        for _, row in df.iterrows():
+            row_cells = table.add_row().cells
+            for i, val in enumerate(row):
+                row_cells[i].text = str(val)
+    doc.add_paragraph(f"\nعضو الادارة: {member}")
+    doc.add_paragraph(f"مدير الادارة: {manager}")
+    doc.add_paragraph(f"مدير عام: {general}")
+    f = BytesIO()
+    doc.save(f)
+    return f.getvalue()
+
+def to_pdf(df, title, region, member, manager, general):
     buffer = BytesIO()
     p = canvas.Canvas(buffer, pagesize=A4)
     p.setFont("Helvetica", 10)
@@ -1292,16 +1353,92 @@ elif st.session_state.page == "المكتبة":
     for _, row in df.iterrows():
         p.drawString(50, y, " | ".join([str(x) for x in row]))
         y -= 20
-        if y < 50: break
+        if y < 50:
+            break
     p.save()
     return buffer.getvalue()
 
-# سيب سطرين فاضيين هنا
+# ========== الجلسة ========== #
+if 'page' not in st.session_state:
+    st.session_state.page = "الرئيسية"
+
+# ========== 1: الرئيسية ========== #
+if st.session_state.page == "الرئيسية":
+    st.markdown("<h1 style='text-align:center; color:#D4AF37;'>نظام ادارة القضايا</h1>", unsafe_allow_html=True)
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        if st.button("تسجيل قضية جديدة", use_container_width=True):
+            st.session_state.page = "تسجيل"; st.rerun()
+    with col2:
+        if st.button("الحصر العام", use_container_width=True):
+            st.session_state.page = "الحصر"; st.rerun()
+    with col3:
+        if st.button("الارشيف", use_container_width=True):
+            st.session_state.page = "الارشيف"; st.rerun()
+    if st.button("مركز التقارير", use_container_width=True):
+        st.session_state.page = "تقارير"; st.rerun()
+
+# ========== 2: التسجيل ========== #
+elif st.session_state.page == "تسجيل":
+    st.markdown("<h2 style='text-align:center; color:#D4AF37;'>تسجيل قضية جديدة</h2>", unsafe_allow_html=True)
+    if st.button("⬅️ العودة للرئيسية"):
+        st.session_state.page = "الرئيسية"; st.rerun()
+
+    with st.form("case_form"):
+        col1, col2 = st.columns(2)
+        with col1:
+            رقم = st.text_input("رقم القضية")
+            سنة = st.text_input("السنة")
+            محكمة_اسم = st.text_input("المحكمة")
+        with col2:
+            مدعي = st.text_input("المدعي")
+            مدعي_عليه = st.text_input("المدعي عليه")
+            موضوع = st.text_input("الموضوع")
+        col3, col4 = st.columns(2)
+        with col3:
+            تاريخ_جلسة = st.date_input("تاريخ الجلسة")
+            سبب = st.text_input("السبب")
+        with col4:
+            الحالة = st.selectbox("الحالة", ["متداولة", "منتهية"])
+
+        submitted = st.form_submit_button("حفظ القضية")
+        if submitted:
+            data = load_data()
+            new_case = {
+                "رقم": رقم, "سنة": سنة, "محكمة_اسم": محكمة_اسم,
+                "مدعي": مدعي, "مدعي_عليه": مدعي_عليه, "موضوع": موضوع,
+                "تاريخ_جلسة": str(تاريخ_جلسة), "سبب": سبب, "الحالة": الحالة,
+                "مسندة_الى_الحكم": "", "تاريخ_الحكم": ""
+            }
+            data["cases"].append(new_case)
+            save_data(data)
+            st.success("تم الحفظ بنجاح")
+
+# ========== 3: الحصر ========== #
+elif st.session_state.page == "الحصر":
+    st.markdown("<h2 style='text-align:center; color:#D4AF37;'>الحصر العام للقضايا المتداولة</h2>", unsafe_allow_html=True)
+    if st.button("⬅️ العودة للرئيسية"):
+        st.session_state.page = "الرئيسية"; st.rerun()
+    data = load_data()
+    cases = [c for c in data["cases"] if c.get('الحالة') == 'متداولة']
+    df = pd.DataFrame(cases)
+    st.dataframe(df, use_container_width=True)
+
+# ========== 4: الارشيف ========== #
+elif st.session_state.page == "الارشيف":
+    st.markdown("<h2 style='text-align:center; color:#D4AF37;'>ارشيف الاحكام</h2>", unsafe_allow_html=True)
+    if st.button("⬅️ العودة للرئيسية"):
+        st.session_state.page = "الرئيسية"; st.rerun()
+    data = load_data()
+    cases = [c for c in data["cases"] if c.get('الحالة') == 'منتهية']
+    df = pd.DataFrame(cases)
+    st.dataframe(df, use_container_width=True)
+
+# ========== 5: التقارير ========== #
 elif st.session_state.page == "تقارير":
     data = load_data()
     all_cases = data.get("cases", [])
 
-    # 1. التعديل الاول: فصل الارشيف صح
     active_cases = [c for c in all_cases if c.get('الحالة') == 'متداولة']
     archive_cases = [c for c in all_cases if c.get('الحالة') == 'منتهية']
 
@@ -1317,27 +1454,23 @@ elif st.session_state.page == "تقارير":
         key="report_select"
     )
 
-    st.info(f"عدد القضايا المتداولة: {len(active_cases)} | عدد الاحكام في الارشيف: {len(archive_cases)}")
+    st.info(f"المتداولة: {len(active_cases)} | المنتهية: {len(archive_cases)}")
 
-    # حقول التوقيعات
-    st.markdown("<div style='background:#1E2A47; padding:15px; border-radius:10px; border:2px solid #D4AF37; margin:10px 0;'>", unsafe_allow_html=True)
     col1, col2, col3 = st.columns(3)
     with col1: member = st.text_input("عضو الادارة القانونية", key="member_rep")
     with col2: manager = st.text_input("مدير الادارة القانونية", key="manager_rep")
     with col3: general_manager = st.text_input("مدير عام الإدارات القانونية", key="general_rep")
-    st.markdown("</div>", unsafe_allow_html=True)
 
     df_report = pd.DataFrame()
     report_title = ""
     region = st.text_input("ديوان عام منطقة", key="region_rep")
 
-    # ====== 1 و 2: المتداولة ======
     if report_type.startswith("1") or report_type.startswith("2"):
         cases = active_cases
-        col1, col2, col3 = st.columns(3)
+        col1, col2 = st.columns(2)
         with col1: from_date = st.date_input("من الفترة", key="from_active")
         with col2: to_date = st.date_input("حتى الفترة", key="to_active")
-        with col3: topic = st.text_input("موضوع الدعوى للفلترة", key="topic_active") if report_type.startswith("2") else ""
+        topic = st.text_input("موضوع الدعوى للفلترة", key="topic_active") if report_type.startswith("2") else ""
 
         if st.button("🔍 عرض التقرير", use_container_width=True, type="primary"):
             filtered = cases
@@ -1352,9 +1485,8 @@ elif st.session_state.page == "تقارير":
                 "الموضوع": c.get('موضوع',''), "تاريخ الجلسة": c.get('تاريخ_جلسة',''),
                 "السبب": c.get('سبب','')
             } for i,c in enumerate(filtered)])
-            report_title = f"بيان بالدعاوى المتداولة من {from_date} حتى {to_date}"
+            report_title = f"بيان بالدعاوى المتداولة"
 
-    # ====== 3 4 5 6 8: الاحكام ======
     elif report_type.startswith("3") or report_type.startswith("4") or report_type.startswith("5") or report_type.startswith("6") or report_type.startswith("8"):
         cases = [c for c in archive_cases if c.get('مسندة_الى_الحكم') in ['للصالح', 'للضد']]
         col1, col2 = st.columns(2)
@@ -1371,24 +1503,23 @@ elif st.session_state.page == "تقارير":
             if report_type.startswith("5"): filtered = [c for c in filtered if c.get('مسندة_الى_الحكم') == 'للضد']
             if topic: filtered = [c for c in filtered if topic in str(c.get('موضوع',''))]
 
-            if report_type.startswith("8"): # العددى
+            if report_type.startswith("8"):
                 total_ahkam = len(filtered)
                 saleh = len([c for c in filtered if c.get('مسندة_الى_الحكم') == 'للصالح'])
                 ded = len([c for c in filtered if c.get('مسندة_الى_الحكم') == 'للضد'])
                 df_report = pd.DataFrame({
-                    "البيان": ["اجمالي الاحكام", "احكام للصالح", "احكام للضد", "نسبة الصالح %", "نسبة الضد %"],
-                    "العدد": [total_ahkam, saleh, ded, f"{(saleh/total_ahkam*100):.1f}%" if total_ahkam > 0 else "0%", f"{(ded/total_ahkam*100):.1f}%" if total_ahkam > 0 else "0%"]
+                    "البيان": ["اجمالي الاحكام", "احكام للصالح", "احكام للضد"],
+                    "العدد": [total_ahkam, saleh, ded]
                 })
-            else: # الجداول العادية
+            else:
                 df_report = pd.DataFrame([{
                     "م": i+1, "رقم القضية": f"{c.get('رقم','')}/{c.get('سنة','')}", "الحكم": c.get('مسندة_الى_الحكم',''),
                     "الموضوع": c.get('موضوع',''), "تاريخ الحكم": c.get('تاريخ_الحكم',''), "المحكمة": c.get('محكمة_اسم','')
                 } for i,c in enumerate(filtered)])
-            report_title = f"بيان بالاحكام من {from_date} حتى {to_date}"
+            report_title = f"بيان بالاحكام"
 
-    # ====== 7: الاحصائيات ======
     elif report_type.startswith("7"):
-        st.markdown("<h3 style='text-align:center; color:white;'>📊 الاحصائيات العامة</h3>", unsafe_allow_html=True)
+        st.markdown("<h3 style='text-align:center; color:white;'>📊 الاحصائيات</h3>", unsafe_allow_html=True)
         total_active = len(active_cases)
         total_archive = len([c for c in archive_cases if c.get('مسندة_الى_الحكم') in ['للصالح', 'للضد']])
         saleh = len([c for c in archive_cases if c.get('مسندة_الى_الحكم') == 'للصالح'])
@@ -1399,16 +1530,11 @@ elif st.session_state.page == "تقارير":
         with col3: st.metric("للصالح", saleh)
         with col4: st.metric("للضد", ded)
 
-    # ====== عرض وتصدير ======
     if not df_report.empty:
         st.success(f"تم العثور على {len(df_report)} سجل")
         st.dataframe(df_report, use_container_width=True)
 
-        c1, c2, c3, c4 = st.columns(4)
-        with c1: st.download_button("⬇️ Excel", data=to_excel(df_report), file_name=f"تقرير_{datetime.now().strftime('%Y%m%d')}.xlsx", use_container_width=True)
-        with c2: st.download_button("📄 Word", data=to_word(df_report, report_title, region, member, manager, general_manager), file_name=f"تقرير_{datetime.now().strftime('%Y%m%d')}.docx", use_container_width=True)
-        with c3: st.download_button("📕 PDF", data=to_pdf(df_report, report_title, region, member, manager, general_manager), file_name=f"تقرير_{datetime.now().strftime('%Y%m%d')}.pdf", use_container_width=True)
-        with c4: st.download_button("🖨️ HTML", data=df_report.to_html(index=False).encode('utf-8-sig'), file_name=f"تقرير_{datetime.now().strftime('%Y%m%d')}.html", use_container_width=True)
-    else:
-        if not report_type.startswith("7"):
-            st.warning("لا توجد بيانات للفترة المختارة او الفلاتر")
+        c1, c2, c3 = st.columns(3)
+        with c1: st.download_button("⬇️ Excel", data=to_excel(df_report), file_name=f"تقرير.xlsx", use_container_width=True)
+        with c2: st.download_button("📄 Word", data=to_word(df_report, report_title, region, member, manager, general_manager), file_name=f"تقرير.docx", use_container_width=True)
+        with c3: st.download_button("📕 PDF", data=to_pdf(df_report, report_title, region, member, manager, general_manager), file_name=f"تقرير.pdf", use_container_width=True)
