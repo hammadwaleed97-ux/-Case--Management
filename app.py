@@ -1278,8 +1278,7 @@ elif st.session_state.page == "المكتبة":
             st.session_state.pop(k, None)
         st.rerun()
         # =========================================
-        # ==============================================
-# ============ الجزء الثامن: التقارير ============
+        # ============ الجزء الثامن: التقارير ============
 # ================================================
 if st.session_state.page == "تقارير":
     data = load_data()
@@ -1290,7 +1289,8 @@ if st.session_state.page == "تقارير":
     tab1, tab2, tab3 = st.tabs(["📊 بيان الدعاوى المتداولة", "⚖️ بيان الاحكام", "📈 الإحصائيات"])
 
     def report_header(region, title):
-        st.markdown(f"<div style='text-align:center; color:#D4AF37; border:4px double #D4AF37; padding:20px; background: linear-gradient(135deg, #0A1428 0%, #1E2A47 100%); border-radius:15px; margin-bottom:20px;'><h2>الهيئة القومية للتأمين الاجتماعى</h2><h3>الإدارة المركزية للإدارات القانونية</h3><h3>الإدارة العامة للقضايا</h3><h3>ديوان عام {region}</h3><hr><h3>{title}</h3></div>", unsafe_allow_html=True)
+        # استخدمنا fix_arabic عشان الهيدر يطلع متصل
+        st.markdown(f"<div dir='rtl' style='text-align:center; color:#D4AF37; border:4px double #D4AF37; padding:20px; background: linear-gradient(135deg, #0A1428 0%, #1E2A47 100%); border-radius:15px; margin-bottom:20px;'><h2>{fix_arabic('الهيئة القومية للتأمين الاجتماعى')}</h2><h3>{fix_arabic('الإدارة المركزية للإدارات القانونية')}</h3><h3>{fix_arabic('الإدارة العامة للقضايا')}</h3><h3>{fix_arabic(f'ديوان عام {region}')}</h3><hr><h3>{fix_arabic(title)}</h3></div>", unsafe_allow_html=True)
 
     with tab1:
         st.markdown("<div style='background:#1E2A47; padding:20px; border-radius:15px; border:2px solid #D4AF37; margin-bottom:15px'>", unsafe_allow_html=True)
@@ -1334,7 +1334,7 @@ if st.session_state.page == "تقارير":
                 with c3: st.download_button("📕 PDF", data=to_pdf(df_export, title, region), file_name=f"بيان_المتداولة_{datetime.now().strftime('%Y%m%d')}.pdf")
                 with c4: st.download_button("🖨️ HTML", data=html.encode('utf-8-sig'), file_name=f"بيان_المتداولة_{datetime.now().strftime('%Y%m%d')}.html")
 
-                st.markdown(f"<p style='text-align:right; color:#D4AF37; margin-top:30px;'>تفضلوا بقبول وافر الاحترام<br><br>عضو الادارة.................. مدير الإدارة..................<br>تحرر في {datetime.now().strftime('%Y-%m-%d')}</p>", unsafe_allow_html=True)
+                st.markdown(f"<p dir='rtl' style='text-align:right; color:#D4AF37; margin-top:30px;'>{fix_arabic('تفضلوا بقبول وافر الاحترام')}<br><br>{fix_arabic('عضو الادارة.................. مدير الإدارة..................')}<br>{fix_arabic(f'تحرر في {datetime.now().strftime('%Y-%m-%d')}')}</p>", unsafe_allow_html=True)
 
     with tab2: # نفس الفكرة للاحكام
         st.info("نفس كود تبويب المتداولة بس فلتر الاحكام")
