@@ -1,97 +1,93 @@
-# ============================================
-# ========== الجزء الاول: الاساسيات ==========
+# ============ الجزء الاول: الاساسيات ============
 # ================================================
 import streamlit as st
 import pandas as pd
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 
 st.set_page_config(page_title="إدارة القضايا", layout="wide", page_icon="⚖️")
 
+# ============= التصميم النهائي المصلح =============
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');
-html, body, [class*="css"]  { font-family: 'Cairo', sans-serif; }
-.stApp { background: linear-gradient(180deg, #0A1428 0%, #1E2A47 100%); color: white;}
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap');
+    * { font-family: 'Cairo', sans-serif!important; }
+    html, body { direction: rtl; color: #FFFFFF!important; }
+   .stApp { background: linear-gradient(180deg, #0A1428 0%, #1E2A47 100%); }
+    
+   .marquee {
+        background: linear-gradient(90deg, #D4AF37 0%, #FFD700 50%, #D4AF37 100%);
+        color: #0A1428; padding: 12px; font-weight: 900; font-size: 16px;
+        white-space: nowrap; overflow: hidden; border-radius: 0 0 15px 15px;
+    }
+   .marquee span { display: inline-block; animation: marquee 15s linear infinite; }
+    @keyframes marquee { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+    
+   .main-title { color: #D4AF37; text-align: center; font-size: 36px; font-weight: 900; padding: 15px 0; }
+    h1, h2, h3 { color: #D4AF37!important; text-align: center!important; font-weight: 900; }
+    
+   .stButton > button {
+        color: #000!important; font-weight: 900!important; font-size: 18px!important;
+        border: none!important; border-radius: 15px!important; padding: 16px!important;
+        width: 100%!important; max-width: 400px!important; margin: 10px auto!important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.4)!important; display: block;
+    }
+   .btn-add button { background: linear-gradient(180deg, #4DA8DA 0%, #2C5282 100%)!important; }
+   .btn-list button { background: linear-gradient(180deg, #4CAF50 0%, #2E7D32 100%)!important; }
+   .btn-alert button { background: linear-gradient(180deg, #FF5252 0%, #D32F2F 100%)!important; animation: pulse 1.5s infinite; }
+   .btn-report button { background: linear-gradient(180deg, #FF9800 0%, #F57C00 100%)!important; }
+    
+   .stTextInput > div > div > input,.stTextArea > div > div > textarea,.stSelectbox > div > div > select {
+        background-color: #FFFFFF!important; color: #000!important;
+        border: 2px solid #D4AF37!important; border-radius: 12px!important;
+        padding: 12px!important; text-align: right!important; font-weight: 700!important;
+    }
+    
+   .case-table { width:100%; color:#FFFFFF; text-align:center; border-collapse: collapse; }
+   .case-table th { background:#D4AF37; color:#0A1428; padding:8px; font-weight:900; }
+   .case-table td { padding:8px; border-bottom: 1px solid #D4AF37; }
+   .table-container { background:#1E2A47; padding:10px; border-radius:15px; border:2px solid #D4AF37; margin-bottom:15px; }
+   .row1 { background: #142038; }
+   .row2 { background: #1E2A47; }
+    
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 82, 82, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(255, 82, 82, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 82, 82, 0); }
 </style>
 """, unsafe_allow_html=True)
 
+st.markdown("""
+<div class="marquee">
+<span>مع تحيات وليد حماد - الإدارة العامة للشئون القانونية بديوان عام منطقة البحيرة بالهيئة القومية للتأمين الاجتماعي</span>
+</div>
+""", unsafe_allow_html=True)
+
+st.markdown('<div class="main-title">⚖️ إدارة القضايا ⚖️</div>', unsafe_allow_html=True)
+
+# ====== المتغيرات العامة ======
 DATA_FILE = "cases_data.json"
-def load_data():
-    if os.path.exists(DATA_FILE):
-        with open(DATA_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    return {"cases": []}
-def save_data(data):
-    with open(DATA_FILE, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=4)
+UPLOAD_FOLDER = "uploads"
 
-if 'data' not in st.session_state:
-    st.session_state.data = load_data()
-if 'show_form' not in st.session_state:
-    st.session_state.show_form = False
+if not os.path.exists(UPLOAD_FOLDER): os.makedirs(UPLOAD_FOLDER)
 
-# ============================================
-# ========== الجزء التاني: الواجهة ==========
-# ================================================
-st.title("⚖️ إدارة القضايا")
+if 'page' not in st.session_state: st.session_state.page = "الرئيسية"
+if 'selected_case_id' not in st.session_state: st.session_state.selected_case_id = None
 
-if st.button("➕ اضافة قضية جديدة"):
-    st.session_state.show_form = True
-
-if st.session_state.show_form:
-    with st.form("add_case"):
-        case_num = st.text_input("رقم القضية")
-        client_name = st.text_input("اسم الموكل")
-        case_type = st.selectbox("نوع القضية", ["مدني", "جنائي", "اسرة", "تجاري"])
-        submitted = st.form_submit_button("حفظ")
-        
-        if submitted:
-            new_case = {
-                "رقم القضية": case_num,
-                "اسم الموكل": client_name,
-                "النوع": case_type,
-                "التاريخ": datetime.now().strftime("%Y-%m-%d")
-            }
-            st.session_state.data["cases"].append(new_case)
-            save_data(st.session_state.data)
-            st.success("تم حفظ القضية ✅")
-            st.session_state.show_form = False
-            st.rerun()
-
-st.divider()
-
-st.subheader("القضايا المسجلة")
-if st.session_state.data["cases"]:
-    df = pd.DataFrame(st.session_state.data["cases"])
-    st.dataframe(df, use_container_width=True)
-else:
-    st.info("مفيش قضايا لسه. ضيف اول قضية 👆")
-# ====== دوال التحميل والحفظ ====
+# ====== دوال التحميل والحفظ ======
 def load_data():
     if os.path.exists(DATA_FILE):
         with open(DATA_FILE, "r", encoding="utf-8") as f: return json.load(f)
-        return {"cases": [], "library": []}
+    return {"cases": []} # صلحت ال return
+
 def save_data(data):
     with open(DATA_FILE, "w", encoding="utf-8") as f: json.dump(data, f, ensure_ascii=False, indent=4)
 
-def load_tokens():
-    if os.path.exists(TOKENS_FILE):
-        with open(TOKENS_FILE, "r", encoding="utf-8") as f: return json.load(f)
-    return {"tokens": []}
-
-def save_tokens(tokens_data):
-    with open(TOKENS_FILE, "w", encoding="utf-8") as f:
-        json.dump(tokens_data, f, ensure_ascii=False, indent=4)
-        # ========= دوال التنبيهات =========
+# ========= دوال التنبيهات =========
 def get_alert_cases():
     data = load_data()
     today = datetime.now().date()
     all_cases = data["cases"]
     alerts = {"sessions": [], "appeals": []}
     for case in all_cases:
-        # 1. الجلسات: خلال 7 ايام
         if case.get('حالة') == 'متداولة' and case.get('تاريخ_جلسة'):
             try:
                 session_date = datetime.strptime(case['تاريخ_جلسة'], '%Y-%m-%d').date()
@@ -101,7 +97,6 @@ def get_alert_cases():
                     alerts["sessions"].append(case)
             except: pass
         
-        # 2. الطعون: من 15 يوم قبل اخر ميعاد لحد اخر يوم
         if case.get('حالة') == 'منتهية' and case.get('مسندة_ل_الحكم') == 'الضد' and case.get('تاريخ_الحكم'):
             try:
                 judgment_date = datetime.strptime(case['تاريخ_الحكم'], '%Y-%m-%d').date()
@@ -115,19 +110,118 @@ def get_alert_cases():
                     alerts["appeals"].append(case)
             except: pass
     return alerts
-# ========= نهاية دوال التنبيهات =========
-# ========= نهاية دوال التنبيهات =========
-LIBRARY_SECTIONS = {
-    "القوانين": "#FF4500", "القرارات الوزارية": "#FF8C00", "قرارات الهيئة": "#FFD700",
-    "المنشورات الوزارية": "#ADFF2F", "منشورات الهيئة": "#32CD32", "الكتب الدورية": "#20B2AA",
-    "تعليمات الهيئة": "#00CED1", "رسائل الهيئة": "#1E90FF", "المرصد الفنى": "#4169E1",
-    "فتاوى لجنة الشئون القانونية بالوزارة": "#8A2BE2", "فتاوى الادارة المركزية للشئون القانونية": "#9400D3",
-    "احكام المحكمة الدستورية العليا": "#DC143C", "احكام محكمة النقض": "#B22222", "احكام المحكمة الإدارية العليا": "#8B0000",
-    "احكام المحاكم الاستئنافية": "#A0522D", "احكام محاكم القضاء الإدارى": "#D2691E", "احكام المحاكم الابتدائية": "#CD853F",
-    "احكام المحكمة الإدارية": "#DEB887", "منشورات القضاء العادى": "#5F9EA0", "منشورات مجلس الدولة": "#4682B4",
-    "فتاوى الجمعية العمومية": "#7B68EE", "صحف طعون": "#6A5ACD", "صحف استئنافات": "#483D8B",
-    "صحف دعاوى": "#E6E6FA", "مذكرات دفاع": "#FFF0F5", "أخرى": "#808080"
-}
+
+# ========= دالة طباعة التقرير HTML =========
+def show_report(case):
+    st.markdown(f"""
+    <div style="background:white; color:black; padding:20px; border-radius:15px; direction:rtl; font-family:Cairo">
+        <h1 style="text-align:center; color:#0A1428">تقرير قضية رقم {case.get('رقم','')}</h1>
+        <hr>
+        <p><b>اسم الموكل:</b> {case.get('الموكل','')}</p>
+        <p><b>نوع القضية:</b> {case.get('نوع','')}</p>
+        <p><b>المحكمة:</b> {case.get('المحكمة','')}</p>
+        <p><b>تاريخ الجلسة:</b> {case.get('تاريخ_جلسة','')}</p>
+        <p><b>الحالة:</b> {case.get('حالة','')}</p>
+        <p><b>ملاحظات:</b> {case.get('ملاحظات','')}</p>
+    </div>
+    """, unsafe_allow_html=True)
+    st.info("اطبع التقرير: Ctrl + P من المتصفح")
+
+# ========== الصفحة الرئيسية =========
+alerts = get_alert_cases()
+total_alerts = len(alerts['sessions']) + len(alerts['appeals'])
+
+col1, col2, col3 = st.columns(3)
+with col1:
+    st.markdown('<div class="btn-add">', unsafe_allow_html=True)
+    if st.button("➕ اضافة قضية جديدة"): st.session_state.page = "اضافة"
+    st.markdown('</div>', unsafe_allow_html=True)
+with col2:
+    st.markdown('<div class="btn-list">', unsafe_allow_html=True)
+    if st.button("📋 عرض كل القضايا"): st.session_state.page = "عرض"
+    st.markdown('</div>', unsafe_allow_html=True)
+with col3:
+    st.markdown('<div class="btn-alert">', unsafe_allow_html=True)
+    if st.button(f"🚨 التنبيهات ({total_alerts})"): st.session_state.page = "تنبيهات"
+    st.markdown('</div>', unsafe_allow_html=True)
+
+col4, col5 = st.columns(2)
+with col4:
+    st.markdown('<div class="btn-report">', unsafe_allow_html=True)
+    if st.button("📄 طباعة تقرير"): st.session_state.page = "تقرير"
+    st.markdown('</div>', unsafe_allow_html=True)
+with col5:
+    st.markdown('<div class="btn-search">', unsafe_allow_html=True)
+    if st.button("🔍 بحث"): st.session_state.page = "بحث"
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# ========== الصفحات ==========
+data = load_data()
+
+if st.session_state.page == "اضافة":
+    st.subheader("اضافة قضية جديدة")
+    with st.form("add_case"):
+        رقم = st.text_input("رقم القضية")
+        الموكل = st.text_input("اسم الموكل")
+        نوع = st.selectbox("نوع القضية", ["مدني", "جنائي", "اسرة", "تجاري"])
+        المحكمة = st.text_input("المحكمة")
+        تاريخ_جلسة = st.date_input("تاريخ الجلسة")
+        حالة = st.selectbox("الحالة", ["متداولة", "منتهية", "مؤجلة"])
+        ملاحظات = st.text_area("ملاحظات")
+        submitted = st.form_submit_button("حفظ")
+        
+        if submitted:
+            new_case = {
+                "id": str(datetime.now().timestamp()),
+                "رقم": رقم, "الموكل": الموكل, "نوع": نوع, "المحكمة": المحكمة,
+                "تاريخ_جلسة": تاريخ_جلسة.strftime('%Y-%m-%d'), "حالة": حالة, "ملاحظات": ملاحظات
+            }
+            data["cases"].append(new_case)
+            save_data(data)
+            st.success("تم الحفظ ✅")
+            st.session_state.page = "الرئيسية"
+            st.rerun()
+
+elif st.session_state.page == "عرض":
+    st.subheader("كل القضايا")
+    if data["cases"]:
+        df = pd.DataFrame(data["cases"])
+        st.dataframe(df, use_container_width=True)
+    else:
+        st.info("لا توجد قضايا")
+
+elif st.session_state.page == "تنبيهات":
+    st.subheader("🚨 التنبيهات")
+    if alerts['sessions']:
+        st.warning(f"جلسات خلال 7 ايام: {len(alerts['sessions'])}")
+        st.dataframe(pd.DataFrame(alerts['sessions']))
+    if alerts['appeals']:
+        st.error(f"مواعيد طعن: {len(alerts['appeals'])}")
+        st.dataframe(pd.DataFrame(alerts['appeals']))
+
+elif st.session_state.page == "تقرير":
+    st.subheader("طباعة تقرير قضية")
+    if data["cases"]:
+        case_options = {f"{c['رقم']} - {c['الموكل']}": c['id'] for c in data["cases"]}
+        selected = st.selectbox("اختر القضية", list(case_options.keys()))
+        if st.button("عرض التقرير"):
+            case_id = case_options[selected]
+            case = next(c for c in data["cases"] if c['id'] == case_id)
+            show_report(case)
+    else:
+        st.info("لا توجد قضايا للطباعة")
+
+elif st.session_state.page == "بحث":
+    st.subheader("بحث")
+    search = st.text_input("ابحث برقم او اسم الموكل")
+    if search:
+        results = [c for c in data["cases"] if search in c['رقم'] or search in c['الموكل']]
+        st.dataframe(pd.DataFrame(results))
+
+if st.session_state.page!= "الرئيسية":
+    if st.button("⬅️ الرجوع للرئيسية"):
+        st.session_state.page = "الرئيسية"
+        st.rerun()
 # ================================================
 # ========== الصفحة الرئيسية ==========
 if st.session_state.page == "الرئيسية":
