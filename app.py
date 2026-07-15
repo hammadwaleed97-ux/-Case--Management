@@ -13,23 +13,21 @@ from email.mime.multipart import MIMEMultipart
 st.set_page_config(page_title="إدارة القضايا", layout="wide", page_icon="⚖️")
 
 # ====== دوال التحميل والحفظ ======
-DATA_FILE = "cases_data.json" # <-- السطر ده كان ناقص
+DATA_FILE = "cases_data.json"
 
 def load_data():
     if os.path.exists(DATA_FILE):
         try:
             with open(DATA_FILE, "r", encoding="utf-8") as f: 
                 data = json.load(f)
-                # لو الملف فاضي او ناقص نرجع الشكل الافتراضي
                 if not data or "cases" not in data:
                     return {"cases": [], "archive": [], "library": [], "tasks": [], "users": []}
                 return data
         except:
-            # لو الملف بايظ نرجع فاضي برضو
             return {"cases": [], "archive": [], "library": [], "tasks": [], "users": []}
     return {"cases": [], "archive": [], "library": [], "tasks": [], "users": []}
 
-def save_data(data): # <-- الدالة دي كانت ناقصة
+def save_data(data):
     with open(DATA_FILE, "w", encoding="utf-8") as f: json.dump(data, f, ensure_ascii=False, indent=4)
 # =============================
 # ================================================
@@ -39,7 +37,7 @@ if "page" not in st.session_state:
     st.session_state.page = "الرئيسية"
 
 if "data" not in st.session_state:
-    st.session_state.data = load_data()  # يحمل من الملف او يعمل فاضي
+    st.session_state.data = load_data()
 
 if "user" not in st.session_state:
     st.session_state.user = "المستخدم"
@@ -137,7 +135,6 @@ def get_alert_cases():
     all_cases = data["cases"]
     alerts = {"sessions": [], "appeals": []}
     for case in all_cases:
-        # 1. الجلسات: خلال 7 ايام
         if case.get('حالة') == 'متداولة' and case.get('تاريخ_جلسة'):
             try:
                 session_date = datetime.strptime(case['تاريخ_جلسة'], '%Y-%m-%d').date()
@@ -147,7 +144,6 @@ def get_alert_cases():
                     alerts["sessions"].append(case)
             except: pass
         
-        # 2. الطعون: من 15 يوم قبل اخر ميعاد لحد اخر يوم
         if case.get('حالة') == 'منتهية' and case.get('مسندة_ل_الحكم') == 'الضد' and case.get('تاريخ_الحكم'):
             try:
                 judgment_date = datetime.strptime(case['تاريخ_الحكم'], '%Y-%m-%d').date()
@@ -173,6 +169,46 @@ LIBRARY_SECTIONS = {
     "فتاوى الجمعية العمومية": "#7B68EE", "صحف طعون": "#6A5ACD", "صحف استئنافات": "#483D8B",
     "صحف دعاوى": "#E6E6FA", "مذكرات دفاع": "#FFF0F5", "أخرى": "#808080"
 }
+# ================================================
+# ========== الصفحة الرئيسية =======
+if st.session_state.page == "الرئيسية":
+    alerts = get_alert_cases()
+    total_alerts = len(alerts["sessions"]) + len(alerts["appeals"])
+    
+    if total_alerts > 0:
+        st.markdown(f'<div class="btn-alert"><button>🔔 لديك {total_alerts} تنبيهات</button></div>', unsafe_allow_html=True)
+        if st.button("عرض التنبيهات", key="show_alerts_btn"):
+            st.session_state.page = "التنبيهات"
+
+    st.markdown('<div class="btn-add">', unsafe_allow_html=True)
+    if st.button("➕ اضافة قضية جديدة", key="add_case_main_btn"):
+        st.session_state.page = "اضافة قضية"
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    st.markdown('<div class="btn-list">', unsafe_allow_html=True)
+    if st.button("📋 عرض جميع القضايا", key="list_case_main_btn"):
+        st.session_state.page = "عرض القضايا"
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    st.markdown('<div class="btn-report">', unsafe_allow_html=True)
+    if st.button("📊 التقارير", key="report_main_btn"):
+        st.session_state.page = "التقارير"
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    st.markdown('<div class="btn-lib">', unsafe_allow_html=True)
+    if st.button("📚 المكتبة القانونية", key="lib_main_btn"):
+        st.session_state.page = "المكتبة"
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    st.markdown('<div class="btn-arch">', unsafe_allow_html=True)
+    if st.button("📦 الارشيف", key="arch_main_btn"):
+        st.session_state.page = "الارشيف"
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    st.markdown('<div class="btn-search">', unsafe_allow_html=True)
+    if st.button("🔍 بحث متقدم", key="search_main_btn"):
+        st.session_state.page = "بحث"
+    st.markdown('</div>', unsafe_allow_html=True)
 # ================================================
 # ========== الصفحة الرئيسية =======
 # ================================
