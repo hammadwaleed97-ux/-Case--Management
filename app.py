@@ -1278,7 +1278,7 @@ elif st.session_state.page == "المكتبة":
             st.session_state.pop(k, None)
         st.rerun()
         # =========================================
-        # ========== الجزء الثامن: التقارير ========== #
+        #======== الجزء الثامن: التقارير ========== #
 import streamlit as st
 import pandas as pd
 from datetime import datetime
@@ -1290,8 +1290,6 @@ from docx.shared import Pt
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
-from reportlab.lib import colors
-from reportlab.platypus import Table, TableStyle
 
 DATA_FILE = "data.json"
 
@@ -1315,14 +1313,15 @@ def to_word(df, title, region, member, manager, general):
     doc = Document()
     doc.add_paragraph(f"ديوان عام منطقة: {region}").alignment = WD_ALIGN_PARAGRAPH.CENTER
     doc.add_paragraph(title).alignment = WD_ALIGN_PARAGRAPH.CENTER
-    table = doc.add_table(rows=1, cols=len(df.columns))
-    hdr_cells = table.rows[0].cells
-    for i, col in enumerate(df.columns):
-        hdr_cells[i].text = str(col)
-    for _, row in df.iterrows():
-        row_cells = table.add_row().cells
-        for i, val in enumerate(row):
-            row_cells[i].text = str(val)
+    if not df.empty:
+        table = doc.add_table(rows=1, cols=len(df.columns))
+        hdr_cells = table.rows[0].cells
+        for i, col in enumerate(df.columns):
+            hdr_cells[i].text = str(col)
+        for _, row in df.iterrows():
+            row_cells = table.add_row().cells
+            for i, val in enumerate(row):
+                row_cells[i].text = str(val)
     doc.add_paragraph(f"\nعضو الادارة: {member}")
     doc.add_paragraph(f"مدير الادارة: {manager}")
     doc.add_paragraph(f"مدير عام: {general}")
@@ -1333,11 +1332,14 @@ def to_word(df, title, region, member, manager, general):
 def to_pdf(df, title, region, member, manager, general):
     buffer = BytesIO()
     p = canvas.Canvas(buffer, pagesize=A4)
-    p.setFont("Helvetica", 12)
-    p.drawString(100, 800, f"ديوان عام منطقة: {region}")
-    p.drawString(100, 780, title)
+    p.setFont("Helvetica", 10)
+    p.drawString(50, 800, f"ديوان عام منطقة: {region}")
+    p.drawString(50, 780, title)
     y = 750
-    for i, row in df.iterrows():
+    headers = " | ".join(df.columns)
+    p.drawString(50, y, headers)
+    y -= 20
+    for _, row in df.iterrows():
         p.drawString(50, y, " | ".join([str(x) for x in row]))
         y -= 20
         if y < 50: break
@@ -1348,9 +1350,9 @@ elif st.session_state.page == "تقارير":
     data = load_data()
     all_cases = data.get("cases", [])
 
-    # الفصل حسب كودك انت
+    # 1. التعديل الاول: فصل الارشيف صح
     active_cases = [c for c in all_cases if c.get('الحالة') == 'متداولة']
-    archive_cases = [c for c in all_cases if c.get('الحالة') == 'منتهية' and c.get('مسندة_الى_الحكم') in ['للصالح', 'للضد']]
+    archive_cases = [c for c in all_cases if c.get('الحالة') == 'منتهية'] # شلت شرط الحكم من هنا
 
     st.markdown("<h2 style='text-align:center; color:#D4AF37;'>📑 مركز التقارير القضائية</h2>", unsafe_allow_html=True)
     if st.button("⬅️ العودة للرئيسية", key="back_reports", use_container_width=True):
@@ -1403,7 +1405,8 @@ elif st.session_state.page == "تقارير":
 
     # ====== 3 4 5 6 8: الاحكام ======
     elif report_type.startswith("3") or report_type.startswith("4") or report_type.startswith("5") or report_type.startswith("6") or report_type.startswith("8"):
-        cases = archive_cases
+        # 2. التعديل الثاني: نفلتر الاحكام اللي فيها حكم فقط هنا
+        cases = [c for c in archive_cases if c.get('مسندة_الى_الحكم') in ['للصالح', 'للضد']]
         col1, col2 = st.columns(2)
         with col1: from_date = st.date_input("من الفترة", key="from_archive")
         with col2: to_date = st.date_input("حتى الفترة", key="to_archive")
@@ -1437,7 +1440,7 @@ elif st.session_state.page == "تقارير":
     elif report_type.startswith("7"):
         st.markdown("<h3 style='text-align:center; color:white;'>📊 الاحصائيات العامة</h3>", unsafe_allow_html=True)
         total_active = len(active_cases)
-        total_archive = len(archive_cases)
+        total_archive = len([c for c in archive_cases if c.get('مسندة_الى_الحكم') in ['للصالح', 'للضد']]) # 3. التعديل الثالث
         saleh = len([c for c in archive_cases if c.get('مسندة_الى_الحكم') == 'للصالح'])
         ded = len([c for c in archive_cases if c.get('مسندة_الى_الحكم') == 'للضد'])
         col1, col2, col3, col4 = st.columns(4)
@@ -1458,4 +1461,4 @@ elif st.session_state.page == "تقارير":
         with c4: st.download_button("🖨️ HTML", data=df_report.to_html(index=False).encode('utf-8-sig'), file_name=f"تقرير_{datetime.now().strftime('%Y%m%d')}.html", use_container_width=True)
     else:
         if not report_type.startswith("7"):
-            st.info("اختر الفلاتر ودوس عرض التقرير")
+            st.warning("لا توجد بيانات للفترة المختارة او الفلاتر")
