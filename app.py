@@ -1282,22 +1282,72 @@ elif st.session_state.page == "المكتبة":
 # ================================================
 if st.session_state.page == "تقارير":
     data = load_data()
+    
+    # ====== استايل الجدول الفخم المسطر ======
+    st.markdown("""
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');
+    .fancy-table {
+        border-collapse: collapse;
+        width: 100%;
+        font-family: 'Cairo', sans-serif;
+        font-size: 13px;
+        box-shadow: 0 4px 15px rgba(212, 175, 55, 0.2);
+        border-radius: 12px;
+        overflow: hidden;
+        direction: rtl;
+    }
+    .fancy-table thead {
+        background: linear-gradient(135deg, #D4AF37 0%, #B8860B 100%);
+        color: #0A1428;
+        font-weight: bold;
+        font-size: 14px;
+    }
+    .fancy-table th {
+        border: 1.5px solid #D4AF37;
+        padding: 12px 8px;
+        text-align: center;
+    }
+    .fancy-table td {
+        border: 1px solid #2F3E5A;
+        padding: 10px 8px;
+        text-align: center;
+        background-color: #1E2A47;
+        color: #FFFFFF;
+    }
+    .fancy-table tbody tr:nth-child(even) td {
+        background-color: #253355; /* لون مختلف للسطور الزوجية */
+    }
+    .fancy-table tbody tr:hover td {
+        background-color: #D4AF37;
+        color: #0A1428;
+        transition: 0.3s;
+        font-weight: bold;
+    }
+    .table-container {
+        background: #0A1428;
+        padding: 15px;
+        border-radius: 15px;
+        border: 2px solid #D4AF37;
+        margin-top: 15px;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
     st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
     st.markdown("<h2 style='color:#D4AF37; text-align:center'>📑 مركز التقارير الحكومية</h2>", unsafe_allow_html=True)
     if st.button("⬅️ العودة للرئيسية", use_container_width=True): st.session_state.page = "الرئيسية"; st.rerun()
 
     tab1, tab2, tab3 = st.tabs(["📊 بيان الدعاوى المتداولة", "⚖️ بيان الاحكام", "📈 الإحصائيات"])
 
-    # شيلنا report_header من هنا عشان متظهرش في الصفحة
-    # الهيدر هيظهر بس جوه دوال التصدير to_pdf و to_word
-
+    # ====== تبويب 1: المتداولة ======
     with tab1:
         st.markdown("<div style='background:#1E2A47; padding:20px; border-radius:15px; border:2px solid #D4AF37; margin-bottom:15px'>", unsafe_allow_html=True)
-        region = st.text_input("ديوان عام منطقة", key="region1") # سيبناها
+        region = st.text_input("ديوان عام منطقة", key="region1")
         col1, col2, col3 = st.columns(3)
         with col1: from_date = st.date_input("من الفترة", key="from1")
         with col2: to_date = st.date_input("حتى الفترة", key="to1")
-        with col3: lawyer = st.text_input("طرف الاستاذ/ المحامي", key="lawyer1") # سيبناها
+        with col3: lawyer = st.text_input("طرف الاستاذ/ المحامي", key="lawyer1")
         topic = st.text_input("موضوع الدعوى للفلترة", key="topic1")
         st.markdown("</div>", unsafe_allow_html=True)
 
@@ -1320,20 +1370,61 @@ if st.session_state.page == "تقارير":
                     })
                 df_export = pd.DataFrame(export_data)
 
-                # العرض في الصفحة بسيط بدون هيدر
-                html = f"<div dir='rtl' style='font-family:Cairo; text-align:right'>"
-                html += df_export.to_html(index=False, classes='case-table')
+                # الجدول الفخم
+                html = f"<div class='table-container'>"
+                html += df_export.to_html(index=False, classes='fancy-table', border=0)
                 html += "</div>"
-                st.markdown(f"<div class='table-container'>{html}</div>", unsafe_allow_html=True)
+                st.markdown(html, unsafe_allow_html=True)
 
                 st.markdown("<hr>", unsafe_allow_html=True)
                 c1, c2, c3, c4 = st.columns(4)
-                with c1: st.download_button("⬇️ Excel", data=to_excel(df_export), file_name=f"بيان_المتداولة_{datetime.now().strftime('%Y%m%d')}.xlsx")
-                with c2: st.download_button("📄 Word", data=to_word(df_export, title, region), file_name=f"بيان_المتداولة_{datetime.now().strftime('%Y%m%d')}.docx") # الهيدر هنا
-                with c3: st.download_button("📕 PDF", data=to_pdf(df_export, title, region), file_name=f"بيان_المتداولة_{datetime.now().strftime('%Y%m%d')}.pdf") # الهيدر هنا
-                with c4: st.download_button("🖨️ HTML", data=html.encode('utf-8-sig'), file_name=f"بيان_المتداولة_{datetime.now().strftime('%Y%m%d')}.html")
+                with c1: st.download_button("⬇️ Excel", data=to_excel(df_export), file_name=f"بيان_المتداولة_{datetime.now().strftime('%Y%m%d')}.xlsx", use_container_width=True)
+                with c2: st.download_button("📄 Word", data=to_word(df_export, title, region), file_name=f"بيان_المتداولة_{datetime.now().strftime('%Y%m%d')}.docx", use_container_width=True)
+                with c3: st.download_button("📕 PDF", data=to_pdf(df_export, title, region), file_name=f"بيان_المتداولة_{datetime.now().strftime('%Y%m%d')}.pdf", use_container_width=True)
+                with c4: st.download_button("🖨️ HTML", data=html.encode('utf-8-sig'), file_name=f"بيان_المتداولة_{datetime.now().strftime('%Y%m%d')}.html", use_container_width=True)
 
-                # شيلنا برضو "تفضلوا بقبول" من هنا عشان تطلع بس في التقرير
-    with tab2: 
-        st.info("نفس كود تبويب المتداولة بس فلتر الاحكام")
-    with tab3: st.info("الاحصائيات")
+    # ====== تبويب 2: الاحكام ======
+    with tab2:
+        st.markdown("<div style='background:#1E2A47; padding:20px; border-radius:15px; border:2px solid #D4AF37; margin-bottom:15px'>", unsafe_allow_html=True)
+        region2 = st.text_input("ديوان عام منطقة", key="region2")
+        col1, col2, col3 = st.columns(3)
+        with col1: from_date2 = st.date_input("من الفترة", key="from2")
+        with col2: to_date2 = st.date_input("حتى الفترة", key="to2")
+        with col3: lawyer2 = st.text_input("طرف الاستاذ/ المحامي", key="lawyer2")
+        topic2 = st.text_input("موضوع الدعوى للفلترة", key="topic2")
+        st.markdown("</div>", unsafe_allow_html=True)
+
+        if st.button("🔍 عرض بيان الاحكام", use_container_width=True, type="primary", key="show2"):
+            cases = [c for c in data.get("cases", []) if c.get('حالة') == 'حكم']
+            if cases: cases = [c for c in cases if c.get('تاريخ_جلسة') and from_date2 <= datetime.strptime(c['تاريخ_جلسة'], '%Y-%m-%d').date() <= to_date2]
+            if topic2: cases = [c for c in cases if topic2 in str(c.get('موضوع',''))]
+            cases = sorted(cases, key=lambda x: x.get("تاريخ_جلسة","9999-12-31"), reverse=True)
+
+            title = f"بيان بالاحكام الصادرة خلال الفترة من {from_date2} حتى {to_date2} طرف الاستاذ/ {lawyer2} المحامي"
+
+            if not cases: st.warning("لا توجد احكام")
+            else:
+                export_data = []
+                for i, c in enumerate(cases, 1):
+                    export_data.append({
+                        "م": i, "رقم القضية": c.get('رقم',''), "السنة": c.get('سنة',''), "الدائرة": c.get('دائرة',''), "النوع": c.get('نوع',''),
+                        "المحكمة": c.get('محكمة_اسم',''), "المأمورية": c.get('مأمورية',''), "المدعي": c.get('مدعي',''), "المدعي عليه": c.get('مدعي_عليه',''),
+                        "الموضوع": c.get('موضوع',''), "تاريخ الجلسة": c.get('تاريخ_جلسة',''), "الحكم": c.get('الحكم',''), "ملاحظات": c.get('ملاحظات','')
+                    })
+                df_export = pd.DataFrame(export_data)
+
+                # الجدول الفخم
+                html = f"<div class='table-container'>"
+                html += df_export.to_html(index=False, classes='fancy-table', border=0)
+                html += "</div>"
+                st.markdown(html, unsafe_allow_html=True)
+
+                st.markdown("<hr>", unsafe_allow_html=True)
+                c1, c2, c3, c4 = st.columns(4)
+                with c1: st.download_button("⬇️ Excel", data=to_excel(df_export), file_name=f"بيان_الاحكام_{datetime.now().strftime('%Y%m%d')}.xlsx", use_container_width=True)
+                with c2: st.download_button("📄 Word", data=to_word(df_export, title, region2), file_name=f"بيان_الاحكام_{datetime.now().strftime('%Y%m%d')}.docx", use_container_width=True)
+                with c3: st.download_button("📕 PDF", data=to_pdf(df_export, title, region2), file_name=f"بيان_الاحكام_{datetime.now().strftime('%Y%m%d')}.pdf", use_container_width=True)
+                with c4: st.download_button("🖨️ HTML", data=html.encode('utf-8-sig'), file_name=f"بيان_الاحكام_{datetime.now().strftime('%Y%m%d')}.html", use_container_width=True)
+
+    with tab3: 
+        st.info("الاحصائيات قريباً")
