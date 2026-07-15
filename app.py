@@ -44,9 +44,9 @@ h1, h2, h3, h4, h5, h6 {
 </style>
 """, unsafe_allow_html=True)
 
-# ====== 2- تحميل خط Cairo للـ PDF اوتوماتيك من النت - النسخة الصح ======
+# ====== 2- تحميل خط Cairo للـ PDF اوتوماتيك من النت - لينك CDN مضمون ======
 FONT_FILE = "Cairo-Regular.ttf"
-FONT_URL = "https://raw.githubusercontent.com/google/fonts/main/ofl/cairo/Cairo-Regular.ttf" # اللينك المباشر الصح
+FONT_URL = "https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/cairo/Cairo-Regular.ttf" # <--- ده اللينك اللي هيشتغل
 
 if not os.path.exists(FONT_FILE):
     try:
@@ -76,6 +76,18 @@ def arabic(text):
     except:
         return str(text)
 
+# ====== 4- دوال التحميل والحفظ ======
+DATA_FILE = "cases_data.json"
+
+def load_data():
+    if os.path.exists(DATA_FILE):
+        with open(DATA_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return {"cases": [], "users": {}}
+
+def save_data(data):
+    with open(DATA_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=4)
 # ====== 4- دوال التحميل والحفظ ======
 DATA_FILE = "cases_data.json"
 
