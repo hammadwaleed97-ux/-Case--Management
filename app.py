@@ -1,4 +1,5 @@
-# ========= الجزء الاول: الاساسيات ============
+# ================================================
+# ========== الجزء الاول: الاساسيات ============
 # ================================================
 import streamlit as st
 import pandas as pd
@@ -14,6 +15,8 @@ st.set_page_config(page_title="إدارة القضايا", layout="wide", page_i
 st.set_page_config(page_title="إدارة القضايا", layout="wide")
 
 # ====== دوال التحميل والحفظ ======
+DATA_FILE = "cases_data.json" # <-- السطر ده كان ناقص
+
 def load_data():
     if os.path.exists(DATA_FILE):
         try:
@@ -27,6 +30,12 @@ def load_data():
             # لو الملف بايظ نرجع فاضي برضو
             return {"cases": [], "archive": [], "library": [], "tasks": [], "users": []}
     return {"cases": [], "archive": [], "library": [], "tasks": [], "users": []}
+
+def save_data(data): # <-- الدالة دي كانت ناقصة
+    with open(DATA_FILE, "w", encoding="utf-8") as f: json.dump(data, f, ensure_ascii=False, indent=4)
+# =============================
+# ================================================
+"archive": [], "library": [], "tasks": [], "users": []}
 # ==================================
 # ========= تهيئة الـ Session State =========
 if "page" not in st.session_state:
