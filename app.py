@@ -128,6 +128,7 @@ def load_tokens():
 def save_tokens(tokens_data):
     with open(TOKENS_FILE, "w", encoding="utf-8") as f:
         json.dump(tokens_data, f, ensure_ascii=False, indent=4)
+        
 # ========= دوال التنبيهات =========
 def get_alert_cases():
     data = load_data()
@@ -169,6 +170,8 @@ LIBRARY_SECTIONS = {
     "فتاوى الجمعية العمومية": "#7B68EE", "صحف طعون": "#6A5ACD", "صحف استئنافات": "#483D8B",
     "صحف دعاوى": "#E6E6FA", "مذكرات دفاع": "#FFF0F5", "أخرى": "#808080"
 }
+# ================================================
+# ========== الصفحة الرئيسية =======
 # ================================================
 # ========== الصفحة الرئيسية =======
 if st.session_state.page == "الرئيسية":
