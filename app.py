@@ -17,6 +17,16 @@ import streamlit.components.v1 as components
 
 st.set_page_config(page_title="إدارة القضايا", layout="wide", page_icon="⚖️")
 
+# ====== تعريف الـ session_state عشان ميضربش AttributeError ======
+if 'page' not in st.session_state:
+    st.session_state.page = 'login'
+if 'logged_in' not in st.session_state:
+    st.session_state.logged_in = False
+if 'username' not in st.session_state:
+    st.session_state.username = ''
+if 'data' not in st.session_state:
+    st.session_state.data = load_data()
+
 # ====== 1- اضافة خط Cairo من جوجل للويب + الخلفية ======
 st.markdown("""
 <style>
@@ -38,18 +48,6 @@ h1, h2, h3, h4, h5, h6 {
 </style>
 """, unsafe_allow_html=True)
 
-# ====== 2- دوال التحميل والحفظ ======
-DATA_FILE = "cases_data.json"
-
-def load_data():
-    if os.path.exists(DATA_FILE):
-        with open(DATA_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    return {"cases": [], "users": {}}
-
-def save_data(data):
-    with open(DATA_FILE, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=4)
 # ====== دوال التحميل والحفظ ======
 def load_data():
     if os.path.exists(DATA_FILE):
