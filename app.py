@@ -1,4 +1,4 @@
-# ========================================
+# =# ========================================
 # ============ الجزء الاول: الاساسيات ============
 # ================================================
 import streamlit as st
@@ -11,70 +11,82 @@ import secrets
 from datetime import datetime, timedelta
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from docx import Document # جديد للورد
-from docx.shared import Pt # جديد
+from docx import Document
+from docx.shared import Pt
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from fpdf import FPDF # جديد للـ PDF
 
-st.set_page_config(
-    page_title="إدارة القضايا",
-    layout="wide",
-    page_icon="⚖️"
-)
+st.set_page_config(page_title="إدارة القضايا", layout="wide", page_icon="⚖️")
 
-# ====== دالة التصدير للاكسل RTL ======
+# ====== دالة التصدير للاكسل RTL صح ======
 def to_excel(df):
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
         df.to_excel(writer, index=False, sheet_name='التقرير')
         worksheet = writer.sheets['التقرير']
-        worksheet.sheet_view.rightToLeft = True # اجبار الاتجاه يمين
+        worksheet.sheet_view.rightToLeft = True
         for col in worksheet.columns:
-            max_length = 0
-            column = col[0].column_letter
-            for cell in col:
-                try:
-                    if len(str(cell.value)) > max_length:
-                        max_length = len(cell.value)
-                except:
-                    pass
-            adjusted_width = (max_length + 2)
-            worksheet.column_dimensions[column].width = adjusted_width
+            worksheet.column_dimensions[col[0].column_letter].width = 20
     return output.getvalue()
 
 # ====== دالة التصدير للورد ======
-def to_word(cases, title, region):
+def to_word(df, title, region):
     doc = Document()
-    style = doc.styles['Normal']
-    font = style.font
-    font.name = 'Cairo'
-    font.size = Pt(11)
-
-    doc.add_heading('الهيئة القومية للتأمين الاجتماعى', 0).alignment = 1
-    doc.add_heading('الإدارة المركزية للإدارات القانونية', 1).alignment = 1
-    doc.add_heading('الإدارة العامة للقضايا', 1).alignment = 1
-    doc.add_heading(f'ديوان عام {region}', 1).alignment = 1
-    doc.add_heading(title, 2).alignment = 1
+    doc.add_heading('الهيئة القومية للتأمين الاجتماعى', 0).alignment = WD_ALIGN_PARAGRAPH.CENTER
+    doc.add_heading('الإدارة المركزية للإدارات القانونية', 1).alignment = WD_ALIGN_PARAGRAPH.CENTER
+    doc.add_heading('الإدارة العامة للقضايا', 1).alignment = WD_ALIGN_PARAGRAPH.CENTER
+    doc.add_heading(f'ديوان عام {region}', 1).alignment = WD_ALIGN_PARAGRAPH.CENTER
+    doc.add_heading(title, 2).alignment = WD_ALIGN_PARAGRAPH.CENTER
     doc.add_paragraph()
 
-    table = doc.add_table(rows=1, cols=len(cases[0]) if cases else 1)
+    table = doc.add_table(rows=1, cols=len(df.columns))
     table.style = 'Table Grid'
-    table.alignment = 2 # يمين
     hdr_cells = table.rows[0].cells
-    for i, col_name in enumerate(cases[0].keys()):
+    for i, col_name in enumerate(df.columns):
         hdr_cells[i].text = col_name
-        hdr_cells[i].paragraphs[0].alignment = 2
+        hdr_cells[i].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
 
-    for c in cases:
+    for _, row in df.iterrows():
         row_cells = table.add_row().cells
-        for i, val in enumerate(c.values()):
+        for i, val in enumerate(row):
             row_cells[i].text = str(val)
-            row_cells[i].paragraphs[0].alignment = 2
+            row_cells[i].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
 
-    doc.add_paragraph()
-    doc.add_paragraph(f'تفضلوا بقبول وافر الاحترام\n\nعضو الادارة.................. مدير الإدارة..................\nتحر في {datetime.now().strftime("%Y-%m-%d")}')
-
+    doc.add_paragraph(f'\nتفضلوا بقبول وافر الاحترام\n\nعضو الادارة.................. مدير الإدارة..................\nتحر في {datetime.now().strftime("%Y-%m-%d")}')
     output = io.BytesIO()
     doc.save(output)
     return output.getvalue()
+
+# ====== دالة التصدير للـ PDF ======
+def to_pdf(df, title, region):
+    pdf = FPDF(orientation='L', unit='mm', format='A4') # عرض
+    pdf.add_page()
+    pdf.add_font('Cairo', '', 'Cairo-Regular.ttf', uni=True) # لازم تحمل الخط وتحطه جنب app.py
+    pdf.set_font('Cairo', '', 12)
+
+    pdf.cell(0, 10, 'الهيئة القومية للتأمين الاجتماعى', 0, 1, 'C')
+    pdf.cell(0, 10, 'الإدارة المركزية للإدارات القانونية', 0, 1, 'C')
+    pdf.cell(0, 10, 'الإدارة العامة للقضايا', 0, 1, 'C')
+    pdf.cell(0, 10, f'ديوان عام {region}', 0, 1, 'C')
+    pdf.ln(5)
+    pdf.set_font('Cairo', '', 14)
+    pdf.cell(0, 10, title, 0, 1, 'C')
+    pdf.ln(5)
+
+    # الجدول
+    col_width = pdf.w / (len(df.columns) + 1)
+    pdf.set_font('Cairo', '', 10)
+    for col in df.columns:
+        pdf.cell(col_width, 10, col, 1, 0, 'C')
+    pdf.ln()
+    for _, row in df.iterrows():
+        for item in row:
+            pdf.cell(col_width, 10, str(item), 1, 0, 'C')
+        pdf.ln()
+
+    pdf.ln(10)
+    pdf.cell(0, 10, f'تفضلوا بقبول وافر الاحترام', 0, 1, 'R')
+    return bytes(pdf.output())
 
 def load_data():
     if os.path.exists("data.json"):
