@@ -291,7 +291,7 @@ elif st.session_state.page == "الحصر":
         st.session_state.open_from_search = False
         st.info("جاري فتح القضية من البحث...")
     # ======================================
-    if not data.get("cases", []):
+    if not data or not data.get("cases", []):
         st.info("لا توجد قضايا مسجلة") # <-- زودت 4 مسافات بس هنا
     else:
         for i, case in enumerate(data["cases"]):
