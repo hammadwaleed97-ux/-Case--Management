@@ -209,3 +209,269 @@ def save_tokens(tokens_data):
             ensure_ascii=False,
             indent=4
 )
+        # ==================================================
+# دوال التنبيهات (تم إصلاحها)
+# ==================================================
+
+def get_alert_cases():
+
+    data = load_data()
+
+    if not isinstance(data, dict):
+        data = {
+            "cases": [],
+            "library": []
+        }
+
+    today = datetime.now().date()
+
+    all_cases = data.get("cases", [])
+
+    alerts = {
+        "sessions": [],
+        "appeals": []
+    }
+
+    for case in all_cases:
+
+        # ==================================
+        # تنبيهات الجلسات خلال 7 أيام
+        # ==================================
+        if (
+            case.get("حالة") == "متداولة"
+            and case.get("تاريخ_جلسة")
+        ):
+
+            try:
+
+                session_date = datetime.strptime(
+                    case["تاريخ_جلسة"],
+                    "%Y-%m-%d"
+                ).date()
+
+                days_left = (
+                    session_date - today
+                ).days
+
+                if 0 <= days_left <= 7:
+
+                    case_copy = case.copy()
+                    case_copy["days_left"] = days_left
+
+                    alerts["sessions"].append(
+                        case_copy
+                    )
+
+            except Exception:
+                pass
+
+        # ==================================
+        # تنبيهات الطعون
+        # ==================================
+        if (
+            case.get("حالة") == "منتهية"
+            and case.get("مسندة_ل_الحكم") == "الضد"
+            and case.get("تاريخ_الحكم")
+        ):
+
+            try:
+
+                judgment_date = datetime.strptime(
+                    case["تاريخ_الحكم"],
+                    "%Y-%m-%d"
+                ).date()
+
+                appeal_days = (
+                    40
+                    if case.get("نوع") == "دعوى"
+                    else 60
+                )
+
+                last_appeal_day = (
+                    judgment_date +
+                    timedelta(days=appeal_days)
+                )
+
+                notify_start = (
+                    last_appeal_day -
+                    timedelta(days=15)
+                )
+
+                days_left_appeal = (
+                    last_appeal_day - today
+                ).days
+
+                if (
+                    notify_start <= today <= last_appeal_day
+                    and days_left_appeal >= 0
+                ):
+
+                    case_copy = case.copy()
+
+                    case_copy[
+                        "days_left_appeal"
+                    ] = days_left_appeal
+
+                    alerts["appeals"].append(
+                        case_copy
+                    )
+
+            except Exception:
+                pass
+
+    return alerts
+
+
+# ==================================================
+# الصفحة الرئيسية
+# ==================================================
+
+if st.session_state.page == "الرئيسية":
+
+    st.markdown(
+        "<h2>الأقسام</h2>",
+        unsafe_allow_html=True
+    )
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+
+        st.markdown(
+            '<div class="btn-add">',
+            unsafe_allow_html=True
+        )
+
+        if st.button(
+            "➕ تسجيل القضايا",
+            use_container_width=True
+        ):
+            st.session_state.page = "تسجيل"
+            st.rerun()
+
+        st.markdown(
+            "</div>",
+            unsafe_allow_html=True
+        )
+
+    with col2:
+
+        st.markdown(
+            '<div class="btn-list">',
+            unsafe_allow_html=True
+        )
+
+        if st.button(
+            "📋 الحصر العام",
+            use_container_width=True
+        ):
+            st.session_state.page = "الحصر"
+            st.rerun()
+
+        st.markdown(
+            "</div>",
+            unsafe_allow_html=True
+        )
+
+    col1, col2, col3 = st.columns([1, 2, 1])
+
+    with col2:
+
+        st.markdown(
+            '<div class="btn-alert">',
+            unsafe_allow_html=True
+        )
+
+        if st.button(
+            "🔴 مركز التنبيهات",
+            use_container_width=True
+        ):
+            st.session_state.page = "تنبيهات"
+            st.rerun()
+
+        st.markdown(
+            "</div>",
+            unsafe_allow_html=True
+        )
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+
+        st.markdown(
+            '<div class="btn-report">',
+            unsafe_allow_html=True
+        )
+
+        if st.button(
+            "📊 التقارير",
+            use_container_width=True
+        ):
+            st.session_state.page = "تقارير"
+            st.rerun()
+
+        st.markdown(
+            "</div>",
+            unsafe_allow_html=True
+        )
+
+    with col2:
+
+        st.markdown(
+            '<div class="btn-lib">',
+            unsafe_allow_html=True
+        )
+
+        if st.button(
+            "📚 المكتبة القانونية",
+            use_container_width=True
+        ):
+            st.session_state.page = "مكتبة"
+            st.rerun()
+
+        st.markdown(
+            "</div>",
+            unsafe_allow_html=True
+        )
+
+    col1, col2, col3 = st.columns([1, 2, 1])
+
+    with col2:
+
+        st.markdown(
+            '<div class="btn-arch">',
+            unsafe_allow_html=True
+        )
+
+        if st.button(
+            "🗄️ الأرشيف",
+            use_container_width=True
+        ):
+            st.session_state.page = "الأرشيف"
+            st.rerun()
+
+        st.markdown(
+            "</div>",
+            unsafe_allow_html=True
+        )
+
+    col1, col2, col3 = st.columns([1, 2, 1])
+
+    with col2:
+
+        st.markdown(
+            '<div class="btn-search">',
+            unsafe_allow_html=True
+        )
+
+        if st.button(
+            "🔍 البحث عن دعوى",
+            use_container_width=True
+        ):
+            st.session_state.page = "بحث"
+            st.rerun()
+
+        st.markdown(
+            "</div>",
+            unsafe_allow_html=True
+                )
