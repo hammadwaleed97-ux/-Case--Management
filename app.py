@@ -1282,44 +1282,26 @@ elif st.session_state.page == "المكتبة":
 # ================================================
 if st.session_state.page == "تقارير":
     data = load_data()
-    
-    # ====== استايل الجدول + التابات بيضا ======
+
+    # ====== استايل ابيض × كحلي ======
     st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap');
-    
-    /* الليبلات ابيض وتخين */
-    [data-testid="stTextInput"] label, 
-    [data-testid="stDateInput"] label {
-        color: #FFFFFF !important;
-        font-weight: 700 !important;
-        font-size: 15px !important;
-    }
-    
-    /* عنوان الصفحة ابيض */
-    h2 {
-        color: #FFFFFF !important;
-        font-weight: 900 !important;
-    }
-    
-    /* اسماء التابات فوق - كلهم ابيض */
-    .stTabs [data-baseweb="tab-list"] button [data-testid="stMarkdownContainer"] p {
-        color: #FFFFFF !important;
-        font-weight: 700 !important;
-        font-size: 16px !important;
-    }
-    
-    /* التاب النشط يبقى ابيض برضو بس بخط اتقل + خط ابيض تحته */
-    .stTabs [data-baseweb="tab-list"] button[aria-selected="true"] [data-testid="stMarkdownContainer"] p {
-        color: #FFFFFF !important;
-        font-weight: 900 !important;
-    }
-    .stTabs [data-baseweb="tab-highlight"] {
-        background-color: #FFFFFF !important; /* الخط الابيض اللي تحت التاب */
-        height: 3px !important;
+
+    div[data-testid="stTextInput"] label,
+    div[data-testid="stDateInput"] label,
+    div[data-testid="stSelectbox"] label {
+        color: white!important;
+        font-weight: 800!important;
+        font-size: 16px!important;
     }
 
-    .fancy-table {
+    h2, h3, h4 {
+        color: white!important;
+        font-weight: 900!important;
+    }
+
+   .fancy-table {
         border-collapse: collapse;
         width: 100%;
         font-family: 'Cairo', sans-serif;
@@ -1327,152 +1309,246 @@ if st.session_state.page == "تقارير":
         border-radius: 12px;
         overflow: hidden;
         direction: rtl;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
     }
-    .fancy-table thead {
-        background: linear-gradient(135deg, #FFFFFF 0%, #E0E0E0 100%); /* هيدر ابيض */
-        color: #0A1428; /* الكلام كحلي */
+   .fancy-table thead {
+        background: white;
+        color: #0A1428;
         font-weight: bold;
-        font-size: 14px;
     }
-    .fancy-table th {
-        border: 1.5px solid #FFFFFF;
-        padding: 12px 8px;
-        text-align: center;
-    }
-    .fancy-table td {
-        border: 1px solid #2F3E5A;
+   .fancy-table th,.fancy-table td {
+        border: 1px solid white;
         padding: 10px 8px;
         text-align: center;
-        background-color: #1E2A47;
-        color: #FFFFFF;
     }
-    .fancy-table tbody tr:nth-child(even) td {
+   .fancy-table td {
+        background-color: #1E2A47;
+        color: white;
+    }
+   .fancy-table tbody tr:nth-child(even) td {
         background-color: #253355;
     }
-    .fancy-table tbody tr:hover td {
-        background-color: #FFFFFF; /* الهوفر ابيض */
+   .fancy-table tbody tr:hover td {
+        background-color: white;
         color: #0A1428;
-        transition: 0.3s;
-        font-weight: bold;
     }
-    .table-container {
+   .table-container {
         background: transparent;
         padding: 0;
-        border-radius: 0;
         border: none;
         margin-top: 15px;
     }
-    
-    /* الخط الفاصل */
-    hr {
-        border-top: 2px solid #FFFFFF;
-        margin: 20px 0;
+
+   .filter-card {
+        background:#1E2A47;
+        padding:20px;
+        border-radius:15px;
+        border:2px solid white;
+        margin:15px 0;
+    }
+
+   .metric-card {
+        background: linear-gradient(135deg, #1E2A47 0%, #253355 100%);
+        padding: 20px;
+        border-radius: 15px;
+        border: 2px solid white;
+        text-align: center;
     }
     </style>
     """, unsafe_allow_html=True)
-    
+
     st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
-    st.markdown("<h2 style='color:#FFFFFF; text-align:center'>📑 مركز التقارير الحكومية</h2>", unsafe_allow_html=True)
-    if st.button("⬅️ العودة للرئيسية", use_container_width=True): st.session_state.page = "الرئيسية"; st.rerun()
+    st.markdown("<h2>📑 مركز التقارير الحكومية</h2>", unsafe_allow_html=True)
 
-    tab1, tab2, tab3 = st.tabs(["📊 بيان الدعاوى المتداولة", "⚖️ بيان الاحكام", "📈 الإحصائيات"])
+    if st.button("⬅️ العودة للرئيسية", use_container_width=True):
+        st.session_state.page = "الرئيسية"; st.rerun()
 
-    # ====== تبويب 1: المتداولة ======
-    with tab1:
-        st.markdown("<div style='background:#1E2A47; padding:20px; border-radius:15px; border:2px solid #FFFFFF; margin-bottom:15px'>", unsafe_allow_html=True) # البرواز ابيض
+    # ====== القائمة المنسدلة ======
+    report_type = st.selectbox(
+        "اختر نوع التقرير",
+        [
+            "1. بيان بجميع الدعاوى المتداولة",
+            "2. بيان بالدعاوى المتداولة حسب موضوع الدعوى",
+            "3. بيان بجميع الاحكام الصادرة للصالح وللضد",
+            "4. بيان بالاحكام الصادرة للصالح",
+            "5. بيان بالاحكام الصادرة للضد",
+            "6. بيان بالاحكام الصادرة حسب موضوع الدعوى",
+            "7. بيان بالاحصائيات"
+        ],
+        key="report_select"
+    )
+
+    df_export = pd.DataFrame()
+    title = ""
+    region = ""
+    cases = data.get("cases", [])
+
+    # ====== 1. جميع المتداولة ======
+    if report_type == "1. بيان بجميع الدعاوى المتداولة":
+        st.markdown("<div class='filter-card'>", unsafe_allow_html=True)
         region = st.text_input("ديوان عام منطقة", key="region1")
         col1, col2, col3 = st.columns(3)
         with col1: from_date = st.date_input("من الفترة", key="from1")
         with col2: to_date = st.date_input("حتى الفترة", key="to1")
         with col3: lawyer = st.text_input("طرف الاستاذ/ المحامي", key="lawyer1")
-        topic = st.text_input("موضوع الدعوى للفلترة", key="topic1")
         st.markdown("</div>", unsafe_allow_html=True)
 
-        if st.button("🔍 عرض بيان الدعاوى المتداولة", use_container_width=True, type="primary", key="show1"):
-            cases = [c for c in data.get("cases", []) if c.get('حالة') == 'متداولة']
-            if cases: cases = [c for c in cases if c.get('تاريخ_جلسة') and from_date <= datetime.strptime(c['تاريخ_جلسة'], '%Y-%m-%d').date() <= to_date]
-            if topic: cases = [c for c in cases if topic in str(c.get('موضوع',''))]
-            cases = sorted(cases, key=lambda x: x.get("تاريخ_جلسة","9999-12-31"), reverse=True)
+        if st.button("🔍 عرض التقرير", use_container_width=True, type="primary"):
+            filtered = [c for c in cases if c.get('حالة') == 'متداولة']
+            if filtered: filtered = [c for c in filtered if c.get('تاريخ_جلسة') and from_date <= datetime.strptime(c['تاريخ_جلسة'], '%Y-%m-%d').date() <= to_date]
+            filtered = sorted(filtered, key=lambda x: x.get("تاريخ_جلسة","9999-12-31"), reverse=True)
+            df_export = pd.DataFrame([{"م": i+1, "رقم القضية": c.get('رقم',''), "السنة": c.get('سنة',''), "الدائرة": c.get('دائرة',''), "المحكمة": c.get('محكمة_اسم',''), "المدعي": c.get('مدعي',''), "المدعي عليه": c.get('مدعي_عليه',''), "الموضوع": c.get('موضوع',''), "تاريخ الجلسة": c.get('تاريخ_جلسة',''), "السبب": c.get('سبب','')} for i,c in enumerate(filtered)])
+            title = f"بيان بجميع الدعاوى المتداولة من {from_date} حتى {to_date}"
 
-            export_data = []
-            for i, c in enumerate(cases, 1):
-                export_data.append({
-                    "م": i, "رقم القضية": c.get('رقم',''), "السنة": c.get('سنة',''), "الدائرة": c.get('دائرة',''), "النوع": c.get('نوع',''),
-                    "المحكمة": c.get('محكمة_اسم',''), "المأمورية": c.get('مأمورية',''), "المدعي": c.get('مدعي',''), "المدعي عليه": c.get('مدعي_عليه',''),
-                    "الموضوع": c.get('موضوع',''), "تاريخ الجلسة": c.get('تاريخ_جلسة',''), "السبب": c.get('سبب',''), "ملاحظات": c.get('ملاحظات','')
-                })
-            st.session_state.df_tab1 = pd.DataFrame(export_data)
-            st.session_state.title_tab1 = f"بيان بالدعاوى المتداولة خلال الفترة من {from_date} حتى {to_date} طرف الاستاذ/ {lawyer} المحامي"
-            st.session_state.region_tab1 = region
+    # ====== 2. المتداولة حسب الموضوع ======
+    elif report_type == "2. بيان بالدعاوى المتداولة حسب موضوع الدعوى":
+        st.markdown("<div class='filter-card'>", unsafe_allow_html=True)
+        region = st.text_input("ديوان عام منطقة", key="region2")
+        col1, col2 = st.columns(2)
+        with col1: from_date = st.date_input("من الفترة", key="from2")
+        with col2: to_date = st.date_input("حتى الفترة", key="to2")
+        topic = st.text_input("اكتب موضوع الدعوى للفلترة", key="topic2")
+        st.markdown("</div>", unsafe_allow_html=True)
 
-        if 'df_tab1' in st.session_state and not st.session_state.df_tab1.empty:
-            df_export = st.session_state.df_tab1
-            title = st.session_state.title_tab1
-            region = st.session_state.region_tab1
-            
-            html = f"<div class='table-container'>"
-            html += df_export.to_html(index=False, classes='fancy-table', border=0)
-            html += "</div>"
-            st.markdown(html, unsafe_allow_html=True)
+        if st.button("🔍 عرض التقرير", use_container_width=True, type="primary"):
+            filtered = [c for c in cases if c.get('حالة') == 'متداولة']
+            if filtered: filtered = [c for c in filtered if c.get('تاريخ_جلسة') and from_date <= datetime.strptime(c['تاريخ_جلسة'], '%Y-%m-%d').date() <= to_date]
+            if topic: filtered = [c for c in filtered if topic in str(c.get('موضوع',''))]
+            filtered = sorted(filtered, key=lambda x: x.get("موضوع",""))
+            df_export = pd.DataFrame([{"م": i+1, "الموضوع": c.get('موضوع',''), "رقم القضية": c.get('رقم',''), "تاريخ الجلسة": c.get('تاريخ_جلسة',''), "المدعي": c.get('مدعي',''), "المدعي عليه": c.get('مدعي_عليه','')} for i,c in enumerate(filtered)])
+            title = f"بيان بالدعاوى المتداولة حسب موضوع: {topic}"
 
-            st.markdown("<hr>", unsafe_allow_html=True)
-            c1, c2, c3, c4 = st.columns(4)
-            with c1: st.download_button("⬇️ Excel", data=to_excel(df_export), file_name=f"بيان_المتداولة_{datetime.now().strftime('%Y%m%d')}.xlsx", use_container_width=True, key="dl1_x")
-            with c2: st.download_button("📄 Word", data=to_word(df_export, title, region), file_name=f"بيان_المتداولة_{datetime.now().strftime('%Y%m%d')}.docx", use_container_width=True, key="dl1_w")
-            with c3: st.download_button("📕 PDF", data=to_pdf(df_export, title, region), file_name=f"بيان_المتداولة_{datetime.now().strftime('%Y%m%d')}.pdf", use_container_width=True, key="dl1_p")
-            with c4: st.download_button("🖨️ HTML", data=html.encode('utf-8-sig'), file_name=f"بيان_المتداولة_{datetime.now().strftime('%Y%m%d')}.html", use_container_width=True, key="dl1_h")
-        
-        elif 'df_tab1' in st.session_state:
-            st.warning("لا توجد دعاوى متداولة بالمعايير المحددة")
-
-    # ====== تبويب 2: الاحكام ======
-    with tab2:
-        st.markdown("<div style='background:#1E2A47; padding:20px; border-radius:15px; border:2px solid #FFFFFF; margin-bottom:15px'>", unsafe_allow_html=True) # البرواز ابيض
-        region2 = st.text_input("ديوان عام منطقة", key="region2")
+    # ====== 3. جميع الاحكام صالح + ضد ======
+    elif report_type == "3. بيان بجميع الاحكام الصادرة للصالح وللضد":
+        st.markdown("<div class='filter-card'>", unsafe_allow_html=True)
+        region = st.text_input("ديوان عام منطقة", key="region3")
         col1, col2, col3 = st.columns(3)
-        with col1: from_date2 = st.date_input("من الفترة", key="from2")
-        with col2: to_date2 = st.date_input("حتى الفترة", key="to2")
-        with col3: lawyer2 = st.text_input("طرف الاستاذ/ المحامي", key="lawyer2")
-        topic2 = st.text_input("موضوع الدعوى للفلترة", key="topic2")
+        with col1: from_date = st.date_input("من الفترة", key="from3")
+        with col2: to_date = st.date_input("حتى الفترة", key="to3")
+        with col3: lawyer = st.text_input("طرف الاستاذ/ المحامي", key="lawyer3")
         st.markdown("</div>", unsafe_allow_html=True)
 
-        if st.button("🔍 عرض بيان الاحكام", use_container_width=True, type="primary", key="show2"):
-            cases = [c for c in data.get("cases", []) if c.get('حالة') == 'حكم']
-            if cases: cases = [c for c in cases if c.get('تاريخ_جلسة') and from_date2 <= datetime.strptime(c['تاريخ_جلسة'], '%Y-%m-%d').date() <= to_date2]
-            if topic2: cases = [c for c in cases if topic2 in str(c.get('موضوع',''))]
-            cases = sorted(cases, key=lambda x: x.get("تاريخ_جلسة","9999-12-31"), reverse=True)
+        if st.button("🔍 عرض التقرير", use_container_width=True, type="primary"):
+            filtered = [c for c in cases if c.get('حالة') == 'حكم']
+            if filtered: filtered = [c for c in filtered if c.get('تاريخ_جلسة') and from_date <= datetime.strptime(c['تاريخ_جلسة'], '%Y-%m-%d').date() <= to_date]
+            filtered = sorted(filtered, key=lambda x: x.get("تاريخ_جلسة","9999-12-31"), reverse=True)
+            df_export = pd.DataFrame([{"م": i+1, "رقم القضية": c.get('رقم',''), "الحكم": c.get('الحكم',''), "تاريخ الجلسة": c.get('تاريخ_جلسة',''), "الموضوع": c.get('موضوع',''), "المدعي": c.get('مدعي',''), "المدعي عليه": c.get('مدعي_عليه','')} for i,c in enumerate(filtered)])
+            title = f"بيان بجميع الاحكام الصادرة من {from_date} حتى {to_date}"
 
-            export_data = []
-            for i, c in enumerate(cases, 1):
-                export_data.append({
-                    "م": i, "رقم القضية": c.get('رقم',''), "السنة": c.get('سنة',''), "الدائرة": c.get('دائرة',''), "النوع": c.get('نوع',''),
-                    "المحكمة": c.get('محكمة_اسم',''), "المأمورية": c.get('مأمورية',''), "المدعي": c.get('مدعي',''), "المدعي عليه": c.get('مدعي_عليه',''),
-                    "الموضوع": c.get('موضوع',''), "تاريخ الجلسة": c.get('تاريخ_جلسة',''), "الحكم": c.get('الحكم',''), "ملاحظات": c.get('ملاحظات','')
-                })
-            st.session_state.df_tab2 = pd.DataFrame(export_data)
-            st.session_state.title_tab2 = f"بيان بالاحكام الصادرة خلال الفترة من {from_date2} حتى {to_date2} طرف الاستاذ/ {lawyer2} المحامي"
-            st.session_state.region_tab2 = region2
+    # ====== 4. الاحكام للصالح ======
+    elif report_type == "4. بيان بالاحكام الصادرة للصالح":
+        st.markdown("<div class='filter-card'>", unsafe_allow_html=True)
+        region = st.text_input("ديوان عام منطقة", key="region4")
+        col1, col2 = st.columns(2)
+        with col1: from_date = st.date_input("من الفترة", key="from4")
+        with col2: to_date = st.date_input("حتى الفترة", key="to4")
+        st.markdown("</div>", unsafe_allow_html=True)
 
-        if 'df_tab2' in st.session_state and not st.session_state.df_tab2.empty:
-            df_export = st.session_state.df_tab2
-            title = st.session_state.title_tab2
-            region = st.session_state.region_tab2
-            
-            html = f"<div class='table-container'>"
-            html += df_export.to_html(index=False, classes='fancy-table', border=0)
-            html += "</div>"
-            st.markdown(html, unsafe_allow_html=True)
+        if st.button("🔍 عرض التقرير", use_container_width=True, type="primary"):
+            filtered = [c for c in cases if c.get('حالة') == 'حكم' and 'صالح' in str(c.get('الحكم',''))]
+            if filtered: filtered = [c for c in filtered if c.get('تاريخ_جلسة') and from_date <= datetime.strptime(c['تاريخ_جلسة'], '%Y-%m-%d').date() <= to_date]
+            df_export = pd.DataFrame([{"م": i+1, "رقم القضية": c.get('رقم',''), "الحكم": c.get('الحكم',''), "تاريخ الجلسة": c.get('تاريخ_جلسة',''), "الموضوع": c.get('موضوع','')} for i,c in enumerate(filtered)])
+            title = f"بيان بالاحكام الصادرة للصالح من {from_date} حتى {to_date}"
 
-            st.markdown("<hr>", unsafe_allow_html=True)
-            c1, c2, c3, c4 = st.columns(4)
-            with c1: st.download_button("⬇️ Excel", data=to_excel(df_export), file_name=f"بيان_الاحكام_{datetime.now().strftime('%Y%m%d')}.xlsx", use_container_width=True, key="dl2_x")
-            with c2: st.download_button("📄 Word", data=to_word(df_export, title, region), file_name=f"بيان_الاحكام_{datetime.now().strftime('%Y%m%d')}.docx", use_container_width=True, key="dl2_w")
-            with c3: st.download_button("📕 PDF", data=to_pdf(df_export, title, region), file_name=f"بيان_الاحكام_{datetime.now().strftime('%Y%m%d')}.pdf", use_container_width=True, key="dl2_p")
-            with c4: st.download_button("🖨️ HTML", data=html.encode('utf-8-sig'), file_name=f"بيان_الاحكام_{datetime.now().strftime('%Y%m%d')}.html", use_container_width=True, key="dl2_h")
-        
-        elif 'df_tab2' in st.session_state:
-            st.warning("لا توجد احكام بالمعايير المحددة")
+    # ====== 5. الاحكام للضد ======
+    elif report_type == "5. بيان بالاحكام الصادرة للضد":
+        st.markdown("<div class='filter-card'>", unsafe_allow_html=True)
+        region = st.text_input("ديوان عام منطقة", key="region5")
+        col1, col2 = st.columns(2)
+        with col1: from_date = st.date_input("من الفترة", key="from5")
+        with col2: to_date = st.date_input("حتى الفترة", key="to5")
+        st.markdown("</div>", unsafe_allow_html=True)
 
-    with tab3: 
-        st.info("الاحصائيات قريباً")
+        if st.button("🔍 عرض التقرير", use_container_width=True, type="primary"):
+            filtered = [c for c in cases if c.get('حالة') == 'حكم' and 'ضد' in str(c.get('الحكم',''))]
+            if filtered: filtered = [c for c in filtered if c.get('تاريخ_جلسة') and from_date <= datetime.strptime(c['تاريخ_جلسة'], '%Y-%m-%d').date() <= to_date]
+            df_export = pd.DataFrame([{"م": i+1, "رقم القضية": c.get('رقم',''), "الحكم": c.get('الحكم',''), "تاريخ الجلسة": c.get('تاريخ_جلسة',''), "الموضوع": c.get('موضوع','')} for i,c in enumerate(filtered)])
+            title = f"بيان بالاحكام الصادرة للضد من {from_date} حتى {to_date}"
+
+    # ====== 6. الاحكام حسب الموضوع ======
+    elif report_type == "6. بيان بالاحكام الصادرة حسب موضوع الدعوى":
+        st.markdown("<div class='filter-card'>", unsafe_allow_html=True)
+        region = st.text_input("ديوان عام منطقة", key="region6")
+        col1, col2 = st.columns(2)
+        with col1: from_date = st.date_input("من الفترة", key="from6")
+        with col2: to_date = st.date_input("حتى الفترة", key="to6")
+        topic = st.text_input("اكتب موضوع الدعوى للفلترة", key="topic6")
+        st.markdown("</div>", unsafe_allow_html=True)
+
+        if st.button("🔍 عرض التقرير", use_container_width=True, type="primary"):
+            filtered = [c for c in cases if c.get('حالة') == 'حكم']
+            if filtered: filtered = [c for c in filtered if c.get('تاريخ_جلسة') and from_date <= datetime.strptime(c['تاريخ_جلسة'], '%Y-%m-%d').date() <= to_date]
+            if topic: filtered = [c for c in filtered if topic in str(c.get('موضوع',''))]
+            df_export = pd.DataFrame([{"م": i+1, "الموضوع": c.get('موضوع',''), "الحكم": c.get('الحكم',''), "رقم القضية": c.get('رقم',''), "تاريخ الجلسة": c.get('تاريخ_جلسة','')} for i,c in enumerate(filtered)])
+            title = f"بيان بالاحكام الصادرة حسب موضوع: {topic}"
+
+    # ====== 7. الاحصائيات بالرسوم البيانية ======
+    elif report_type == "7. بيان بالاحصائيات":
+        st.markdown("<h3>📊 الاحصائيات العامة</h3>", unsafe_allow_html=True)
+
+        total = len(cases)
+        mtdaola = len([c for c in cases if c.get('حالة') == 'متداولة'])
+        ahkam = len([c for c in cases if c.get('حالة') == 'حكم'])
+        saleh = len([c for c in cases if c.get('حالة') == 'حكم' and 'صالح' in str(c.get('الحكم',''))])
+        ded = len([c for c in cases if c.get('حالة') == 'حكم' and 'ضد' in str(c.get('الحكم',''))])
+
+        col1, col2, col3, col4, col5 = st.columns(5)
+        with col1: st.metric("اجمالي القضايا", total)
+        with col2: st.metric("المتداولة", mtdaola)
+        with col3: st.metric("الاحكام", ahkam)
+        with col4: st.metric("للصالح", saleh)
+        with col5: st.metric("للضد", ded)
+
+        st.markdown("<hr style='border-top: 2px solid white;'>", unsafe_allow_html=True)
+        st.markdown("<h3>📈 الرسوم البيانية</h3>", unsafe_allow_html=True)
+
+        col1, col2 = st.columns(2)
+
+        # رسم 1: المتداولة vs الاحكام
+        with col1:
+            st.markdown("<h4>نسبة الحالات</h4>", unsafe_allow_html=True)
+            chart_data = pd.DataFrame({
+                'الحالة': ['متداولة', 'احكام'],
+                'العدد': [mtdaola, ahkam]
+            })
+            st.bar_chart(chart_data, x='الحالة', y='العدد', use_container_width=True)
+
+        # رسم 2: الصالح vs الضد
+        with col2:
+            st.markdown("<h4>نتيجة الاحكام</h4>", unsafe_allow_html=True)
+            chart_data2 = pd.DataFrame({
+                'النتيجة': ['للصالح', 'للضد'],
+                'العدد': [saleh, ded]
+            })
+            st.bar_chart(chart_data2, x='النتيجة', y='العدد', use_container_width=True)
+
+        # رسم 3: الاحكام حسب الشهر
+        st.markdown("<h4>الاحكام حسب الشهور</h4>", unsafe_allow_html=True)
+        months = {}
+        for c in cases:
+            if c.get('حالة') == 'حكم' and c.get('تاريخ_جلسة'):
+                month = datetime.strptime(c['تاريخ_جلسة'], '%Y-%m-%d').strftime('%Y-%m')
+                months[month] = months.get(month, 0) + 1
+
+        if months:
+            df_months = pd.DataFrame(list(months.items()), columns=['الشهر', 'عدد الاحكام'])
+            df_months = df_months.sort_values('الشهر')
+            st.line_chart(df_months, x='الشهر', y='عدد الاحكام', use_container_width=True)
+        else:
+            st.info("لا توجد احكام لعرضها في الرسم البياني")
+
+    # ====== عرض الجدول وازرار التصدير ======
+    if not df_export.empty:
+        html = f"<div class='table-container'>"
+        html += df_export.to_html(index=False, classes='fancy-table', border=0)
+        html += "</div>"
+        st.markdown(html, unsafe_allow_html=True)
+
+        st.markdown("<hr style='border-top: 2px solid white;'>", unsafe_allow_html=True)
+        c1, c2, c3, c4 = st.columns(4)
+        with c1: st.download_button("⬇️ Excel", data=to_excel(df_export), file_name=f"تقرير_{datetime.now().strftime('%Y%m%d')}.xlsx", use_container_width=True)
+        with c2: st.download_button("📄 Word", data=to_word(df_export, title, region), file_name=f"تقرير_{datetime.now().strftime('%Y%m%d')}.docx", use_container_width=True)
+        with c3: st.download_button("📕 PDF", data=to_pdf(df_export, title, region), file_name=f"تقرير_{datetime.now().strftime('%Y%m%d')}.pdf", use_container_width=True)
+        with c4: st.download_button("🖨️ HTML", data=html.encode('utf-8-sig'), file_name=f"تقرير_{datetime.now().strftime('%Y%m%d')}.html", use_container_width=True)
+
+    elif report_type!= "7. بيان بالاحصائيات":
+        st.warning("لا توجد بيانات بالمعايير المحددة")
