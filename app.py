@@ -1,14 +1,50 @@
-# ============ الجزء الاول: الاساسيات ============
+# ========== الجزء الاول: الاساسيات ============
 # ================================================
 import streamlit as st
 import pandas as pd
 import json
 import os
+import smtplib
+import secrets
 from datetime import datetime, timedelta
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 st.set_page_config(page_title="إدارة القضايا", layout="wide", page_icon="⚖️")
+st.set_page_config(page_title="إدارة القضايا", layout="wide")
 
-# ============= التصميم النهائي =============
+# ====== دوال التحميل والحفظ ======
+DATA_FILE = "cases_data.json" # <-- السطر ده كان ناقص
+
+def load_data():
+    if os.path.exists(DATA_FILE):
+        try:
+            with open(DATA_FILE, "r", encoding="utf-8") as f: 
+                data = json.load(f)
+                # لو الملف فاضي او ناقص نرجع الشكل الافتراضي
+                if not data or "cases" not in data:
+                    return {"cases": [], "archive": [], "library": [], "tasks": [], "users": []}
+                return data
+        except:
+            # لو الملف بايظ نرجع فاضي برضو
+            return {"cases": [], "archive": [], "library": [], "tasks": [], "users": []}
+    return {"cases": [], "archive": [], "library": [], "tasks": [], "users": []}
+
+def save_data(data): # <-- الدالة دي كانت ناقصة
+    with open(DATA_FILE, "w", encoding="utf-8") as f: json.dump(data, f, ensure_ascii=False, indent=4)
+# =============================
+# ================================================
+# ==================================
+# ========= تهيئة الـ Session State =========
+if "page" not in st.session_state:
+    st.session_state.page = "الرئيسية"
+
+if "data" not in st.session_state:
+    st.session_state.data = load_data()  # يحمل من الملف او يعمل فاضي
+
+if "user" not in st.session_state:
+    st.session_state.user = "المستخدم"
+# ============= التصميم النهائي المصلح =============
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap');
@@ -20,17 +56,9 @@ st.markdown("""
         background: linear-gradient(90deg, #D4AF37 0%, #FFD700 50%, #D4AF37 100%);
         color: #0A1428; padding: 12px; font-weight: 900; font-size: 16px;
         white-space: nowrap; overflow: hidden; border-radius: 0 0 15px 15px;
-        direction: ltr;
     }
-    .marquee span { 
-        display: inline-block; 
-        direction: rtl;
-        animation: marquee 18s linear infinite; 
-    }
-    @keyframes marquee { 
-        0% { transform: translateX(-100%); } 
-        100% { transform: translateX(100%); } 
-    }
+    .marquee span { display: inline-block; animation: marquee 15s linear infinite; }
+    @keyframes marquee { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
     
     .main-title { color: #D4AF37; text-align: center; font-size: 36px; font-weight: 900; padding: 15px 0; }
     h1, h2, h3 { color: #D4AF37 !important; text-align: center !important; font-weight: 900; }
@@ -49,6 +77,8 @@ st.markdown("""
     .btn-list button { background: linear-gradient(180deg, #4CAF50 0%, #2E7D32 100%) !important; }
     .btn-alert button { background: linear-gradient(180deg, #FF5252 0%, #D32F2F 100%) !important; animation: pulse 1.5s infinite; }
     .btn-report button { background: linear-gradient(180deg, #FF9800 0%, #F57C00 100%) !important; }
+    .btn-lib button { background: linear-gradient(180deg, #3F51B5 0%, #303F9F 100%) !important; }
+    .btn-arch button { background: linear-gradient(180deg, #9E9E9E 0%, #616161 100%) !important; }
     .btn-search button { background: linear-gradient(180deg, #9C27B0 0%, #6A1B9A 100%) !important; }
     
     .stTextInput > div > div > input, .stTextArea > div > div > textarea, .stSelectbox > div > div > select {
@@ -57,54 +87,58 @@ st.markdown("""
         padding: 12px !important; text-align: right !important; font-weight: 700 !important;
     }
     
+    .case-table { width:100%; color:#FFFFFF; text-align:center; border-collapse: collapse; }
+    .case-table th { background:#D4AF37; color:#0A1428; padding:8px; font-weight:900; }
+    .case-table td { padding:8px; border-bottom: 1px solid #D4AF37; }
+    .table-container { background:#1E2A47; padding:10px; border-radius:15px; border:2px solid #D4AF37; margin-bottom:15px; }
+    .row1 { background: #142038; }
+    .row2 { background: #1E2A47; }
+    .row-hey2a { background: #1E3A6B; }
+    .row-judgment { background: #2C2F33; }
+    
     @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 82, 82, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(255, 82, 82, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 82, 82, 0); } }
 </style>
 """, unsafe_allow_html=True)
 
-# الماركيه مظبوطة
 st.markdown("""
 <div class="marquee">
 <span>مع تحيات وليد حماد - الإدارة العامة للشئون القانونية بديوان عام منطقة البحيرة بالهيئة القومية للتأمين الاجتماعي</span>
 </div>
 """, unsafe_allow_html=True)
 
-# رجعت الميزانين
 st.markdown('<div class="main-title">⚖️ إدارة القضايا ⚖️</div>', unsafe_allow_html=True)
 
-# ====== المتغيرات العامة بتاعتنا ======
+# ====== المتغيرات العامة ======
 DATA_FILE = "cases_data.json"
 UPLOAD_FOLDER = "uploads"
+TOKENS_FILE = "tokens.json"
 ANWA3_MOSTANDAT = ["صحيفة دعوى", "صحيفة استئناف", "صحيفة طعن", "مذكرة دفاع", "حافظة مستندات", "تقرير خبير", "تقرير طب شرعى", "تقرير لجنة طبية", "صحيفة تجديد من الشطب", "صحيفة تعجيل من الوقف", "صورة حكم تمهيدى", "أخرى"]
 
-LIBRARY_SECTIONS = {
-    "القوانين": "#FF4500", "القرارات الوزارية": "#FF8C00", "قرارات الهيئة": "#FFD700",
-    "المنشورات الوزارية": "#ADFF2F", "منشورات الهيئة": "#32CD32", "الكتب الدورية": "#20B2AA",
-    "تعليمات الهيئة": "#00CED1", "رسائل الهيئة": "#1E90FF", "المرصد الفنى": "#4169E1",
-    "فتاوى لجنة الشئون القانونية بالوزارة": "#8A2BE2", "فتاوى الادارة المركزية للشئون القانونية": "#9400D3",
-    "احكام المحكمة الدستورية العليا": "#DC143C", "احكام محكمة النقض": "#B22222", "احكام المحكمة الإدارية العليا": "#8B0000",
-    "احكام المحاكم الاستئنافية": "#A0522D", "احكام محاكم القضاء الإدارى": "#D2691E", "احكام المحاكم الابتدائية": "#CD853F",
-    "احكام المحكمة الإدارية": "#DEB887", "منشورات القضاء العادى": "#5F9EA0", "منشورات مجلس الدولة": "#4682B4",
-    "فتاوى الجمعية العمومية": "#7B68EE", "صحف طعون": "#6A5ACD", "صحف استئنافات": "#483D8B",
-    "صحف دعاوى": "#E6E6FA", "مذكرات دفاع": "#FFF0F5", "أخرى": "#808080"
-}
+SENDER_EMAIL = "" 
+SENDER_PASSWORD = "" 
+APP_URL = "https://qpyqpsmkqcvdou4imbfunp.streamlit.app/"
 
-if not os.path.exists(UPLOAD_FOLDER): 
-    os.makedirs(UPLOAD_FOLDER)
+if not os.path.exists(UPLOAD_FOLDER): os.makedirs(UPLOAD_FOLDER)
 
-if 'page' not in st.session_state: 
-    st.session_state.page = "الرئيسية"
+if 'page' not in st.session_state: st.session_state.page = "الرئيسية"
+if 'selected_case_id' not in st.session_state: st.session_state.selected_case_id = None
 
 # ====== دوال التحميل والحفظ ======
 def load_data():
     if os.path.exists(DATA_FILE):
-        with open(DATA_FILE, "r", encoding="utf-8") as f: 
-            return json.load(f)
-    return {"cases": []}
-
+        with open(DATA_FILE, "r", encoding="utf-8") as f: return json.load(f)
+        return {"cases": [], "library": []}
 def save_data(data):
-    with open(DATA_FILE, "w", encoding="utf-8") as f: 
-        json.dump(data, f, ensure_ascii=False, indent=4)
+    with open(DATA_FILE, "w", encoding="utf-8") as f: json.dump(data, f, ensure_ascii=False, indent=4)
 
+def load_tokens():
+    if os.path.exists(TOKENS_FILE):
+        with open(TOKENS_FILE, "r", encoding="utf-8") as f: return json.load(f)
+    return {"tokens": []}
+
+def save_tokens(tokens_data):
+    with open(TOKENS_FILE, "w", encoding="utf-8") as f:
+        json.dump(tokens_data, f, ensure_ascii=False, indent=4)
 # ========= دوال التنبيهات =========
 def get_alert_cases():
     data = load_data()
@@ -112,6 +146,7 @@ def get_alert_cases():
     all_cases = data["cases"]
     alerts = {"sessions": [], "appeals": []}
     for case in all_cases:
+        # 1. الجلسات: خلال 7 ايام
         if case.get('حالة') == 'متداولة' and case.get('تاريخ_جلسة'):
             try:
                 session_date = datetime.strptime(case['تاريخ_جلسة'], '%Y-%m-%d').date()
@@ -121,6 +156,7 @@ def get_alert_cases():
                     alerts["sessions"].append(case)
             except: pass
         
+        # 2. الطعون: من 15 يوم قبل اخر ميعاد لحد اخر يوم
         if case.get('حالة') == 'منتهية' and case.get('مسندة_ل_الحكم') == 'الضد' and case.get('تاريخ_الحكم'):
             try:
                 judgment_date = datetime.strptime(case['تاريخ_الحكم'], '%Y-%m-%d').date()
@@ -134,7 +170,78 @@ def get_alert_cases():
                     alerts["appeals"].append(case)
             except: pass
     return alerts
+# ========= نهاية دوال التنبيهات =========
+LIBRARY_SECTIONS = {
+    "القوانين": "#FF4500", "القرارات الوزارية": "#FF8C00", "قرارات الهيئة": "#FFD700",
+    "المنشورات الوزارية": "#ADFF2F", "منشورات الهيئة": "#32CD32", "الكتب الدورية": "#20B2AA",
+    "تعليمات الهيئة": "#00CED1", "رسائل الهيئة": "#1E90FF", "المرصد الفنى": "#4169E1",
+    "فتاوى لجنة الشئون القانونية بالوزارة": "#8A2BE2", "فتاوى الادارة المركزية للشئون القانونية": "#9400D3",
+    "احكام المحكمة الدستورية العليا": "#DC143C", "احكام محكمة النقض": "#B22222", "احكام المحكمة الإدارية العليا": "#8B0000",
+    "احكام المحاكم الاستئنافية": "#A0522D", "احكام محاكم القضاء الإدارى": "#D2691E", "احكام المحاكم الابتدائية": "#CD853F",
+    "احكام المحكمة الإدارية": "#DEB887", "منشورات القضاء العادى": "#5F9EA0", "منشورات مجلس الدولة": "#4682B4",
+    "فتاوى الجمعية العمومية": "#7B68EE", "صحف طعون": "#6A5ACD", "صحف استئنافات": "#483D8B",
+    "صحف دعاوى": "#E6E6FA", "مذكرات دفاع": "#FFF0F5", "أخرى": "#808080"
+}
+# ================================================
+# ========== الصفحة الرئيسية =========
 
+data = load_data()
+alerts = get_alert_cases()
+total_alerts = len(alerts['sessions']) + len(alerts['appeals'])
+
+col1, col2 = st.columns(2)
+with col1:
+    st.markdown('<div class="btn-add">', unsafe_allow_html=True)
+    if st.button("➕ اضافة قضية جديدة"): st.session_state.page = "اضافة"
+    st.markdown('</div>', unsafe_allow_html=True)
+with col2:
+    st.markdown('<div class="btn-list">', unsafe_allow_html=True)
+    if st.button("📋 عرض كل القضايا"): st.session_state.page = "عرض"
+    st.markdown('</div>', unsafe_allow_html=True)
+
+col3, col4 = st.columns(2)
+with col3:
+    st.markdown('<div class="btn-alert">', unsafe_allow_html=True)
+    if st.button(f"🚨 التنبيهات ({total_alerts})"): st.session_state.page = "تنبيهات"
+    st.markdown('</div>', unsafe_allow_html=True)
+with col4:
+    st.markdown('<div class="btn-report">', unsafe_allow_html=True)
+    if st.button("📄 التقارير"): st.session_state.page = "تقرير" # <-- ضفت زرار التقارير
+    st.markdown('</div>', unsafe_allow_html=True)
+
+st.markdown('<div class="btn-search">', unsafe_allow_html=True)
+if st.button("🔍 بحث"): st.session_state.page = "بحث"
+st.markdown('</div>', unsafe_allow_html=True)
+
+# ========== صفحات التطبيق ==========
+if st.session_state.page == "تقرير":
+    st.subheader("📄 قسم التقارير")
+    st.markdown("---")
+    
+    tab1, tab2, tab3 = st.tabs(["تقرير اجمالي", "تقرير حسب الحالة", "تقرير حسب النوع"])
+    
+    with tab1:
+        st.write(f"**اجمالي القضايا:** {len(data['cases'])}")
+        st.write(f"**القضايا المتداولة:** {len([c for c in data['cases'] if c.get('حالة')=='متداولة'])}")
+        st.write(f"**القضايا المنتهية:** {len([c for c in data['cases'] if c.get('حالة')=='منتهية'])}")
+        
+    with tab2:
+        if data['cases']:
+            df = pd.DataFrame(data['cases'])
+            st.dataframe(df.groupby('حالة').size().reset_index(name='العدد'))
+        else:
+            st.info("لا توجد قضايا")
+            
+    with tab3:
+        if data['cases']:
+            df = pd.DataFrame(data['cases'])
+            st.dataframe(df.groupby('نوع').size().reset_index(name='العدد'))
+        else:
+            st.info("لا توجد قضايا")
+    
+    if st.button("⬅️ الرجوع للرئيسية"):
+        st.session_state.page = "الرئيسية"
+        st.rerun()
 # ========== الصفحة الرئيسية =========
 alerts = get_alert_cases()
 total_alerts = len(alerts['sessions']) + len(alerts['appeals'])
