@@ -8,53 +8,57 @@ from datetime import datetime, timedelta
 
 st.set_page_config(page_title="إدارة القضايا", layout="wide", page_icon="⚖️")
 
-# ============= التصميم النهائي المصلح =============
+# ============= التصميم النهائي =============
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap');
-    * { font-family: 'Cairo', sans-serif!important; }
-    html, body { direction: rtl; color: #FFFFFF!important; }
-   .stApp { background: linear-gradient(180deg, #0A1428 0%, #1E2A47 100%); }
+    * { font-family: 'Cairo', sans-serif !important; }
+    html, body { direction: rtl; color: #FFFFFF !important; }
+    .stApp { background: linear-gradient(180deg, #0A1428 0%, #1E2A47 100%); }
     
-   .marquee {
+    .marquee {
         background: linear-gradient(90deg, #D4AF37 0%, #FFD700 50%, #D4AF37 100%);
         color: #0A1428; padding: 12px; font-weight: 900; font-size: 16px;
         white-space: nowrap; overflow: hidden; border-radius: 0 0 15px 15px;
     }
-   .marquee span { display: inline-block; animation: marquee 15s linear infinite; }
-    @keyframes marquee { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+    .marquee span { display: inline-block; animation: marquee 15s linear infinite; }
+    @keyframes marquee { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
     
-   .main-title { color: #D4AF37; text-align: center; font-size: 36px; font-weight: 900; padding: 15px 0; }
-    h1, h2, h3 { color: #D4AF37!important; text-align: center!important; font-weight: 900; }
+    .main-title { color: #D4AF37; text-align: center; font-size: 36px; font-weight: 900; padding: 15px 0; }
+    h1, h2, h3 { color: #D4AF37 !important; text-align: center !important; font-weight: 900; }
     
-   .stButton > button {
-        color: #000!important; font-weight: 900!important; font-size: 18px!important;
-        border: none!important; border-radius: 15px!important; padding: 16px!important;
-        width: 100%!important; max-width: 400px!important; margin: 10px auto!important;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.4)!important; display: block;
-    }
-   .btn-add button { background: linear-gradient(180deg, #4DA8DA 0%, #2C5282 100%)!important; }
-   .btn-list button { background: linear-gradient(180deg, #4CAF50 0%, #2E7D32 100%)!important; }
-   .btn-alert button { background: linear-gradient(180deg, #FF5252 0%, #D32F2F 100%)!important; animation: pulse 1.5s infinite; }
-   .btn-report button { background: linear-gradient(180deg, #FF9800 0%, #F57C00 100%)!important; }
+    div[data-testid="column"] { display: flex; justify-content: center; }
+    [data-testid="stForm"] label, .stMarkdown { color: #FFFFFF !important; font-weight: 700; }
     
-   .stTextInput > div > div > input,.stTextArea > div > div > textarea,.stSelectbox > div > div > select {
-        background-color: #FFFFFF!important; color: #000!important;
-        border: 2px solid #D4AF37!important; border-radius: 12px!important;
-        padding: 12px!important; text-align: right!important; font-weight: 700!important;
+    .stButton > button {
+        color: #000 !important; font-weight: 900 !important; font-size: 18px !important;
+        border: none !important; border-radius: 15px !important; padding: 16px !important;
+        width: 100% !important; max-width: 400px !important; margin: 10px auto !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.4) !important; display: block;
     }
     
-   .case-table { width:100%; color:#FFFFFF; text-align:center; border-collapse: collapse; }
-   .case-table th { background:#D4AF37; color:#0A1428; padding:8px; font-weight:900; }
-   .case-table td { padding:8px; border-bottom: 1px solid #D4AF37; }
-   .table-container { background:#1E2A47; padding:10px; border-radius:15px; border:2px solid #D4AF37; margin-bottom:15px; }
-   .row1 { background: #142038; }
-   .row2 { background: #1E2A47; }
+    .btn-add button { background: linear-gradient(180deg, #4DA8DA 0%, #2C5282 100%) !important; }
+    .btn-list button { background: linear-gradient(180deg, #4CAF50 0%, #2E7D32 100%) !important; }
+    .btn-alert button { background: linear-gradient(180deg, #FF5252 0%, #D32F2F 100%) !important; animation: pulse 1.5s infinite; }
+    .btn-report button { background: linear-gradient(180deg, #FF9800 0%, #F57C00 100%) !important; }
+    .btn-search button { background: linear-gradient(180deg, #9C27B0 0%, #6A1B9A 100%) !important; }
     
-    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 82, 82, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(255, 82, 82, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 82, 82, 0); }
+    .stTextInput > div > div > input, .stTextArea > div > div > textarea, .stSelectbox > div > div > select {
+        background-color: #FFFFFF !important; color: #000 !important;
+        border: 2px solid #D4AF37 !important; border-radius: 12px !important;
+        padding: 12px !important; text-align: right !important; font-weight: 700 !important;
+    }
+    
+    .case-table { width:100%; color:#FFFFFF; text-align:center; border-collapse: collapse; }
+    .case-table th { background:#D4AF37; color:#0A1428; padding:8px; font-weight:900; }
+    .case-table td { padding:8px; border-bottom: 1px solid #D4AF37; }
+    .table-container { background:#1E2A47; padding:10px; border-radius:15px; border:2px solid #D4AF37; margin-bottom:15px; }
+    
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 82, 82, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(255, 82, 82, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 82, 82, 0); } }
 </style>
 """, unsafe_allow_html=True)
 
+# الماركيه بتاعت مع تحيات
 st.markdown("""
 <div class="marquee">
 <span>مع تحيات وليد حماد - الإدارة العامة للشئون القانونية بديوان عام منطقة البحيرة بالهيئة القومية للتأمين الاجتماعي</span>
@@ -63,9 +67,22 @@ st.markdown("""
 
 st.markdown('<div class="main-title">⚖️ إدارة القضايا ⚖️</div>', unsafe_allow_html=True)
 
-# ====== المتغيرات العامة ======
+# ====== المتغيرات العامة بتاعتنا ======
 DATA_FILE = "cases_data.json"
 UPLOAD_FOLDER = "uploads"
+ANWA3_MOSTANDAT = ["صحيفة دعوى", "صحيفة استئناف", "صحيفة طعن", "مذكرة دفاع", "حافظة مستندات", "تقرير خبير", "تقرير طب شرعى", "تقرير لجنة طبية", "صحيفة تجديد من الشطب", "صحيفة تعجيل من الوقف", "صورة حكم تمهيدى", "أخرى"]
+
+LIBRARY_SECTIONS = {
+    "القوانين": "#FF4500", "القرارات الوزارية": "#FF8C00", "قرارات الهيئة": "#FFD700",
+    "المنشورات الوزارية": "#ADFF2F", "منشورات الهيئة": "#32CD32", "الكتب الدورية": "#20B2AA",
+    "تعليمات الهيئة": "#00CED1", "رسائل الهيئة": "#1E90FF", "المرصد الفنى": "#4169E1",
+    "فتاوى لجنة الشئون القانونية بالوزارة": "#8A2BE2", "فتاوى الادارة المركزية للشئون القانونية": "#9400D3",
+    "احكام المحكمة الدستورية العليا": "#DC143C", "احكام محكمة النقض": "#B22222", "احكام المحكمة الإدارية العليا": "#8B0000",
+    "احكام المحاكم الاستئنافية": "#A0522D", "احكام محاكم القضاء الإدارى": "#D2691E", "احكام المحاكم الابتدائية": "#CD853F",
+    "احكام المحكمة الإدارية": "#DEB887", "منشورات القضاء العادى": "#5F9EA0", "منشورات مجلس الدولة": "#4682B4",
+    "فتاوى الجمعية العمومية": "#7B68EE", "صحف طعون": "#6A5ACD", "صحف استئنافات": "#483D8B",
+    "صحف دعاوى": "#E6E6FA", "مذكرات دفاع": "#FFF0F5", "أخرى": "#808080"
+}
 
 if not os.path.exists(UPLOAD_FOLDER): os.makedirs(UPLOAD_FOLDER)
 
@@ -76,7 +93,7 @@ if 'selected_case_id' not in st.session_state: st.session_state.selected_case_id
 def load_data():
     if os.path.exists(DATA_FILE):
         with open(DATA_FILE, "r", encoding="utf-8") as f: return json.load(f)
-    return {"cases": []} # صلحت ال return
+    return {"cases": []}
 
 def save_data(data):
     with open(DATA_FILE, "w", encoding="utf-8") as f: json.dump(data, f, ensure_ascii=False, indent=4)
@@ -110,118 +127,7 @@ def get_alert_cases():
                     alerts["appeals"].append(case)
             except: pass
     return alerts
-
-# ========= دالة طباعة التقرير HTML =========
-def show_report(case):
-    st.markdown(f"""
-    <div style="background:white; color:black; padding:20px; border-radius:15px; direction:rtl; font-family:Cairo">
-        <h1 style="text-align:center; color:#0A1428">تقرير قضية رقم {case.get('رقم','')}</h1>
-        <hr>
-        <p><b>اسم الموكل:</b> {case.get('الموكل','')}</p>
-        <p><b>نوع القضية:</b> {case.get('نوع','')}</p>
-        <p><b>المحكمة:</b> {case.get('المحكمة','')}</p>
-        <p><b>تاريخ الجلسة:</b> {case.get('تاريخ_جلسة','')}</p>
-        <p><b>الحالة:</b> {case.get('حالة','')}</p>
-        <p><b>ملاحظات:</b> {case.get('ملاحظات','')}</p>
-    </div>
-    """, unsafe_allow_html=True)
-    st.info("اطبع التقرير: Ctrl + P من المتصفح")
-
-# ========== الصفحة الرئيسية =========
-alerts = get_alert_cases()
-total_alerts = len(alerts['sessions']) + len(alerts['appeals'])
-
-col1, col2, col3 = st.columns(3)
-with col1:
-    st.markdown('<div class="btn-add">', unsafe_allow_html=True)
-    if st.button("➕ اضافة قضية جديدة"): st.session_state.page = "اضافة"
-    st.markdown('</div>', unsafe_allow_html=True)
-with col2:
-    st.markdown('<div class="btn-list">', unsafe_allow_html=True)
-    if st.button("📋 عرض كل القضايا"): st.session_state.page = "عرض"
-    st.markdown('</div>', unsafe_allow_html=True)
-with col3:
-    st.markdown('<div class="btn-alert">', unsafe_allow_html=True)
-    if st.button(f"🚨 التنبيهات ({total_alerts})"): st.session_state.page = "تنبيهات"
-    st.markdown('</div>', unsafe_allow_html=True)
-
-col4, col5 = st.columns(2)
-with col4:
-    st.markdown('<div class="btn-report">', unsafe_allow_html=True)
-    if st.button("📄 طباعة تقرير"): st.session_state.page = "تقرير"
-    st.markdown('</div>', unsafe_allow_html=True)
-with col5:
-    st.markdown('<div class="btn-search">', unsafe_allow_html=True)
-    if st.button("🔍 بحث"): st.session_state.page = "بحث"
-    st.markdown('</div>', unsafe_allow_html=True)
-
-# ========== الصفحات ==========
-data = load_data()
-
-if st.session_state.page == "اضافة":
-    st.subheader("اضافة قضية جديدة")
-    with st.form("add_case"):
-        رقم = st.text_input("رقم القضية")
-        الموكل = st.text_input("اسم الموكل")
-        نوع = st.selectbox("نوع القضية", ["مدني", "جنائي", "اسرة", "تجاري"])
-        المحكمة = st.text_input("المحكمة")
-        تاريخ_جلسة = st.date_input("تاريخ الجلسة")
-        حالة = st.selectbox("الحالة", ["متداولة", "منتهية", "مؤجلة"])
-        ملاحظات = st.text_area("ملاحظات")
-        submitted = st.form_submit_button("حفظ")
-        
-        if submitted:
-            new_case = {
-                "id": str(datetime.now().timestamp()),
-                "رقم": رقم, "الموكل": الموكل, "نوع": نوع, "المحكمة": المحكمة,
-                "تاريخ_جلسة": تاريخ_جلسة.strftime('%Y-%m-%d'), "حالة": حالة, "ملاحظات": ملاحظات
-            }
-            data["cases"].append(new_case)
-            save_data(data)
-            st.success("تم الحفظ ✅")
-            st.session_state.page = "الرئيسية"
-            st.rerun()
-
-elif st.session_state.page == "عرض":
-    st.subheader("كل القضايا")
-    if data["cases"]:
-        df = pd.DataFrame(data["cases"])
-        st.dataframe(df, use_container_width=True)
-    else:
-        st.info("لا توجد قضايا")
-
-elif st.session_state.page == "تنبيهات":
-    st.subheader("🚨 التنبيهات")
-    if alerts['sessions']:
-        st.warning(f"جلسات خلال 7 ايام: {len(alerts['sessions'])}")
-        st.dataframe(pd.DataFrame(alerts['sessions']))
-    if alerts['appeals']:
-        st.error(f"مواعيد طعن: {len(alerts['appeals'])}")
-        st.dataframe(pd.DataFrame(alerts['appeals']))
-
-elif st.session_state.page == "تقرير":
-    st.subheader("طباعة تقرير قضية")
-    if data["cases"]:
-        case_options = {f"{c['رقم']} - {c['الموكل']}": c['id'] for c in data["cases"]}
-        selected = st.selectbox("اختر القضية", list(case_options.keys()))
-        if st.button("عرض التقرير"):
-            case_id = case_options[selected]
-            case = next(c for c in data["cases"] if c['id'] == case_id)
-            show_report(case)
-    else:
-        st.info("لا توجد قضايا للطباعة")
-
-elif st.session_state.page == "بحث":
-    st.subheader("بحث")
-    search = st.text_input("ابحث برقم او اسم الموكل")
-    if search:
-        results = [c for c in data["cases"] if search in c['رقم'] or search in c['الموكل']]
-        st.dataframe(pd.DataFrame(results))
-
-if st.session_state.page!= "الرئيسية":
-    if st.button("⬅️ الرجوع للرئيسية"):
-        st.session_state.page = "الرئيسية"
-        st.rerun()
+# ========= نهاية دوال التنبيهات =========
 # ================================================
 # ========== الصفحة الرئيسية ==========
 if st.session_state.page == "الرئيسية":
