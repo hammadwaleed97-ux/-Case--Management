@@ -21,8 +21,14 @@ st.markdown("""
         color: #0A1428; padding: 12px; font-weight: 900; font-size: 16px;
         white-space: nowrap; overflow: hidden; border-radius: 0 0 15px 15px;
     }
-    .marquee span { display: inline-block; padding-right: 100%; animation: marquee 20s linear infinite; }
-    @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
+    .marquee span { 
+        display: inline-block; 
+        animation: marquee 18s linear infinite; 
+    }
+    @keyframes marquee { 
+        0% { transform: translateX(100%); } 
+        100% { transform: translateX(-100%); } 
+    }
     
     .main-title { color: #D4AF37; text-align: center; font-size: 36px; font-weight: 900; padding: 15px 0; }
     h1, h2, h3 { color: #D4AF37 !important; text-align: center !important; font-weight: 900; }
@@ -49,16 +55,11 @@ st.markdown("""
         padding: 12px !important; text-align: right !important; font-weight: 700 !important;
     }
     
-    .case-table { width:100%; color:#FFFFFF; text-align:center; border-collapse: collapse; }
-    .case-table th { background:#D4AF37; color:#0A1428; padding:8px; font-weight:900; }
-    .case-table td { padding:8px; border-bottom: 1px solid #D4AF37; }
-    .table-container { background:#1E2A47; padding:10px; border-radius:15px; border:2px solid #D4AF37; margin-bottom:15px; }
-    
     @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 82, 82, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(255, 82, 82, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 82, 82, 0); } }
 </style>
 """, unsafe_allow_html=True)
 
-# الماركيه بتاعت مع تحيات
+# الماركيه رايحه جايه وتبدا من اليمين
 st.markdown("""
 <div class="marquee">
 <span>مع تحيات وليد حماد - الإدارة العامة للشئون القانونية بديوان عام منطقة البحيرة بالهيئة القومية للتأمين الاجتماعي</span>
@@ -89,8 +90,6 @@ if not os.path.exists(UPLOAD_FOLDER):
 
 if 'page' not in st.session_state: 
     st.session_state.page = "الرئيسية"
-if 'selected_case_id' not in st.session_state: 
-    st.session_state.selected_case_id = None
 
 # ====== دوال التحميل والحفظ ======
 def load_data():
@@ -110,7 +109,6 @@ def get_alert_cases():
     all_cases = data["cases"]
     alerts = {"sessions": [], "appeals": []}
     for case in all_cases:
-        # 1. الجلسات: خلال 7 ايام
         if case.get('حالة') == 'متداولة' and case.get('تاريخ_جلسة'):
             try:
                 session_date = datetime.strptime(case['تاريخ_جلسة'], '%Y-%m-%d').date()
@@ -118,10 +116,8 @@ def get_alert_cases():
                 if 0 <= days_left <= 7:
                     case['days_left'] = days_left
                     alerts["sessions"].append(case)
-            except: 
-                pass
+            except: pass
         
-        # 2. الطعون: من 15 يوم قبل اخر ميعاد لحد اخر يوم
         if case.get('حالة') == 'منتهية' and case.get('مسندة_ل_الحكم') == 'الضد' and case.get('تاريخ_الحكم'):
             try:
                 judgment_date = datetime.strptime(case['تاريخ_الحكم'], '%Y-%m-%d').date()
@@ -133,10 +129,8 @@ def get_alert_cases():
                 if notify_start <= today <= last_appeal_day and days_left_appeal >= 0:
                     case['days_left_appeal'] = days_left_appeal
                     alerts["appeals"].append(case)
-            except: 
-                pass
+            except: pass
     return alerts
-# ========= نهاية دوال التنبيهات =========
 
 # ========== الصفحة الرئيسية =========
 alerts = get_alert_cases()
@@ -145,30 +139,25 @@ total_alerts = len(alerts['sessions']) + len(alerts['appeals'])
 col1, col2 = st.columns(2)
 with col1:
     st.markdown('<div class="btn-add">', unsafe_allow_html=True)
-    if st.button("➕ اضافة قضية جديدة"): 
-        st.session_state.page = "اضافة"
+    if st.button("➕ اضافة قضية جديدة"): st.session_state.page = "اضافة"
     st.markdown('</div>', unsafe_allow_html=True)
 with col2:
     st.markdown('<div class="btn-list">', unsafe_allow_html=True)
-    if st.button("📋 عرض كل القضايا"): 
-        st.session_state.page = "عرض"
+    if st.button("📋 عرض كل القضايا"): st.session_state.page = "عرض"
     st.markdown('</div>', unsafe_allow_html=True)
 
 col3, col4 = st.columns(2)
 with col3:
     st.markdown('<div class="btn-alert">', unsafe_allow_html=True)
-    if st.button(f"🚨 التنبيهات ({total_alerts})"): 
-        st.session_state.page = "تنبيهات"
+    if st.button(f"🚨 التنبيهات ({total_alerts})"): st.session_state.page = "تنبيهات"
     st.markdown('</div>', unsafe_allow_html=True)
 with col4:
     st.markdown('<div class="btn-report">', unsafe_allow_html=True)
-    if st.button("📄 طباعة تقرير"): 
-        st.session_state.page = "تقرير"
+    if st.button("📄 طباعة تقرير"): st.session_state.page = "تقرير"
     st.markdown('</div>', unsafe_allow_html=True)
 
 st.markdown('<div class="btn-search">', unsafe_allow_html=True)
-if st.button("🔍 بحث"): 
-    st.session_state.page = "بحث"
+if st.button("🔍 بحث"): st.session_state.page = "بحث"
 st.markdown('</div>', unsafe_allow_html=True)
 # ================================================
 # ========== الصفحة الرئيسية ==========
