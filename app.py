@@ -1311,9 +1311,7 @@ def to_excel(df):
 
 def to_word(df, title, region, member="", manager="", general_manager=""):
     doc = Document()
-    style = doc.styles['Normal']
-    style.font.name = 'Cairo'
-    style.font.size = Pt(12)
+    style = doc.styles['Normal']; style.font.name = 'Cairo'; style.font.size = Pt(12)
     p = doc.add_paragraph(); p.alignment = WD_ALIGN_PARAGRAPH.CENTER
     run = p.add_run(title); run.bold = True; run.font.size = Pt(16)
     doc.add_paragraph(f"ديوان عام منطقة: {region}"); doc.add_paragraph("")
@@ -1349,7 +1347,15 @@ def to_pdf(df, title, region, member="", manager="", general_manager=""):
     p.save(); return buffer.getvalue()
 
 st.set_page_config(page_title="إدارة القضايا", layout="wide", initial_sidebar_state="collapsed")
+
+# ====== تهيئة session_state عشان التقرير ميتمسحش ======
 if 'page' not in st.session_state: st.session_state.page = "الرئيسية"
+if 'df_report' not in st.session_state: st.session_state.df_report = pd.DataFrame()
+if 'report_title' not in st.session_state: st.session_state.report_title = ""
+if 'report_region' not in st.session_state: st.session_state.report_region = ""
+if 'report_member' not in st.session_state: st.session_state.report_member = ""
+if 'report_manager' not in st.session_state: st.session_state.report_manager = ""
+if 'report_general' not in st.session_state: st.session_state.report_general = ""
 
 if st.session_state.page == "الرئيسية":
     st.markdown("<h1 style='text-align: center; color: #FFD700;'>⚖️ إدارة القضايا ⚖️</h1>", unsafe_allow_html=True)
@@ -1397,14 +1403,8 @@ elif st.session_state.page == "تقارير":
         key="report_select"
     )
 
-    df_export = pd.DataFrame()
-    title = ""
-    region = ""
-    member = ""
-    manager = ""
-    general_manager = ""
     cases = data.get("cases", [])
-    show_report = False # متغير جديد عشان نعرض التقرير
+    st.info(f"عدد القضايا في النظام: {len(cases)}") # سطر تشخيص
 
     def show_signature_fields(prefix):
         st.markdown("<div class='filter-card'>", unsafe_allow_html=True)
@@ -1423,88 +1423,17 @@ elif st.session_state.page == "تقارير":
         with col2: to_date = st.date_input("حتى الفترة", key="to1")
         with col3: lawyer = st.text_input("طرف الاستاذ/ المحامي", key="lawyer1")
         member, manager, general_manager = show_signature_fields("1")
-        if st.button("🔍 عرض التقرير", use_container_width=True, type="primary"): show_report = True
-        if show_report:
+        if st.button("🔍 عرض التقرير", use_container_width=True, type="primary"):
             filtered = [c for c in cases if c.get('حالة') == 'متداولة']
-            if filtered: filtered = [c for c in filtered if c.get('تاريخ_جلسة') and from_date <= datetime.strptime(c['تاريخ_جلسة'], '%Y-%m-%d').date() <= to_date]
+            if from_date and to_date and filtered:
+                filtered = [c for c in filtered if c.get('تاريخ_جلسة') and from_date <= datetime.strptime(c['تاريخ_جلسة'], '%Y-%m-%d').date() <= to_date]
             filtered = sorted(filtered, key=lambda x: x.get("تاريخ_جلسة","9999-12-31"), reverse=True)
-            df_export = pd.DataFrame([{"م": i+1, "رقم القضية": c.get('رقم',''), "السنة": c.get('سنة',''), "الدائرة": c.get('دائرة',''), "المحكمة": c.get('محكمة_اسم',''), "المدعي": c.get('مدعي',''), "المدعي عليه": c.get('مدعي_عليه',''), "الموضوع": c.get('موضوع',''), "تاريخ الجلسة": c.get('تاريخ_جلسة',''), "السبب": c.get('سبب','')} for i,c in enumerate(filtered)])
-            title = f"بيان بجميع الدعاوى المتداولة من {from_date} حتى {to_date}"
-
-    # ====== 2 ======
-    elif report_type == "2. بيان بالدعاوى المتداولة حسب موضوع الدعوى":
-        region = st.text_input("ديوان عام منطقة", key="region2")
-        col1, col2 = st.columns(2)
-        with col1: from_date = st.date_input("من الفترة", key="from2")
-        with col2: to_date = st.date_input("حتى الفترة", key="to2")
-        topic = st.text_input("اكتب موضوع الدعوى للفلترة", key="topic2")
-        member, manager, general_manager = show_signature_fields("2")
-        if st.button("🔍 عرض التقرير", use_container_width=True, type="primary"): show_report = True
-        if show_report:
-            filtered = [c for c in cases if c.get('حالة') == 'متداولة']
-            if filtered: filtered = [c for c in filtered if c.get('تاريخ_جلسة') and from_date <= datetime.strptime(c['تاريخ_جلسة'], '%Y-%m-%d').date() <= to_date]
-            if topic: filtered = [c for c in filtered if topic in str(c.get('موضوع',''))]
-            df_export = pd.DataFrame([{"م": i+1, "الموضوع": c.get('موضوع',''), "رقم القضية": c.get('رقم',''), "تاريخ الجلسة": c.get('تاريخ_جلسة',''), "المدعي": c.get('مدعي',''), "المدعي عليه": c.get('مدعي_عليه','')} for i,c in enumerate(filtered)])
-            title = f"بيان بالدعاوى المتداولة حسب موضوع: {topic}"
-
-    # ====== 3 ======
-    elif report_type == "3. بيان بجميع الاحكام الصادرة للصالح وللضد":
-        region = st.text_input("ديوان عام منطقة", key="region3")
-        col1, col2, col3 = st.columns(3)
-        with col1: from_date = st.date_input("من الفترة", key="from3")
-        with col2: to_date = st.date_input("حتى الفترة", key="to3")
-        with col3: lawyer = st.text_input("طرف الاستاذ/ المحامي", key="lawyer3")
-        member, manager, general_manager = show_signature_fields("3")
-        if st.button("🔍 عرض التقرير", use_container_width=True, type="primary"): show_report = True
-        if show_report:
-            filtered = [c for c in cases if c.get('حالة') == 'حكم']
-            if filtered: filtered = [c for c in filtered if c.get('تاريخ_جلسة') and from_date <= datetime.strptime(c['تاريخ_جلسة'], '%Y-%m-%d').date() <= to_date]
-            df_export = pd.DataFrame([{"م": i+1, "رقم القضية": c.get('رقم',''), "الحكم": c.get('الحكم',''), "تاريخ الجلسة": c.get('تاريخ_جلسة',''), "الموضوع": c.get('موضوع','')} for i,c in enumerate(filtered)])
-            title = f"بيان بجميع الاحكام الصادرة من {from_date} حتى {to_date}"
-
-    # ====== 4 ======
-    elif report_type == "4. بيان بالاحكام الصادرة للصالح":
-        region = st.text_input("ديوان عام منطقة", key="region4")
-        col1, col2 = st.columns(2)
-        with col1: from_date = st.date_input("من الفترة", key="from4")
-        with col2: to_date = st.date_input("حتى الفترة", key="to4")
-        member, manager, general_manager = show_signature_fields("4")
-        if st.button("🔍 عرض التقرير", use_container_width=True, type="primary"): show_report = True
-        if show_report:
-            filtered = [c for c in cases if c.get('حالة') == 'حكم' and 'صالح' in str(c.get('الحكم',''))]
-            if filtered: filtered = [c for c in filtered if c.get('تاريخ_جلسة') and from_date <= datetime.strptime(c['تاريخ_جلسة'], '%Y-%m-%d').date() <= to_date]
-            df_export = pd.DataFrame([{"م": i+1, "رقم القضية": c.get('رقم',''), "الحكم": c.get('الحكم',''), "تاريخ الجلسة": c.get('تاريخ_جلسة','')} for i,c in enumerate(filtered)])
-            title = f"بيان بالاحكام الصادرة للصالح من {from_date} حتى {to_date}"
-
-    # ====== 5 ======
-    elif report_type == "5. بيان بالاحكام الصادرة للضد":
-        region = st.text_input("ديوان عام منطقة", key="region5")
-        col1, col2 = st.columns(2)
-        with col1: from_date = st.date_input("من الفترة", key="from5")
-        with col2: to_date = st.date_input("حتى الفترة", key="to5")
-        member, manager, general_manager = show_signature_fields("5")
-        if st.button("🔍 عرض التقرير", use_container_width=True, type="primary"): show_report = True
-        if show_report:
-            filtered = [c for c in cases if c.get('حالة') == 'حكم' and 'ضد' in str(c.get('الحكم',''))]
-            if filtered: filtered = [c for c in filtered if c.get('تاريخ_جلسة') and from_date <= datetime.strptime(c['تاريخ_جلسة'], '%Y-%m-%d').date() <= to_date]
-            df_export = pd.DataFrame([{"م": i+1, "رقم القضية": c.get('رقم',''), "الحكم": c.get('الحكم',''), "تاريخ الجلسة": c.get('تاريخ_جلسة','')} for i,c in enumerate(filtered)])
-            title = f"بيان بالاحكام الصادرة للضد من {from_date} حتى {to_date}"
-
-    # ====== 6 ======
-    elif report_type == "6. بيان بالاحكام الصادرة حسب موضوع الدعوى":
-        region = st.text_input("ديوان عام منطقة", key="region6")
-        col1, col2 = st.columns(2)
-        with col1: from_date = st.date_input("من الفترة", key="from6")
-        with col2: to_date = st.date_input("حتى الفترة", key="to6")
-        topic = st.text_input("اكتب موضوع الدعوى للفلترة", key="topic6")
-        member, manager, general_manager = show_signature_fields("6")
-        if st.button("🔍 عرض التقرير", use_container_width=True, type="primary"): show_report = True
-        if show_report:
-            filtered = [c for c in cases if c.get('حالة') == 'حكم']
-            if filtered: filtered = [c for c in filtered if c.get('تاريخ_جلسة') and from_date <= datetime.strptime(c['تاريخ_جلسة'], '%Y-%m-%d').date() <= to_date]
-            if topic: filtered = [c for c in filtered if topic in str(c.get('موضوع',''))]
-            df_export = pd.DataFrame([{"م": i+1, "الموضوع": c.get('موضوع',''), "الحكم": c.get('الحكم',''), "رقم القضية": c.get('رقم','')} for i,c in enumerate(filtered)])
-            title = f"بيان بالاحكام الصادرة حسب موضوع: {topic}"
+            st.session_state.df_report = pd.DataFrame([{"م": i+1, "رقم القضية": c.get('رقم',''), "السنة": c.get('سنة',''), "الدائرة": c.get('دائرة',''), "المحكمة": c.get('محكمة_اسم',''), "المدعي": c.get('مدعي',''), "المدعي عليه": c.get('مدعي_عليه',''), "الموضوع": c.get('موضوع',''), "تاريخ الجلسة": c.get('تاريخ_جلسة',''), "السبب": c.get('سبب','')} for i,c in enumerate(filtered)])
+            st.session_state.report_title = f"بيان بجميع الدعاوى المتداولة من {from_date} حتى {to_date}"
+            st.session_state.report_region = region
+            st.session_state.report_member = member
+            st.session_state.report_manager = manager
+            st.session_state.report_general = general_manager
 
     # ====== 8 ======
     elif report_type == "8. بيان عددى بالاحكام":
@@ -1513,14 +1442,19 @@ elif st.session_state.page == "تقارير":
         with col1: from_date = st.date_input("من الفترة", key="from8")
         with col2: to_date = st.date_input("حتى الفترة", key="to8")
         member, manager, general_manager = show_signature_fields("8")
-        if st.button("🔍 عرض البيان العددى", use_container_width=True, type="primary"): show_report = True
-        if show_report:
+        if st.button("🔍 عرض البيان العددى", use_container_width=True, type="primary"):
             filtered = [c for c in cases if c.get('حالة') == 'حكم']
-            if filtered: filtered = [c for c in filtered if c.get('تاريخ_جلسة') and from_date <= datetime.strptime(c['تاريخ_جلسة'], '%Y-%m-%d').date() <= to_date]
+            if from_date and to_date and filtered:
+                filtered = [c for c in filtered if c.get('تاريخ_جلسة') and from_date <= datetime.strptime(c['تاريخ_جلسة'], '%Y-%m-%d').date() <= to_date]
             total_ahkam = len(filtered); saleh = len([c for c in filtered if 'صالح' in str(c.get('الحكم',''))]); ded = len([c for c in filtered if 'ضد' in str(c.get('الحكم',''))])
             summary_data = {"البيان": ["اجمالي الاحكام", "احكام للصالح", "احكام للضد", "نسبة الصالح %", "نسبة الضد %"],
                 "العدد": [total_ahkam, saleh, ded, f"{(saleh/total_ahkam*100):.1f}%" if total_ahkam > 0 else "0%", f"{(ded/total_ahkam*100):.1f}%" if total_ahkam > 0 else "0%"]}
-            df_export = pd.DataFrame(summary_data); title = f"بيان عددى بالاحكام من {from_date} حتى {to_date}"
+            st.session_state.df_report = pd.DataFrame(summary_data)
+            st.session_state.report_title = f"بيان عددى بالاحكام من {from_date} حتى {to_date}"
+            st.session_state.report_region = region
+            st.session_state.report_member = member
+            st.session_state.report_manager = manager
+            st.session_state.report_general = general_manager
 
     # ====== 7 ======
     elif report_type == "7. بيان بالاحصائيات":
@@ -1533,35 +1467,26 @@ elif st.session_state.page == "تقارير":
         with col3: st.metric("الاحكام", ahkam)
         with col4: st.metric("للصالح", saleh)
         with col5: st.metric("للضد", ded)
-        st.markdown("<hr style='border-top: 2px solid white;'>", unsafe_allow_html=True)
-        st.markdown("<h3>📈 الرسوم البيانية</h3>", unsafe_allow_html=True)
-        col1, col2 = st.columns(2)
-        with col1:
-            st.markdown("<h4>نسبة الحالات</h4>", unsafe_allow_html=True)
-            fig1 = px.bar(x=['متداولة', 'احكام'], y=[mtdaola, ahkam], color=['متداولة', 'احكام'], color_discrete_map={'متداولة':'#00BFFF', 'احكام':'#FFD700'})
-            fig1.update_layout(plot_bgcolor='#1E2A47', paper_bgcolor='#1E2A47', font_color='white', showlegend=False); st.plotly_chart(fig1, use_container_width=True)
-        with col2:
-            st.markdown("<h4>نتيجة الاحكام</h4>", unsafe_allow_html=True)
-            fig2 = px.pie(values=[saleh, ded], names=['للصالح', 'للضد'], color_discrete_map={'للصالح':'#32CD32', 'للضد':'#FF4500'})
-            fig2.update_layout(plot_bgcolor='#1E2A47', paper_bgcolor='#1E2A47', font_color='white'); st.plotly_chart(fig2, use_container_width=True)
 
-    # ====== عرض الجدول وازرار التصدير - بره الزرار ======
-    if not df_export.empty:
-        st.success(f"تم العثور على {len(df_export)} سجل")
-        html = f"<div class='table-container'>" + df_export.to_html(index=False, classes='fancy-table', border=0) + "</div>"
+    # ====== عرض التقرير من session_state ======
+    if not st.session_state.df_report.empty:
+        st.success(f"تم العثور على {len(st.session_state.df_report)} سجل")
+        html = f"<div class='table-container'>" + st.session_state.df_report.to_html(index=False, classes='fancy-table', border=0) + "</div>"
         st.markdown(html, unsafe_allow_html=True)
         st.markdown(f"""
         <div class='signature-container'>
             <div class='signature-row'>
-                <div class='signature-item'><div class='signature-line'></div><p><b>عضو الادارة القانونية</b></p><p>{member}</p></div>
-                <div class='signature-item'><div class='signature-line'></div><p><b>مدير الادارة القانونية</b></p><p>{manager}</p></div>
+                <div class='signature-item'><div class='signature-line'></div><p><b>عضو الادارة القانونية</b></p><p>{st.session_state.report_member}</p></div>
+                <div class='signature-item'><div class='signature-line'></div><p><b>مدير الادارة القانونية</b></p><p>{st.session_state.report_manager}</p></div>
             </div>
-            <div class='signature-center'><div class='signature-line' style='width: 300px; margin: 0 auto;'></div><p><b>مدير عام الإدارات القانونية</b></p><p>{general_manager}</p></div>
+            <div class='signature-center'><div class='signature-line' style='width: 300px; margin: 0 auto;'></div><p><b>مدير عام الإدارات القانونية</b></p><p>{st.session_state.report_general}</p></div>
         </div>
         """, unsafe_allow_html=True)
         st.markdown("<hr style='border-top: 2px solid white;'>", unsafe_allow_html=True)
         c1, c2, c3, c4 = st.columns(4)
-        with c1: st.download_button("⬇️ Excel", data=to_excel(df_export), file_name=f"تقرير_{datetime.now().strftime('%Y%m%d')}.xlsx", use_container_width=True)
-        with c2: st.download_button("📄 Word", data=to_word(df_export, title, region, member, manager, general_manager), file_name=f"تقرير_{datetime.now().strftime('%Y%m%d')}.docx", use_container_width=True)
-        with c3: st.download_button("📕 PDF", data=to_pdf(df_export, title, region, member, manager, general_manager), file_name=f"تقرير_{datetime.now().strftime('%Y%m%d')}.pdf", use_container_width=True)
+        with c1: st.download_button("⬇️ Excel", data=to_excel(st.session_state.df_report), file_name=f"تقرير_{datetime.now().strftime('%Y%m%d')}.xlsx", use_container_width=True)
+        with c2: st.download_button("📄 Word", data=to_word(st.session_state.df_report, st.session_state.report_title, st.session_state.report_region, st.session_state.report_member, st.session_state.report_manager, st.session_state.report_general), file_name=f"تقرير_{datetime.now().strftime('%Y%m%d')}.docx", use_container_width=True)
+        with c3: st.download_button("📕 PDF", data=to_pdf(st.session_state.df_report, st.session_state.report_title, st.session_state.report_region, st.session_state.report_member, st.session_state.report_manager, st.session_state.report_general), file_name=f"تقرير_{datetime.now().strftime('%Y%m%d')}.pdf", use_container_width=True)
         with c4: st.download_button("🖨️ HTML", data=html.encode('utf-8-sig'), file_name=f"تقرير_{datetime.now().strftime('%Y%m%d')}.html", use_container_width=True)
+    else:
+        st.info("اختر نوع التقرير ودوس عرض التقرير")
