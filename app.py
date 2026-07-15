@@ -841,3 +841,332 @@ elif st.session_state.page == "الأرشيف":
             
             st.markdown("</tr></table></div>", unsafe_allow_html=True)
             # ======================
+==============================================
+# ============ الجزء السادس: البحث ============
+# ================================================
+elif st.session_state.page == "بحث":
+    data = load_data()
+    st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
+    st.markdown("<h2 style='color:#4DA8DA; text-align:center'>🔍 البحث عن دعوى</h2>", unsafe_allow_html=True)
+
+    if st.button("⬅️ العودة للرئيسية", use_container_width=True, key="back_from_search"):
+        st.session_state.page = "الرئيسية"
+        st.rerun()
+
+    st.markdown("<div style='background:#1E2A47; padding:20px; border-radius:15px; border:2px solid #4DA8DA; margin-bottom:20px'>", unsafe_allow_html=True)
+    search_type = st.selectbox("نوع البحث", [
+        "اسم المدعي او المدعى عليه",
+        "رقم الدعوى وسنتها - اول درجة",
+        "رقم الاستئناف وسنته - ثاني درجة",
+        "رقم الطعن بالنقض وسنته",
+        "رقم الدعوى وسنتها - المحكمة الادارية",
+        "رقم الدعوى وسنتها - محكمة القضاء الاداري",
+        "رقم الطعن وسنته - القضاء الاداري بهيئة استئنافية",
+        "رقم الدعوى وسنتها - المحكمة الادارية العليا"
+    ], key="search_type_select")
+
+    search_value = st.text_input("اكتب كلمة البحث", placeholder="للاسم: اكتب الاسم | للرقم: اكتب الرقم والسنة مثال 1234 2024", key="search_input")
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    if st.button("🔍 بحث", use_container_width=True, type="primary", key="do_search"):
+        if not search_value.strip():
+            st.error("اكتب حاجة تبحث بيها")
+        else:
+            results = []
+            parts = search_value.split()
+            رقم_بحث = parts[0] if len(parts) > 0 else ""
+            سنة_بحث = parts[1] if len(parts) > 1 else ""
+
+            for case in data["cases"]:
+                match = False
+                نوع_الدعوى = str(case.get('نوع_الدعوى', '')).lower()
+
+                if search_type == "اسم المدعي او المدعى عليه":
+                    if search_value in str(case.get('مدعي','')) or search_value in str(case.get('مدعي_عليه','')):
+                        match = True
+
+                elif "اول درجة" in search_type:
+                    if رقم_بحث == str(case.get('رقم','')) and سنة_بحث == str(case.get('سنة','')) and ("دعوى" in نوع_الدعوى or "عمال" in نوع_الدعوى):
+                        match = True
+
+                elif "استئناف" in search_type and "استئنافية" not in search_type:
+                    if رقم_بحث == str(case.get('رقم','')) and سنة_بحث == str(case.get('سنة','')) and "استئناف" in نوع_الدعوى:
+                        match = True
+
+                elif "الطعن بالنقض" in search_type:
+                    if رقم_بحث == str(case.get('رقم','')) and سنة_بحث == str(case.get('سنة','')) and "طعن" in نوع_الدعوى and "اداري" not in نوع_الدعوى:
+                        match = True
+
+                elif "المحكمة الادارية" in search_type and "العليا" not in search_type and "استئنافية" not in search_type:
+                    if رقم_بحث == str(case.get('رقم','')) and سنة_بحث == str(case.get('سنة','')) and "ادارية" in نوع_الدعوى and "عليا" not in نوع_الدعوى:
+                        match = True
+
+                elif "القضاء الاداري" in search_type and "استئنافية" not in search_type:
+                    if رقم_بحث == str(case.get('رقم','')) and سنة_بحث == str(case.get('سنة','')) and "قضاء اداري" in نوع_الدعوى:
+                        match = True
+
+                elif "استئنافية" in search_type:
+                    if رقم_بحث == str(case.get('رقم','')) and سنة_بحث == str(case.get('سنة','')) and "استئنافية" in نوع_الدعوى:
+                        match = True
+
+                elif "الادارية العليا" in search_type:
+                    if رقم_بحث == str(case.get('رقم','')) and سنة_بحث == str(case.get('سنة','')) and "ادارية عليا" in نوع_الدعوى:
+                        match = True
+
+                if match:
+                    results.append(case)
+
+            if not results:
+                st.warning("لم يتم العثور على نتائج")
+            else:
+                st.success(f"تم العثور على {len(results)} نتيجة")
+                for idx, case in enumerate(results, 1):
+                    رقم_كامل = f"{case.get('رقم','')} لسنة {case.get('سنة','')}"
+                    محكمة_كاملة = f"{case.get('نوع_الدعوى','')} - {case.get('محكمة_اسم','')}"
+                    if case.get('مأمورية',''):
+                        محكمة_كاملة += f"<br>مأمورية {case.get('مأمورية','')}"
+                    if case.get('دائرة',''):
+                        محكمة_كاملة += f"<br>دائرة {case.get('دائرة','')}"
+
+                    خصوم = f"<div style='background:#FFF3CD; padding:8px; border-radius:8px; color:#000; margin-bottom:5px; text-align:center'><b>المدعى:</b><br>{case.get('مدعي','')}</div><div style='background:#CFF4FC; padding:8px; border-radius:8px; color:#000; text-align:center'><b>المدعى عليه:</b><br>{case.get('مدعي_عليه','')}</div>"
+
+                    if case.get('حالة') == 'منتهية':
+                        row_class = "row-judgment"
+                        حالة_لون = "#FF5252"
+                        مكان = "📁 الأرشيف"
+                        الصفحة_المطلوبة = "الأرشيف" # <-- اتعدل هنا بالالف واللام
+                    else:
+                        row_class = "row1" if idx % 2 == 1 else "row2"
+                        حالة_لون = "#4CAF50"
+                        مكان = "📋 الحصر العام"
+                        الصفحة_المطلوبة = "الحصر"
+
+                    st.markdown("<div class='table-container'>", unsafe_allow_html=True)
+                    st.markdown(f"""
+                    <table class='case-table'>
+                    <tr><th>م</th><th>الرقم والسنة</th><th>نوع الدعوى والمحكمة</th><th>الخصوم</th><th>الموضوع</th><th>اخر جلسة</th><th>الحالة</th><th>المكان</th></tr>
+                    <tr class='{row_class}'>
+                        <td>{idx}</td>
+                        <td>{رقم_كامل}</td>
+                        <td>{محكمة_كاملة}</td>
+                        <td>{خصوم}</td>
+                        <td>{case.get('موضوع','')}</td>
+                        <td style='color:#FFD700; font-weight:900'>{case.get('تاريخ_جلسة','-')}</td>
+                        <td style='color:{حالة_لون}; font-weight:900'>{case.get('حالة','متداولة')}</td>
+                        <td style='color:#4DA8DA; font-weight:900'>{مكان}</td>
+                    </tr>
+                    </table>
+                    """, unsafe_allow_html=True)
+
+                    c1, c2, c3 = st.columns([4,1,4])
+                    with c2:
+                        if st.button(f"📂 فتح في {مكان}", key=f"open_smart_btn_{case['id']}", use_container_width=True):
+                            st.session_state.selected_case_id = case['id']
+                            st.session_state.open_from_search = True # العلامة عشان الصفحة التانية تعرف
+                            st.session_state.page = الصفحة_المطلوبة
+                            st.rerun()
+                    st.markdown("</div>", unsafe_allow_html=True)
+                    # ========== الجزء السابع: مركز التنبيهات ==========
+elif st.session_state.page == "تنبيهات":
+    st.markdown("<h1 style='text-align: center; color: #C9A961;'>🔔 مركز التنبيهات</h1>", unsafe_allow_html=True)
+    
+    if st.button("⬅️ العودة للرئيسية", use_container_width=True): 
+        st.session_state.page = "الرئيسية"
+        st.rerun()
+    
+    # ====== 1. تسجيل الايميل ======
+    st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
+    with st.container(border=True):
+        st.markdown("<div class='card-title'>📧 تسجيل الايميل لاستلام التنبيهات</div>", unsafe_allow_html=True)
+        user_email = st.text_input("ادخل ايميلك", placeholder="example@gmail.com", key="email_alert")
+        if st.button("تسجيل الايميل", type="primary", use_container_width=True):
+            if user_email:
+                st.session_state['saved_email'] = user_email
+                st.success(f"✅ تم حفظ الايميل {user_email}. هيجيلك تنبيهات قريب")
+            else:
+                st.warning("دخل الايميل الاول")
+    
+    alerts = get_alert_cases()
+    st.markdown(f"<h3 style='text-align:center; color:#FFFFFF;'>📅 تاريخ اليوم: {datetime.now().strftime('%Y-%m-%d')}</h3>", unsafe_allow_html=True)
+    
+    # ====== 2. الجلسات خلال 7 ايام ======
+    st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align:center; color:#C9A961;'>⚖️ جلسات خلال 7 ايام القادمة</h2>", unsafe_allow_html=True)
+    
+    if alerts["sessions"]:
+        for case in alerts["sessions"]:
+            with st.container(border=True):
+                # نفس جدول الحصر
+                رقم_كامل = f"{case.get('رقم','')} لسنة {case.get('سنة','')}"
+                محكمة_كاملة = f"{case.get('نوع','')} {case.get('محكمة_اسم','')}"
+                if case.get('مأمورية',''): محكمة_كاملة += f"<br>مأمورية {case.get('مأمورية','')}"
+                دائرة_كاملة = f"{case.get('دائرة','')} عمال" if case.get('دائرة','') else ""
+                محكمة_كاملة += f"<br>{دائرة_كاملة}"
+                خصوم = f"{case.get('مدعي','')}<br>ضد<br>{case.get('مدعي_عليه','')}"
+                
+                st.markdown(f"<h4 style='color:#FFD700; text-align:center;'>⚠️ فاضل {case['days_left']} يوم على الجلسة</h4>", unsafe_allow_html=True)
+                
+                table_html = f"<div class='table-container'><table class='case-table'><tr><th>الرقم والسنة</th><th>المحكمة والدائرة</th><th>الخصوم</th><th>الموضوع</th><th>تاريخ الجلسة</th></tr><tr class='row1'><td>{رقم_كامل}</td><td>{محكمة_كاملة}</td><td>{خصوم}</td><td>{case.get('موضوع','')}</td><td>{case.get('تاريخ_جلسة','')}</td></tr></table></div>"
+                st.markdown(table_html, unsafe_allow_html=True)
+                
+                if st.button("📂 فتح القضية", key=f"open_alert_{case['id']}", use_container_width=True):
+                    st.session_state.selected_case_id = case['id']
+                    st.session_state.page = "تفاصيل"
+                    st.rerun()
+    else:
+        st.success("✅ مفيش جلسات خلال 7 ايام")
+    
+    # ====== 3. الطعون خلال 15 يوم ======
+    st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align:center; color:#C9A961;'>📄 طعون خلال 15 يوم</h2>", unsafe_allow_html=True)
+    
+    if alerts["appeals"]:
+        for case in alerts["appeals"]:
+            with st.container(border=True):
+                رقم_كامل = f"{case.get('رقم','')} لسنة {case.get('سنة','')}"
+                محكمة_كاملة = f"{case.get('نوع','')} {case.get('محكمة_اسم','')}"
+                if case.get('مأمورية',''): محكمة_كاملة += f"<br>مأمورية {case.get('مأمورية','')}"
+                دائرة_كاملة = f"{case.get('دائرة','')} عمال" if case.get('دائرة','') else ""
+                محكمة_كاملة += f"<br>{دائرة_كاملة}"
+                خصوم = f"{case.get('مدعي','')}<br>ضد<br>{case.get('مدعي_عليه','')}"
+                
+                st.markdown(f"<h4 style='color:#FF4500; text-align:center;'>⏰ فاضل {case['days_left_appeal']} يوم على اخر ميعاد للطعن</h4>", unsafe_allow_html=True)
+                
+                table_html = f"<div class='table-container'><table class='case-table'><tr><th>الرقم والسنة</th><th>المحكمة والدائرة</th><th>الخصوم</th><th>الموضوع</th><th>تاريخ الحكم</th></tr><tr class='row-judgment'><td>{رقم_كامل}</td><td>{محكمة_كاملة}</td><td>{خصوم}</td><td>{case.get('موضوع','')}</td><td>{case.get('تاريخ_الحكم','')}</td></tr></table></div>"
+                st.markdown(table_html, unsafe_allow_html=True)
+                
+                if st.button("📂 فتح القضية", key=f"open_appeal_{case['id']}", use_container_width=True):
+                    st.session_state.selected_case_id = case['id']
+                    st.session_state.page = "تفاصيل"
+                    st.rerun()
+    else:
+        st.success("✅ مفيش طعون قريبة")
+        # ========= صفحة المكتبة القانونية =========
+elif st.session_state.page == "المكتبة":
+    st.markdown('<h1 style="text-align: center; color: #FFD700;">المكتبة 📚<br>القانونية</h1>', unsafe_allow_html=True)
+    
+    # 1. البحث العام في كل المواد
+    st.markdown("### 🔍 البحث عن أي مادة قانونية")
+    search_query = st.text_input("ابحث باسم الموضوع")
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        search_number = st.text_input("رقم القانون / القرار / التعليمات")
+    with col2:
+        search_year = st.text_input("السنة")
+    
+    if st.button("بحث", use_container_width=True, type="primary"):
+        st.session_state.search_filters = {"q": search_query, "num": search_number, "year": search_year}
+        st.rerun()
+
+    st.divider()
+
+    # 2. ال 22 قسم بالالوان
+    LIBRARY_SECTIONS = {
+        "القوانين": "#FF6B6B", "القرارات الوزارية": "#4ECDC4", "قرارات الهيئة": "#45B7D1",
+        "المنشورات الوزارية": "#96CEB4", "منشورات الهيئة": "#FFEAA7", "الكتب الدورية": "#DDA0DD",
+        "تعليمات الهيئة": "#98D8C8", "رسائل الهيئة": "#F7DC6F", "المرصد الفني": "#BB8FCE",
+        "فتاوى لجنة الشئون القانونية بالوزارة": "#85C1E2", "فتاوى الادارة المركزية للشئون القانونية": "#F8B500",
+        "احكام المحكمة الدستورية العليا": "#E74C3C", "احكام محكمة النقض": "#3498DB",
+        "احكام المحكمة الإدارية العليا": "#2ECC71", "احكام المحاكم الاستئنافية": "#9B59B6",
+        "احكام محاكم القضاء الإدارى": "#1ABC9C", "احكام المحاكم الابتدائية": "#E67E22",
+        "احكام المحكمة الإدارية": "#34495E", "منشورات القضاء العادى": "#16A085",
+        "منشورات مجلس الدولة": "#8E44AD", "فتاوى الجمعية العمومية": "#27AE60",
+        "صحف طعون": "#C0392B", "صحف استئنافات": "#2980B9", "صحف دعاوى": "#8E44AD",
+        "مذكرات دفاع": "#D35400", "أخرى": "#7F8C8D"
+    }
+
+    # 3. عرض الاقسام كأزرار ملونة
+    st.markdown("### 📁 الاقسام")
+    cols = st.columns(4)
+    for i, (section, color) in enumerate(LIBRARY_SECTIONS.items()):
+        with cols[i % 4]:
+            if st.button(f"{section}", key=f"sec_{section}", use_container_width=True, 
+                        help=f"عرض {section}"):
+                st.session_state.selected_section = section
+                st.rerun()
+            st.markdown(f'<div style="background:{color};height:5px;border-radius:5px;"></div>', unsafe_allow_html=True)
+
+    # 4. لو اختار قسم او بحث
+    if "selected_section" in st.session_state or "search_filters" in st.session_state:
+        st.divider()
+        
+        library_data = st.session_state.data.get("library", [])
+        
+        # فلترة
+        if "selected_section" in st.session_state:
+            sec = st.session_state.selected_section
+            st.subheader(f"📂 {sec}")
+            files = [f for f in library_data if f.get("section") == sec]
+        else:
+            sec = "نتائج البحث"
+            st.subheader("🔍 نتائج البحث")
+            f = st.session_state.search_filters
+            files = [item for item in library_data if 
+                     f["q"].lower() in item.get("name","").lower() and
+                     f["num"] in item.get("number","") and
+                     f["year"] in item.get("year","")]
+        
+        # زر الاضافة
+        if st.button("➕ اضافة مادة قانونية", key="add_doc", type="secondary"):
+            st.session_state.show_upload = True
+
+        # فورم الاضافة
+        if st.session_state.get("show_upload", False):
+            with st.form("form_add_doc"):
+                section_select = st.selectbox("اختر القسم", list(LIBRARY_SECTIONS.keys()))
+                doc_name = st.text_input("بيان المستند - الاسم اللي هيظهر في المكتبة")
+                doc_number = st.text_input("الرقم")
+                doc_year = st.text_input("السنة")
+                doc_link = st.text_input("رابط المستند")
+                
+                if st.form_submit_button("💾 حفظ بصفة دائمة"):
+                    new_doc = {
+                        "id": secrets.token_hex(6),
+                        "name": doc_name, 
+                        "section": section_select,
+                        "number": doc_number,
+                        "year": doc_year,
+                        "link": doc_link
+                    }
+                    st.session_state.data.setdefault("library", []).append(new_doc)
+                    save_data(st.session_state.data)
+                    st.success("تم الحفظ")
+                    st.session_state.show_upload = False
+                    st.rerun()
+
+        st.divider()
+        # 5. عرض المستندات مع 4 ازرار
+        if files:
+            for doc in files:
+                color = LIBRARY_SECTIONS.get(doc.get("section"), "#7F8C8D")
+                st.markdown(f'<div style="border-left:5px solid {color}; padding:10px; margin:5px 0; background:#1e1e1e;">', unsafe_allow_html=True)
+                st.write(f"**{doc.get('name')}**")
+                st.caption(f"رقم: {doc.get('number','-')} | سنة: {doc.get('year','-')} | القسم: {doc.get('section')}")
+                
+                col1, col2, col3, col4 = st.columns(4)
+                with col1:
+                    if st.button("📖 فتح", key=f"open_{doc['id']}", use_container_width=True):
+                        st.info(f"الرابط: {doc.get('link')}")
+                with col2:
+                    if st.button("⬇️ تحميل", key=f"dl_{doc['id']}", use_container_width=True):
+                        st.info("التحميل متاح للعضو المشترك")
+                with col3:
+                    if st.button("✏️ تعديل", key=f"edit_{doc['id']}", use_container_width=True):
+                        st.warning("وظيفة التعديل قريبا")
+                with col4:
+                    if st.button("🗑️ حذف", key=f"del_{doc['id']}", use_container_width=True):
+                        st.session_state.data["library"] = [d for d in st.session_state.data["library"] if d["id"] != doc["id"]]
+                        save_data(st.session_state.data)
+                        st.rerun()
+                st.markdown('</div>', unsafe_allow_html=True)
+        else:
+            st.info("مفيش مستندات. دوس ➕ اضافة مادة قانونية")
+
+    st.divider()
+    # زر العودة
+    if st.button("⬅️ العودة للصفحة الرئيسية", use_container_width=True):
+        st.session_state.page = "الرئيسية"
+        for k in ["selected_section", "show_upload", "search_filters"]:
+            st.session_state.pop(k, None)
+        st.rerun()
