@@ -11,6 +11,8 @@ import secrets
 from datetime import datetime, timedelta
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from docx import Document # جديد للورد
+from docx.shared import Pt # جديد
 
 st.set_page_config(
     page_title="إدارة القضايا",
@@ -18,35 +20,67 @@ st.set_page_config(
     page_icon="⚖️"
 )
 
-# ====== دالة التصدير للاكسل ======
+# ====== دالة التصدير للاكسل RTL ======
 def to_excel(df):
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
         df.to_excel(writer, index=False, sheet_name='التقرير')
+        worksheet = writer.sheets['التقرير']
+        worksheet.sheet_view.rightToLeft = True # اجبار الاتجاه يمين
+        for col in worksheet.columns:
+            max_length = 0
+            column = col[0].column_letter
+            for cell in col:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(cell.value)
+                except:
+                    pass
+            adjusted_width = (max_length + 2)
+            worksheet.column_dimensions[column].width = adjusted_width
     return output.getvalue()
 
-# ====== دوال التحميل والحفظ ======
-DATA_FILE = "data.json"
+# ====== دالة التصدير للورد ======
+def to_word(cases, title, region):
+    doc = Document()
+    style = doc.styles['Normal']
+    font = style.font
+    font.name = 'Cairo'
+    font.size = Pt(11)
+
+    doc.add_heading('الهيئة القومية للتأمين الاجتماعى', 0).alignment = 1
+    doc.add_heading('الإدارة المركزية للإدارات القانونية', 1).alignment = 1
+    doc.add_heading('الإدارة العامة للقضايا', 1).alignment = 1
+    doc.add_heading(f'ديوان عام {region}', 1).alignment = 1
+    doc.add_heading(title, 2).alignment = 1
+    doc.add_paragraph()
+
+    table = doc.add_table(rows=1, cols=len(cases[0]) if cases else 1)
+    table.style = 'Table Grid'
+    table.alignment = 2 # يمين
+    hdr_cells = table.rows[0].cells
+    for i, col_name in enumerate(cases[0].keys()):
+        hdr_cells[i].text = col_name
+        hdr_cells[i].paragraphs[0].alignment = 2
+
+    for c in cases:
+        row_cells = table.add_row().cells
+        for i, val in enumerate(c.values()):
+            row_cells[i].text = str(val)
+            row_cells[i].paragraphs[0].alignment = 2
+
+    doc.add_paragraph()
+    doc.add_paragraph(f'تفضلوا بقبول وافر الاحترام\n\nعضو الادارة.................. مدير الإدارة..................\nتحر في {datetime.now().strftime("%Y-%m-%d")}')
+
+    output = io.BytesIO()
+    doc.save(output)
+    return output.getvalue()
 
 def load_data():
-    if os.path.exists(DATA_FILE):
-        with open(DATA_FILE, "r", encoding="utf-8") as f:
+    if os.path.exists("data.json"):
+        with open("data.json", "r", encoding="utf-8") as f:
             return json.load(f)
     return {"cases": [], "library": [], "tasks": [], "users": []}
-
-def save_data(data):
-    with open(DATA_FILE, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=4)
-
-# ========= تهيئة الـ Session State =========
-if "page" not in st.session_state:
-    st.session_state.page = "الرئيسية"
-
-if "data" not in st.session_state:
-    st.session_state.data = load_data()
-
-if "user" not in st.session_state:
-    st.session_state.user = "المستخدم"
 # ============= التصميم النهائي =======
 st.markdown("""
 <style>
