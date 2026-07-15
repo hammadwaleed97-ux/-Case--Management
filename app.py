@@ -1290,7 +1290,6 @@ if st.session_state.page == "تقارير":
 
     tab1, tab2, tab3 = st.tabs(["📊 بيان الدعاوى المتداولة", "⚖️ بيان الاحكام", "📈 الإحصائيات"])
 
-    # ===== دالة الهيدر الرسمي =====
     def report_header(region, title):
         st.markdown(f"""
         <div style='text-align:center; color:#D4AF37; border:4px double #D4AF37; padding:20px; background: linear-gradient(135deg, #0A1428 0%, #1E2A47 100%); border-radius:15px; margin-bottom:20px;'>
@@ -1316,19 +1315,31 @@ if st.session_state.page == "تقارير":
 
         if st.button("🔍 عرض بيان الدعاوى المتداولة", use_container_width=True, type="primary", key="show1"):
             cases = [c for c in data.get("cases", []) if c.get('حالة') == 'متداولة']
-            
+
             if cases:
                 cases = [c for c in cases if c.get('تاريخ_جلسة') and from_date <= datetime.strptime(c['تاريخ_جلسة'], '%Y-%m-%d').date() <= to_date]
-            if topic: 
+            if topic:
                 cases = [c for c in cases if topic in str(c.get('موضوع',''))]
             cases = sorted(cases, key=lambda x: x.get("تاريخ_جلسة","9999-12-31"), reverse=True)
 
-            report_header(region, f"بيان بالدعاوى المتداولة خلال الفترة من {from_date} حتى {to_date} طرف الاستاذ/ {lawyer} المحامي")
-            
+            title = f"بيان بالدعاوى المتداولة خلال الفترة من {from_date} حتى {to_date} طرف الاستاذ/ {lawyer} المحامي"
+            report_header(region, title)
+
             if not cases: st.warning("لا توجد دعاوى متداولة في الفترة المحددة")
             else:
-                df_export = pd.DataFrame(cases)
-                html = "<table class='case-table'><tr><th>م</th><th>رقم القضية</th><th>السنة القضائية</th><th>الدائرة والنوع</th><th>اسم المحكمة والمأمورية</th><th>الخصوم</th><th>موضوع الدعوى</th><th>اخر جلسة وسببها</th><th>ملاحظات</th></tr>"
+                # نعمل df مرتب للتصدير
+                export_data = []
+                for i, c in enumerate(cases, 1):
+                    export_data.append({
+                        "م": i, "رقم القضية": c.get('رقم',''), "السنة": c.get('سنة',''),
+                        "الدائرة": c.get('دائرة',''), "النوع": c.get('نوع',''), "المحكمة": c.get('محكمة_اسم',''),
+                        "المأمورية": c.get('مأمورية',''), "المدعي": c.get('مدعي',''), "المدعي عليه": c.get('مدعي_عليه',''),
+                        "الموضوع": c.get('موضوع',''), "تاريخ الجلسة": c.get('تاريخ_جلسة',''), "السبب": c.get('سبب',''), "ملاحظات": c.get('ملاحظات','')
+                    })
+                df_export = pd.DataFrame(export_data)
+
+                html = f"<div dir='rtl' style='font-family:Cairo'>"
+                html += "<table class='case-table'><tr><th>م</th><th>رقم القضية</th><th>السنة القضائية</th><th>الدائرة والنوع</th><th>اسم المحكمة والمأمورية</th><th>الخصوم</th><th>موضوع الدعوى</th><th>اخر جلسة وسببها</th><th>ملاحظات</th></tr>"
                 for i, c in enumerate(cases, 1):
                     محكمة = f"{c.get('محكمة_اسم','')}"
                     if c.get('مأمورية'): محكمة += f"<br>مأمورية {c.get('مأمورية')}"
@@ -1336,16 +1347,17 @@ if st.session_state.page == "تقارير":
                     خصوم = f"<div style='background:#FFF3CD; padding:5px; border-radius:5px; color:#000'><b>المدعى:</b> {c.get('مدعي','')}</div><div style='background:#CFF4FC; padding:5px; border-radius:5px; color:#000'><b>المدعى عليه:</b> {c.get('مدعي_عليه','')}</div>"
                     جلسة = f"<b style='color:#FFD700'>{c.get('تاريخ_جلسة','')}</b><br>{c.get('سبب','')}"
                     html += f"<tr class='row1'><td>{i}</td><td>{c.get('رقم','')}</td><td>{c.get('سنة','')}</td><td>{دائرة}</td><td>{محكمة}</td><td>{خصوم}</td><td>{c.get('موضوع','')}</td><td>{جلسة}</td><td>{c.get('ملاحظات','')}</td></tr>"
-                html += "</table>"
+                html += "</table></div>"
                 st.markdown(f"<div class='table-container'>{html}</div>", unsafe_allow_html=True)
 
-                # ===== ازرار التصدير تحت التقرير =====
                 st.markdown("<hr>", unsafe_allow_html=True)
-                c1, c2 = st.columns(2)
+                c1, c2, c3 = st.columns(3)
                 with c1:
                     st.download_button("⬇️ تحميل Excel", data=to_excel(df_export), file_name=f"بيان_المتداولة_{datetime.now().strftime('%Y%m%d')}.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True)
                 with c2:
-                    st.download_button("📄 تحميل HTML للطباعة", data=html.encode('utf-8'), file_name=f"بيان_المتداولة_{datetime.now().strftime('%Y%m%d')}.html", mime="text/html", use_container_width=True)
+                    st.download_button("📄 تحميل Word", data=to_word(export_data, title, region), file_name=f"بيان_المتداولة_{datetime.now().strftime('%Y%m%d')}.docx", mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document", use_container_width=True)
+                with c3:
+                    st.download_button("🖨️ تحميل HTML للطباعة", data=html.encode('utf-8'), file_name=f"بيان_المتداولة_{datetime.now().strftime('%Y%m%d')}.html", mime="text/html", use_container_width=True)
 
             st.markdown(f"<p style='text-align:right; color:#D4AF37; margin-top:30px; font-size:16px;'>تفضلوا بقبول وافر الاحترام<br><br>عضو الادارة.................. مدير الإدارة..................<br>تحرر في {datetime.now().strftime('%Y-%m-%d')}</p>", unsafe_allow_html=True)
 
@@ -1363,22 +1375,33 @@ if st.session_state.page == "تقارير":
 
         if st.button("🔍 عرض بيان الاحكام", use_container_width=True, type="primary", key="show2"):
             cases = [c for c in data.get("cases", []) if c.get('حالة') == 'منتهية' and c.get('مسندة_ل_الحكم') in ['الصالح','الضد']]
-            
+
             if الحكم_نوع == "الاحكام للصالح": cases = [c for c in cases if c.get('مسندة_ل_الحكم') == 'الصالح']
             if الحكم_نوع == "الاحكام للضد": cases = [c for c in cases if c.get('مسندة_ل_الحكم') == 'الضد']
-            
+
             if cases:
                 cases = [c for c in cases if c.get('تاريخ_الحكم') and from_date2 <= datetime.strptime(c['تاريخ_الحكم'], '%Y-%m-%d').date() <= to_date2]
-            if topic2: 
+            if topic2:
                 cases = [c for c in cases if topic2 in str(c.get('موضوع',''))]
             cases = sorted(cases, key=lambda x: x.get("تاريخ_الحكم","9999-12-31"), reverse=True)
 
-            report_header(region2, f"بيان ب{الحكم_نوع} خلال الفترة من {from_date2} حتى {to_date2} طرف الاستاذ/ {lawyer2} المحامي")
+            title = f"بيان ب{الحكم_نوع} خلال الفترة من {from_date2} حتى {to_date2} طرف الاستاذ/ {lawyer2} المحامي"
+            report_header(region2, title)
 
             if not cases: st.warning("لا توجد احكام في الفترة المحددة")
             else:
-                df_export = pd.DataFrame(cases)
-                html = "<table class='case-table'><tr><th>م</th><th>رقم القضية</th><th>السنة القضائية</th><th>الدائرة والنوع</th><th>اسم المحكمة والمأمورية</th><th>الخصوم</th><th>موضوع الدعوى</th><th>تاريخ جلسة الحكم</th><th>منطوق الحكم</th><th>النتيجة</th><th>ملاحظات</th></tr>"
+                export_data = []
+                for i, c in enumerate(cases, 1):
+                    export_data.append({
+                        "م": i, "رقم القضية": c.get('رقم',''), "السنة": c.get('سنة',''),
+                        "الدائرة": c.get('دائرة',''), "النوع": c.get('نوع',''), "المحكمة": c.get('محكمة_اسم',''),
+                        "المأمورية": c.get('مأمورية',''), "المدعي": c.get('مدعي',''), "المدعي عليه": c.get('مدعي_عليه',''),
+                        "الموضوع": c.get('موضوع',''), "تاريخ الحكم": c.get('تاريخ_الحكم',''), "منطوق الحكم": c.get('منطوق_الحكم',''), "النتيجة": c.get('مسندة_ل_الحكم',''), "ملاحظات": c.get('ملاحظات','')
+                    })
+                df_export = pd.DataFrame(export_data)
+
+                html = f"<div dir='rtl' style='font-family:Cairo'>"
+                html += "<table class='case-table'><tr><th>م</th><th>رقم القضية</th><th>السنة القضائية</th><th>الدائرة والنوع</th><th>اسم المحكمة والمأمورية</th><th>الخصوم</th><th>موضوع الدعوى</th><th>تاريخ جلسة الحكم</th><th>منطوق الحكم</th><th>النتيجة</th><th>ملاحظات</th></tr>"
                 for i, c in enumerate(cases, 1):
                     محكمة = f"{c.get('محكمة_اسم','')}"
                     if c.get('مأمورية'): محكمة += f"<br>مأمورية {c.get('مأمورية')}"
@@ -1386,16 +1409,17 @@ if st.session_state.page == "تقارير":
                     خصوم = f"<div style='background:#FFF3CD; padding:5px; border-radius:5px; color:#000'><b>المدعى:</b> {c.get('مدعي','')}</div><div style='background:#CFF4FC; padding:5px; border-radius:5px; color:#000'><b>المدعى عليه:</b> {c.get('مدعي_عليه','')}</div>"
                     لون = "#4CAF50" if c.get('مسندة_ل_الحكم') == 'الصالح' else "#FF5252"
                     html += f"<tr class='row-judgment'><td>{i}</td><td>{c.get('رقم','')}</td><td>{c.get('سنة','')}</td><td>{دائرة}</td><td>{محكمة}</td><td>{خصوم}</td><td>{c.get('موضوع','')}</td><td><b style='color:#FFD700'>{c.get('تاريخ_الحكم','')}</b></td><td>{c.get('منطوق_الحكم','')}</td><td style='color:{لون}; font-weight:900; font-size:16px'>{c.get('مسندة_ل_الحكم','')}</td><td>{c.get('ملاحظات','')}</td></tr>"
-                html += "</table>"
+                html += "</table></div>"
                 st.markdown(f"<div class='table-container'>{html}</div>", unsafe_allow_html=True)
 
-                # ===== ازرار التصدير تحت التقرير =====
                 st.markdown("<hr>", unsafe_allow_html=True)
-                c1, c2 = st.columns(2)
+                c1, c2, c3 = st.columns(3)
                 with c1:
                     st.download_button("⬇️ تحميل Excel", data=to_excel(df_export), file_name=f"بيان_الاحكام_{datetime.now().strftime('%Y%m%d')}.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True)
                 with c2:
-                    st.download_button("📄 تحميل HTML للطباعة", data=html.encode('utf-8'), file_name=f"بيان_الاحكام_{datetime.now().strftime('%Y%m%d')}.html", mime="text/html", use_container_width=True)
+                    st.download_button("📄 تحميل Word", data=to_word(export_data, title, region2), file_name=f"بيان_الاحكام_{datetime.now().strftime('%Y%m%d')}.docx", mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document", use_container_width=True)
+                with c3:
+                    st.download_button("🖨️ تحميل HTML للطباعة", data=html.encode('utf-8'), file_name=f"بيان_الاحكام_{datetime.now().strftime('%Y%m%d')}.html", mime="text/html", use_container_width=True)
 
             st.markdown(f"<p style='text-align:right; color:#FF5252; margin-top:30px; font-size:16px;'>تفضلوا بقبول وافر الاحترام<br><br>عضو الادارة.................. مدير الإدارة..................<br>تحر في {datetime.now().strftime('%Y-%m-%d')}</p>", unsafe_allow_html=True)
 
@@ -1407,7 +1431,7 @@ if st.session_state.page == "تقارير":
         with col1: stat_from = st.date_input("من تاريخ", key="s1")
         with col2: stat_to = st.date_input("حتى تاريخ", key="s2")
         st.markdown("</div>", unsafe_allow_html=True)
-        
+
         if st.button("استخراج الإحصائيات", use_container_width=True, type="primary"):
             all_cases = data.get("cases", [])
             متداولة = [c for c in all_cases if c.get('حالة') == 'متداولة' and c.get('تاريخ_جلسة') and stat_from <= datetime.strptime(c['تاريخ_جلسة'], '%Y-%m-%d').date() <= stat_to]
