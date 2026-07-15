@@ -1,4 +1,3 @@
-# ========================================
 # ============ الجزء الاول: الاساسيات ============
 # ================================================
 import streamlit as st
@@ -8,15 +7,22 @@ import os
 import io
 import smtplib
 import secrets
+import arabic_reshaper # جديد
+from bidi.algorithm import get_display # جديد
 from datetime import datetime, timedelta
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from docx import Document
 from docx.shared import Pt
 from docx.enum.text import WD_ALIGN_PARAGRAPH
-from fpdf import FPDF # جديد للـ PDF
+from fpdf import FPDF
 
 st.set_page_config(page_title="إدارة القضايا", layout="wide", page_icon="⚖️")
+
+# دالة عشان تظبط العربي وتوصله
+def fix_arabic(text):
+    reshaped_text = arabic_reshaper.reshape(str(text))
+    return get_display(reshaped_text)
 
 # ====== دالة التصدير للاكسل RTL صح ======
 def to_excel(df):
@@ -32,27 +38,30 @@ def to_excel(df):
 # ====== دالة التصدير للورد ======
 def to_word(df, title, region):
     doc = Document()
-    doc.add_heading('الهيئة القومية للتأمين الاجتماعى', 0).alignment = WD_ALIGN_PARAGRAPH.CENTER
-    doc.add_heading('الإدارة المركزية للإدارات القانونية', 1).alignment = WD_ALIGN_PARAGRAPH.CENTER
-    doc.add_heading('الإدارة العامة للقضايا', 1).alignment = WD_ALIGN_PARAGRAPH.CENTER
-    doc.add_heading(f'ديوان عام {region}', 1).alignment = WD_ALIGN_PARAGRAPH.CENTER
-    doc.add_heading(title, 2).alignment = WD_ALIGN_PARAGRAPH.CENTER
+    doc.add_heading(fix_arabic('الهيئة القومية للتأمين الاجتماعى'), 0).alignment = WD_ALIGN_PARAGRAPH.CENTER
+    doc.add_heading(fix_arabic('الإدارة المركزية للإدارات القانونية'), 1).alignment = WD_ALIGN_PARAGRAPH.CENTER
+    doc.add_heading(fix_arabic('الإدارة العامة للقضايا'), 1).alignment = WD_ALIGN_PARAGRAPH.CENTER
+    doc.add_heading(fix_arabic(f'ديوان عام {region}'), 1).alignment = WD_ALIGN_PARAGRAPH.CENTER
+    doc.add_heading(fix_arabic(title), 2).alignment = WD_ALIGN_PARAGRAPH.CENTER
     doc.add_paragraph()
+
+    # نعكس الاعمدة في الورد كمان
+    df = df.iloc[:, ::-1]
 
     table = doc.add_table(rows=1, cols=len(df.columns))
     table.style = 'Table Grid'
     hdr_cells = table.rows[0].cells
     for i, col_name in enumerate(df.columns):
-        hdr_cells[i].text = col_name
+        hdr_cells[i].text = fix_arabic(col_name)
         hdr_cells[i].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
 
     for _, row in df.iterrows():
         row_cells = table.add_row().cells
         for i, val in enumerate(row):
-            row_cells[i].text = str(val)
+            row_cells[i].text = fix_arabic(val)
             row_cells[i].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
 
-    doc.add_paragraph(f'\nتفضلوا بقبول وافر الاحترام\n\nعضو الادارة.................. مدير الإدارة..................\nتحر في {datetime.now().strftime("%Y-%m-%d")}')
+    doc.add_paragraph(fix_arabic(f'\nتفضلوا بقبول وافر الاحترام\n\nعضو الادارة.................. مدير الإدارة..................\nتحر في {datetime.now().strftime("%Y-%m-%d")}'))
     output = io.BytesIO()
     doc.save(output)
     return output.getvalue()
@@ -61,31 +70,41 @@ def to_word(df, title, region):
 def to_pdf(df, title, region):
     pdf = FPDF(orientation='L', unit='mm', format='A4') # عرض
     pdf.add_page()
-    pdf.add_font('Cairo', '', 'Cairo-Regular.ttf', uni=True) # لازم تحمل الخط وتحطه جنب app.py
-    pdf.set_font('Cairo', '', 12)
+    pdf.add_font('Cairo', '', 'Cairo-Regular.ttf', uni=True)
 
-    pdf.cell(0, 10, 'الهيئة القومية للتأمين الاجتماعى', 0, 1, 'C')
-    pdf.cell(0, 10, 'الإدارة المركزية للإدارات القانونية', 0, 1, 'C')
-    pdf.cell(0, 10, 'الإدارة العامة للقضايا', 0, 1, 'C')
-    pdf.cell(0, 10, f'ديوان عام {region}', 0, 1, 'C')
-    pdf.ln(5)
+    # الهيدر
     pdf.set_font('Cairo', '', 14)
-    pdf.cell(0, 10, title, 0, 1, 'C')
-    pdf.ln(5)
+    pdf.cell(0, 8, fix_arabic('الهيئة القومية للتأمين الاجتماعى'), 0, 1, 'C')
+    pdf.cell(0, 8, fix_arabic('الإدارة المركزية للإدارات القانونية'), 0, 1, 'C')
+    pdf.cell(0, 8, fix_arabic('الإدارة العامة للقضايا'), 0, 1, 'C')
+    pdf.cell(0, 8, fix_arabic(f'ديوان عام {region}'), 0, 1, 'C')
+    pdf.ln(3)
+    pdf.set_font('Cairo', '', 12)
+    pdf.cell(0, 8, fix_arabic(title), 0, 1, 'C')
+    pdf.ln(3)
 
-    # الجدول
+    # نعكس الاعمدة عشان الجدول يطلع من اليمين للشمال
+    df = df.iloc[:, ::-1]
+
+    # الجدول - صغرنا الخط لـ 7
+    pdf.set_font('Cairo', '', 7)
     col_width = pdf.w / (len(df.columns) + 1)
-    pdf.set_font('Cairo', '', 10)
+    # الهيدر
     for col in df.columns:
-        pdf.cell(col_width, 10, col, 1, 0, 'C')
+        pdf.cell(col_width, 7, fix_arabic(col), 1, 0, 'C')
     pdf.ln()
+    # البيانات
     for _, row in df.iterrows():
         for item in row:
-            pdf.cell(col_width, 10, str(item), 1, 0, 'C')
+            pdf.cell(col_width, 7, fix_arabic(item), 1, 0, 'C')
         pdf.ln()
 
-    pdf.ln(10)
-    pdf.cell(0, 10, f'تفضلوا بقبول وافر الاحترام', 0, 1, 'R')
+    pdf.ln(5)
+    pdf.set_font('Cairo', '', 11)
+    pdf.cell(0, 8, fix_arabic('تفضلوا بقبول وافر الاحترام'), 0, 1, 'R')
+    pdf.cell(0, 8, fix_arabic('عضو الادارة.................. مدير الإدارة..................'), 0, 1, 'R')
+    pdf.cell(0, 8, fix_arabic(f'تحر في {datetime.now().strftime("%Y-%m-%d")}'), 0, 1, 'R')
+
     return bytes(pdf.output())
 
 def load_data():
@@ -93,39 +112,7 @@ def load_data():
         with open("data.json", "r", encoding="utf-8") as f:
             return json.load(f)
     return {"cases": [], "library": [], "tasks": [], "users": []}
-# ============= التصميم النهائي =======
-st.markdown("""
-<style>
-    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap');
-    * { font-family: 'Cairo', sans-serif !important; }
-    html, body { direction: rtl; color: #FFFFFF !important; }
-    .stApp { background: linear-gradient(180deg, #0A1428 0%, #1E2A47 100%); }
-    
-    .marquee {
-        background: linear-gradient(90deg, #D4AF37 0%, #FFD700 50%, #D4AF37 100%);
-        color: #0A1428; padding: 12px; font-weight: 900; font-size: 16px;
-        white-space: nowrap; overflow: hidden; border-radius: 0 0 15px 15px;
-        text-align: center;
-    }
-    
-    .main-title { color: #D4AF37; text-align: center; font-size: 36px; font-weight: 900; padding: 15px 0; }
-    
-    .stButton > button {
-        color: #000 !important; font-weight: 900 !important; font-size: 18px !important;
-        border: none !important; border-radius: 15px !important; padding: 16px !important;
-        width: 100% !important; max-width: 400px !important; margin: 10px auto !important;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.4) !important; display: block;
-        background-color: #FFFFFF !important;
-    }
-    
-    .case-table { width:100%; color:#FFFFFF; text-align:center; border-collapse: collapse; }
-    .case-table th { background:#D4AF37; color:#0A1428; padding:8px; font-weight:900; }
-    .case-table td { padding:8px; border-bottom: 1px solid #D4AF37; }
-    .table-container { background:#1E2A47; padding:10px; border-radius:15px; border:2px solid #D4AF37; margin-bottom:15px; }
-    .row1 { background: #142038; }
-    .row-judgment { background: #2C2F33; }
-</style>
-""", unsafe_allow_html=True)
+# ============= التصميم النهائي ==
 # ============= التصميم النهائي =============
 st.markdown("""
 <style>
