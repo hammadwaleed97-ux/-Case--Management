@@ -1085,17 +1085,6 @@ elif st.session_state.page == "المكتبة":
         for k in ["selected_section", "show_upload", "search_filters"]:
             st.session_state.pop(k, None)
         st.rerun()
-  # #  == 
-    import streamlit as st
-import pandas as pd
-import json
-import os
-from datetime import datetime
-from io import BytesIO
-from docx import Document
-from docx.enum.text import WD_ALIGN_PARAGRAPH
-from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import A4
 
 st.set_page_config(page_title="ادارة القضايا", layout="wide")
 
