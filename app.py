@@ -373,7 +373,7 @@ if st.session_state.page == "الرئيسية":
             "</div>",
             unsafe_allow_html=True
                 )
-        # ================================
+        # ===============================
 # ========= الجزء الثاني: تسجيل القضية ============
 elif st.session_state.page == "تسجيل":
     data = load_data()
@@ -386,7 +386,7 @@ elif st.session_state.page == "تسجيل":
     st.markdown("<label style='color:#FFF; font-weight:700; text-align:right; width:100%; display:block;'>نوع القضية</label>", unsafe_allow_html=True)
     نوع = st.selectbox("", ["دعوى", "استئناف", "طعن"], key="case_type_add")
     
-    with st.form("form_case_add"):
+    with st.form("form_case_add", clear_on_submit=True):  # <-- ضفت clear_on_submit هنا
         # 1- بيانات المحكمة
         st.markdown("<div style='background:#1E2A47; padding:15px; border-radius:15px; border:2px solid #D4AF37; margin-bottom:15px'>", unsafe_allow_html=True)
         st.markdown("<div style='color:#D4AF37; font-size:20px; font-weight:900; text-align:center; margin-bottom:10px'>1- بيانات المحكمة</div>", unsafe_allow_html=True)
@@ -426,7 +426,6 @@ elif st.session_state.page == "تسجيل":
             if not رقم or not سنة: 
                 st.error("❌ من فضلك ادخل رقم القضية والسنة")
             else:
-                # بيعمل الصحيفة ويحفظها اوتوماتيك
                 case_for_pdf = {"نوع":نوع,"رقم":رقم,"سنة":سنة,"دائرة":دائرة,"محكمة_اسم":محكمة_اسم,"مدعي":مدعي,"مدعي_عليه":مدعي_عليه,"موضوع":موضوع,"تاريخ_جلسة":str(تاريخ_جلسة)}
                 paper_path = create_paper_pdf(case_for_pdf)
 
@@ -442,8 +441,12 @@ elif st.session_state.page == "تسجيل":
                 data["cases"].append(new_case)
                 save_data(data)
                 
-                # الرسالة اللي طلبتها
                 st.success(f"✅ تم الحفظ ونقلت الى الحصر العام")
+                
+                # دول السطرين الجداد بس
+                st.session_state.page = "الحصر"  # 1- يوديك على الحصر
+                st.rerun() # 2- يفضي الفورم
+# ==============================================
 # ==============================================
 # ===============================================
 # ========== الجزء الثالث: الحصر العام ============
