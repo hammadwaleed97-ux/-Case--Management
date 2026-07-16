@@ -373,8 +373,7 @@ if st.session_state.page == "الرئيسية":
             "</div>",
             unsafe_allow_html=True
                 )
-        # ==========================================
-# ========================================
+        # =====================================
 # ========= الجزء الثاني: تسجيل القضايا - الدهبي بس ============
 elif st.session_state.page == "تسجيل":
     data = load_data()
@@ -431,16 +430,19 @@ elif st.session_state.page == "تسجيل":
                 case_for_pdf = {"نوع":نوع,"رقم":رقم,"سنة":سنة,"دائرة":دائرة,"محكمة_اسم":محكمة_اسم,"مدعي":مدعي,"مدعي_عليه":مدعي_عليه,"موضوع":موضوع,"تاريخ_جلسة":str(تاريخ_جلسة),"مسندة_ل":مسندة_ل}
                 paper_path = create_paper_pdf(case_for_pdf)
 
-                # بيحفظ البيانات
+                # بيحفظ البيانات في الحصر العام
                 new_case = {"id": len(data["cases"])+1, "نوع": نوع, "محكمة_اسم": محكمة_اسم, "مأمورية": مأمورية, "رقم": رقم, "سنة": سنة, "دائرة": دائرة, "مدعي": مدعي, "مدعي_عليه": مدعي_عليه, "موضوع": موضوع, "تاريخ_جلسة": str(تاريخ_جلسة), "الرول": الرول, "سبب": سبب, "ملاحظات": ملاحظات, "جلسات": [], "مستندات": [paper_path], "حالة": "متداولة", "مسندة_ل": مسندة_ل}
                 if الرول or سبب: new_case["جلسات"].append({"تاريخ":str(تاريخ_جلسة),"الرول":الرول,"سبب":سبب,"ملاحظات":ملاحظات})
                 data["cases"].append(new_case); save_data(data)
                 
                 st.success(f"✅ تم حفظ القضية رقم {رقم} لسنة {سنة}")
-                
-                # ===== ده التعديل الوحيد =====
-                with open(paper_path, "rb") as f:
-                    st.download_button("📄 تحميل صحيفة الدعوى", data=f, file_name=os.path.basename(paper_path), mime="application/pdf", use_container_width=True)
+                st.session_state.paper_path = paper_path # خزن المسار عشان الزرار
+
+# ===== زرار التحميل بره الفورم =====
+if "paper_path" in st.session_state and st.session_state.paper_path:
+    with open(st.session_state.paper_path, "rb") as f:
+        st.download_button("📄 تحميل صحيفة الدعوى", data=f, file_name=os.path.basename(st.session_state.paper_path), mime="application/pdf", use_container_width=True)
+# ==============================================
 # ==============================================
 # ===============================================
 # ========== الجزء الثالث: الحصر العام ============
