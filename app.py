@@ -373,7 +373,7 @@ if st.session_state.page == "الرئيسية":
             "</div>",
             unsafe_allow_html=True
                 )
-        # =================================
+        # ================================
 # ========= الجزء الثاني: تسجيل القضايا - الدهبي بس ============
 elif st.session_state.page == "تسجيل":
     data = load_data()
@@ -381,6 +381,7 @@ elif st.session_state.page == "تسجيل":
     st.markdown("<h2 style='color:#D4AF37; text-align:center'>➕ تسجيل القضايا</h2>", unsafe_allow_html=True)
     if st.button("⬅️ العودة للرئيسية", key="back_add", use_container_width=True):
         st.session_state.page = "الرئيسية"
+        st.session_state.paper_path_temp = None # نمسح المسار القديم
         st.rerun()
 
     st.markdown("<label style='color:#FFF; font-weight:700; text-align:right; width:100%; display:block;'>نوع الدعوى</label>", unsafe_allow_html=True)
@@ -424,24 +425,21 @@ elif st.session_state.page == "تسجيل":
 
         col1, col2 = st.columns(2)
         with col1:
-            generate_btn = st.form_submit_button("📄 تحميل صحيفة الدعوى", use_container_width=True)
+            generate_btn = st.form_submit_button("📄 انشاء صحيفة الدعوى", use_container_width=True)
         with col2:
             save_btn = st.form_submit_button("💾 حفظ القضية", use_container_width=True, type="primary")
 
-        paper_path = None
+        # زرار الانشاء بيشتغل جوه الفورم
         if generate_btn:
             if not رقم or not سنة: st.error("❌ من فضلك ادخل رقم الدعوى والسنة الاول")
             else:
                 case_for_pdf = {"نوع":نوع,"رقم":رقم,"سنة":سنة,"دائرة":دائرة,"محكمة_اسم":محكمة_اسم,"مدعي":مدعي,"مدعي_عليه":مدعي_عليه,"موضوع":موضوع,"تاريخ_جلسة":str(تاريخ_جلسة),"مسندة_ل":مسندة_ل}
-                paper_path = create_paper_pdf(case_for_pdf)
-                with open(paper_path, "rb") as f:
-                    st.download_button("⬇️ اضغط للتحميل", data=f, file_name=os.path.basename(paper_path), mime="application/pdf", use_container_width=True)
-                st.info("✅ تم انشاء الصحيفة. راجعها وبعدين دوس حفظ القضية")
+                st.session_state.paper_path_temp = create_paper_pdf(case_for_pdf)
+                st.info("✅ تم انشاء الصحيفة. نزلها تحت وبعدين دوس حفظ القضية")
 
         if save_btn:
             if not رقم or not سنة: st.error("❌ من فضلك ادخل رقم الدعوى والسنة")
             else:
-                # بيعمل الصحيفة ويحفظها في الحصر
                 case_for_pdf = {"نوع":نوع,"رقم":رقم,"سنة":سنة,"دائرة":دائرة,"محكمة_اسم":محكمة_اسم,"مدعي":مدعي,"مدعي_عليه":مدعي_عليه,"موضوع":موضوع,"تاريخ_جلسة":str(تاريخ_جلسة),"مسندة_ل":مسندة_ل}
                 paper_path = create_paper_pdf(case_for_pdf)
 
@@ -449,6 +447,12 @@ elif st.session_state.page == "تسجيل":
                 if الرول or سبب: new_case["جلسات"].append({"تاريخ":str(تاريخ_جلسة),"الرول":الرول,"سبب":سبب,"ملاحظات":ملاحظات})
                 data["cases"].append(new_case); save_data(data)
                 st.success(f"✅ تم حفظ القضية رقم {رقم} لسنة {سنة} وانتقلت للحصر العام")
+                st.session_state.paper_path_temp = None
+
+# ===== زرار التحميل بره الفورم =====
+if "paper_path_temp" in st.session_state and st.session_state.paper_path_temp:
+    with open(st.session_state.paper_path_temp, "rb") as f:
+        st.download_button("⬇️ تحميل صحيفة الدعوى", data=f, file_name=os.path.basename(st.session_state.paper_path_temp), mime="application/pdf", use_container_width=True)
 # ==============================================
 # ===============================================
 # ========== الجزء الثالث: الحصر العام ============
