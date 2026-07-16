@@ -583,6 +583,7 @@ if st.session_state.page == "الرئيسية":
             unsafe_allow_html=True
                 )
         # ==========================================
+# ==========================================
 # ========= الجزء الثاني: تسجيل القضايا ============
 # ================================================
 elif st.session_state.page == "تسجيل":
@@ -593,7 +594,10 @@ elif st.session_state.page == "تسجيل":
         st.session_state.page = "الرئيسية"
         st.rerun()
 
-    نوع = st.selectbox("نوع الدعوى", ["دعوى", "استئناف", "طعن"], key="case_type_add")
+    # خليت اللون ابيض عشان يظهر
+    st.markdown("<label style='color:#FFF; font-weight:700;'>نوع الدعوى</label>", unsafe_allow_html=True)
+    نوع = st.selectbox("", ["دعوى", "استئناف", "طعن"], key="case_type_add")
+    
     with st.form("form_case_add"):
         st.markdown("<div style='background:#1E2A47; padding:15px; border-radius:15px; border:2px solid #D4AF37; margin-bottom:15px'>", unsafe_allow_html=True)
         st.markdown("<div style='color:#D4AF37; font-size:20px; font-weight:900; text-align:center; margin-bottom:10px'>1- بيانات المحكمة</div>", unsafe_allow_html=True)
