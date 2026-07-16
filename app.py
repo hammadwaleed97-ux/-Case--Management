@@ -1277,7 +1277,6 @@ elif st.session_state.page == "المكتبة":
         for k in ["selected_section", "show_upload", "search_filters"]:
             st.session_state.pop(k, None)
         st.rerun()
-        # ===================التقارير======================
         elif st.session_state.page == "تقارير":
     data = load_data()
     all_cases = data.get("cases", [])
