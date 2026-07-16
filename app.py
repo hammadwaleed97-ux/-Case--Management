@@ -1149,7 +1149,7 @@ def to_pdf(df, title, region, member, manager, general):
     return buffer.getvalue()
 
 
-elif st.session_state.page == "تقارير":
+if st.session_state.page == "تقارير":
     data = load_data()
     all_cases = data.get("cases", [])
 
