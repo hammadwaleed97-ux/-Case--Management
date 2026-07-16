@@ -464,12 +464,27 @@ elif st.session_state.page == "الحصر":
             if "مستندات" not in case: case["مستندات"] = []
 
         save_data(data)
+
+        # ======= الجزء الجديد: تحديث اخر جلسة من جوه القضية =======
+        for case in data["cases"]:
+            if "جلسات" in case and case["جلسات"]: # لو في جلسات متسجلة جوه
+                # رتب الجلسات بالتاريخ من الاحدث
+                جلسات_مرتبة = sorted(case["جلسات"], key=lambda x: x.get("تاريخ","9999-12-31"), reverse=True)
+                اخر_جلسة = جلسات_مرتبة[0]
+                # حدث بيانات القضية بره
+                case["تاريخ_جلسة"] = اخر_جلسة.get("تاريخ","")
+                case["سبب"] = اخر_جلسة.get("السبب","")
+                case["الحالة"] = اخر_جلسة.get("الحالة", case.get("الحالة","متداولة"))
+
+        save_data(data) # احفظ التحديثات عشان الحصر يقراها
+        # ==========================================================
+
         sorted_cases = sorted(data["cases"], key=lambda x: x.get("تاريخ_جلسة","9999-12-31"))
         total = len(sorted_cases)
         today = datetime.now().date()
         this_week = len([c for c in sorted_cases if c.get('تاريخ_جلسة') and datetime.strptime(c['تاريخ_جلسة'],'%Y-%m-%d').date() <= today + timedelta(days=7)])
         ended = len([c for c in sorted_cases if c.get('حالة') == 'منتهية'])
-        
+
         st.markdown(f"<div style='background:#1E2A47; padding:20px; border-radius:15px; border:2px solid #D4AF37; text-align:center; margin-bottom:20px'>", unsafe_allow_html=True)
         col1, col2, col3 = st.columns(3)
         with col1: st.markdown(f"<div style='font-size:28px; font-weight:900; color:#D4AF37'>📊 {total}</div><div style='font-size:18px; color:#FFF; font-weight:700'>اجمالي القضايا</div>", unsafe_allow_html=True)
@@ -480,14 +495,14 @@ elif st.session_state.page == "الحصر":
         # CSS للجدول الجديد مصغر جدا
         st.markdown("""
         <style>
-        .case-table {width:100%; border-collapse: collapse; font-size:11px; color:white; text-align:center; margin-bottom:5px;}
-        .case-table th {background:#D4AF37; color:#0B1426; padding:6px; font-weight:900;}
-        .case-table td {background:#1E2A47; padding:6px; border:1px solid #D4AF37; vertical-align:top;}
-        .plaintiff {background:#FFF3CD; color:#000; font-weight:700; border-radius:6px; padding:6px; font-size:11px;}
-        .plaintiff-hey2a {background:#DC3545 !important; color:#FFF !important; font-weight:900; border-radius:6px; padding:6px; font-size:11px;}
-        .defendant {background:#CFF4FC; color:#000; font-weight:700; border-radius:6px; padding:6px; font-size:11px;}
-        .date-gold {color:#FFD700; font-weight:900;}
-        .status-green {color:#4CAF50; font-weight:900;}
+       .case-table {width:100%; border-collapse: collapse; font-size:11px; color:white; text-align:center; margin-bottom:5px;}
+       .case-table th {background:#D4AF37; color:#0B1426; padding:6px; font-weight:900;}
+       .case-table td {background:#1E2A47; padding:6px; border:1px solid #D4AF37; vertical-align:top;}
+       .plaintiff {background:#FFF3CD; color:#000; font-weight:700; border-radius:6px; padding:6px; font-size:11px;}
+       .plaintiff-hey2a {background:#DC3545!important; color:#FFF!important; font-weight:900; border-radius:6px; padding:6px; font-size:11px;}
+       .defendant {background:#CFF4FC; color:#000; font-weight:700; border-radius:6px; padding:6px; font-size:11px;}
+       .date-gold {color:#FFD700; font-weight:900;}
+       .status-green {color:#4CAF50; font-weight:900;}
         </style>
         """, unsafe_allow_html=True)
 
@@ -495,9 +510,9 @@ elif st.session_state.page == "الحصر":
             رقم_كامل = f"{case.get('رقم','')} لسنة {case.get('سنة','')}"
             محكمة_كاملة = f"{case.get('نوع','')} {case.get('محكمة_اسم','')}"
             if case.get('مأمورية',''): محكمة_كاملة += f"<br>مأمورية {case.get('مأمورية','')}"
-            دائرة_كاملة = f"{case.get('دائرة' , '' )}" if case.get('دائرة' , '' ) else ""
+            دائرة_كاملة = f"{case.get('دائرة', '' )}" if case.get('دائرة', '' ) else ""
             if دائرة_كاملة: محكمة_كاملة += f"<br>دائرة {دائرة_كاملة}"
-            
+
             # تغيير المسميات حسب النوع
             نوع = case.get('نوع','')
             if نوع == "استئناف":
@@ -512,7 +527,7 @@ elif st.session_state.page == "الحصر":
                 طرف1_html = f"<div class='plaintiff-hey2a'><b>{لقب1}</b><br>{case.get('مدعي','')}</div>"
             else:
                 طرف1_html = f"<div class='plaintiff'><b>{لقب1}</b><br>{case.get('مدعي','')}</div>"
-            
+
             طرف2_html = f"<div class='defendant'><b>{لقب2}</b><br>{case.get('مدعي_عليه','')}</div>"
             خصوم = طرف1_html + "<div style='height:4px'></div>" + طرف2_html
 
@@ -537,11 +552,10 @@ elif st.session_state.page == "الحصر":
             # زر الفتح تحت القضية مباشرة
             c1, c2, c3 = st.columns([4,1,4])
             with c2:
-                if st.button("فتح", key=f"open_{case['id']}", use_container_width=True): 
+                if st.button("فتح", key=f"open_{case['id']}", use_container_width=True):
                     st.session_state.selected_case_id = case['id']; st.session_state.page = "تفاصيل"; st.rerun()
 
-# ===============================================
-# ============================================
+# ==============================================
 # ================================================
 # ============ الجزء الرابع: تفاصيل القضية ============
 # ================================================
