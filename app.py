@@ -595,7 +595,7 @@ elif st.session_state.page == "تسجيل":
         st.rerun()
 
     # خليت اللون ابيض عشان يظهر
-    st.markdown("<label style='color:#FFF; font-weight:700;'>نوع الدعوى</label>", unsafe_allow_html=True)
+    st.markdown("<label style='color:#FFF; font-weight:700; text-align:right; width:100%; display:block;'>نوع الدعوى</label>", unsafe_allow_html=True)
     نوع = st.selectbox("", ["دعوى", "استئناف", "طعن"], key="case_type_add")
     
     with st.form("form_case_add"):
