@@ -1,4 +1,4 @@
-# =========== الجزء الاول: الاساسيات ============
+# ========= الجزء الاول: الاساسيات ============
 # ==============================================
 import streamlit as st
 import pandas as pd
@@ -45,8 +45,7 @@ def to_word(df, title, region):
     doc.add_heading(fix_arabic(title), 2).alignment = WD_ALIGN_PARAGRAPH.CENTER
     doc.add_paragraph()
 
-    # نعكس الاعمدة في الورد كمان
-    df = df.iloc[:, ::-1]
+    df = df.iloc[:, ::-1] # نعكس الاعمدة
 
     table = doc.add_table(rows=1, cols=len(df.columns))
     table.style = 'Table Grid'
@@ -61,7 +60,7 @@ def to_word(df, title, region):
             row_cells[i].text = fix_arabic(val)
             row_cells[i].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
 
-    doc.add_paragraph(fix_arabic(f'\nتفضلوا بقبول وافر الاحترام\n\nعضو الادارة.................. مدير الإدارة..................\nتحر في {datetime.now().strftime("%Y-%m-%d")}'))
+    doc.add_paragraph(fix_arabic(f'\nتفضلوا بقبول وافر الاحترام\nعضو الادارة.................. مدير الإدارة..................\nتحر في {datetime.now().strftime("%Y-%m-%d")}'))
     output = io.BytesIO()
     doc.save(output)
     return output.getvalue()
@@ -72,7 +71,6 @@ def to_pdf(df, title, region):
     pdf.add_page()
     pdf.add_font('Cairo', '', 'Cairo-Regular.ttf', uni=True)
 
-    # الهيدر
     pdf.set_font('Cairo', '', 14)
     pdf.cell(0, 8, fix_arabic('الهيئة القومية للتأمين الاجتماعى'), 0, 1, 'C')
     pdf.cell(0, 8, fix_arabic('الإدارة المركزية للإدارات القانونية'), 0, 1, 'C')
@@ -83,17 +81,13 @@ def to_pdf(df, title, region):
     pdf.cell(0, 8, fix_arabic(title), 0, 1, 'C')
     pdf.ln(3)
 
-    # نعكس الاعمدة عشان الجدول يطلع من اليمين للشمال
-    df = df.iloc[:, ::-1]
+    df = df.iloc[:, ::-1] # نعكس الاعمدة
 
-    # الجدول - صغرنا الخط لـ 7
     pdf.set_font('Cairo', '', 7)
     col_width = pdf.w / (len(df.columns) + 1)
-    # الهيدر
     for col in df.columns:
         pdf.cell(col_width, 7, fix_arabic(col), 1, 0, 'C')
     pdf.ln()
-    # البيانات
     for _, row in df.iterrows():
         for item in row:
             pdf.cell(col_width, 7, fix_arabic(item), 1, 0, 'C')
@@ -105,318 +99,86 @@ def to_pdf(df, title, region):
     pdf.cell(0, 8, fix_arabic('عضو الادارة.................. مدير الإدارة..................'), 0, 1, 'R')
     pdf.cell(0, 8, fix_arabic(f'تحر في {datetime.now().strftime("%Y-%m-%d")}'), 0, 1, 'R')
 
-    return bytes(pdf.output())
+    return bytes(pdf.output(dest='S')) # <-- التعديل المهم عشان التحميل
 
-def load_data():
-    if os.path.exists("data.json"):
-        with open("data.json", "r", encoding="utf-8") as f:
-            return json.load(f)
-    return {"cases": [], "library": [], "tasks": [], "users": []}
-# ============= التصميم النهائي ==
-# ============= التصميم النهائي =============
-st.markdown("""
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap');
+# ====== دالة حفظ صحيفة الدعوى ======
+def create_paper_pdf(case_data):
+    if not os.path.exists("papers"): os.makedirs("papers")
+    pdf = FPDF(orientation='P', unit='mm', format='A4')
+    pdf.add_page()
+    pdf.add_font('Cairo', '', 'Cairo-Regular.ttf', uni=True)
+    pdf.set_font('Cairo', '', 14); pdf.set_right_margin(15)
+    pdf.cell(0,10,fix_arabic(f"صحيفة {case_data.get('مسندة_ل','')}"),ln=1,align='R')
+    pdf.ln(5)
+    pdf.cell(0,10,fix_arabic(f"محكمة: {case_data.get('محكمة_اسم','')}"),ln=1,align='R')
+    pdf.cell(0,10,fix_arabic(f"رقم: {case_data.get('رقم','')} لسنة {case_data.get('سنة','')}"),ln=1,align='R')
+    pdf.cell(0,10,fix_arabic(f"المدعي: {case_data.get('مدعي','')}"),ln=1,align='R')
+    pdf.cell(0,10,fix_arabic(f"ضد: {case_data.get('مدعي_عليه','')}"),ln=1,align='R')
+    pdf.multi_cell(0,10,fix_arabic(f"الموضوع: {case_data.get('موضوع','')}"),align='R')
+    name = f"papers/صحيفة_{case_data.get('رقم')}_{case_data.get('سنة')}.pdf"; pdf.output(name); return name
 
-*{
-    font-family:'Cairo',sans-serif!important;
-}
-
-html,body{
-    direction:rtl;
-    color:#FFF!important;
-}
-
-.stApp{
-    background:linear-gradient(180deg,#0A1428 0%,#1E2A47 100%);
-}
-
-.marquee{
-    background:linear-gradient(90deg,#D4AF37,#FFD700,#D4AF37);
-    color:#0A1428;
-    padding:12px;
-    font-weight:900;
-    font-size:16px;
-    white-space:nowrap;
-    overflow:hidden;
-    border-radius:0 0 15px 15px;
-}
-
-.marquee span{
-    display:inline-block;
-    animation:marquee 15s linear infinite;
-}
-
-@keyframes marquee{
-0%{transform:translateX(-100%);}
-100%{transform:translateX(100%);}
-}
-
-.main-title{
-    color:#D4AF37;
-    text-align:center;
-    font-size:36px;
-    font-weight:900;
-    padding:15px 0;
-}
-
-h1,h2,h3{
-    color:#D4AF37!important;
-    text-align:center!important;
-}
-
-div[data-testid="column"]{
-    display:flex;
-    justify-content:center;
-}
-
-[data-testid="stForm"] label,
-.stMarkdown{
-    color:#FFF!important;
-    font-weight:700;
-}
-
-.stButton>button{
-    width:100%!important;
-    max-width:400px!important;
-    border:none!important;
-    border-radius:15px!important;
-    font-size:18px!important;
-    font-weight:900!important;
-    padding:16px!important;
-    color:#000!important;
-}
-</style>
-""", unsafe_allow_html=True)
-
-st.markdown("""
-<div class="marquee">
-<span>
-مع تحيات وليد حماد - الإدارة العامة للشئون القانونية
-بديوان عام منطقة البحيرة بالهيئة القومية للتأمين الاجتماعي
-</span>
-</div>
-""", unsafe_allow_html=True)
-
-st.markdown(
-    '<div class="main-title">⚖️ إدارة القضايا ⚖️</div>',
-    unsafe_allow_html=True
-)
-
-# ==================================================
-# المتغيرات العامة
-# ==================================================
-
+# ====== دالة التحميل والحفظ الوحيدة ======
 DATA_FILE = "cases_data.json"
-UPLOAD_FOLDER = "uploads"
 TOKENS_FILE = "tokens.json"
-
-ANWA3_MOSTANDAT = [
-    "صحيفة دعوى",
-    "صحيفة استئناف",
-    "صحيفة طعن",
-    "مذكرة دفاع",
-    "حافظة مستندات",
-    "تقرير خبير",
-    "تقرير طب شرعى",
-    "تقرير لجنة طبية",
-    "صحيفة تجديد من الشطب",
-    "صحيفة تعجيل من الوقف",
-    "صورة حكم تمهيدى",
-    "أخرى"
-]
-
-SENDER_EMAIL=""
-SENDER_PASSWORD=""
-APP_URL="https://qpyqpsmkqcvdou4imbfunp.streamlit.app/"
-
+UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER,exist_ok=True)
 
-if "page" not in st.session_state:
-    st.session_state.page="الرئيسية"
-
-if "selected_case_id" not in st.session_state:
-    st.session_state.selected_case_id=None
-
-
-# ==================================================
-# دوال التحميل والحفظ (تم إصلاحها)
-# ==================================================
-
 def load_data():
-
     if not os.path.exists(DATA_FILE):
-        return {
-            "cases":[],
-            "library":[]
-        }
-
+        return {"cases":[],"library":[]}
     try:
         with open(DATA_FILE,"r",encoding="utf-8") as f:
             data=json.load(f)
-
-        if not isinstance(data,dict):
-            data={}
-
+        if not isinstance(data,dict): data={}
         data.setdefault("cases",[])
         data.setdefault("library",[])
-
         return data
-
     except Exception:
-        return {
-            "cases":[],
-            "library":[]
-        }
-
+        return {"cases":[],"library":[]}
 
 def save_data(data):
-
     data.setdefault("cases",[])
     data.setdefault("library",[])
-
     with open(DATA_FILE,"w",encoding="utf-8") as f:
-        json.dump(
-            data,
-            f,
-            ensure_ascii=False,
-            indent=4
-        )
-
+        json.dump(data, f, ensure_ascii=False, indent=4)
 
 def load_tokens():
-
     if os.path.exists(TOKENS_FILE):
         try:
-            with open(TOKENS_FILE,"r",encoding="utf-8") as f:
-                return json.load(f)
-        except:
-            pass
-
+            with open(TOKENS_FILE,"r",encoding="utf-8") as f: return json.load(f)
+        except: pass
     return {"tokens":[]}
 
-
 def save_tokens(tokens_data):
-
     with open(TOKENS_FILE,"w",encoding="utf-8") as f:
-        json.dump(
-            tokens_data,
-            f,
-            ensure_ascii=False,
-            indent=4
-)
-        # ==================================================
-# دوال التنبيهات (تم إصلاحها)
-# ==================================================
+        json.dump(tokens_data, f, ensure_ascii=False, indent=4)
 
+# ====== دوال التنبيهات ======
 def get_alert_cases():
-
     data = load_data()
-
-    if not isinstance(data, dict):
-        data = {
-            "cases": [],
-            "library": []
-        }
-
     today = datetime.now().date()
-
     all_cases = data.get("cases", [])
-
-    alerts = {
-        "sessions": [],
-        "appeals": []
-    }
-
+    alerts = {"sessions": [], "appeals": []}
     for case in all_cases:
-
-        # ==================================
-        # تنبيهات الجلسات خلال 7 أيام
-        # ==================================
-        if (
-            case.get("حالة") == "متداولة"
-            and case.get("تاريخ_جلسة")
-        ):
-
+        if case.get("حالة") == "متداولة" and case.get("تاريخ_جلسة"):
             try:
-
-                session_date = datetime.strptime(
-                    case["تاريخ_جلسة"],
-                    "%Y-%m-%d"
-                ).date()
-
-                days_left = (
-                    session_date - today
-                ).days
-
+                session_date = datetime.strptime(case["تاريخ_جلسة"], "%Y-%m-%d").date()
+                days_left = (session_date - today).days
                 if 0 <= days_left <= 7:
-
-                    case_copy = case.copy()
-                    case_copy["days_left"] = days_left
-
-                    alerts["sessions"].append(
-                        case_copy
-                    )
-
-            except Exception:
-                pass
-
-        # ==================================
-        # تنبيهات الطعون
-        # ==================================
-        if (
-            case.get("حالة") == "منتهية"
-            and case.get("مسندة_ل_الحكم") == "الضد"
-            and case.get("تاريخ_الحكم")
-        ):
-
+                    case_copy = case.copy(); case_copy["days_left"] = days_left; alerts["sessions"].append(case_copy)
+            except Exception: pass
+        if case.get("حالة") == "منتهية" and case.get("مسندة_ل_الحكم") == "الضد" and case.get("تاريخ_الحكم"):
             try:
-
-                judgment_date = datetime.strptime(
-                    case["تاريخ_الحكم"],
-                    "%Y-%m-%d"
-                ).date()
-
-                appeal_days = (
-                    40
-                    if case.get("نوع") == "دعوى"
-                    else 60
-                )
-
-                last_appeal_day = (
-                    judgment_date +
-                    timedelta(days=appeal_days)
-                )
-
-                notify_start = (
-                    last_appeal_day -
-                    timedelta(days=15)
-                )
-
-                days_left_appeal = (
-                    last_appeal_day - today
-                ).days
-
-                if (
-                    notify_start <= today <= last_appeal_day
-                    and days_left_appeal >= 0
-                ):
-
-                    case_copy = case.copy()
-
-                    case_copy[
-                        "days_left_appeal"
-                    ] = days_left_appeal
-
-                    alerts["appeals"].append(
-                        case_copy
-                    )
-
-            except Exception:
-                pass
-
+                judgment_date = datetime.strptime(case["تاريخ_الحكم"], "%Y-%m-%d").date()
+                appeal_days = 40 if case.get("نوع") == "دعوى" else 60
+                last_appeal_day = judgment_date + timedelta(days=appeal_days)
+                notify_start = last_appeal_day - timedelta(days=15)
+                days_left_appeal = (last_appeal_day - today).days
+                if notify_start <= today <= last_appeal_day and days_left_appeal >= 0:
+                    case_copy = case.copy(); case_copy["days_left_appeal"] = days_left_appeal; alerts["appeals"].append(case_copy)
+            except Exception: pass
     return alerts
-    # ======= نهاية دوال التنبيهات =========
+
 LIBRARY_SECTIONS = {
     "القوانين": "#FF4500", "القرارات الوزارية": "#FF8C00", "قرارات الهيئة": "#FFD700",
     "المنشورات الوزارية": "#ADFF2F", "منشورات الهيئة": "#32CD32", "الكتب الدورية": "#20B2AA",
@@ -428,6 +190,35 @@ LIBRARY_SECTIONS = {
     "فتاوى الجمعية العمومية": "#7B68EE", "صحف طعون": "#6A5ACD", "صحف استئنافات": "#483D8B",
     "صحف دعاوى": "#E6E6FA", "مذكرات دفاع": "#FFF0F5", "أخرى": "#808080"
 }
+
+SENDER_EMAIL=""; SENDER_PASSWORD=""; APP_URL="https://qpyqpsmkqcvdou4imbfunp.streamlit.app/"
+ANWA3_MOSTANDAT = ["صحيفة دعوى","صحيفة استئناف","صحيفة طعن","مذكرة دفاع","حافظة مستندات","تقرير خبير","تقرير طب شرعى","تقرير لجنة طبية","صحيفة تجديد من الشطب","صحيفة تعجيل من الوقف","صورة حكم تمهيدى","أخرى"]
+
+if "page" not in st.session_state: st.session_state.page="الرئيسية"
+if "selected_case_id" not in st.session_state: st.session_state.selected_case_id=None
+
+# ============= التصميم النهائي =============
+st.markdown("""
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap');
+*{font-family:'Cairo',sans-serif!important;}
+html,body{direction:rtl;color:#FFF!important;}
+.stApp{background:linear-gradient(180deg,#0A1428 0%,#1E2A47 100%);}
+.marquee{background:linear-gradient(90deg,#D4AF37,#FFD700,#D4AF37);color:#0A1428;padding:12px;font-weight:900;font-size:16px;white-space:nowrap;overflow:hidden;border-radius:0 0 15px 15px;}
+.marquee span{display:inline-block;animation:marquee 15s linear infinite;}
+@keyframes marquee{0%{transform:translateX(-100%);}100%{transform:translateX(100%);}}
+.main-title{color:#D4AF37;text-align:center;font-size:36px;font-weight:900;padding:15px 0;}
+h1,h2,h3{color:#D4AF37!important;text-align:center!important;}
+div[data-testid="column"]{display:flex;justify-content:center;}
+[data-testid="stForm"] label,.stMarkdown{color:#FFF!important;font-weight:700;}
+.stButton>button{width:100%!important;max-width:400px!important;border:none!important;border-radius:15px!important;font-size:18px!important;font-weight:900!important;padding:16px!important;color:#000!important;}
+</style>
+""", unsafe_allow_html=True)
+
+st.markdown("""<div class="marquee"><span>مع تحيات وليد حماد - الإدارة العامة للشئون القانونية بديوان عام منطقة البحيرة بالهيئة القومية للتأمين الاجتماعي</span></div>""", unsafe_allow_html=True)
+st.markdown('<div class="main-title">⚖️ إدارة القضايا ⚖️</div>', unsafe_allow_html=True)
+
+# =========================================
 # =======================================
 # ==================================================
 # الصفحة الرئيسية
