@@ -444,7 +444,7 @@ elif st.session_state.page == "تسجيل":
                 st.success(f"✅ تم الحفظ بنجاح -ونقلت للحصر العام- جاهز لتسجيل قضية جديدة")
                 #
 # ==============================================
-# ===============================================
+# =============================================
 # ========== الجزء الثالث: الحصر العام ============
 # ================================================
 elif st.session_state.page == "الحصر":
@@ -453,14 +453,10 @@ elif st.session_state.page == "الحصر":
     st.markdown("<h2 style='color:#FFFFFF; text-align:center'>📊 الحصر العام الخارجي</h2>", unsafe_allow_html=True)
     if st.button("⬅️ العودة للرئيسية", use_container_width=True): st.session_state.page = "الرئيسية"; st.rerun()
 
-    # ======= السطرين الجداد دول بس =======
     if st.session_state.get('open_from_search', False):
         st.session_state.open_from_search = False
         st.info("جاري فتح القضية من البحث...")
-    # ======================================
 
-    # هنا باقي كود الحصر بتاعك زي ما هو
-    # ... عرض الجدول بتاع الحصر
     if not data["cases"]:
         st.info("لا توجد قضايا مسجلة")
     else:
@@ -482,27 +478,66 @@ elif st.session_state.page == "الحصر":
         with col3: st.markdown(f"<div style='font-size:28px; font-weight:900; color:#FF5252'>🚫 {ended}</div><div style='font-size:18px; color:#FFF; font-weight:700'>عدد المنتهية</div>", unsafe_allow_html=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
+        # CSS للجدول الجديد
+        st.markdown("""
+        <style>
+        .case-table {width:100%; border-collapse: collapse; font-size:12px; color:white; text-align:center; margin-bottom:15px;}
+        .case-table th {background:#D4AF37; color:#0B1426; padding:8px; font-weight:900;}
+        .case-table td {background:#1E2A47; padding:8px; border:1px solid #D4AF37; vertical-align:top;}
+        .plaintiff {background:#FFF3CD; color:#000; font-weight:700; border-radius:8px; padding:8px;}
+        .plaintiff-hey2a {background:#DC3545 !important; color:#FFF !important; font-weight:900; border-radius:8px; padding:8px;}
+        .defendant {background:#CFF4FC; color:#000; font-weight:700; border-radius:8px; padding:8px;}
+        .date-gold {color:#FFD700; font-weight:900;}
+        .status-green {color:#4CAF50; font-weight:900;}
+        </style>
+        """, unsafe_allow_html=True)
+
+        # رأس الجدول
+        table_html = "<table class='case-table'><tr>"
+        headers = ["م", "الرقم والسنة", "المحكمة والدائرة", "الخصوم", "الموضوع", "اخر جلسة", "السبب", "الحالة", "فتح"]
+        for h in headers:
+            table_html += f"<th>{h}</th>"
+        table_html += "</tr>"
+
         for idx, case in enumerate(sorted_cases, 1):
             رقم_كامل = f"{case.get('رقم','')} لسنة {case.get('سنة','')}"
             محكمة_كاملة = f"{case.get('نوع','')} {case.get('محكمة_اسم','')}"
             if case.get('مأمورية',''): محكمة_كاملة += f"<br>مأمورية {case.get('مأمورية','')}"
-            دائرة_كاملة = f"{case.get('دائرة','')} عمال" if case.get('دائرة','') else "" # <-- مرة واحدة بس
+            دائرة_كاملة = f"{case.get('دائرة','')} عمال" if case.get('دائرة','') else ""
             if دائرة_كاملة: محكمة_كاملة += f"<br>{دائرة_كاملة}"
-            خصوم = f"<div style='background:#FFF3CD; padding:8px; border-radius:8px; color:#000; margin-bottom:5px; text-align:center'><b>المدعى:</b><br>{case.get('مدعي','')}</div><div style='background:#CFF4FC; padding:8px; border-radius:8px; color:#000; text-align:center'><b>المدعى عليه:</b><br>{case.get('مدعي_عليه','')}</div>"
+            
+            # شرط اللون الاحمر للهيئة
+            if "الهيئة" in str(case.get('مدعي','')):
+                مدعي_html = f"<div class='plaintiff-hey2a'><b>المدعى:</b><br>{case.get('مدعي','')}</div>"
+            else:
+                مدعي_html = f"<div class='plaintiff'><b>المدعى:</b><br>{case.get('مدعي','')}</div>"
+            
+            مدعي_عليه_html = f"<div class='defendant'><b>المدعى عليه:</b><br>{case.get('مدعي_عليه','')}</div>"
+            خصوم = مدعي_html + "<div style='height:5px'></div>" + مدعي_عليه_html
 
-            if case.get('حالة') == 'منتهية': row_class = "row-judgment"
-            elif "الهيئة" in str(case.get('مدعي','')): row_class = "row-hey2a"
-            else: row_class = "row1" if idx % 2 == 1 else "row2"
+            table_html += f"<tr>"
+            table_html += f"<td>{idx}</td>"
+            table_html += f"<td>{رقم_كامل}</td>"
+            table_html += f"<td>{محكمة_كاملة}</td>"
+            table_html += f"<td>{خصوم}</td>"
+            table_html += f"<td>{case.get('موضوع','')}</td>"
+            table_html += f"<td class='date-gold'>{case.get('تاريخ_جلسة','')}</td>"
+            table_html += f"<td>{case.get('سبب','')}</td>"
+            table_html += f"<td class='status-green'>{case.get('حالة','متداولة')}</td>"
+            table_html += f"<td>"
+            table_html += f"</td></tr>"
+        
+        table_html += "</table>"
+        st.markdown(table_html, unsafe_allow_html=True)
 
-            st.markdown("<div class='table-container'>", unsafe_allow_html=True)
-            table_html = f"<table class='case-table'><tr><th>م</th><th>الرقم والسنة</th><th>المحكمة والدائرة</th><th>الخصوم</th><th>الموضوع</th><th>اخر جلسة</th><th>السبب</th><th>الحالة</th></tr><tr class='{row_class}'><td>{idx}</td><td>{رقم_كامل}</td><td>{محكمة_كاملة}</td><td>{خصوم}</td><td>{case.get('موضوع','')}</td><td style='color:#FFD700; font-weight:900'>{case.get('تاريخ_جلسة','')}</td><td>{case.get('سبب','')}</td><td style='color:#4CAF50; font-weight:900'>{case.get('حالة','متداولة')}</td></tr></table></div>"
-            st.markdown(table_html, unsafe_allow_html=True)
-
+        # ازرار الفتح تحت الجدول
+        for case in sorted_cases:
             c1, c2, c3 = st.columns([4,1,4])
             with c2:
                 if st.button("فتح", key=f"open_{case['id']}", use_container_width=True): 
                     st.session_state.selected_case_id = case['id']; st.session_state.page = "تفاصيل"; st.rerun()
 
+# ===============================================
 # ================================================
 # ============ الجزء الرابع: تفاصيل القضية ============
 # ================================================
