@@ -583,9 +583,7 @@ if st.session_state.page == "الرئيسية":
             unsafe_allow_html=True
                 )
         # ==========================================
-# ==========================================
-# ========= الجزء الثاني: تسجيل القضايا ============
-# ================================================
+# ========= الجزء الثاني: تسجيل القضايا - الدهبي بس ============
 elif st.session_state.page == "تسجيل":
     data = load_data()
     st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
@@ -594,16 +592,18 @@ elif st.session_state.page == "تسجيل":
         st.session_state.page = "الرئيسية"
         st.rerun()
 
-    # خليت اللون ابيض عشان يظهر
+    # نوع الدعوى في اليمين
     st.markdown("<label style='color:#FFF; font-weight:700; text-align:right; width:100%; display:block;'>نوع الدعوى</label>", unsafe_allow_html=True)
     نوع = st.selectbox("", ["دعوى", "استئناف", "طعن"], key="case_type_add")
     
     with st.form("form_case_add"):
+        # 1- بيانات المحكمة
         st.markdown("<div style='background:#1E2A47; padding:15px; border-radius:15px; border:2px solid #D4AF37; margin-bottom:15px'>", unsafe_allow_html=True)
         st.markdown("<div style='color:#D4AF37; font-size:20px; font-weight:900; text-align:center; margin-bottom:10px'>1- بيانات المحكمة</div>", unsafe_allow_html=True)
         محكمة_اسم = st.text_input("اسم المحكمة", key="court_name_add"); مأمورية = st.text_input("المأمورية", key="mamoria_add") if نوع == "استئناف" else ""
         st.markdown("</div>", unsafe_allow_html=True)
 
+        # 2- بيانات الدعوى
         st.markdown("<div style='background:#1E2A47; padding:15px; border-radius:15px; border:2px solid #D4AF37; margin-bottom:15px'>", unsafe_allow_html=True)
         st.markdown("<div style='color:#D4AF37; font-size:20px; font-weight:900; text-align:center; margin-bottom:10px'>2- بيانات الدعوى</div>", unsafe_allow_html=True)
         col1, col2 = st.columns(2)
@@ -611,6 +611,7 @@ elif st.session_state.page == "تسجيل":
         with col2: سنة = st.text_input("السنة القضائية", key="case_year_add")
         دائرة = st.text_input("الدائرة", key="circle_add"); st.markdown("</div>", unsafe_allow_html=True)
 
+        # 3- بيانات الخصوم
         st.markdown("<div style='background:#1E2A47; padding:15px; border-radius:15px; border:2px solid #D4AF37; margin-bottom:15px'>", unsafe_allow_html=True)
         st.markdown("<div style='color:#D4AF37; font-size:20px; font-weight:900; text-align:center; margin-bottom:10px'>3- بيانات الخصوم</div>", unsafe_allow_html=True)
         col1, col2 = st.columns(2)
@@ -618,6 +619,7 @@ elif st.session_state.page == "تسجيل":
         with col2: مدعي_عليه = st.text_input("اسم المدعى عليه / المستأنف ضده / المطعون ضده", key="defendant_add")
         موضوع = st.text_area("موضوع الدعوى", height=100, key="subject_add"); st.markdown("</div>", unsafe_allow_html=True)
 
+        # 4- بيانات الجلسة
         st.markdown("<div style='background:#1E2A47; padding:15px; border-radius:15px; border:2px solid #D4AF37; margin-bottom:15px'>", unsafe_allow_html=True)
         st.markdown("<div style='color:#D4AF37; font-size:20px; font-weight:900; text-align:center; margin-bottom:10px'>4- بيانات الجلسة</div>", unsafe_allow_html=True)
         col1, col2 = st.columns(2)
@@ -625,6 +627,7 @@ elif st.session_state.page == "تسجيل":
         with col2: الرول = st.text_input("الرول", key="roll_add")
         سبب = st.text_input("سبب الجلسة", key="reason_add"); ملاحظات = st.text_area("ملاحظات", height=100, key="notes_add"); st.markdown("</div>", unsafe_allow_html=True)
 
+        # 5- صحيفة الدعوى
         st.markdown("<div style='background:#1E2A47; padding:15px; border-radius:15px; border:2px solid #D4AF37; margin-bottom:15px'>", unsafe_allow_html=True)
         st.markdown("<div style='color:#D4AF37; font-size:20px; font-weight:900; text-align:center; margin-bottom:10px'>5- صحيفة الدعوى</div>", unsafe_allow_html=True)
         مسندة_ل = st.selectbox("نوع الصحيفة", ["صحيفة الدعوى"], key="paper_type_add"); st.markdown("</div>", unsafe_allow_html=True)
@@ -632,12 +635,18 @@ elif st.session_state.page == "تسجيل":
         if st.form_submit_button("💾 حفظ القضية", use_container_width=True, type="primary"):
             if not رقم or not سنة: st.error("❌ من فضلك ادخل رقم الدعوى والسنة")
             else:
-                new_case = {"id": len(data["cases"])+1, "نوع": نوع, "محكمة_اسم": محكمة_اسم, "مأمورية": مأمورية, "رقم": رقم, "سنة": سنة, "دائرة": دائرة, "مدعي": مدعي, "مدعي_عليه": مدعي_عليه, "موضوع": موضوع, "تاريخ_جلسة": str(تاريخ_جلسة), "الرول": الرول, "سبب": سبب, "ملاحظات": ملاحظات, "جلسات": [], "مستندات": [], "حالة": "متداولة", "مسندة_ل": مسندة_ل}
+                # بيعمل الصحيفة ويحفظها
+                case_for_pdf = {"نوع":نوع,"رقم":رقم,"سنة":سنة,"دائرة":دائرة,"محكمة_اسم":محكمة_اسم,"مدعي":مدعي,"مدعي_عليه":مدعي_عليه,"موضوع":موضوع,"تاريخ_جلسة":str(تاريخ_جلسة),"مسندة_ل":مسندة_ل}
+                paper_path = create_paper_pdf(case_for_pdf)
+
+                # بيحفظ البيانات
+                new_case = {"id": len(data["cases"])+1, "نوع": نوع, "محكمة_اسم": محكمة_اسم, "مأمورية": مأمورية, "رقم": رقم, "سنة": سنة, "دائرة": دائرة, "مدعي": مدعي, "مدعي_عليه": مدعي_عليه, "موضوع": موضوع, "تاريخ_جلسة": str(تاريخ_جلسة), "الرول": الرول, "سبب": سبب, "ملاحظات": ملاحظات, "جلسات": [], "مستندات": [paper_path], "حالة": "متداولة", "مسندة_ل": مسندة_ل}
                 if الرول or سبب: new_case["جلسات"].append({"تاريخ":str(تاريخ_جلسة),"الرول":الرول,"سبب":سبب,"ملاحظات":ملاحظات})
                 data["cases"].append(new_case); save_data(data)
+                
                 st.success(f"✅ تم حفظ القضية رقم {رقم} لسنة {سنة}")
-                st.session_state.page = "الحصر"; st.rerun()
-# ===============================
+                # زر التحميل الحقي
+                st.download_button("📄 تحميل صحيفة الدعوى", data=open(paper_path, "rb"), file_name=os.path.basename(paper_path), mime="application/pdf", use_container_width=True)
 # ===============================================
 # ========== الجزء الثالث: الحصر العام ============
 # ================================================
