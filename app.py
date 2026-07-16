@@ -374,6 +374,7 @@ if st.session_state.page == "الرئيسية":
             unsafe_allow_html=True
                 )
         # ==========================================
+# ========================================
 # ========= الجزء الثاني: تسجيل القضايا - الدهبي بس ============
 elif st.session_state.page == "تسجيل":
     data = load_data()
@@ -414,7 +415,7 @@ elif st.session_state.page == "تسجيل":
         st.markdown("<div style='background:#1E2A47; padding:15px; border-radius:15px; border:2px solid #D4AF37; margin-bottom:15px'>", unsafe_allow_html=True)
         st.markdown("<div style='color:#D4AF37; font-size:20px; font-weight:900; text-align:center; margin-bottom:10px'>4- بيانات الجلسة</div>", unsafe_allow_html=True)
         col1, col2 = st.columns(2)
-        with col1: تاريخ_جلسة = st.date_input("تاريخ أول جلسة", value=datetime.now(), key="session_date_add")
+        with col1: تاريخ_جلسة = st.date_input("تاريخ أول جلسة", value=datetime.now().date(), key="session_date_add")
         with col2: الرول = st.text_input("الرول", key="roll_add")
         سبب = st.text_input("سبب الجلسة", key="reason_add"); ملاحظات = st.text_area("ملاحظات", height=100, key="notes_add"); st.markdown("</div>", unsafe_allow_html=True)
 
@@ -436,8 +437,11 @@ elif st.session_state.page == "تسجيل":
                 data["cases"].append(new_case); save_data(data)
                 
                 st.success(f"✅ تم حفظ القضية رقم {رقم} لسنة {سنة}")
-                # زر التحميل الحقي
-                st.download_button("📄 تحميل صحيفة الدعوى", data=open(paper_path, "rb"), file_name=os.path.basename(paper_path), mime="application/pdf", use_container_width=True)
+                
+                # ===== ده التعديل الوحيد =====
+                with open(paper_path, "rb") as f:
+                    st.download_button("📄 تحميل صحيفة الدعوى", data=f, file_name=os.path.basename(paper_path), mime="application/pdf", use_container_width=True)
+# ==============================================
 # ===============================================
 # ========== الجزء الثالث: الحصر العام ============
 # ================================================
