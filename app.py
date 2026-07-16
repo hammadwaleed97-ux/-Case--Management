@@ -443,8 +443,8 @@ elif st.session_state.page == "تسجيل":
                 
                 st.success(f"✅ تم الحفظ بنجاح -ونقلت للحصر العام- جاهز لتسجيل قضية جديدة")
                 #
-# ============================================
-# ========== الجزء الثالث: الحصر العام ============
+# ==========================================
+# ========= الجزء الثالث: الحصر العام ============
 # ================================================
 elif st.session_state.page == "الحصر":
     data = load_data()
@@ -493,7 +493,7 @@ elif st.session_state.page == "الحصر":
 
         # رأس الجدول بدون عمود فتح فاضي
         table_html = "<table class='case-table'><tr>"
-        headers = ["م", "الرقم والسنة", "المحكمة والدائرة", "الخصوم", "الموضوع", "اخر جلسة", "السبب", "الحالة", "فتح"]
+        headers = ["م", "الرقم والسنة", "المحكمة والدائرة", "الخصوم", "الموضوع", "اخر جلسة", "السبب", "الحالة"] # <-- شلت فتح من هنا
         for h in headers:
             table_html += f"<th>{h}</th>"
         table_html += "</tr>"
@@ -532,17 +532,20 @@ elif st.session_state.page == "الحصر":
             table_html += f"<td class='date-gold'>{case.get('تاريخ_جلسة','')}</td>"
             table_html += f"<td>{case.get('سبب','')}</td>"
             table_html += f"<td class='status-green'>{case.get('حالة','متداولة')}</td>"
-            table_html += f"<td></td></tr>" # هنحط الزرار بال streamlit بعد الجدول
+            table_html += f"</tr>" # <-- شلت ال td الفاضي بتاع فتح
         
         table_html += "</table>"
         st.markdown(table_html, unsafe_allow_html=True)
 
-        # ازرار الفتح جوا الجدول - كل زرار في مكانه
-        for case in sorted_cases:
-            if st.button("فتح", key=f"open_{case['id']}", use_container_width=False): 
-                st.session_state.selected_case_id = case['id']; st.session_state.page = "تفاصيل"; st.rerun()
+        # ازرار الفتح - 3 في الصف تحت الجدول
+        cols = st.columns(3) # <-- ده الجديد
+        for i, case in enumerate(sorted_cases):
+            with cols[i % 3]:
+                if st.button("فتح", key=f"open_{case['id']}", use_container_width=True): 
+                    st.session_state.selected_case_id = case['id']; st.session_state.page = "تفاصيل"; st.rerun()
 
 # ===============================================
+# ============================================
 # ================================================
 # ============ الجزء الرابع: تفاصيل القضية ============
 # ================================================
