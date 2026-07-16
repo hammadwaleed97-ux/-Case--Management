@@ -418,7 +418,7 @@ elif st.session_state.page == "تسجيل":
         col1, col2 = st.columns(2)
         with col1: تاريخ_جلسة = st.date_input("تاريخ أول جلسة", value=datetime.now().date(), key="session_date_add")
         with col2: الرول = st.text_input("الرول", key="roll_add")
-        سبب = st.text_input("سبب الجلسة", key="reason_add")
+        سبب = st.text_input("الاجراء", key="reason_add")
         ملاحظات = st.text_area("ملاحظات", height=100, key="notes_add")
         st.markdown("</div>", unsafe_allow_html=True)
 
