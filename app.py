@@ -442,8 +442,35 @@ elif st.session_state.page == "تسجيل":
                 save_data(data)
                 
                 st.success(f"✅ تم الحفظ بنجاح -ونقلت للحصر العام- جاهز لتسجيل قضية جديدة")
-                #
-# ======================
+                # =============================
+# ====== الجزء الثالث: الحصر العام ============
+# ================================================
+elif st.session_state.page == "الحصر":
+    data = load_data()
+    st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
+    st.markdown("<h2 style='color:#FFFFFF; text-align:center'>📊 الحصر العام الخارجي</h2>", unsafe_allow_html=True)
+    if st.button("⬅️ العودة للرئيسية", use_container_width=True): st.session_state.page = "الرئيسية"; st.rerun()
+
+    if st.session_state.get('open_from_search', False):
+        st.session_state.open_from_search = False
+        st.info("جاري فتح القضية من البحث...")
+
+    if not data["cases"]:
+        st.info("لا توجد قضايا مسجلة")
+    else:
+        for i, case in enumerate(data["cases"]):
+            if "id" not in case: case["id"] = i + 1
+            if "مستندات" not in case: case["مستندات"] = []
+
+        save_data(data)
+
+        # ======= تحديث اخر جلسة والاجراء من الجلسات =======
+        for case in data["cases"]:
+            if "جلسات" in case and case["جلسات"]:
+                جلسات_مرتبة = sorted(case["جلسات"], key=lambda x: x.get("تاريخ","9999-12-31"), reverse=True)
+                اخر_جلسة = جلسات_مرتبة[0]
+                case["تاريخ_جلسة"] = اخر_جلسة.get("تاريخ","")
+                case["الاجراء"] = اخر_جلسة.get("الاجراء","")
                 case["الحالة"] = اخر_جلسة.get("الحالة", case.get("الحالة","متداولة"))
         save_data(data)
         # ======= عرض الجدول =======
@@ -452,7 +479,7 @@ elif st.session_state.page == "تسجيل":
             دائرة_نص = f"{case.get('دائرة')} عمال" if case.get('دائرة') else ""
             محكمة_كاملة = f"{case.get('محكمة_اسم')}"
             if case.get('مأمورية'): محكمة_كاملة += f" - مأمورية {case.get('مأمورية')}"
-            
+
             with st.container():
                 st.markdown(f"""
                 <div style='background:#142038; padding:15px; border-radius:15px; border:2px solid #D4AF37; margin-bottom:15px'>
@@ -466,7 +493,7 @@ elif st.session_state.page == "تسجيل":
                     <div style='color:#FFF; margin-bottom:8px'><b style='color:#D4AF37'>ضد:</b> {case.get('مدعي_عليه')}</div>
                     <div style='color:#FFF; margin-bottom:8px'><b style='color:#D4AF37'>الموضوع:</b> {case.get('موضوع')}</div>
                     <div style='color:#FFF; margin-bottom:8px'><b style='color:#D4AF37'>اخر جلسة:</b> {case.get('تاريخ_جلسة')}</div>
-                    <div style='color:#FFF; margin-bottom:15px'><b style='color:#D4AF37'>السبب:</b> {case.get('السبب')}</div>
+                    <div style='color:#FFF; margin-bottom:15px'><b style='color:#D4AF37'>الاجراء:</b> {case.get('الاجراء')}</div>
                 </div>
                 """, unsafe_allow_html=True)
                 c1, c2 = st.columns([3,1])
@@ -474,7 +501,7 @@ elif st.session_state.page == "تسجيل":
                     if st.button("فتح", key=f"open_{case['id']}", use_container_width=True):
                         st.session_state.selected_case_id = case['id']; st.session_state.page = "تفاصيل"; st.rerun()
         st.markdown("</div>", unsafe_allow_html=True)
-# ===============================================
+        # ===============================================
 import shutil
 
 # ============ الجزء الرابع: تفاصيل القضية ============
