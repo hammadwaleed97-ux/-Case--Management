@@ -117,6 +117,102 @@ def create_paper_pdf(case_data):
     pdf.multi_cell(0,10,fix_arabic(f"الموضوع: {case_data.get('موضوع','')}"),align='R')
     name = f"papers/صحيفة_{case_data.get('رقم')}_{case_data.get('سنة')}.pdf"; pdf.output(name); return name
 
+def print_case_report(case):
+    جلسات_html = ""
+    for i, ج in enumerate(case.get("جلسات", []), 1):
+        جلسات_html += f"""
+        <tr>
+            <td>{i}</td>
+            <td>{ج.get('تاريخ')}</td>
+            <td>{ج.get('الرول')}</td>
+            <td>{ج.get('الاجراء')}</td>
+            <td>{ج.get('ملاحظات')}</td>
+        </tr>
+        """
+    
+    محكمة_كاملة = case.get('محكمة_اسم','')
+    if case.get('مأمورية'): محكمة_كاملة += f" - مأمورية {case.get('مأمورية')}"
+    
+    html = f"""
+    <html dir="rtl" lang="ar">
+    <head>
+        <meta charset="UTF-8">
+        <style>
+            @page {{ size: A4; margin: 15mm; }}
+            body {{ font-family: 'Arial'; background:#FFF; color:#000; direction:rtl; }}
+            .header {{ text-align:center; border-bottom:3px solid #D4AF37; padding-bottom:10px; margin-bottom:20px }}
+            .header h1 {{ color:#0A1428; margin:0; font-size:28px }}
+            .header h3 {{ color:#D4AF37; margin:5px 0; font-size:16px }}
+            .case-title {{ background:linear-gradient(90deg, #D4AF37, #FFD700); color:#000; padding:12px; border-radius:10px; text-align:center; font-size:20px; font-weight:900; margin-bottom:20px }}
+            .section {{ border:2px solid #D4AF37; border-radius:12px; padding:15px; margin-bottom:15px; background:#F8F9FA }}
+            .section-title {{ color:#0A1428; background:#D4AF37; padding:8px; border-radius:8px; font-weight:900; text-align:center; margin-bottom:12px; font-size:16px }}
+            .grid {{ display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px }}
+            .item {{ background:#FFF; padding:10px; border-radius:8px; border:1px solid #DDD }}
+            .item-label {{ color:#D4AF37; font-weight:900; font-size:12px }}
+            .item-value {{ color:#000; font-weight:700; font-size:14px; margin-top:4px }}
+            table {{ width:100%; border-collapse: collapse; margin-top:10px }}
+            th {{ background:#0A1428; color:#D4AF37; padding:10px; border:1px solid #D4AF37; font-weight:900 }}
+            td {{ padding:8px; border:1px solid #DDD; text-align:center }}
+            tr:nth-child(even) {{ background:#F1F1F1 }}
+            .footer {{ text-align:center; margin-top:20px; color:#666; font-size:10px; border-top:1px solid #DDD; padding-top:10px }}
+            .judgment {{ background:#FFF3CD; border:2px solid #FFC107; padding:15px; border-radius:10px }}
+        </style>
+    </head>
+    <body>
+        <div class="header">
+            <h1>ادارة القضايا</h1>
+            <h3>تقرير تفاصيل القضية</h3>
+            <p>تاريخ الطباعة: {datetime.now().strftime('%Y-%m-%d %H:%M')}</p>
+        </div>
+        
+        <div class="case-title">القضية رقم {case.get('رقم')} لسنة {case.get('سنة')}</div>
+        
+        <div class="section">
+            <div class="section-title">1- بيانات القضية</div>
+            <div class="grid">
+                <div class="item"><div class="item-label">رقم القضية</div><div class="item-value">{case.get('رقم')}</div></div>
+                <div class="item"><div class="item-label">السنة</div><div class="item-value">{case.get('سنة')}</div></div>
+                <div class="item"><div class="item-label">النوع</div><div class="item-value">{case.get('نوع')}</div></div>
+                <div class="item"><div class="item-label">المحكمة</div><div class="item-value">{محكمة_كاملة}</div></div>
+                <div class="item"><div class="item-label">الدائرة</div><div class="item-value">{case.get('دائرة')}</div></div>
+                <div class="item"><div class="item-label">الحالة</div><div class="item-value">{case.get('حالة')}</div></div>
+            </div>
+            <div class="item" style="margin-top:10px"><div class="item-label">الموضوع</div><div class="item-value">{case.get('موضوع')}</div></div>
+        </div>
+        
+        <div class="section">
+            <div class="section-title">2- بيانات الخصوم</div>
+            <div class="grid" style="grid-template-columns: 1fr 1fr">
+                <div class="item" style="background:#FFF3CD"><div class="item-label">المدعي</div><div class="item-value">{case.get('مدعي')}</div></div>
+                <div class="item" style="background:#CFF4FC"><div class="item-label">المدعي عليه</div><div class="item-value">{case.get('مدعي_عليه')}</div></div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <div class="section-title">3- متابعة الجلسات</div>
+            <table>
+                <tr><th>م</th><th>التاريخ</th><th>الرول</th><th>الاجراء</th><th>ملاحظات</th></tr>
+                {جلسات_html if جلسات_html else '<tr><td colspan="5">لا توجد جلسات</td></tr>'}
+            </table>
+        </div>
+        
+        {f'''
+        <div class="section">
+            <div class="section-title">4- بيانات الحكم</div>
+            <div class="judgment">
+                <div style="margin-bottom:8px"><b>تاريخ الحكم:</b> {case.get('تاريخ_الحكم')}</div>
+                <div style="margin-bottom:8px"><b>مسندة لـ:</b> {case.get('مسندة_ل_الحكم')}</div>
+                <div><b>منطوق الحكم:</b><br>{case.get('منطوق_الحكم')}</div>
+            </div>
+        </div>
+        ''' if case.get('حالة') == 'منتهية' else ''}
+        
+        <div class="footer">تم انشاء التقرير بواسطة نظام ادارة القضايا</div>
+    </body>
+    </html>
+    """
+    return html
+
 # ====== دالة التحميل والحفظ الوحيدة ======
 DATA_FILE = "cases_data.json"
 TOKENS_FILE = "tokens.json"
@@ -545,6 +641,15 @@ elif st.session_state.page == "تفاصيل":
 
     st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
     st.markdown(f"<h2 style='color:#D4AF37; text-align:center'>📄 تفاصيل القضية رقم {case.get('رقم')} لسنة {case.get('سنة')}</h2>", unsafe_allow_html=True)
+        st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
+    st.markdown(f"<h2 style='color:#D4AF37; text-align:center'>📄 تفاصيل القضية رقم {case.get('رقم')} لسنة {case.get('سنة')}</h2>", unsafe_allow_html=True)
+    
+    # زر الطباعة الجديد
+    if st.button("🖨️ طباعة تقرير القضية", use_container_width=True, type="primary"):
+        html_report = print_case_report(case)
+        st.components.v1.html(html_report, height=800, scrolling=True)
+        st.success("✅ اضغط Ctrl+P للطباعة او الحفظ كـ PDF")
+    
     if st.button("⬅️ العودة للحصر العام", use_container_width=True): st.session_state.page = "الحصر"; st.rerun()
 
     # 1- بيانات القضية
