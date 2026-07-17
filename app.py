@@ -151,8 +151,8 @@ def print_case_report(case):
         .label {{ font-weight: 700; color: #1E2A47; width: 30%; }}
         .value {{ width: 70%; }}
         table {{ width: 100%; border-collapse: collapse; margin-top: 10px; }}
-        th {{ background: #1E2A47; color: #FFF; padding: 8px; border: 1px solid #ddd; }}
-        td {{ padding: 8px; border: 1px solid #ddd; }}
+        th {{ background: #1E2A47; color: #FFF; padding: 8px; border: 1px solid #ddd; text-align: center; }}
+        td {{ padding: 8px; border: 1px solid #ddd; text-align: center; }}
     </style>
     </head>
     <body>
@@ -160,7 +160,7 @@ def print_case_report(case):
     <div class="header">
         <div class="logo">الهيئة القومية للتأمين الاجتماعي</div>
         <div class="sub">الإدارة المركزية للإدارات القانونية</div>
-        <div class="sub">الإدارة العامة للشئون القانونية بمنطقة: _____________</div>
+        <div class="sub">الإدارة العامة للشئون القانونية منطقة: _____________</div>
     </div>
 
     <div class="title">📄 تقرير تفاصيل القضية رقم {case.get('رقم')} لسنة {case.get('سنة')}</div>
@@ -183,16 +183,16 @@ def print_case_report(case):
     </div>
     """
 
-    # 3- الجلسات
+    # 3- الجلسات والإجراءات - بالترتيب الجديد
     if case.get("جلسات"):
         html += """
         <div class="section">
-            <div class="section-title">3- متابعة الجلسات</div>
+            <div class="section-title">3- الجلسات والإجراءات</div>
             <table>
-                <tr><th>م</th><th>التاريخ</th><th>الرول</th><th>الإجراء</th><th>ملاحظات</th></tr>
+                <tr><th>م</th><th>الرول</th><th>الجلسات</th><th>الإجراءات</th><th>ملاحظات</th></tr>
         """
         for i, ج in enumerate(case["جلسات"], 1):
-            html += f"<tr><td>{i}</td><td>{ج.get('تاريخ')}</td><td>{ج.get('الرول')}</td><td>{ج.get('الاجراء')}</td><td>{ج.get('ملاحظات')}</td></tr>"
+            html += f"<tr><td>{i}</td><td>{ج.get('الرول')}</td><td>{ج.get('تاريخ')}</td><td>{ج.get('الاجراء')}</td><td>{ج.get('ملاحظات')}</td></tr>"
         html += "</table></div>"
 
     # 4- الحكم
