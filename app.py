@@ -192,7 +192,7 @@ def print_case_report(case):
                 <tr><th>م</th><th>التاريخ</th><th>الرول</th><th>الإجراء</th><th>ملاحظات</th></tr>
         """
         for i, ج in enumerate(case["جلسات"], 1):
-            html += f"<tr><td>{i}</td><td>{ج.get('تاريخ')}</td><td>{ج.get('الرول')}</td><td>{j.get('الاجراء')}</td><td>{ج.get('ملاحظات')}</td></tr>"
+            html += f"<tr><td>{i}</td><td>{ج.get('تاريخ')}</td><td>{ج.get('الرول')}</td><td>{ج.get('الاجراء')}</td><td>{ج.get('ملاحظات')}</td></tr>"
         html += "</table></div>"
 
     # 4- الحكم
