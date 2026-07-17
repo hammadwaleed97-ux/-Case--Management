@@ -535,13 +535,13 @@ elif st.session_state.page == "الحصر":
                     st.session_state.selected_case_id = case['id']; st.session_state.page = "تفاصيل"; st.rerun()
 
 # ===============================================
-# ============================================
+# ==========================================
 import os
-import shutil
+import shutil # <-- كانت مكتوبة shutils غلط
 
 # ============ الجزء الرابع: تفاصيل القضية ============
 # ================================================
-elif st.session_state.page == "تفاصيل":
+elif st.session_state.page == "تفاصيل": # <-- هنا لازم : في الاخر
     data = load_data()
     case = next((c for c in data["cases"] if c["id"] == st.session_state.selected_case_id), None)
     if not case: st.error("القضية غير موجودة"); st.session_state.page = "الحصر"; st.rerun()
@@ -595,10 +595,10 @@ elif st.session_state.page == "تفاصيل":
     st.markdown("<div style='background:#1E2A47; padding:15px; border-radius:15px; border:2px solid #D4AF37; margin-bottom:15px'>", unsafe_allow_html=True)
     st.markdown("<div style='color:#D4AF37; font-size:20px; font-weight:900; text-align:center; margin-bottom:10px'>3- متابعة الجلسات</div>", unsafe_allow_html=True)
     if case.get("جلسات"):
-        html = "<table style='width:100%; border:2px solid #D4AF37; background:#0A1428; border-radius:12px'><tr style='background:#D4AF37; color:#000'><th>م</th><th>التاريخ</th><th>الرول</th><th>الاجراء</th><th>ملاحظات</th></tr>" # <-- غيرت السبب
+        html = "<table style='width:100%; border:2px solid #D4AF37; background:#0A1428; border-radius:12px'><tr style='background:#D4AF37; color:#000'><th>م</th><th>التاريخ</th><th>الرول</th><th>الاجراء</th><th>ملاحظات</th></tr>"
         for i, ج in enumerate(case["جلسات"], 1):
             لون = "#1E2A47" if i % 2 == 0 else "#142038"
-            html += f"<tr style='background:{لون}; color:#FFF'><td>{i}</td><td>{ج.get('تاريخ')}</td><td>{ج.get('الرول')}</td><td>{ج.get('الاجراء')}</td><td>{ج.get('ملاحظات')}</td></tr>" # <-- غيرت السبب
+            html += f"<tr style='background:{لون}; color:#FFF'><td>{i}</td><td>{ج.get('تاريخ')}</td><td>{ج.get('الرول')}</td><td>{ج.get('الاجراء')}</td><td>{ج.get('ملاحظات')}</td></tr>"
         html += "</table>"; st.markdown(html, unsafe_allow_html=True)
     else: st.info("لا توجد جلسات مسجلة")
     
@@ -607,17 +607,17 @@ elif st.session_state.page == "تفاصيل":
     div[data-testid="stExpander"] {background: white; border-radius: 10px; border: 2px solid #D4AF37;}
     div[data-testid="stExpander"] summary {color: black !important; font-weight: 900; font-size: 16px;}
     </style>
-    """, unsafe_allow_html=True) # <-- ابيض
+    """, unsafe_allow_html=True)
     with st.expander("➕ اضافة جلسة جديدة"):
         with st.form("add_session"):
             تاريخ_جديد = st.date_input("تاريخ الجلسة", value=datetime.now())
             رول_جديد = st.text_input("الرول")
-            الاجراء_جديد = st.text_input("الاجراء") # <-- غيرت السبب
+            الاجراء_جديد = st.text_input("الاجراء")
             ملاحظات_جديدة = st.text_area("ملاحظات")
             if st.form_submit_button("حفظ الجلسة"):
-                case["جلسات"].append({"تاريخ":str(تاريخ_جديد),"الرول":رول_جديد,"الاجراء":الاجراء_جديد,"ملاحظات":ملاحظات_جديدة}) # <-- غيرت السبب
+                case["جلسات"].append({"تاريخ":str(تاريخ_جديد),"الرول":رول_جديد,"الاجراء":الاجراء_جديد,"ملاحظات":ملاحظات_جديدة})
                 case["تاريخ_جلسة"] = str(تاريخ_جديد)
-                case["الاجراء"] = الاجراء_جديد # <-- حدث الاجراء بره كمان
+                case["الاجراء"] = الاجراء_جديد
                 save_data(data); st.success("تم اضافة الجلسة"); st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
 
@@ -625,7 +625,6 @@ elif st.session_state.page == "تفاصيل":
     st.markdown("<div style='background:#1E2A47; padding:15px; border-radius:15px; border:2px solid #D4AF37; margin-bottom:15px'>", unsafe_allow_html=True)
     st.markdown("<div style='color:#D4AF37; font-size:20px; font-weight:900; text-align:center; margin-bottom:10px'>4- المستندات</div>", unsafe_allow_html=True)
     
-    # عرض المستندات الموجودة
     if case['مستندات']:
         st.markdown("<b style='color:#FFF'>المستندات المرفوعة:</b>", unsafe_allow_html=True)
         for doc_path in case['مستندات']:
@@ -679,9 +678,9 @@ elif st.session_state.page == "تفاصيل":
                     case['تاريخ_الحكم'] = str(تاريخ_حكم)
                     case['منطوق_الحكم'] = منطوق_الحكم
                     case['مسندة_ل_الحكم'] = مسندة_ل
-                    case['جلسات'].append({'تاريخ':str(تاريخ_حكم),'الرول':'-','الاجراء':f'الحكم - مسندة لـ {مسندة_ل}','ملاحظات':منطوق_الحكم}) # <-- غيرت السبب
+                    case['جلسات'].append({'تاريخ':str(تاريخ_حكم),'الرول':'-','الاجراء':f'الحكم - مسندة لـ {مسندة_ل}','ملاحظات':منطوق_الحكم})
                     case['تاريخ_جلسة'] = str(تاريخ_حكم)
-                    case['الاجراء'] = f'الحكم - مسندة لـ {مسندة_ل}' # <-- غيرت السبب
+                    case['الاجراء'] = f'الحكم - مسندة لـ {مسندة_ل}'
                     save_data(data)
                     st.success(f"✅ تم حفظ الحكم واغلاق القضية. تم نقلها للارشيف")
                     st.session_state.page = "الأرشيف"
@@ -727,6 +726,7 @@ elif st.session_state.page == "تفاصيل":
     st.markdown("</div>", unsafe_allow_html=True)
     # ================================================
 # ==========================
+
 # ==============================================
 # ============ الجزء الخامس: الأرشيف ============
 # ================================================
