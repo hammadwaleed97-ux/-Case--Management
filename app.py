@@ -744,11 +744,52 @@ elif st.session_state.page == "تفاصيل":
     st.markdown("<div style='background:#1E2A47; padding:15px; border-radius:15px; border:2px solid #D4AF37; margin-bottom:15px'>", unsafe_allow_html=True)
     st.markdown("<div style='color:#D4AF37; font-size:20px; font-weight:900; text-align:center; margin-bottom:10px'>4- المستندات</div>", unsafe_allow_html=True)
     with st.form("upload_form"):
-        نوع_المستند = st.selectbox("نوع المستند", ANWA3_MOSTANDAT); uploaded_file = st.file_uploader("اختر الملف")
+        نوع_المستند = st.selectbox("نوع المستند", ANWA3_MOSTANDAT)
+        if نوع_المستند == "اخرى":
+            نوع_اخرى = st.text_input("اكتب اسم المستند")
+        else:
+            نوع_اخرى = ""
+        uploaded_file = st.file_uploader("اختر الملف")
         if st.form_submit_button("رفع المستند"):
-            if uploaded_file: file_path = os.path.join(UPLOAD_FOLDER, f"{case['id']}_{uploaded_file.name}")
+            if uploaded_file:
+                os.makedirs(os.path.join(UPLOAD_FOLDER, str(case['id'])), exist_ok=True)
+                file_name = f"{نوع_اخرى if نوع_المستند == 'اخرى' else نوع_المستند}_{uploaded_file.name}"
+                file_path = os.path.join(UPLOAD_FOLDER, str(case['id']), file_name)
+                with open(file_path, "wb") as f:
+                    f.write(uploaded_file.getbuffer())
+                case['مستندات'].append({"نوع": file_name, "مسار": file_path})
+                save_data(data); st.success("✅ تم رفع المستند"); st.rerun()
+            else:
+                st.error("❌ لازم تختار ملف")
     st.markdown("</div>", unsafe_allow_html=True)
 
+    # عرض المستندات المرفوعة مع ازرار التحميل والحذف
+    if case.get('مستندات'):
+        st.markdown("<div style='background:#142038; padding:15px; border-radius:12px; margin-top:10px'>", unsafe_allow_html=True)
+        st.markdown("<div style='color:#D4AF37; font-weight:900; margin-bottom:10px'>المستندات المرفوعة:</div>", unsafe_allow_html=True)
+        for i, مستند in enumerate(case['مستندات']):
+            col1, col2, col3 = st.columns([4,1,1])
+            with col1:
+                st.markdown(f"<div style='color:#FFF; padding:8px'>{مستند['نوع']}</div>", unsafe_allow_html=True)
+            with col2:
+                with open(مستند['مسار'], "rb") as f:
+                    st.download_button("📥", f.read(), file_name=مستند['نوع'], key=f"dl_{i}", use_container_width=True)
+            with col3:
+                if st.button("🗑️", key=f"del_{i}", use_container_width=True):
+                    st.session_state[f"confirm_del_{i}"] = True
+            
+            if st.session_state.get(f"confirm_del_{i}", False):
+                st.warning(f"متأكد من حذف {مستند['نوع']}؟")
+                c1,c2 = st.columns(2)
+                with c1:
+                    if st.button("نعم احذف", key=f"yes_del_{i}"):
+                        if os.path.exists(مستند['مسار']): os.remove(مستند['مسار'])
+                        case['مستندات'].pop(i)
+                        save_data(data); st.session_state[f"confirm_del_{i}"] = False; st.rerun()
+                with c2:
+                    if st.button("الغاء", key=f"no_del_{i}"):
+                        st.session_state[f"confirm_del_{i}"] = False; st.rerun()
+        st.markdown("</div>", unsafe_allow_html=True)
     # 5- جلسة الحكم
     st.markdown("<div style='background:#1E2A47; padding:15px; border-radius:15px; border:2px solid #FF5252; margin-bottom:15px'>", unsafe_allow_html=True)
     st.markdown("<div style='color:#FF5252; font-size:20px; font-weight:900; text-align:center; margin-bottom:10px'>5- جلسة الحكم</div>", unsafe_allow_html=True)
