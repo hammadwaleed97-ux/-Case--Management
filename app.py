@@ -834,16 +834,35 @@ elif st.session_state.page == "تفاصيل":
         )
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # 7- حذف نهائى
-    st.markdown("<div style='background:#1E2A47; padding:15px; border-radius:15px; border:2px solid #FF0000; margin-bottom:15px'>", unsafe_allow_html=True)
-    st.markdown("<div style='color:#FF0000; font-size:20px; font-weight:900; text-align:center; margin-bottom:10px'>⚠️ منطقة الخطر - الحذف النهائي</div>", unsafe_allow_html=True)
-    if st.button("🗑️ حذف نهائى للقضية", use_container_width=True, type="primary", key="delete_final_btn"): st.session_state.confirm_delete_final = True
+        # 7- حذف نهائى - تصميم احمر زي الصورة
+    st.markdown("""
+    <style>
+    .delete-box {background:#1E2A47; padding:15px; border-radius:15px; border:2px solid #FF0000; margin-bottom:15px; text-align:center}
+    .delete-title {color:#FF0000; font-size:20px; font-weight:900; margin-bottom:10px}
+    .delete-btn {background:#FF3B3B; color:#000; font-weight:900; font-size:18px; padding:14px; border-radius:12px; border:none; width:100%; cursor:pointer; margin-bottom:10px}
+    .delete-btn:hover {background:#FF5252}
+    .warning-box {background:#2A1A1A; padding:12px; border-radius:12px; margin:10px 0; color:#FF5252; font-weight:900}
+    .confirm-btn {background:#FF0000; color:#000; font-weight:900; font-size:18px; padding:14px; border-radius:12px; border:none; width:100%; cursor:pointer}
+    </style>
+    """, unsafe_allow_html=True)
+    
+    st.markdown("<div class='delete-box'>", unsafe_allow_html=True)
+    st.markdown("<div class='delete-title'>⚠️ منطقة الخطر - الحذف النهائي</div>", unsafe_allow_html=True)
+    
+    if st.button("🗑️ حذف نهائى للقضية", use_container_width=True, key="delete_final_btn"):
+        st.session_state.confirm_delete_final = True
+    
     if st.session_state.get('confirm_delete_final', False):
-        st.error(f"⚠️ تحذير نهائي: سيتم حذف القضية رقم {case.get('رقم')} لسنة {case.get('سنة')}"); c1, c2 = st.columns(2)
+        st.markdown(f"<div class='warning-box'>⚠️ تحذير نهائي: سيتم حذف القضية رقم {case.get('رقم')} لسنة {case.get('سنة')}</div>", unsafe_allow_html=True)
+        c1, c2 = st.columns(2)
         with c1:
             if st.button("نعم احذف نهائيا", use_container_width=True, type="primary", key="delete_yes_final"):
                 data["cases"] = [c for c in data["cases"] if c["id"]!= case["id"]]
-    
+                save_data(data); st.session_state.confirm_delete_final = False; st.success("✅ تم الحذف النهائي"); st.session_state.page = "الحصر"; st.rerun()
+        with c2:
+            if st.button("تراجع والغاء", use_container_width=True, key="delete_no_final"):
+                st.session_state.confirm_delete_final = False; st.rerun()
+    st.markdown("</div>", unsafe_allow_html=True)
 # ==============================================
 # ============ الجزء الخامس: الأرشيف ============
 # ================================================
