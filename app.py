@@ -629,7 +629,7 @@ elif st.session_state.page == "الحصر":
                     st.session_state.selected_case_id = case['id']; st.session_state.page = "تفاصيل"; st.rerun()
 
 # =========================================
-# =============================================
+# ============================================
 # ================================================
 # ============ الجزء الرابع: تفاصيل القضية ============
 # ================================================
@@ -698,7 +698,7 @@ elif st.session_state.page == "تفاصيل":
                     <div style='background:#D4AF37; color:#000; padding:5px 15px; border-radius:8px; font-weight:900; font-size:16px'>جلسة {i+1}</div>
                 </div>
                 <div style='margin-bottom:8px'><span style='color:#D4AF37; font-weight:900'>التاريخ:</span> <span style='color:#FFF'>{ج.get('تاريخ')}</span></div>
-                <div style='margin-bottom:8px'><span style='color:#D4AF37; font-weight:900'>الرول:</span> <span style='color:#FFF'>{j.get('الرول')}</span></div>
+                <div style='margin-bottom:8px'><span style='color:#D4AF37; font-weight:900'>الرول:</span> <span style='color:#FFF'>{ج.get('الرول')}</span></div>
                 <div style='margin-bottom:8px'><span style='color:#D4AF37; font-weight:900'>الاجراء:</span> <span style='color:#FFF'>{ج.get('الاجراء')}</span></div>
                 <div><span style='color:#D4AF37; font-weight:900'>ملاحظات:</span> <span style='color:#FFF'>{ج.get('ملاحظات')}</span></div>
             </div>
@@ -786,7 +786,6 @@ elif st.session_state.page == "تفاصيل":
         with c2:
             if st.button("تراجع والغاء", use_container_width=True, key="delete_no_final"): st.session_state.confirm_delete_final = False; st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
-# ================================================
 # ==============================================
 # ============ الجزء الخامس: الأرشيف ============
 # ================================================
