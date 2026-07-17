@@ -117,102 +117,97 @@ def create_paper_pdf(case_data):
     pdf.multi_cell(0,10,fix_arabic(f"الموضوع: {case_data.get('موضوع','')}"),align='R')
     name = f"papers/صحيفة_{case_data.get('رقم')}_{case_data.get('سنة')}.pdf"; pdf.output(name); return name
 
+import base64
+from io import BytesIO
+
 def print_case_report(case):
-    جلسات_html = ""
-    for i, ج in enumerate(case.get("جلسات", []), 1):
-        جلسات_html += f"""
-        <tr>
-            <td>{i}</td>
-            <td>{ج.get('تاريخ')}</td>
-            <td>{ج.get('الرول')}</td>
-            <td>{ج.get('الاجراء')}</td>
-            <td>{ج.get('ملاحظات')}</td>
-        </tr>
-        """
-    
-    محكمة_كاملة = case.get('محكمة_اسم','')
-    if case.get('مأمورية'): محكمة_كاملة += f" - مأمورية {case.get('مأمورية')}"
-    
+    # 1- تحديد الخصوم حسب النوع
+    نوع = case.get('نوع', '').lower()
+    if 'استئناف' in نوع:
+        طرف1_عنوان = "المستأنف"
+        طرف2_عنوان = "المستأنف ضده"
+    elif 'طعن' in نوع:
+        طرف1_عنوان = "الطاعن"
+        طرف2_عنوان = "المطعون ضده"
+    else:  # دعوى عادية
+        طرف1_عنوان = "المدعي"
+        طرف2_عنوان = "المدعى عليه"
+
+    # 2- اللوجو والهيدر
     html = f"""
     <html dir="rtl" lang="ar">
     <head>
-        <meta charset="UTF-8">
-        <style>
-            @page {{ size: A4; margin: 15mm; }}
-            body {{ font-family: 'Arial'; background:#FFF; color:#000; direction:rtl; }}
-            .header {{ text-align:center; border-bottom:3px solid #D4AF37; padding-bottom:10px; margin-bottom:20px }}
-            .header h1 {{ color:#0A1428; margin:0; font-size:28px }}
-            .header h3 {{ color:#D4AF37; margin:5px 0; font-size:16px }}
-            .case-title {{ background:linear-gradient(90deg, #D4AF37, #FFD700); color:#000; padding:12px; border-radius:10px; text-align:center; font-size:20px; font-weight:900; margin-bottom:20px }}
-            .section {{ border:2px solid #D4AF37; border-radius:12px; padding:15px; margin-bottom:15px; background:#F8F9FA }}
-            .section-title {{ color:#0A1428; background:#D4AF37; padding:8px; border-radius:8px; font-weight:900; text-align:center; margin-bottom:12px; font-size:16px }}
-            .grid {{ display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px }}
-            .item {{ background:#FFF; padding:10px; border-radius:8px; border:1px solid #DDD }}
-            .item-label {{ color:#D4AF37; font-weight:900; font-size:12px }}
-            .item-value {{ color:#000; font-weight:700; font-size:14px; margin-top:4px }}
-            table {{ width:100%; border-collapse: collapse; margin-top:10px }}
-            th {{ background:#0A1428; color:#D4AF37; padding:10px; border:1px solid #D4AF37; font-weight:900 }}
-            td {{ padding:8px; border:1px solid #DDD; text-align:center }}
-            tr:nth-child(even) {{ background:#F1F1F1 }}
-            .footer {{ text-align:center; margin-top:20px; color:#666; font-size:10px; border-top:1px solid #DDD; padding-top:10px }}
-            .judgment {{ background:#FFF3CD; border:2px solid #FFC107; padding:15px; border-radius:10px }}
-        </style>
+    <meta charset="UTF-8">
+    <style>
+        @page {{ size: A4; margin: 2cm; }}
+        body {{ font-family: 'Arial'; direction: rtl; text-align: right; color: #000; }}
+        .header {{ text-align: center; border-bottom: 3px solid #1E2A47; padding-bottom: 15px; margin-bottom: 20px; }}
+        .logo {{ font-size: 18px; font-weight: 900; color: #1E2A47; }}
+        .sub {{ font-size: 14px; color: #333; margin: 5px 0; }}
+        .title {{ text-align: center; font-size: 22px; font-weight: 900; color: #D4AF37; margin: 20px 0; }}
+        .section {{ background: #f5f5f5; padding: 12px; border-radius: 8px; margin-bottom: 15px; border-right: 4px solid #D4AF37; }}
+        .section-title {{ font-weight: 900; font-size: 16px; color: #1E2A47; margin-bottom: 10px; }}
+        .row {{ display: flex; justify-content: space-between; margin-bottom: 8px; }}
+        .label {{ font-weight: 700; color: #1E2A47; width: 30%; }}
+        .value {{ width: 70%; }}
+        table {{ width: 100%; border-collapse: collapse; margin-top: 10px; }}
+        th {{ background: #1E2A47; color: #FFF; padding: 8px; border: 1px solid #ddd; }}
+        td {{ padding: 8px; border: 1px solid #ddd; }}
+    </style>
     </head>
     <body>
-        <div class="header">
-            <h1>ادارة القضايا</h1>
-            <h3>تقرير تفاصيل القضية</h3>
-            <p>تاريخ الطباعة: {datetime.now().strftime('%Y-%m-%d %H:%M')}</p>
-        </div>
-        
-        <div class="case-title">القضية رقم {case.get('رقم')} لسنة {case.get('سنة')}</div>
-        
-        <div class="section">
-            <div class="section-title">1- بيانات القضية</div>
-            <div class="grid">
-                <div class="item"><div class="item-label">رقم القضية</div><div class="item-value">{case.get('رقم')}</div></div>
-                <div class="item"><div class="item-label">السنة</div><div class="item-value">{case.get('سنة')}</div></div>
-                <div class="item"><div class="item-label">النوع</div><div class="item-value">{case.get('نوع')}</div></div>
-                <div class="item"><div class="item-label">المحكمة</div><div class="item-value">{محكمة_كاملة}</div></div>
-                <div class="item"><div class="item-label">الدائرة</div><div class="item-value">{case.get('دائرة')}</div></div>
-                <div class="item"><div class="item-label">الحالة</div><div class="item-value">{case.get('حالة')}</div></div>
-            </div>
-            <div class="item" style="margin-top:10px"><div class="item-label">الموضوع</div><div class="item-value">{case.get('موضوع')}</div></div>
-        </div>
-        
-        <div class="section">
-            <div class="section-title">2- بيانات الخصوم</div>
-            <div class="grid" style="grid-template-columns: 1fr 1fr">
-                <div class="item" style="background:#FFF3CD"><div class="item-label">المدعي</div><div class="item-value">{case.get('مدعي')}</div></div>
-                <div class="item" style="background:#CFF4FC"><div class="item-label">المدعي عليه</div><div class="item-value">{case.get('مدعي_عليه')}</div></div>
-            </div>
-        </div>
-        
+    
+    <div class="header">
+        <div class="logo">الهيئة القومية للتأمين الاجتماعي</div>
+        <div class="sub">الإدارة المركزية للإدارات القانونية</div>
+        <div class="sub">الإدارة العامة للشئون القانونية بمنطقة: _____________</div>
+    </div>
+
+    <div class="title">📄 تقرير تفاصيل القضية رقم {case.get('رقم')} لسنة {case.get('سنة')}</div>
+
+    <div class="section">
+        <div class="section-title">1- بيانات القضية</div>
+        <div class="row"><div class="label">رقم القضية:</div><div class="value">{case.get('رقم')}</div></div>
+        <div class="row"><div class="label">السنة:</div><div class="value">{case.get('سنة')}</div></div>
+        <div class="row"><div class="label">النوع:</div><div class="value">{case.get('نوع')}</div></div>
+        <div class="row"><div class="label">المحكمة:</div><div class="value">{case.get('محكمة_اسم')} {f'- مأمورية {case.get("مأمورية")}' if case.get('مأمورية') else ''}</div></div>
+        <div class="row"><div class="label">الدائرة:</div><div class="value">{case.get('دائرة')}</div></div>
+        <div class="row"><div class="label">الحالة:</div><div class="value">{case.get('حالة')}</div></div>
+        <div class="row"><div class="label">الموضوع:</div><div class="value">{case.get('موضوع')}</div></div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">2- بيانات الخصوم</div>
+        <div class="row"><div class="label">{طرف1_عنوان}:</div><div class="value">{case.get('مدعي')}</div></div>
+        <div class="row"><div class="label">{طرف2_عنوان}:</div><div class="value">{case.get('مدعي_عليه')}</div></div>
+    </div>
+    """
+
+    # 3- الجلسات
+    if case.get("جلسات"):
+        html += """
         <div class="section">
             <div class="section-title">3- متابعة الجلسات</div>
             <table>
-                <tr><th>م</th><th>التاريخ</th><th>الرول</th><th>الاجراء</th><th>ملاحظات</th></tr>
-                {جلسات_html if جلسات_html else '<tr><td colspan="5">لا توجد جلسات</td></tr>'}
-            </table>
-        </div>
-        
-        {f'''
-        <div class="section">
-            <div class="section-title">4- بيانات الحكم</div>
-            <div class="judgment">
-                <div style="margin-bottom:8px"><b>تاريخ الحكم:</b> {case.get('تاريخ_الحكم')}</div>
-                <div style="margin-bottom:8px"><b>مسندة لـ:</b> {case.get('مسندة_ل_الحكم')}</div>
-                <div><b>منطوق الحكم:</b><br>{case.get('منطوق_الحكم')}</div>
-            </div>
-        </div>
-        ''' if case.get('حالة') == 'منتهية' else ''}
-        
-        <div class="footer">تم انشاء التقرير بواسطة نظام ادارة القضايا</div>
-    </body>
-    </html>
-    """
-    return html
+                <tr><th>م</th><th>التاريخ</th><th>الرول</th><th>الإجراء</th><th>ملاحظات</th></tr>
+        """
+        for i, ج in enumerate(case["جلسات"], 1):
+            html += f"<tr><td>{i}</td><td>{ج.get('تاريخ')}</td><td>{ج.get('الرول')}</td><td>{ج.get('الاجراء')}</td><td>{ج.get('ملاحظات')}</td></tr>"
+        html += "</table></div>"
 
+    # 4- الحكم
+    if case.get('حالة') == 'منتهية':
+        html += f"""
+        <div class="section" style="border-right-color: #FF5252;">
+            <div class="section-title" style="color: #FF5252;">4- منطوق الحكم</div>
+            <div class="row"><div class="label">تاريخ الحكم:</div><div class="value">{case.get('تاريخ_الحكم')}</div></div>
+            <div class="row"><div class="label">مسندة لـ:</div><div class="value">{case.get('مسندة_ل_الحكم')}</div></div>
+            <div class="row"><div class="label">المنطوق:</div><div class="value">{case.get('منطوق_الحكم')}</div></div>
+        </div>
+        """
+    
+    html += "</body></html>"
+    return html
 # ====== دالة التحميل والحفظ الوحيدة ======
 DATA_FILE = "cases_data.json"
 TOKENS_FILE = "tokens.json"
