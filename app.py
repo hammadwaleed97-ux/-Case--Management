@@ -629,7 +629,6 @@ elif st.session_state.page == "الحصر":
                     st.session_state.selected_case_id = case['id']; st.session_state.page = "تفاصيل"; st.rerun()
 
 # =========================================
-# =====================================
 # ================================================
 # ============ الجزء الرابع: تفاصيل القضية ============
 # ================================================
@@ -643,23 +642,14 @@ elif st.session_state.page == "تفاصيل":
     st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
     st.markdown(f"<h2 style='color:#D4AF37; text-align:center'>📄 تفاصيل القضية رقم {case.get('رقم')} لسنة {case.get('سنة')}</h2>", unsafe_allow_html=True)
 
-    # زر الطباعة والتحميل
-    col1, col2, col3 = st.columns(3)
+    # زر الطباعة والعودة فقط
+    col1, col2 = st.columns(2)
     with col1:
         if st.button("🖨️ معاينة للطباعة", use_container_width=True, type="primary"):
             html_report = print_case_report(case)
             st.components.v1.html(html_report, height=800, scrolling=True)
             st.success("✅ اضغط Ctrl+P للطباعة")
     with col2:
-        html_report = print_case_report(case)
-        st.download_button(
-            label="📥 تحميل التقرير",
-            data=html_report.encode('utf-8'),
-            file_name=f"تقرير_قضية_{case.get('رقم')}_{case.get('سنة')}.html",
-            mime="text/html",
-            use_container_width=True
-        )
-    with col3:
         if st.button("⬅️ العودة للحصر", use_container_width=True): st.session_state.page = "الحصر"; st.rerun()
 
     # 1- بيانات القضية
@@ -707,9 +697,9 @@ elif st.session_state.page == "تفاصيل":
                     <div style='background:#D4AF37; color:#000; padding:5px 15px; border-radius:8px; font-weight:900; font-size:16px'>جلسة {i+1}</div>
                 </div>
                 <div style='margin-bottom:8px'><span style='color:#D4AF37; font-weight:900'>التاريخ:</span> <span style='color:#FFF'>{ج.get('تاريخ')}</span></div>
-                <div style='margin-bottom:8px'><span style='color:#D4AF37; font-weight:900'>الرول:</span> <span style='color:#FFF'>{ج.get('الرول')}</span></div>
-                <div style='margin-bottom:8px'><span style='color:#D4AF37; font-weight:900'>الاجراء:</span> <span style='color:#FFF'>{ج.get('الاجراء')}</span></div>
-                <div><span style='color:#D4AF37; font-weight:900'>ملاحظات:</span> <span style='color:#FFF'>{ج.get('ملاحظات')}</span></div>
+                <div style='margin-bottom:8px'><span style='color:#D4AF37; font-weight:900'>الرول:</span> <span style='color:#FFF'>{j.get('الرول')}</span></div>
+                <div style='margin-bottom:8px'><span style='color:#D4AF37; font-weight:900'>الاجراء:</span> <span style='color:#FFF'>{j.get('الاجراء')}</span></div>
+                <div><span style='color:#D4AF37; font-weight:900'>ملاحظات:</span> <span style='color:#FFF'>{j.get('ملاحظات')}</span></div>
             </div>
             """, unsafe_allow_html=True)
             if st.button("✏️ تعديل الجلسة", key=f"edit_session_{i}", use_container_width=True):
@@ -740,24 +730,25 @@ elif st.session_state.page == "تفاصيل":
                 case["تاريخ_جلسة"] = str(تاريخ_جديد); case["الاجراء"] = الاجراء_جديد; save_data(data); st.success("تم اضافة الجلسة"); st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # 4- المستندات - متعدل عشان Cloud
+    # 4- المستندات - متعدل base64 + خانة اخرى
     st.markdown("<div style='background:#1E2A47; padding:15px; border-radius:15px; border:2px solid #D4AF37; margin-bottom:15px'>", unsafe_allow_html=True)
     st.markdown("<div style='color:#D4AF37; font-size:20px; font-weight:900; text-align:center; margin-bottom:10px'>4- المستندات</div>", unsafe_allow_html=True)
     with st.form("upload_form"):
         نوع_المستند = st.selectbox("نوع المستند", ANWA3_MOSTANDAT)
         if نوع_المستند == "اخرى":
-            نوع_اخرى = st.text_input("اكتب اسم المستند")
+            اسم_نهائي = st.text_input("اكتب اسم المستند")
         else:
-            نوع_اخرى = ""
+            اسم_نهائي = نوع_المستند
         uploaded_file = st.file_uploader("اختر الملف")
         if st.form_submit_button("رفع المستند"):
-            if uploaded_file:
-                file_name = f"{نوع_اخرى if نوع_المستند == 'اخرى' else نوع_المستند}_{uploaded_file.name}"
-                file_bytes = uploaded_file.getvalue() # بنحفظ المحتوى bytes
-                case['مستندات'].append({"نوع": file_name, "محتوى": file_bytes})
+            if uploaded_file and اسم_نهائي:
+                file_name = f"{اسم_نهائي}_{uploaded_file.name}"
+                file_bytes = uploaded_file.getvalue()
+                file_base64 = base64.b64encode(file_bytes).decode('utf-8')
+                case['مستندات'].append({"نوع": file_name, "محتوى": file_base64})
                 save_data(data); st.success("✅ تم رفع المستند"); st.rerun()
             else:
-                st.error("❌ لازم تختار ملف")
+                st.error("❌ لازم تختار ملف وتكتب اسم المستند")
     st.markdown("</div>", unsafe_allow_html=True)
 
     # عرض المستندات المرفوعة مع ازرار التحميل والحذف
@@ -770,10 +761,9 @@ elif st.session_state.page == "تفاصيل":
                 with col1:
                     st.markdown(f"<div style='color:#FFF; padding:8px'>{مستند.get('نوع', 'ملف بدون اسم')}</div>", unsafe_allow_html=True)
                 with col2:
-                    # لو المستند جديد
                     if 'محتوى' in مستند and مستند['محتوى']:
-                        st.download_button("📥", مستند['محتوى'], file_name=مستند.get('نوع','file'), key=f"dl_{i}", use_container_width=True)
-                    # لو المستند قديم
+                        file_data = base64.b64decode(مستند['محتوى'])
+                        st.download_button("📥", file_data, file_name=مستند.get('نوع','file'), key=f"dl_{i}", use_container_width=True)
                     elif 'مسار' in مستند and os.path.exists(مستند['مسار']):
                         with open(مستند['مسار'], "rb") as f:
                             st.download_button("📥", f.read(), file_name=مستند.get('نوع','file'), key=f"dl_{i}", use_container_width=True)
@@ -782,7 +772,7 @@ elif st.session_state.page == "تفاصيل":
                 with col3:
                     if st.button("🗑️", key=f"del_{i}", use_container_width=True):
                         st.session_state[f"confirm_del_{i}"] = True
-                
+
                 if st.session_state.get(f"confirm_del_{i}", False):
                     st.warning(f"متأكد من حذف {مستند.get('نوع','الملف')}؟")
                     c1,c2 = st.columns(2)
@@ -794,8 +784,7 @@ elif st.session_state.page == "تفاصيل":
                     with c2:
                         if st.button("الغاء", key=f"no_del_{i}"):
                             st.session_state[f"confirm_del_{i}"] = False; st.rerun()
-            except Exception as e:
-                st.error(f"خطأ في المستند رقم {i+1}: سيتم حذفه تلقائيا")
+            except:
                 case['مستندات'].pop(i)
                 save_data(data)
                 st.rerun()
@@ -832,7 +821,21 @@ elif st.session_state.page == "تفاصيل":
                 else: case['حالة'] = 'منتهية'; case['تاريخ_الحكم'] = str(تاريخ_حكم); case['منطوق_الحكم'] = منطوق_الحكم; case['مسندة_ل_الحكم'] = مسندة_ل; case['جلسات'].append({'تاريخ':str(تاريخ_حكم),'الرول':'-','الاجراء':f'الحكم - مسندة لـ {مسندة_ل}','ملاحظات':منطوق_الحكم}); case['تاريخ_جلسة'] = str(تاريخ_حكم); case['الاجراء'] = f'الحكم - مسندة لـ {مسندة_ل}'; save_data(data); st.success(f"✅ تم حفظ الحكم"); st.session_state.page = "الأرشيف"; st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # 6- حذف نهائى
+    # 6- تحميل التقرير - اتنقل تحت خالص
+    st.markdown("<div style='background:#1E2A47; padding:15px; border-radius:15px; border:2px solid #D4AF37; margin-bottom:15px; text-align:center'>", unsafe_allow_html=True)
+    st.markdown("<div style='color:#D4AF37; font-size:20px; font-weight:900; margin-bottom:10px'>📥 تحميل التقرير</div>", unsafe_allow_html=True)
+    html_report = print_case_report(case)
+    st.download_button(
+        label="📥 تحميل التقرير كامل HTML",
+        data=html_report.encode('utf-8'),
+        file_name=f"تقرير_قضية_{case.get('رقم')}_{case.get('سنة')}.html",
+        mime="text/html",
+        use_container_width=True,
+        type="primary"
+    )
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    # 7- حذف نهائى
     st.markdown("<div style='background:#1E2A47; padding:15px; border-radius:15px; border:2px solid #FF0000; margin-bottom:15px'>", unsafe_allow_html=True)
     st.markdown("<div style='color:#FF0000; font-size:20px; font-weight:900; text-align:center; margin-bottom:10px'>⚠️ منطقة الخطر - الحذف النهائي</div>", unsafe_allow_html=True)
     if st.button("🗑️ حذف نهائى للقضية", use_container_width=True, type="primary", key="delete_final_btn"): st.session_state.confirm_delete_final = True
@@ -841,10 +844,7 @@ elif st.session_state.page == "تفاصيل":
         with c1:
             if st.button("نعم احذف نهائيا", use_container_width=True, type="primary", key="delete_yes_final"):
                 data["cases"] = [c for c in data["cases"] if c["id"]!= case["id"]]
-                save_data(data); st.session_state.confirm_delete_final = False; st.success("✅ تم الحذف النهائي"); st.session_state.page = "الحصر"; st.rerun()
-        with c2:
-            if st.button("تراجع والغاء", use_container_width=True, key="delete_no_final"): st.session_state.confirm_delete_final = False; st.rerun()
-    st.markdown("</div>", unsafe_allow_html=True)
+    
 # ==============================================
 # ============ الجزء الخامس: الأرشيف ============
 # ================================================
