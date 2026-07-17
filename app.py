@@ -642,15 +642,8 @@ elif st.session_state.page == "تفاصيل":
     st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
     st.markdown(f"<h2 style='color:#D4AF37; text-align:center'>📄 تفاصيل القضية رقم {case.get('رقم')} لسنة {case.get('سنة')}</h2>", unsafe_allow_html=True)
 
-    # زر الطباعة والعودة فقط
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("🖨️ معاينة للطباعة", use_container_width=True, type="primary"):
-            html_report = print_case_report(case)
-            st.components.v1.html(html_report, height=800, scrolling=True)
-            st.success("✅ اضغط Ctrl+P للطباعة")
-    with col2:
-        if st.button("⬅️ العودة للحصر", use_container_width=True): st.session_state.page = "الحصر"; st.rerun()
+    # زر العودة فقط فوق
+    if st.button("⬅️ العودة للحصر", use_container_width=True): st.session_state.page = "الحصر"; st.rerun()
 
     # 1- بيانات القضية
     st.markdown("<div style='background:#1E2A47; padding:15px; border-radius:15px; border:2px solid #D4AF37; margin-bottom:15px'>", unsafe_allow_html=True)
@@ -821,18 +814,24 @@ elif st.session_state.page == "تفاصيل":
                 else: case['حالة'] = 'منتهية'; case['تاريخ_الحكم'] = str(تاريخ_حكم); case['منطوق_الحكم'] = منطوق_الحكم; case['مسندة_ل_الحكم'] = مسندة_ل; case['جلسات'].append({'تاريخ':str(تاريخ_حكم),'الرول':'-','الاجراء':f'الحكم - مسندة لـ {مسندة_ل}','ملاحظات':منطوق_الحكم}); case['تاريخ_جلسة'] = str(تاريخ_حكم); case['الاجراء'] = f'الحكم - مسندة لـ {مسندة_ل}'; save_data(data); st.success(f"✅ تم حفظ الحكم"); st.session_state.page = "الأرشيف"; st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # 6- تحميل التقرير - تحت خالص قبل الحذف
+    # 6- الطباعة والتحميل - تحت خالص قبل الحذف
     st.markdown("<div style='background:#1E2A47; padding:15px; border-radius:15px; border:2px solid #D4AF37; margin-bottom:15px; text-align:center'>", unsafe_allow_html=True)
-    st.markdown("<div style='color:#D4AF37; font-size:20px; font-weight:900; margin-bottom:10px'>📥 تحميل التقرير</div>", unsafe_allow_html=True)
-    html_report = print_case_report(case)
-    st.download_button(
-        label="📥 تحميل التقرير كامل HTML",
-        data=html_report.encode('utf-8'),
-        file_name=f"تقرير_قضية_{case.get('رقم')}_{case.get('سنة')}.html",
-        mime="text/html",
-        use_container_width=True,
-        type="primary"
-    )
+    st.markdown("<div style='color:#D4AF37; font-size:20px; font-weight:900; margin-bottom:10px'>🖨️ الطباعة والتقرير</div>", unsafe_allow_html=True)
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("🖨️ معاينة للطباعة", use_container_width=True, type="primary"):
+            html_report = print_case_report(case)
+            st.components.v1.html(html_report, height=800, scrolling=True)
+            st.success("✅ اضغط Ctrl+P للطباعة")
+    with col2:
+        html_report = print_case_report(case)
+        st.download_button(
+            label="📥 تحميل التقرير",
+            data=html_report.encode('utf-8'),
+            file_name=f"تقرير_قضية_{case.get('رقم')}_{case.get('سنة')}.html",
+            mime="text/html",
+            use_container_width=True
+        )
     st.markdown("</div>", unsafe_allow_html=True)
 
     # 7- حذف نهائى
@@ -844,7 +843,7 @@ elif st.session_state.page == "تفاصيل":
         with c1:
             if st.button("نعم احذف نهائيا", use_container_width=True, type="primary", key="delete_yes_final"):
                 data["cases"] = [c for c in data["cases"] if c["id"]!= case["id"]]
-                        
+    
 # ==============================================
 # ============ الجزء الخامس: الأرشيف ============
 # ================================================
