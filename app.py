@@ -532,8 +532,7 @@ elif st.session_state.page == "الحصر":
                 if st.button("فتح", key=f"open_{case['id']}", use_container_width=True):
                     st.session_state.selected_case_id = case['id']; st.session_state.page = "تفاصيل"; st.rerun()
 
-# =============================================
-# ==============================================
+# ==========================================
 # ================================================
 # ============ الجزء الرابع: تفاصيل القضية ============
 # ================================================
@@ -565,7 +564,7 @@ elif st.session_state.page == "تفاصيل":
 
     st.markdown(f"<div style='background:#142038; padding:12px; border-radius:12px; border:1px solid #D4AF37; text-align:center'><div style='color:#D4AF37; font-weight:900; font-size:14px'>الموضوع</div><div style='color:#FFF; font-weight:700; font-size:16px'>{case.get('موضوع')}</div></div>", unsafe_allow_html=True)
 
-    # زر تعديل بيانات القضية
+    # تعديل بيانات القضية
     st.markdown("<style>div[data-testid='stExpander'] summary p{color:#D4AF37!important; font-weight:900!important;}</style>", unsafe_allow_html=True)
     with st.expander("✏️ تعديل بيانات القضية"):
         with st.form("edit_case_form"):
@@ -587,20 +586,24 @@ elif st.session_state.page == "تفاصيل":
     with col2: st.markdown(f"<div style='background:#CFF4FC; padding:10px; border-radius:10px; color:#000; text-align:center'><b>المدعى عليه:</b><br>{case.get('مدعي_عليه')}</div>", unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # 3- متابعة الجلسات + تعديل
+    # 3- متابعة الجلسات
     st.markdown("<div style='background:#1E2A47; padding:15px; border-radius:15px; border:2px solid #D4AF37; margin-bottom:15px'>", unsafe_allow_html=True)
     st.markdown("<div style='color:#D4AF37; font-size:20px; font-weight:900; text-align:center; margin-bottom:10px'>3- متابعة الجلسات</div>", unsafe_allow_html=True)
     if case.get("جلسات"):
-        header = st.columns([1,2,2,3,3,1])
-        header[0].markdown("<b>م</b>"); header[1].markdown("<b>التاريخ</b>"); header[2].markdown("<b>الرول</b>"); header[3].markdown("<b>الاجراء</b>"); header[4].markdown("<b>ملاحظات</b>"); header[5].markdown("<b>تعديل</b>")
         for i, ج in enumerate(case["جلسات"]):
-            لون = "#1E2A47" if i % 2 == 0 else "#142038"; cols = st.columns([1,2,2,3,3,1])
-            cols[0].markdown(f"<div style='background:{لون}; padding:8px; color:#FFF; text-align:center; border-radius:8px'>{i+1}</div>", unsafe_allow_html=True)
-            cols[1].markdown(f"<div style='background:{لون}; padding:8px; color:#FFF; text-align:center; border-radius:8px'>{ج.get('تاريخ')}</div>", unsafe_allow_html=True)
-            cols[2].markdown(f"<div style='background:{لون}; padding:8px; color:#FFF; text-align:center; border-radius:8px'>{ج.get('الرول')}</div>", unsafe_allow_html=True)
-            cols[3].markdown(f"<div style='background:{لون}; padding:8px; color:#FFF; text-align:center; border-radius:8px'>{ج.get('الاجراء')}</div>", unsafe_allow_html=True)
-            cols[4].markdown(f"<div style='background:{لون}; padding:8px; color:#FFF; text-align:center; border-radius:8px'>{ج.get('ملاحظات')}</div>", unsafe_allow_html=True)
-            if cols[5].button("✏️", key=f"edit_session_{i}"): st.session_state.edit_session_index = i; st.rerun()
+            st.markdown(f"""
+            <div style='background:#142038; padding:15px; border-radius:12px; border:1px solid #D4AF37; margin-bottom:10px'>
+                <div style='display:flex; justify-content:space-between; align-items:center'>
+                    <div style='background:#D4AF37; color:#000; padding:5px 12px; border-radius:8px; font-weight:900'>جلسة {i+1}</div>
+                </div>
+                <div style='color:#FFF; margin-top:10px'><b style='color:#D4AF37'>التاريخ:</b> {ج.get('تاريخ')}</div>
+                <div style='color:#FFF'><b style='color:#D4AF37'>الرول:</b> {ج.get('الرول')}</div>
+                <div style='color:#FFF'><b style='color:#D4AF37'>الاجراء:</b> {ج.get('الاجراء')}</div>
+                <div style='color:#FFF'><b style='color:#D4AF37'>ملاحظات:</b> {ج.get('ملاحظات')}</div>
+            </div>
+            """, unsafe_allow_html=True)
+            if st.button("✏️ تعديل الجلسة", key=f"edit_session_{i}", use_container_width=True):
+                st.session_state.edit_session_index = i; st.rerun()
 
         if 'edit_session_index' in st.session_state and st.session_state.edit_session_index is not None:
             idx = st.session_state.edit_session_index; جلسة = case["جلسات"][idx]
@@ -620,7 +623,7 @@ elif st.session_state.page == "تفاصيل":
     else: st.info("لا توجد جلسات مسجلة")
 
     st.markdown("<style>div[data-testid='stExpander'] summary p{color:white!important; font-weight:900!important;}</style>", unsafe_allow_html=True)
-    with st.expander("➕ اضافة جلسة جديدة"):
+    with st.expander("اضافة جلسة جديدة"):
         with st.form("add_session"):
             تاريخ_جديد = st.date_input("تاريخ الجلسة", value=datetime.now()); رول_جديد = st.text_input("الرول"); الاجراء_جديد = st.text_input("الاجراء"); ملاحظات_جديدة = st.text_area("ملاحظات")
             if st.form_submit_button("حفظ الجلسة"):
@@ -637,7 +640,7 @@ elif st.session_state.page == "تفاصيل":
             if uploaded_file: file_path = os.path.join(UPLOAD_FOLDER, f"{case['id']}_{uploaded_file.name}")
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # 5- جلسة الحكم + تعديل
+    # 5- جلسة الحكم
     st.markdown("<div style='background:#1E2A47; padding:15px; border-radius:15px; border:2px solid #FF5252; margin-bottom:15px'>", unsafe_allow_html=True)
     st.markdown("<div style='color:#FF5252; font-size:20px; font-weight:900; text-align:center; margin-bottom:10px'>5- جلسة الحكم</div>", unsafe_allow_html=True)
     if case.get('حالة') == 'منتهية':
@@ -683,7 +686,6 @@ elif st.session_state.page == "تفاصيل":
         with c2:
             if st.button("تراجع والغاء", use_container_width=True, key="delete_no_final"): st.session_state.confirm_delete_final = False; st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
-# ================================================
 # ================================================
 # ==============================================
 # ============ الجزء الخامس: الأرشيف ============
