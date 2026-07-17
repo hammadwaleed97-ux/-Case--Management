@@ -133,26 +133,31 @@ def print_case_report(case):
         طرف1_عنوان = "المدعي"
         طرف2_عنوان = "المدعى عليه"
 
-    # 2- اللوجو والهيدر
     html = f"""
     <html dir="rtl" lang="ar">
     <head>
     <meta charset="UTF-8">
     <style>
-        @page {{ size: A4; margin: 2cm; }}
-        body {{ font-family: 'Arial'; direction: rtl; text-align: right; color: #000; }}
-        .header {{ text-align: center; border-bottom: 3px solid #1E2A47; padding-bottom: 15px; margin-bottom: 20px; }}
-        .logo {{ font-size: 18px; font-weight: 900; color: #1E2A47; }}
-        .sub {{ font-size: 14px; color: #333; margin: 5px 0; }}
-        .title {{ text-align: center; font-size: 22px; font-weight: 900; color: #D4AF37; margin: 20px 0; }}
-        .section {{ background: #f5f5f5; padding: 12px; border-radius: 8px; margin-bottom: 15px; border-right: 4px solid #D4AF37; }}
-        .section-title {{ font-weight: 900; font-size: 16px; color: #1E2A47; margin-bottom: 10px; }}
-        .row {{ display: flex; justify-content: space-between; margin-bottom: 8px; }}
-        .label {{ font-weight: 700; color: #1E2A47; width: 30%; }}
-        .value {{ width: 70%; }}
-        table {{ width: 100%; border-collapse: collapse; margin-top: 10px; }}
-        th {{ background: #1E2A47; color: #FFF; padding: 8px; border: 1px solid #ddd; text-align: center; }}
-        td {{ padding: 8px; border: 1px solid #ddd; text-align: center; }}
+        @page {{ size: A4; margin: 1.5cm; }}
+        body {{ font-family: 'Arial'; direction: rtl; text-align: right; color: #000; background: #f8f9fa; }}
+        .header {{ text-align: center; padding: 25px; margin-bottom: 25px; background: linear-gradient(135deg, #1E2A47 0%, #D4AF37 100%); color: #FFF; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }}
+        .logo {{ font-size: 22px; font-weight: 900; color: #FFF; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }}
+        .sub {{ font-size: 16px; color: #FFF9E6; margin: 8px 0; }}
+        .title {{ text-align: center; font-size: 26px; font-weight: 900; color: #1E2A47; margin: 25px 0; border: 3px solid #D4AF37; padding: 15px; border-radius: 15px; background: linear-gradient(90deg, #FFF9E6, #FFF); box-shadow: 0 3px 10px rgba(212,175,55,0.3); }}
+        .section {{ padding: 20px; border-radius: 15px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 2px solid transparent; }}
+        .section-title {{ font-weight: 900; font-size: 20px; color: #FFF; margin-bottom: 20px; text-align: center; padding: 12px; border-radius: 10px; }}
+        .sec1 {{ background: linear-gradient(135deg, #1E2A47, #3498db); border-color: #1E2A47; }}
+        .sec2 {{ background: linear-gradient(135deg, #27ae60, #2ecc71); border-color: #27ae60; }}
+        .sec3 {{ background: linear-gradient(135deg, #8e44ad, #9b59b6); border-color: #8e44ad; }}
+        .sec4 {{ background: linear-gradient(135deg, #c0392b, #e74c3c); border-color: #c0392b; }}
+        .row {{ display: flex; justify-content: space-between; margin-bottom: 12px; background: linear-gradient(90deg, #fff, #f8f9fa); padding: 12px; border-radius: 8px; border-right: 4px solid #D4AF37; }}
+        .label {{ font-weight: 900; color: #1E2A47; width: 35%; font-size: 15px; }}
+        .value {{ width: 65%; color: #000; font-weight: 700; font-size: 15px; }}
+        table {{ width: 100%; border-collapse: collapse; margin-top: 15px; border-radius: 10px; overflow: hidden; box-shadow: 0 3px 10px rgba(0,0,0,0.1); }}
+        th {{ background: linear-gradient(135deg, #1E2A47, #34495e); color: #D4AF37; padding: 12px; border: none; text-align: center; font-size: 16px; font-weight: 900; }}
+        td {{ padding: 12px; border-bottom: 1px solid #ddd; text-align: center; background: #fff; }}
+        tr:nth-child(even) td {{ background: #f8f9fa; }}
+        tr:hover td {{ background: #FFF9E6; }}
     </style>
     </head>
     <body>
@@ -165,8 +170,8 @@ def print_case_report(case):
 
     <div class="title">📄 تقرير تفاصيل القضية رقم {case.get('رقم')} لسنة {case.get('سنة')}</div>
 
-    <div class="section">
-        <div class="section-title">1- بيانات القضية</div>
+    <div class="section sec1">
+        <div class="section-title sec1">1- بيانات القضية</div>
         <div class="row"><div class="label">رقم القضية:</div><div class="value">{case.get('رقم')}</div></div>
         <div class="row"><div class="label">السنة:</div><div class="value">{case.get('سنة')}</div></div>
         <div class="row"><div class="label">النوع:</div><div class="value">{case.get('نوع')}</div></div>
@@ -176,18 +181,18 @@ def print_case_report(case):
         <div class="row"><div class="label">الموضوع:</div><div class="value">{case.get('موضوع')}</div></div>
     </div>
 
-    <div class="section">
-        <div class="section-title">2- بيانات الخصوم</div>
+    <div class="section sec2">
+        <div class="section-title sec2">2- بيانات الخصوم</div>
         <div class="row"><div class="label">{طرف1_عنوان}:</div><div class="value">{case.get('مدعي')}</div></div>
         <div class="row"><div class="label">{طرف2_عنوان}:</div><div class="value">{case.get('مدعي_عليه')}</div></div>
     </div>
     """
 
-    # 3- الجلسات والإجراءات - بالترتيب الجديد
+    # 3- الجلسات والإجراءات
     if case.get("جلسات"):
         html += """
-        <div class="section">
-            <div class="section-title">3- الجلسات والإجراءات</div>
+        <div class="section sec3">
+            <div class="section-title sec3">3- الجلسات والإجراءات</div>
             <table>
                 <tr><th>م</th><th>الرول</th><th>الجلسات</th><th>الإجراءات</th><th>ملاحظات</th></tr>
         """
@@ -198,8 +203,8 @@ def print_case_report(case):
     # 4- الحكم
     if case.get('حالة') == 'منتهية':
         html += f"""
-        <div class="section" style="border-right-color: #FF5252;">
-            <div class="section-title" style="color: #FF5252;">4- منطوق الحكم</div>
+        <div class="section sec4">
+            <div class="section-title sec4">4- منطوق الحكم</div>
             <div class="row"><div class="label">تاريخ الحكم:</div><div class="value">{case.get('تاريخ_الحكم')}</div></div>
             <div class="row"><div class="label">مسندة لـ:</div><div class="value">{case.get('مسندة_ل_الحكم')}</div></div>
             <div class="row"><div class="label">المنطوق:</div><div class="value">{case.get('منطوق_الحكم')}</div></div>
