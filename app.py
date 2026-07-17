@@ -629,6 +629,7 @@ elif st.session_state.page == "الحصر":
                     st.session_state.selected_case_id = case['id']; st.session_state.page = "تفاصيل"; st.rerun()
 
 # =========================================
+# =============================================
 # ================================================
 # ============ الجزء الرابع: تفاصيل القضية ============
 # ================================================
@@ -641,16 +642,16 @@ elif st.session_state.page == "تفاصيل":
 
     st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
     st.markdown(f"<h2 style='color:#D4AF37; text-align:center'>📄 تفاصيل القضية رقم {case.get('رقم')} لسنة {case.get('سنة')}</h2>", unsafe_allow_html=True)
-        st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
-    st.markdown(f"<h2 style='color:#D4AF37; text-align:center'>📄 تفاصيل القضية رقم {case.get('رقم')} لسنة {case.get('سنة')}</h2>", unsafe_allow_html=True)
-    
+
     # زر الطباعة الجديد
-    if st.button("🖨️ طباعة تقرير القضية", use_container_width=True, type="primary"):
-        html_report = print_case_report(case)
-        st.components.v1.html(html_report, height=800, scrolling=True)
-        st.success("✅ اضغط Ctrl+P للطباعة او الحفظ كـ PDF")
-    
-    if st.button("⬅️ العودة للحصر العام", use_container_width=True): st.session_state.page = "الحصر"; st.rerun()
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("🖨️ طباعة تقرير القضية", use_container_width=True, type="primary"):
+            html_report = print_case_report(case)
+            st.components.v1.html(html_report, height=800, scrolling=True)
+            st.success("✅ اضغط Ctrl+P للطباعة او الحفظ كـ PDF")
+    with col2:
+        if st.button("⬅️ العودة للحصر العام", use_container_width=True): st.session_state.page = "الحصر"; st.rerun()
 
     # 1- بيانات القضية
     st.markdown("<div style='background:#1E2A47; padding:15px; border-radius:15px; border:2px solid #D4AF37; margin-bottom:15px'>", unsafe_allow_html=True)
@@ -697,7 +698,7 @@ elif st.session_state.page == "تفاصيل":
                     <div style='background:#D4AF37; color:#000; padding:5px 15px; border-radius:8px; font-weight:900; font-size:16px'>جلسة {i+1}</div>
                 </div>
                 <div style='margin-bottom:8px'><span style='color:#D4AF37; font-weight:900'>التاريخ:</span> <span style='color:#FFF'>{ج.get('تاريخ')}</span></div>
-                <div style='margin-bottom:8px'><span style='color:#D4AF37; font-weight:900'>الرول:</span> <span style='color:#FFF'>{ج.get('الرول')}</span></div>
+                <div style='margin-bottom:8px'><span style='color:#D4AF37; font-weight:900'>الرول:</span> <span style='color:#FFF'>{j.get('الرول')}</span></div>
                 <div style='margin-bottom:8px'><span style='color:#D4AF37; font-weight:900'>الاجراء:</span> <span style='color:#FFF'>{ج.get('الاجراء')}</span></div>
                 <div><span style='color:#D4AF37; font-weight:900'>ملاحظات:</span> <span style='color:#FFF'>{ج.get('ملاحظات')}</span></div>
             </div>
