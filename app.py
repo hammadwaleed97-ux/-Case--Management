@@ -697,9 +697,9 @@ elif st.session_state.page == "تفاصيل":
                     <div style='background:#D4AF37; color:#000; padding:5px 15px; border-radius:8px; font-weight:900; font-size:16px'>جلسة {i+1}</div>
                 </div>
                 <div style='margin-bottom:8px'><span style='color:#D4AF37; font-weight:900'>التاريخ:</span> <span style='color:#FFF'>{ج.get('تاريخ')}</span></div>
-                <div style='margin-bottom:8px'><span style='color:#D4AF37; font-weight:900'>الرول:</span> <span style='color:#FFF'>{j.get('الرول')}</span></div>
-                <div style='margin-bottom:8px'><span style='color:#D4AF37; font-weight:900'>الاجراء:</span> <span style='color:#FFF'>{j.get('الاجراء')}</span></div>
-                <div><span style='color:#D4AF37; font-weight:900'>ملاحظات:</span> <span style='color:#FFF'>{j.get('ملاحظات')}</span></div>
+                <div style='margin-bottom:8px'><span style='color:#D4AF37; font-weight:900'>الرول:</span> <span style='color:#FFF'>{ج.get('الرول')}</span></div>
+                <div style='margin-bottom:8px'><span style='color:#D4AF37; font-weight:900'>الاجراء:</span> <span style='color:#FFF'>{ج.get('الاجراء')}</span></div>
+                <div><span style='color:#D4AF37; font-weight:900'>ملاحظات:</span> <span style='color:#FFF'>{ج.get('ملاحظات')}</span></div>
             </div>
             """, unsafe_allow_html=True)
             if st.button("✏️ تعديل الجلسة", key=f"edit_session_{i}", use_container_width=True):
@@ -821,7 +821,7 @@ elif st.session_state.page == "تفاصيل":
                 else: case['حالة'] = 'منتهية'; case['تاريخ_الحكم'] = str(تاريخ_حكم); case['منطوق_الحكم'] = منطوق_الحكم; case['مسندة_ل_الحكم'] = مسندة_ل; case['جلسات'].append({'تاريخ':str(تاريخ_حكم),'الرول':'-','الاجراء':f'الحكم - مسندة لـ {مسندة_ل}','ملاحظات':منطوق_الحكم}); case['تاريخ_جلسة'] = str(تاريخ_حكم); case['الاجراء'] = f'الحكم - مسندة لـ {مسندة_ل}'; save_data(data); st.success(f"✅ تم حفظ الحكم"); st.session_state.page = "الأرشيف"; st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # 6- تحميل التقرير - اتنقل تحت خالص
+    # 6- تحميل التقرير - تحت خالص قبل الحذف
     st.markdown("<div style='background:#1E2A47; padding:15px; border-radius:15px; border:2px solid #D4AF37; margin-bottom:15px; text-align:center'>", unsafe_allow_html=True)
     st.markdown("<div style='color:#D4AF37; font-size:20px; font-weight:900; margin-bottom:10px'>📥 تحميل التقرير</div>", unsafe_allow_html=True)
     html_report = print_case_report(case)
@@ -844,7 +844,7 @@ elif st.session_state.page == "تفاصيل":
         with c1:
             if st.button("نعم احذف نهائيا", use_container_width=True, type="primary", key="delete_yes_final"):
                 data["cases"] = [c for c in data["cases"] if c["id"]!= case["id"]]
-    
+                        
 # ==============================================
 # ============ الجزء الخامس: الأرشيف ============
 # ================================================
