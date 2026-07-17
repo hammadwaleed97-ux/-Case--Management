@@ -723,18 +723,21 @@ elif st.session_state.page == "تفاصيل":
                 case["تاريخ_جلسة"] = str(تاريخ_جديد); case["الاجراء"] = الاجراء_جديد; save_data(data); st.success("تم اضافة الجلسة"); st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # 4- المستندات - متعدل base64 + خانة اخرى
+    # 4- المستندات - متعدل base64 + خانة اخرى بتظهر
     st.markdown("<div style='background:#1E2A47; padding:15px; border-radius:15px; border:2px solid #D4AF37; margin-bottom:15px'>", unsafe_allow_html=True)
     st.markdown("<div style='color:#D4AF37; font-size:20px; font-weight:900; text-align:center; margin-bottom:10px'>4- المستندات</div>", unsafe_allow_html=True)
     with st.form("upload_form"):
-        نوع_المستند = st.selectbox("نوع المستند", ANWA3_MOSTANDAT)
-        if نوع_المستند == "اخرى":
-            اسم_نهائي = st.text_input("اكتب اسم المستند")
+        نوع_المستند = st.selectbox("نوع المستند", ANWA3_MOSTANDAT, key="select_doc_type")
+        
+        # لو اختار أخرى يظهرله خانة تحتها
+        if نوع_المستند == "أخرى":
+            اسم_نهائي = st.text_input("✍️ اكتب اسم المستند", placeholder="مثال: طلب / انذار / الخ")
         else:
             اسم_نهائي = نوع_المستند
+            
         uploaded_file = st.file_uploader("اختر الملف")
         if st.form_submit_button("رفع المستند"):
-            if uploaded_file and اسم_نهائي:
+            if uploaded_file and اسم_نهائي and اسم_نهائي.strip() != "":
                 file_name = f"{اسم_نهائي}_{uploaded_file.name}"
                 file_bytes = uploaded_file.getvalue()
                 file_base64 = base64.b64encode(file_bytes).decode('utf-8')
