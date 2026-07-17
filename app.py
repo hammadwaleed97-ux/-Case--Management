@@ -492,14 +492,14 @@ elif st.session_state.page == "الحصر":
 
         st.markdown("""
         <style>
-    .case-table {width:100%; border-collapse: collapse; font-size:11px; color:white; text-align:center; margin-bottom:5px;}
-    .case-table th {background:#D4AF37; color:#0B1426; padding:6px; font-weight:900;}
-    .case-table td {background:#1E2A47; padding:6px; border:1px solid #D4AF37; vertical-align:top;}
-    .plaintiff {background:#FFF3CD; color:#000; font-weight:700; border-radius:6px; padding:6px; font-size:11px;}
-    .plaintiff-hey2a {background:#DC3545!important; color:#FFF!important; font-weight:900; border-radius:6px; padding:6px; font-size:11px;}
-    .defendant {background:#CFF4FC; color:#000; font-weight:700; border-radius:6px; padding:6px; font-size:11px;}
-    .date-gold {color:#FFD700; font-weight:900;}
-    .status-green {color:#4CAF50; font-weight:900;}
+   .case-table {width:100%; border-collapse: collapse; font-size:11px; color:white; text-align:center; margin-bottom:5px;}
+   .case-table th {background:#D4AF37; color:#0B1426; padding:6px; font-weight:900;}
+   .case-table td {background:#1E2A47; padding:6px; border:1px solid #D4AF37; vertical-align:top;}
+   .plaintiff {background:#FFF3CD; color:#000; font-weight:700; border-radius:6px; padding:6px; font-size:11px;}
+   .plaintiff-hey2a {background:#DC3545!important; color:#FFF!important; font-weight:900; border-radius:6px; padding:6px; font-size:11px;}
+   .defendant {background:#CFF4FC; color:#000; font-weight:700; border-radius:6px; padding:6px; font-size:11px;}
+   .date-gold {color:#FFD700; font-weight:900;}
+   .status-green {color:#4CAF50; font-weight:900;}
         </style>
         """, unsafe_allow_html=True)
 
@@ -520,19 +520,27 @@ elif st.session_state.page == "الحصر":
             else:
                 طرف1_html = f"<div class='plaintiff'><b>{لقب1}</b><br>{case.get('مدعي','')}</div>"
             طرف2_html = f"<div class='defendant'><b>{لقب2}</b><br>{case.get('مدعي_عليه','')}</div>"
-            خصوم = طرف1_html + "<div style='height:4px'></div>" + طرف2_html
+            خصوم_html = طرف1_html + "<div style='height:4px'></div>" + طرف2_html # <-- غيرت الاسم عشان ميضربش
 
             table_html = "<table class='case-table'><tr>"
-            headers = ["م", "الرقم والسنة", "المحكمة والدائرة", "الخصوم", "الموضوع", "اخر جلسة", "الاجراء", "الحالة"] # <-- هنا بقت الاجراء
+            headers = ["م", "الرقم والسنة", "المحكمة والدائرة", "الخصوم", "الموضوع", "اخر جلسة", "الاجراء", "الحالة"]
             for h in headers: table_html += f"<th>{h}</th>"
             table_html += "</tr>"
-            table_html += f"<tr><td>{idx}</td><td>{رقم_كامل}</td><td>{محكمة_كاملة}</td><td>{خصوم}</td><td>{case.get('موضوع','')}</td><td class='date-gold'>{case.get('تاريخ_جلسة','')}</td><td>{case.get('الاجراء','')}</td><td class='status-green'>{case.get('حالة','متداولة')}</td></tr></table>" # <-- وهنا كمان
+            table_html += f"<tr><td>{idx}</td><td>{رقم_كامل}</td><td>{محكمة_كاملة}</td><td>{خصوم_html}</td><td>{case.get('موضوع','')}</td><td class='date-gold'>{case.get('تاريخ_جلسة','')}</td><td>{case.get('الاجراء','')}</td><td class='status-green'>{case.get('حالة','متداولة')}</td></tr></table>" # <-- استخدمت خصوم_html
             st.markdown(table_html, unsafe_allow_html=True)
 
             c1, c2, c3 = st.columns([4,1,4])
             with c2:
                 if st.button("فتح", key=f"open_{case['id']}", use_container_width=True):
                     st.session_state.selected_case_id = case['id']; st.session_state.page = "تفاصيل"; st.rerun()
+
+# ===============================================
+# ==========================================
+import os
+import shutil # <-- صح
+
+# ============ الجزء الرابع: تفاصيل القضية ============
+# ================================================
 
 # ===============================================
 # ==========================================
