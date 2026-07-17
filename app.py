@@ -765,33 +765,40 @@ elif st.session_state.page == "تفاصيل":
         st.markdown("<div style='background:#142038; padding:15px; border-radius:12px; margin-top:10px'>", unsafe_allow_html=True)
         st.markdown("<div style='color:#D4AF37; font-weight:900; margin-bottom:10px'>المستندات المرفوعة:</div>", unsafe_allow_html=True)
         for i, مستند in enumerate(case['مستندات']):
-            col1, col2, col3 = st.columns([4,1,1])
-            with col1:
-                st.markdown(f"<div style='color:#FFF; padding:8px'>{مستند['نوع']}</div>", unsafe_allow_html=True)
-            with col2:
-                # لو المستند قديم ومتخزن بمسار هنحاول نقراه، لو جديد هناخد المحتوى
-                if 'محتوى' in مستند:
-                    st.download_button("📥", مستند['محتوى'], file_name=مستند['نوع'], key=f"dl_{i}", use_container_width=True)
-                elif 'مسار' in مستند and os.path.exists(مستند['مسار']):
-                    with open(مستند['مسار'], "rb") as f:
-                        st.download_button("📥", f.read(), file_name=مستند['نوع'], key=f"dl_{i}", use_container_width=True)
-                else:
-                    st.button("❌", disabled=True, key=f"dl_err_{i}", use_container_width=True)
-            with col3:
-                if st.button("🗑️", key=f"del_{i}", use_container_width=True):
-                    st.session_state[f"confirm_del_{i}"] = True
-            
-            if st.session_state.get(f"confirm_del_{i}", False):
-                st.warning(f"متأكد من حذف {مستند['نوع']}؟")
-                c1,c2 = st.columns(2)
-                with c1:
-                    if st.button("نعم احذف", key=f"yes_del_{i}"):
-                        if 'مسار' in مستند and os.path.exists(مستند['مسار']): os.remove(مستند['مسار'])
-                        case['مستندات'].pop(i)
-                        save_data(data); st.session_state[f"confirm_del_{i}"] = False; st.rerun()
-                with c2:
-                    if st.button("الغاء", key=f"no_del_{i}"):
-                        st.session_state[f"confirm_del_{i}"] = False; st.rerun()
+            try:
+                col1, col2, col3 = st.columns([4,1,1])
+                with col1:
+                    st.markdown(f"<div style='color:#FFF; padding:8px'>{مستند.get('نوع', 'ملف بدون اسم')}</div>", unsafe_allow_html=True)
+                with col2:
+                    # لو المستند جديد
+                    if 'محتوى' in مستند and مستند['محتوى']:
+                        st.download_button("📥", مستند['محتوى'], file_name=مستند.get('نوع','file'), key=f"dl_{i}", use_container_width=True)
+                    # لو المستند قديم
+                    elif 'مسار' in مستند and os.path.exists(مستند['مسار']):
+                        with open(مستند['مسار'], "rb") as f:
+                            st.download_button("📥", f.read(), file_name=مستند.get('نوع','file'), key=f"dl_{i}", use_container_width=True)
+                    else:
+                        st.button("❌ تالف", disabled=True, key=f"dl_err_{i}", use_container_width=True)
+                with col3:
+                    if st.button("🗑️", key=f"del_{i}", use_container_width=True):
+                        st.session_state[f"confirm_del_{i}"] = True
+                
+                if st.session_state.get(f"confirm_del_{i}", False):
+                    st.warning(f"متأكد من حذف {مستند.get('نوع','الملف')}؟")
+                    c1,c2 = st.columns(2)
+                    with c1:
+                        if st.button("نعم احذف", key=f"yes_del_{i}"):
+                            if 'مسار' in مستند and os.path.exists(مستند['مسار']): os.remove(مستند['مسار'])
+                            case['مستندات'].pop(i)
+                            save_data(data); st.session_state[f"confirm_del_{i}"] = False; st.rerun()
+                    with c2:
+                        if st.button("الغاء", key=f"no_del_{i}"):
+                            st.session_state[f"confirm_del_{i}"] = False; st.rerun()
+            except Exception as e:
+                st.error(f"خطأ في المستند رقم {i+1}: سيتم حذفه تلقائيا")
+                case['مستندات'].pop(i)
+                save_data(data)
+                st.rerun()
         st.markdown("</div>", unsafe_allow_html=True)
     # 5- جلسة الحكم
     st.markdown("<div style='background:#1E2A47; padding:15px; border-radius:15px; border:2px solid #FF5252; margin-bottom:15px'>", unsafe_allow_html=True)
