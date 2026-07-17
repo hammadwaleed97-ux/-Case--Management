@@ -534,9 +534,6 @@ elif st.session_state.page == "الحصر":
                 if st.button("فتح", key=f"open_{case['id']}", use_container_width=True):
                     st.session_state.selected_case_id = case['id']; st.session_state.page = "تفاصيل"; st.rerun()
 
-import os
-import shutil
-
 # ============ الجزء الرابع: تفاصيل القضية ============
 # ================================================
 elif st.session_state.page == "تفاصيل":
