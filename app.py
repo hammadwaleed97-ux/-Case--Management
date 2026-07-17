@@ -624,7 +624,7 @@ elif st.session_state.page == "الحصر":
                     st.session_state.selected_case_id = case['id']; st.session_state.page = "تفاصيل"; st.rerun()
 
 # =========================================
-# ============================================
+# ======================================
 # ================================================
 # ============ الجزء الرابع: تفاصيل القضية ============
 # ================================================
@@ -638,10 +638,7 @@ elif st.session_state.page == "تفاصيل":
     st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
     st.markdown(f"<h2 style='color:#D4AF37; text-align:center'>📄 تفاصيل القضية رقم {case.get('رقم')} لسنة {case.get('سنة')}</h2>", unsafe_allow_html=True)
 
-    # زر الطباعة الجديد
-    col1, col2 = st.columns(2)
-    with col1:
-        # زر الطباعة والتحميل
+    # زر الطباعة والتحميل
     col1, col2, col3 = st.columns(3)
     with col1:
         if st.button("🖨️ معاينة للطباعة", use_container_width=True, type="primary"):
@@ -659,11 +656,6 @@ elif st.session_state.page == "تفاصيل":
         )
     with col3:
         if st.button("⬅️ العودة للحصر", use_container_width=True): st.session_state.page = "الحصر"; st.rerun()
-            html_report = print_case_report(case)
-            st.components.v1.html(html_report, height=800, scrolling=True)
-            st.success("✅ اضغط Ctrl+P للطباعة او الحفظ كـ PDF")
-    with col2:
-        if st.button("⬅️ العودة للحصر العام", use_container_width=True): st.session_state.page = "الحصر"; st.rerun()
 
     # 1- بيانات القضية
     st.markdown("<div style='background:#1E2A47; padding:15px; border-radius:15px; border:2px solid #D4AF37; margin-bottom:15px'>", unsafe_allow_html=True)
