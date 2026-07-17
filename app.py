@@ -666,6 +666,34 @@ elif st.session_state.page == "تفاصيل":
             st.rerun()
             
     st.markdown("</div>", unsafe_allow_html=True)
+        # 6- حذف نهائى للقضية
+    st.markdown("<div style='background:#1E2A47; padding:15px; border-radius:15px; border:2px solid #FF0000; margin-bottom:15px'>", unsafe_allow_html=True)
+    st.markdown("<div style='color:#FF0000; font-size:20px; font-weight:900; text-align:center; margin-bottom:10px'>⚠️ منطقة الخطر - الحذف النهائي</div>", unsafe_allow_html=True)
+    
+    if st.button("🗑️ حذف نهائى للقضية", use_container_width=True, type="primary", key="delete_final_btn"): 
+        st.session_state.confirm_delete_final = True
+        
+    if st.session_state.get('confirm_delete_final', False):
+        st.error(f"⚠️ تحذير نهائي: سيتم حذف القضية رقم {case.get('رقم')} لسنة {case.get('سنة')} وجميع المستندات الخاصة بها. لا يمكن استرجاعها")
+        st.warning("هل انت متأكد 100% ؟")
+        c1, c2 = st.columns(2)
+        with c1:
+            if st.button("نعم احذف نهائيا", use_container_width=True, type="primary", key="delete_yes_final"):
+                data["cases"] = [c for c in data["cases"] if c["id"]!= case["id"]]
+                case_folder = os.path.join(UPLOAD_FOLDER, f"{case['id']}")
+                if os.path.exists(case_folder): 
+                    import shutil
+                    shutil.rmtree(case_folder)
+                save_data(data)
+                st.session_state.confirm_delete_final = False
+                st.success("✅ تم الحذف النهائي للقضية")
+                st.session_state.page = "الحصر"
+                st.rerun()
+        with c2:
+            if st.button("تراجع والغاء", use_container_width=True, key="delete_no_final"): 
+                st.session_state.confirm_delete_final = False
+                st.rerun()
+    st.markdown("</div>", unsafe_allow_html=True)
 # ================================================
 # ==============================================
 # ============ الجزء الخامس: الأرشيف ============
