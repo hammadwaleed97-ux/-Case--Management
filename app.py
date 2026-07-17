@@ -624,7 +624,7 @@ elif st.session_state.page == "الحصر":
                     st.session_state.selected_case_id = case['id']; st.session_state.page = "تفاصيل"; st.rerun()
 
 # =========================================
-# ======================================
+# =====================================
 # ================================================
 # ============ الجزء الرابع: تفاصيل القضية ============
 # ================================================
@@ -691,9 +691,9 @@ elif st.session_state.page == "تفاصيل":
     with col2: st.markdown(f"<div style='background:#CFF4FC; padding:10px; border-radius:10px; color:#000; text-align:center'><b>المدعى عليه:</b><br>{case.get('مدعي_عليه')}</div>", unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # 3- متابعة الجلسات - متظبط RTL
+    # 3- الجلسات والإجراءات - متظبط RTL
     st.markdown("<div style='background:#1E2A47; padding:15px; border-radius:15px; border:2px solid #D4AF37; margin-bottom:15px'>", unsafe_allow_html=True)
-    st.markdown("<div style='color:#D4AF37; font-size:20px; font-weight:900; text-align:center; margin-bottom:10px'>3- متابعة الجلسات</div>", unsafe_allow_html=True)
+    st.markdown("<div style='color:#D4AF37; font-size:20px; font-weight:900; text-align:center; margin-bottom:10px'>3- الجلسات والإجراءات</div>", unsafe_allow_html=True)
     if case.get("جلسات"):
         for i, ج in enumerate(case["جلسات"]):
             st.markdown(f"""
@@ -703,7 +703,7 @@ elif st.session_state.page == "تفاصيل":
                 </div>
                 <div style='margin-bottom:8px'><span style='color:#D4AF37; font-weight:900'>التاريخ:</span> <span style='color:#FFF'>{ج.get('تاريخ')}</span></div>
                 <div style='margin-bottom:8px'><span style='color:#D4AF37; font-weight:900'>الرول:</span> <span style='color:#FFF'>{ج.get('الرول')}</span></div>
-                <div style='margin-bottom:8px'><span style='color:#D4AF37; font-weight:900'>الاجراء:</span> <span style='color:#FFF'>{ج.get('الاجراء')}</span></div>
+                <div style='margin-bottom:8px'><span style='color:#D4AF37; font-weight:900'>الاجراء:</span> <span style='color:#FFF'>{j.get('الاجراء')}</span></div>
                 <div><span style='color:#D4AF37; font-weight:900'>ملاحظات:</span> <span style='color:#FFF'>{ج.get('ملاحظات')}</span></div>
             </div>
             """, unsafe_allow_html=True)
