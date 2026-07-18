@@ -1,5 +1,6 @@
 import json, os, bcrypt, smtplib, random
 from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart  # <-- ضيف ده بس
 import streamlit as st
 
 st.markdown("""
@@ -77,29 +78,6 @@ def is_admin_email(email):
     admin = next((u for u in users if u["role"] == "admin"), None)
     if not admin: return False
     return email == admin["email"] or email == admin.get("recovery_email","")
-
-    def send_email(to_email, subject, body):
-    # ===== حط بياناتك هنا =====
-    from_email = "hammadwaleed97@gmail.com"  # حط الايميل بتاعك هنا
-    app_password = "r v y q q a y j o n w h u o x r" # حط كلمة سر التطبيق هنا 16 رقم
-    
-    msg = MIMEMultipart("alternative")
-    msg["Subject"] = subject
-    msg["From"] = from_email
-    msg["To"] = to_email
-    
-    msg.attach(MIMEText(body, "html", "utf-8"))
-    
-    try:
-        server = smtplib.SMTP("smtp.gmail.com", 587)
-        server.starttls()
-        server.login(from_email, app_password)
-        server.sendmail(from_email, to_email, msg.as_string())
-        server.quit()
-        return True
-    except Exception as e:
-        st.error(f"خطأ في الارسال: {e}")
-        return False
 
 def login_page():
     st.markdown("<h3 style='text-align:center; color:#C9A961'>ادارة الاعضاء</h3>", unsafe_allow_html=True)
