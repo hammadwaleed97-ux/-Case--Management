@@ -79,16 +79,8 @@ def manage_users_page():
                     users = [u for u in users if u['id'] != user['id']]
                     save_users(users); st.rerun()
 
-if "user" not in st.session_state:
-    st.session_state.user = None
-    st.session_state.page = "login"
-
-if st.session_state.page == "login":
-    login_page()
-elif st.session_state.page == "ادارة_الاعضاء":
-    if st.session_state.user and st.session_state.user["role"] == "admin":
-        manage_users_page()
-        def set_password_page():
+# <<<< الدالة دي كانت جوه غلط طلعتها بره
+def set_password_page():
     st.markdown("<h1 style='text-align:center'>انشاء كلمة سر جديدة</h1>", unsafe_allow_html=True)
     new_pass = st.text_input("كلمة السر الجديدة", type="password")
     confirm_pass = st.text_input("تأكيد كلمة السر", type="password")
@@ -104,6 +96,25 @@ elif st.session_state.page == "ادارة_الاعضاء":
                     st.rerun()
         else:
             st.error("الباسوردين مش زي بعض")
+
+# ===== تشغيل الصفحات =====
+if "user" not in st.session_state:
+    st.session_state.user = None
+    st.session_state.page = "login"
+
+if st.session_state.page == "login":
+    login_page()
+elif st.session_state.page == "ادارة_الاعضاء":
+    if st.session_state.user and st.session_state.user["role"] == "admin":
+        manage_users_page()
+elif st.session_state.page == "set_password":  # <<<< ضفت دي
+    set_password_page()
+elif st.session_state.page == "الرئيسية":
+    st.write(f"اهلا {st.session_state.user['username']}")
+    if st.session_state.user["role"] == "admin":
+        if st.button("ادارة الاعضاء"):
+            st.session_state.page = "ادارة_الاعضاء"
+            st.rerun()
 # ============================================
 # ======= الجزء الاول: الاساسيات ============
 # ============================================
