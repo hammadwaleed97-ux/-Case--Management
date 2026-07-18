@@ -823,60 +823,86 @@ elif st.session_state.page == "تفاصيل":
     # 7- حذف نهائى
     st.markdown("<style>.delete-box {background:#1E2A47; padding:15px; border-radius:15px; border:2px solid #FF0000; margin-bottom:15px; text-align:center}</style>", unsafe_allow_html=True)
 # =============================================
-# ==============================================
-# ============ الجزء الخامس: الأرشيف ============
-# ================================================
-elif st.session_state.page == "الأرشيف":
+# ======= الجزء الخامس: الارشيف =======
+elif st.session_state.page == "الارشيف":
     data = load_data()
     st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
-    st.markdown("<h2 style='color:#FF5252; text-align:center'>📁 أرشيف الأحكام النهائية</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='color:#FFFFFF; text-align:center'>📁 أرشيف الأحكام النهائية</h2>", unsafe_allow_html=True)
     if st.button("⬅️ العودة للرئيسية", use_container_width=True): st.session_state.page = "الرئيسية"; st.rerun()
 
-    search_query = st.text_input("🔍 ابحث برقم القضية او الخصوم", key="search_archive")
-    ended_cases = [c for c in data["cases"] if c.get('حالة') == 'منتهية' and c.get('مسندة_ل_الحكم') in ['الصالح', 'الضد']]
+    ended_cases = [c for c in data["cases"] if c.get('حالة') == 'منتهية']
 
-    if search_query:
-        ended_cases = [c for c in ended_cases if search_query in str(c.get('رقم','')) or search_query in str(c.get('مدعي','')) or search_query in str(c.get('مدعي_عليه',''))]
+    # ======= تفعيل البحث في الارشيف =======
+    search_arch = st.text_input("🔍 ابحث برقم القضية او الخصوم", key="search_arch")
+    if search_arch:
+        ended_cases = [c for c in ended_cases if search_arch in str(c.get('رقم','')) or search_arch in str(c.get('مدعي','')) or search_arch in str(c.get('مدعي_عليه',''))]
+    # ======================================
 
-    if not ended_cases: st.info("لا توجد أحكام نهائية في الارشيف")
+    st.markdown(f"<div style='background:#1E2A47; padding:20px; border-radius:15px; border:2px solid #D4AF37; text-align:center; margin-bottom:20px'>", unsafe_allow_html=True)
+    st.markdown(f"<div style='font-size:28px; font-weight:900; color:#D4AF37'>📁 {len(ended_cases)}</div><div style='font-size:18px; color:#FFF; font-weight:700'>عدد الأحكام النهائية</div>", unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    # ======= ستايل الجدول ابيض =======
+    st.markdown("""
+    <style>
+.case-table {width:100%; border-collapse: collapse; font-size:11px; color:white; text-align:center; margin-bottom:5px;}
+.case-table th {background:#D4AF37; color:#0B1426; padding:6px; font-weight:900;}
+.case-table td {background:#1E2A47; padding:6px; border:1px solid #D4AF37; vertical-align:top; color:#FFFFFF;}
+.plaintiff {background:#FFF3CD; color:#000; font-weight:700; border-radius:6px; padding:6px; font-size:11px;}
+.plaintiff-hey2a {background:#DC3545!important; color:#FFF!important; font-weight:900; border-radius:6px; padding:6px; font-size:11px;}
+.defendant {background:#CFF4FC; color:#000; font-weight:700; border-radius:6px; padding:6px; font-size:11px;}
+.date-gold {color:#FFD700; font-weight:900;}
+.status-green {color:#4CAF50; font-weight:900;}
+    </style>
+    """, unsafe_allow_html=True)
+    # ==================================
+
+    if not ended_cases: st.info("لا توجد احكام نهائية")
     else:
-        sorted_ended = sorted(ended_cases, key=lambda x: x.get("تاريخ_الحكم","0000-00-00"), reverse=True)
-        st.markdown(f"<div style='background:#1E2A47; padding:20px; border-radius:15px; border:2px solid #FF5252; text-align:center; margin-bottom:20px'><div style='font-size:28px; font-weight:900; color:#FF5252'>📁 {len(sorted_ended)}</div><div style='font-size:18px; color:#FFF; font-weight:700'>عدد الأحكام النهائية</div></div>", unsafe_allow_html=True)
+        sorted_ended = sorted(ended_cases, key=lambda x: x.get("تاريخ_جلسة","9999-12-31"), reverse=True)
+        for idx, case in enumerate(sorted_ended, 1):
+            رقم_كامل = f"{case.get('رقم','')} لسنة {case.get('سنة','')}"
+            محكمة_كاملة = f"{case.get('نوع','')} {case.get('محكمة_اسم','')}"
+            if case.get('مأمورية',''): محكمة_كاملة += f"<br>مأمورية {case.get('مأمورية','')}"
+            دائرة_كاملة = f"{case.get('دائرة', '' )}" if case.get('دائرة', '' ) else ""
+            if دائرة_كاملة: محكمة_كاملة += f"<br>دائرة {دائرة_كاملة}"
 
-        for case in sorted_ended:
-            لون = "#4CAF50" if case.get('مسندة_ل_الحكم') == "الصالح" else "#FF5252"
-            st.markdown(f"<div style='background:#142038; padding:15px; border-radius:15px; border:2px solid {لون}; margin-bottom:15px'>", unsafe_allow_html=True)
-            st.markdown(f"<h4 style='color:{لون}; text-align:center'>القضية رقم {case.get('رقم')} لسنة {case.get('سنة')}</h4>", unsafe_allow_html=True)
-            col1, col2 = st.columns(2)
-            with col1:
-                st.markdown(f"<div style='background:#FFF3CD; padding:8px; border-radius:8px; color:#000; margin-bottom:5px; text-align:center'><b>المدعى:</b><br>{case.get('مدعي')}</div>", unsafe_allow_html=True)
-                st.markdown(f"<b>المحكمة:</b> {case.get('نوع')} {case.get('محكمة_اسم')}<br><b>الدائرة:</b> {case.get('دائرة')}", unsafe_allow_html=True)
-            with col2:
-                st.markdown(f"<div style='background:#CFF4FC; padding:8px; border-radius:8px; color:#000; margin-bottom:5px; text-align:center'><b>المدعى عليه:</b><br>{case.get('مدعي_عليه')}</div>", unsafe_allow_html=True)
-                st.markdown(f"<b>الموضوع:</b> {case.get('موضوع')}", unsafe_allow_html=True)
-            st.markdown(f"<div style='background:#1E2A47; padding:10px; border-radius:8px; border:2px solid {لون}; margin:10px 0; text-align:center'><b style='color:{لون}'>تاريخ الحكم:</b> {case.get('تاريخ_الحكم')} | <b style='color:{لون}'>مسندة لـ:</b> {case.get('مسندة_ل_الحكم')}<br><b style='color:{لون}'>المنطوق:</b> {case.get('منطوق_الحكم')}</div>", unsafe_allow_html=True)
-            if case.get('سبب_الحفظ'): st.info(f"**سبب الحفظ:** {case.get('سبب_الحفظ')}")
-            col1, col2 = st.columns(2)
-            with col1:
-                سبب_الحفظ = st.text_input("سبب الحفظ", key=f"save_{case['id']}")
-                if st.button("💾 حفظ السبب", key=f"save_btn_{case['id']}", use_container_width=True):
-                    case['سبب_الحفظ'] = سبب_الحفظ; save_data(data); st.success("تم الحفظ"); st.rerun()
-            with col2:
-                if st.button("↩️ عودة للتداول", key=f"return_btn_{case['id']}", use_container_width=True):
-                    st.session_state[f"show_return_{case['id']}"] = True
-            if st.session_state.get(f"show_return_{case['id']}"):
-                with st.form(f"return_form_{case['id']}"):
-                    رقم_استئناف = st.text_input("رقم الاستئناف/النقض")
-                    سنة_استئناف = st.text_input("سنة الاستئناف/النقض")
-                    سبب = st.text_area("سبب العودة للتداول")
-                    if st.form_submit_button("تأكيد"):
-                        case['حالة'] = 'متداولة'
-                        اجراء_العودة = f"عودة للتداول - استئناف رقم {رقم_استئناف} لسنة {سنة_استئناف}" if رقم_استئناف else "عودة للتداول"
-                        case["جلسات"].append({"تاريخ":str(datetime.now().date()),"الرول":"-","الاجراء":اجراء_العودة,"ملاحظات":سبب})
-                        جلسات_مرتبة = sorted(case["جلسات"], key=lambda x: x.get("تاريخ","9999-12-31"), reverse=True)
-                        case["تاريخ_جلسة"] = جلسات_مرتبة[0].get("تاريخ",""); case["الاجراء"] = جلسات_مرتبة[0].get("الاجراء",""); case['سبب_الحفظ'] = ""
-                        save_data(data); st.success("تم ارجاع القضية للحصر"); st.session_state.page = "الحصر"; st.rerun()
-            st.markdown("</div>", unsafe_allow_html=True)
+            نوع = case.get('نوع','')
+            if نوع == "استئناف": لقب1, لقب2 = "المستأنف:", "المستأنف ضده:"
+            elif نوع == "طعن": لقب1, لقب2 = "الطاعن:", "المطعون ضده:"
+            else: لقب1, لقب2 = "المدعى:", "المدعى عليه:"
+
+            if "الهيئة" in str(case.get('مدعي','')):
+                طرف1_html = f"<div class='plaintiff-hey2a'><b>{لقب1}</b><br>{case.get('مدعي','')}</div>"
+            else:
+                طرف1_html = f"<div class='plaintiff'><b>{لقب1}</b><br>{case.get('مدعي','')}</div>"
+            طرف2_html = f"<div class='defendant'><b>{لقب2}</b><br>{case.get('مدعي_عليه','')}</div>"
+            خصوم = طرف1_html + "<div style='height:4px'></div>" + طرف2_html
+
+            # نجيب اخر جلسة بس للارشيف
+            منطوق = ""
+            تاريخ_حكم = ""
+            لصالح = ""
+            if "جلسات" in case and case["جلسات"]:
+                اخر_جلسة = sorted(case["جلسات"], key=lambda x: x.get("تاريخ",""), reverse=True)[0]
+                تاريخ_حكم = اخر_جلسة.get('تاريخ','')
+                منطوق = اخر_جلسة.get('الاجراء','')
+                لصالح = اخر_جلسة.get('الحالة','')
+
+            table_html = "<table class='case-table'><tr>"
+            headers = ["م", "الرقم والسنة", "المحكمة والدائرة", "الخصوم", "الموضوع", "تاريخ الحكم", "المنطوق", "لـ"]
+            for h in headers: table_html += f"<th>{h}</th>"
+            table_html += "</tr>"
+            table_html += f"<tr><td>{idx}</td><td>{رقم_كامل}</td><td>{محكمة_كاملة}</td><td>{خصوم}</td><td>{case.get('موضوع','')}</td><td class='date-gold'>{تاريخ_حكم}</td><td>{منطوق}</td><td class='status-green'>{لصالح}</td></tr></table>"
+            st.markdown(table_html, unsafe_allow_html=True)
+
+            # ======= زر الفتح تحت الجدول =======
+            c1, c2, c3 = st.columns([4,1,4])
+            with c2:
+                if st.button("فتح", key=f"open_arch_{case['id']}", use_container_width=True):
+                    st.session_state.selected_case_id = case['id']; st.session_state.page = "تفاصيل"; st.rerun()
+            # ===================================
+            st.markdown("<div style='height:15px'></div>", unsafe_allow_html=True)
 # ==============================================
 # ============ الجزء السادس: البحث ============
 # ================================================
