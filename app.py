@@ -1,4 +1,5 @@
-# ======== الجزء الاول: الاساسيات ============
+# ============================================
+# ======= الجزء الاول: الاساسيات ============
 # ============================================
 import streamlit as st
 import pandas as pd
@@ -7,6 +8,7 @@ import os
 import io
 import smtplib
 import secrets
+import base64
 import arabic_reshaper # جديد
 from bidi.algorithm import get_display # جديد
 from datetime import datetime, timedelta
@@ -18,7 +20,6 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 from fpdf import FPDF
 
 st.set_page_config(page_title="إدارة القضايا", layout="wide", page_icon="⚖️")
-
 # دالة عشان تظبط العربي وتوصله
 def fix_arabic(text):
     reshaped_text = arabic_reshaper.reshape(str(text))
