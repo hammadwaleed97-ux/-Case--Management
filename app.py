@@ -4,21 +4,23 @@ import streamlit as st
 
 st.markdown("""
 <style>
-.stApp { background-color: #0E1117; color: white; }
-h1, h2, h3, h4, h5, h6, p, div, span { color: white!important; }
+.stApp { background-color: #0E1117; }
+h1, h2, h3, h4, h5, h6 { color: white!important; }
 
+/* الزرار والانبوت */
 .stButton>button { background-color: #C9A961; color: black; font-weight: bold; border-radius: 10px; }
-.stTextInput>div>div>input { color: black; background-color: white; border-radius: 8px; }
-.stSelectbox>div>div>div { color: black; background-color: white; border-radius: 8px; }
-.stTextArea>div>div>textarea { color: black; background-color: white; border-radius: 8px; }
-
-/* ده الجديد - يظهر اي label */
-label, .stTextInput label, .stSelectbox label, .stTextArea label {
-    color: #C9A961 !important; 
-    font-weight: bold !important; 
-    font-size: 16px !important;
+.stTextInput>div>div>input, .stSelectbox>div>div>div, .stTextArea>div>div>textarea { 
+    color: black; background-color: white; border-radius: 8px; 
 }
 
+/* اهم سطرين: اسم الحقل فوق الانبوت */
+div[data-testid="stWidgetLabel"] p {
+    color: #C9A961 !important; 
+    font-size: 16px !important;
+    font-weight: 700 !important;
+}
+
+/* الجدول */
 thead tr th { color: black !important; background-color: #C9A961 !important; font-weight: bold; }
 tbody tr td { color: black !important; background-color: white !important; }
 </style>
