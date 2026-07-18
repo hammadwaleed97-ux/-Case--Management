@@ -143,16 +143,19 @@ def login_page():
                 else: st.error("الكود غلط")
 
     with tab2:
-        st.markdown("**ادخل كود التفعيل من الادمن**")
-        activation_code = st.text_input("كود التفعيل", key="new_user")
-        if st.button("تفعيل الحساب", use_container_width=True):
-            users = load_users()
-            found_user = next((u for u in users if u.get('activation_code') == activation_code), None)
-            if not found_user: st.error("كود التفعيل غلط")
-            else:
-                st.session_state.page = "set_password"
-                st.session_state.temp_user = found_user["username"]
-                st.rerun()
+    st.markdown("**تفعيل حساب عضو**")
+    member_name = st.text_input("اكتب اسم العضو للتفعيل", key="new_user")
+    if st.button("تفعيل الحساب", use_container_width=True):
+        users = load_users()
+        found_user = next((u for u in users if u.get('username') == member_name), None)
+        if not found_user: 
+            st.error("الاسم ده مش موجود")
+        elif found_user.get("password_set"):
+            st.error("العضو ده مفعل بالفعل")
+        else:
+            st.session_state.page = "set_password"
+            st.session_state.temp_user = found_user["username"]
+            st.rerun()
 
 def extract_member_page():
     st.markdown("<h2 style='text-align:center; color:#C9A961'>استخراج عضوية جديدة</h2>", unsafe_allow_html=True)
