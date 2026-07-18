@@ -839,12 +839,27 @@ elif st.session_state.page == "تفاصيل":
             if st.button("الغاء", use_container_width=True):
                 st.session_state.confirm_delete = False; st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
-# ========================================
+# =======================================
+import base64
+from datetime import datetime
+import streamlit as st
+
 # ==============================================
 # ============ الجزء الخامس: الأرشيف ============
 # ==============================================
 elif st.session_state.page == "الأرشيف":
     data = load_data()
+
+    # تلوين الـ placeholder عشان يبان
+    st.markdown("""
+    <style>
+        input::placeholder, textarea::placeholder {
+            color: #FFD700 !important;  /* اصفر دهبي */
+            opacity: 1 !important;
+            font-weight: 600;
+        }
+    </style>
+    """, unsafe_allow_html=True)
     
     st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
     st.markdown("<h2 style='color:#D4AF37; text-align:center'>📁 الأرشيف</h2>", unsafe_allow_html=True)
@@ -899,7 +914,7 @@ elif st.session_state.page == "الأرشيف":
             if st.session_state.get('save_case_id') == case['id']:
                 with st.form(f"save_form_{case['id']}"):
                     st.warning("حفظ القضية نهائي")
-                    سبب_الحفظ = st.text_area("سبب الحفظ", placeholder="مثال: تم التنفيذ / تصالح / لا يوجد طعن")
+                    سبب_الحفظ = st.text_area("سبب الحفظ", placeholder="مثال: تم الطعن / حكم نهائي / عدم جدوى")
                     مستندات_الحفظ = st.file_uploader("ارفع مستندات الحفظ", type=['pdf','jpg','png','doc','docx'], accept_multiple_files=True)
                     
                     if st.form_submit_button("💾 تأكيد الحفظ النهائي", use_container_width=True, type="primary"):
