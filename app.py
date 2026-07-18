@@ -1564,17 +1564,18 @@ elif st.session_state.page == "بحث":
                     
                     st.markdown("</div>", unsafe_allow_html=True)
                     st.markdown("</div>", unsafe_allow_html=True)
-                    # ====== 
+                    # ======
 elif st.session_state.page == "التنبيهات":
+    st.markdown("<h1 style='text-align:center; color:#C9A961;'>مركز التنبيهات</h1>", unsafe_allow_html=True)
+    
     with st.container(border=True):
-        st.markdown("<div class='card'>", unsafe_allow_html=True)
-        st.markdown("<h2 style='text-align:center; color:#C9A961;'>7. التنبيهات</h2>", unsafe_allow_html=True)
+        st.markdown("<h2 style='text-align:center; color:#C9A961;'>ارسال التنبيهات بالايميل</h2>", unsafe_allow_html=True)
         
         user_email = st.text_input("سجل ايميلك عشان يجيلك التنبيهات", key="alert_email_input")
 
         col1, col2 = st.columns(2)
         with col1:
-            if st.button("1. حفظ الايميل"):
+            if st.button("1. حفظ الايميل", use_container_width=True):
                 if user_email and "@" in user_email:
                     st.session_state['saved_email'] = user_email
                     st.success(f"✅ تم حفظ الايميل: {user_email}")
@@ -1582,51 +1583,55 @@ elif st.session_state.page == "التنبيهات":
                     st.warning("دخل ايميل صحيح")
 
         with col2:
-            if st.button("2. 📧 ارسل التنبيهات دلوقتي"):
+            if st.button("2. 📧 ارسل التنبيهات دلوقتي", use_container_width=True):
                 if 'saved_email' in st.session_state:
                     alerts = get_alert_cases()
                     body = "<h2 style='color:#C9A961;'>تنبيهات القضايا</h2>"
+                    
                     body += "<h3>1. جلسات خلال 7 ايام</h3>"
                     if alerts["sessions"]:
                         for case in alerts["sessions"]:
                             body += f"<p><b>رقم:</b> {case.get('رقم_كامل','')} <br> <b>الجلسة:</b> {case.get('session_date','')} <br> <b>الموضوع:</b> {case.get('موضوع_الدعوى','')}</p><hr>"
                     else:
                         body += "<p>لا توجد جلسات قريبة</p>"
+
                     body += "<h3>2. طعون خلال 15 يوم</h3>"
                     if alerts["appeals"]:
                         for case in alerts["appeals"]:
                             body += f"<p><b>رقم:</b> {case.get('رقم_كامل','')} <br> <b>اخر ميعاد:</b> {case.get('deadline','')} <br> <b>الموضوع:</b> {case.get('موضوع_الدعوى','')}</p><hr>"
                     else:
                         body += "<p>لا توجد طعون قريبة</p>"
+
                     if send_email(st.session_state['saved_email'], "تنبيهات القضايا من النظام", body):
                         st.success("✅ تم ارسال التنبيهات بنجاح للايميل")
                 else:
                     st.error("❌ سجل الايميل الاول من الزرار اللي جنبه")
-        st.markdown("</div>", unsafe_allow_html=True)
 
-        alerts = get_alert_cases()
-        st.markdown(f"<h3 style='text-align:center; color:#C9A961;'>التنبيهات الموجوده حاليا</h3>", unsafe_allow_html=True)
+    st.divider()
+    alerts = get_alert_cases()
+    st.markdown(f"<h3 style='text-align:center; color:#C9A961;'>التنبيهات الموجوده حاليا</h3>", unsafe_allow_html=True)
 
-        st.markdown("<h2 style='text-align:center; color:#C9A961;'>الجلسات خلال 7 ايام</h2>", unsafe_allow_html=True)
-        if alerts["sessions"]:
-            for case in alerts["sessions"]:
-                with st.container(border=True):
-                    st.write(f"**رقم القضية:** {case.get('رقم_كامل','')}")
-                    st.write(f"**تاريخ الجلسة:** {case.get('session_date','')}")
-                    st.write(f"**الموضوع:** {case.get('موضوع_الدعوى','')}")
-        else:
-            st.info("لا توجد جلسات خلال 7 ايام")
+    # الجلسات
+    st.markdown("<h2 style='text-align:center; color:#C9A961;'>الجلسات خلال 7 ايام</h2>", unsafe_allow_html=True)
+    if alerts["sessions"]:
+        for case in alerts["sessions"]:
+            with st.container(border=True):
+                st.write(f"**رقم القضية:** {case.get('رقم_كامل','')}")
+                st.write(f"**تاريخ الجلسة:** {case.get('session_date','')}")
+                st.write(f"**الموضوع:** {case.get('موضوع_الدعوى','')}")
+    else:
+        st.info("لا توجد جلسات خلال 7 ايام")
 
-        st.markdown("<h2 style='text-align:center; color:#C9A961;'>الطعون خلال 15 يوم</h2>", unsafe_allow_html=True)
-        if alerts["appeals"]:
-            for case in alerts["appeals"]:
-                with st.container(border=True):
-                    st.write(f"**رقم القضية:** {case.get('رقم_كامل','')}")
-                    st.write(f"**اخر ميعاد للطعن:** {case.get('deadline','')}")
-                    st.write(f"**الموضوع:** {case.get('موضوع_الدعوى','')}")
-        else:
-            st.info("لا توجد طعون خلال 15 يوم")
-
+    # الطعون
+    st.markdown("<h2 style='text-align:center; color:#C9A961;'>الطعون خلال 15 يوم</h2>", unsafe_allow_html=True)
+    if alerts["appeals"]:
+        for case in alerts["appeals"]:
+            with st.container(border=True):
+                st.write(f"**رقم القضية:** {case.get('رقم_كامل','')}")
+                st.write(f"**اخر ميعاد للطعن:** {case.get('deadline','')}")
+                st.write(f"**الموضوع:** {case.get('موضوع_الدعوى','')}")
+    else:
+        st.info("لا توجد طعون خلال 15 يوم")
 # ===== اقفل التنبيهات واطلع بره =====
 elif st.session_state.page == "المكتبة":
     st.markdown("<h1 style='text-align:center; color:#C9A961;'>المكتبة القانونية</h1>", unsafe_allow_html=True)
