@@ -748,9 +748,9 @@ elif st.session_state.page == "تفاصيل":
 
     نوع_المستند = st.selectbox("نوع المستند", ANWA3_MOSTANDAT, key="select_doc_type")
     
-    # خانة اخرى بتظهر تحتها فورا
+    # خانة اخرى بتظهر تحتها
     if نوع_المستند == "أخرى":
-        اسم_نهائي = st.text_input("✍️ اكتب اسم المستند", placeholder="مثال: طلب / انذار / الخ", key="custom_doc_name")
+        اسم_نهائي = st.text_input("✍️ اكتب اسم المستند", placeholder="مثال: طلب / انذار / الخ")
     else:
         اسم_نهائي = نوع_المستند
         
@@ -767,17 +767,17 @@ elif st.session_state.page == "تفاصيل":
                 st.error("❌ لازم تختار ملف وتكتب اسم المستند")
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # عرض المستندات المرفوعة - الكلام ابيض والتحميل شغال
+    # عرض المستندات المرفوعة
     if case.get('مستندات'):
         st.markdown("<div style='background:#142038; padding:15px; border-radius:12px; margin-top:10px'>", unsafe_allow_html=True)
         st.markdown("<div style='color:#D4AF37; font-weight:900; margin-bottom:10px'>المستندات المرفوعة:</div>", unsafe_allow_html=True)
         for i, مستند in enumerate(case['مستندات']):
             col1, col2, col3 = st.columns([4,1,1])
             with col1:
-                # الكلام ابيض عشان يظهر
-                st.markdown(f"<div style='color:#FFFFFF; padding:8px; font-weight:700; direction:rtl'>{مستند.get('نوع', 'ملف بدون اسم')}</div>", unsafe_allow_html=True)
+                # هنا كان الخطأ وصلحته. الكلام ابيض
+                st.markdown(f"<div style='color:#FFFFFF; padding:8px; font-weight:700; direction:rtl; text-align:right'>{مستند.get('نوع', 'ملف بدون اسم')}</div>", unsafe_allow_html=True)
             with col2:
-                # التحميل متفعل
+                # التحميل شغال
                 if 'محتوى' in مستند and مستند['محتوى']:
                     file_data = base64.b64decode(مستند['محتوى'])
                     st.download_button("📥 تحميل", data=file_data, file_name=مستند.get('نوع','file'), mime="application/octet-stream", key=f"dl_{i}", use_container_width=True)
