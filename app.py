@@ -632,7 +632,7 @@ elif st.session_state.page == "الحصر":
                     st.session_state.selected_case_id = case['id']; st.session_state.page = "تفاصيل"; st.rerun()
 
 # =========================================
-# ======================================
+# ====================================
 # ================================================
 # ============ الجزء الرابع: تفاصيل القضية ============
 # ================================================
@@ -732,16 +732,16 @@ elif st.session_state.page == "تفاصيل":
     st.markdown("<div style='color:#D4AF37; font-size:20px; font-weight:900; text-align:center; margin-bottom:10px'>4- المستندات</div>", unsafe_allow_html=True)
     with st.form("upload_form"):
         نوع_المستند = st.selectbox("نوع المستند", ANWA3_MOSTANDAT, key="select_doc_type")
-        
+
         # لو اختار أخرى يظهرله خانة تحتها
         if نوع_المستند == "أخرى":
             اسم_نهائي = st.text_input("✍️ اكتب اسم المستند", placeholder="مثال: طلب / انذار / الخ")
         else:
             اسم_نهائي = نوع_المستند
-            
+
         uploaded_file = st.file_uploader("اختر الملف")
         if st.form_submit_button("رفع المستند"):
-            if uploaded_file and اسم_نهائي and اسم_نهائي.strip() != "":
+            if uploaded_file and اسم_نهائي and اسم_نهائي.strip()!= "":
                 file_name = f"{اسم_نهائي}_{uploaded_file.name}"
                 file_bytes = uploaded_file.getvalue()
                 file_base64 = base64.b64encode(file_bytes).decode('utf-8')
@@ -844,32 +844,12 @@ elif st.session_state.page == "تفاصيل":
         # 7- حذف نهائى - تصميم احمر زي الصورة
     st.markdown("""
     <style>
-    .delete-box {background:#1E2A47; padding:15px; border-radius:15px; border:2px solid #FF0000; margin-bottom:15px; text-align:center}
-    .delete-title {color:#FF0000; font-size:20px; font-weight:900; margin-bottom:10px}
-    .delete-btn {background:#FF3B3B; color:#000; font-weight:900; font-size:18px; padding:14px; border-radius:12px; border:none; width:100%; cursor:pointer; margin-bottom:10px}
-    .delete-btn:hover {background:#FF5252}
-    .warning-box {background:#2A1A1A; padding:12px; border-radius:12px; margin:10px 0; color:#FF5252; font-weight:900}
-    .confirm-btn {background:#FF0000; color:#000; font-weight:900; font-size:18px; padding:14px; border-radius:12px; border:none; width:100%; cursor:pointer}
-    </style>
-    """, unsafe_allow_html=True)
-    
-    st.markdown("<div class='delete-box'>", unsafe_allow_html=True)
-    st.markdown("<div class='delete-title'>⚠️ منطقة الخطر - الحذف النهائي</div>", unsafe_allow_html=True)
-    
-    if st.button("🗑️ حذف نهائى للقضية", use_container_width=True, key="delete_final_btn"):
-        st.session_state.confirm_delete_final = True
-    
-    if st.session_state.get('confirm_delete_final', False):
-        st.markdown(f"<div class='warning-box'>⚠️ تحذير نهائي: سيتم حذف القضية رقم {case.get('رقم')} لسنة {case.get('سنة')}</div>", unsafe_allow_html=True)
-        c1, c2 = st.columns(2)
-        with c1:
-            if st.button("نعم احذف نهائيا", use_container_width=True, type="primary", key="delete_yes_final"):
-                data["cases"] = [c for c in data["cases"] if c["id"]!= case["id"]]
-                save_data(data); st.session_state.confirm_delete_final = False; st.success("✅ تم الحذف النهائي"); st.session_state.page = "الحصر"; st.rerun()
-        with c2:
-            if st.button("تراجع والغاء", use_container_width=True, key="delete_no_final"):
-                st.session_state.confirm_delete_final = False; st.rerun()
-    st.markdown("</div>", unsafe_allow_html=True)
+   .delete-box {background:#1E2A47; padding:15px; border-radius:15px; border:2px solid #FF0000; margin-bottom:15px; text-align:center}
+   .delete-title {color:#FF0000; font-size:20px; font-weight:900; margin-bottom:10px}
+   .delete-btn {background:#FF3B3B; color:#000; font-weight:900; font-size:18px; padding:14px; border-radius:12px; border:none; width:100%; cursor:pointer; margin-bottom:10px}
+   .delete-btn:hover {background:#FF5252}
+   .warning-box {background:#2A1A1A; padding:12px; border-radius:12px; margin:10px 0; color:#FF5252; font-weight:900}
+   .confirm-btn {background:#FF0000; color:#000; font-weight:90
 # ==============================================
 # ============ الجزء الخامس: الأرشيف ============
 # ================================================
