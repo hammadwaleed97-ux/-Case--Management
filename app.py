@@ -7,10 +7,11 @@ st.markdown("""
 <style>
  .stApp { background-color: #0E1117; }
  div[data-testid="stText"], label, .stMarkdown, .stTextInput label { color: #C9A961 !important; font-weight: bold; }
- /* بتاع التابات بالاحمر */
- button[data-baseweb="tab"] p { color: #dc3545 !important; font-weight: bold; font-size: 16px; }
- button[data-baseweb="tab"][aria-selected="true"] p { color: #dc3545 !important; }
- button[data-baseweb="tab"][aria-selected="true"] { border-bottom: 3px solid #dc3545 !important; }
+ 
+ /* نووي للتابات */
+ [data-baseweb="tab-list"] button * { color: #dc3545 !important; }
+ [data-baseweb="tab-list"] button[aria-selected="true"] * { color: #dc3545 !important; border-bottom: 3px solid #dc3545; }
+ 
  .stButton>button { background-color: #C9A961; color: black; font-weight: bold; }
  .stTextInput>div>div>input { color: black; background-color: white; }
 </style>
