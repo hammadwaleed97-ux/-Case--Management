@@ -841,6 +841,7 @@ elif st.session_state.page == "تفاصيل":
     st.markdown("</div>", unsafe_allow_html=True)
 # ======================================
 # ==============================================
+# ==============================================
 # ============ الجزء الخامس: الأرشيف ============
 # ==============================================
 elif st.session_state.page == "الأرشيف":
@@ -860,7 +861,11 @@ elif st.session_state.page == "الأرشيف":
     
     st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
     st.markdown("<h2 style='color:#D4AF37; text-align:center'>📁 الأرشيف</h2>", unsafe_allow_html=True)
-    if st.button("⬅️ العودة للحصر", use_container_width=True): st.session_state.page = "الحصر"; st.rerun()
+    
+    # زر العودة للرئيسية
+    if st.button("⬅️ العودة للرئيسية", use_container_width=True): 
+        st.session_state.page = "الرئيسية"; 
+        st.rerun()
 
     # 1- شريط البحث
     st.markdown("<div style='background:#1E2A47; padding:15px; border-radius:15px; border:2px solid #D4AF37; margin-bottom:15px'>", unsafe_allow_html=True)
@@ -890,6 +895,19 @@ elif st.session_state.page == "الأرشيف":
     if قضايا_جاري:
         for case in قضايا_جاري:
             لون = "#4CAF50" if case.get('مسندة_ل_الحكم') == "الصالح" else "#FF5252"
+            
+            # تحديد الخصوم حسب النوع
+            نوع = case.get('نوع', '').lower()
+            if 'استئناف' in نوع:
+                طرف1_عنوان = "المستأنف"
+                طرف2_عنوان = "المستأنف ضده"
+            elif 'طعن' in نوع:
+                طرف1_عنوان = "الطاعن"
+                طرف2_عنوان = "المطعون ضده"
+            else:
+                طرف1_عنوان = "المدعي"
+                طرف2_عنوان = "المدعي عليه"
+
             st.markdown(f"<div style='background:#142038; padding:15px; border-radius:12px; border:2px solid {لون}; margin-bottom:10px'>", unsafe_allow_html=True)
             
             # جدول بيانات القضية كامل
@@ -899,11 +917,11 @@ elif st.session_state.page == "الأرشيف":
                 <tr><td style='background:#1E2A47; color:#FFD700; padding:8px; width:35%; font-weight:900;'>المحكمة</td><td style='background:#FFF; color:#000; padding:8px; font-weight:700;'>{case.get('محكمة_اسم')} {f'- مأمورية {case.get("مأمورية")}' if case.get('مأمورية') else ''}</td></tr>
                 <tr><td style='background:#1E2A47; color:#FFD700; padding:8px; font-weight:900;'>الدائرة</td><td style='background:#FFF; color:#000; padding:8px; font-weight:700;'>{case.get('دائرة')}</td></tr>
                 <tr><td style='background:#1E2A47; color:#FFD700; padding:8px; font-weight:900;'>الموضوع</td><td style='background:#FFF; color:#000; padding:8px; font-weight:700;'>{case.get('موضوع')}</td></tr>
-                <tr><td style='background:#1E2A47; color:#FFD700; padding:8px; font-weight:900;'>المدعي</td><td style='background:#FFF; color:#000; padding:8px; font-weight:700;'>{case.get('مدعي')}</td></tr>
-                <tr><td style='background:#1E2A47; color:#FFD700; padding:8px; font-weight:900;'>المدعي عليه</td><td style='background:#FFF; color:#000; padding:8px; font-weight:700;'>{case.get('مدعي_عليه')}</td></tr>
+                <tr><td style='background:#1E2A47; color:#FFD700; padding:8px; font-weight:900;'>{طرف1_عنوان}</td><td style='background:#FFF; color:#000; padding:8px; font-weight:700;'>{case.get('مدعي')}</td></tr>
+                <tr><td style='background:#1E2A47; color:#FFD700; padding:8px; font-weight:900;'>{طرف2_عنوان}</td><td style='background:#FFF; color:#000; padding:8px; font-weight:700;'>{case.get('مدعي_عليه')}</td></tr>
                 <tr><td style='background:#1E2A47; color:#FFD700; padding:8px; font-weight:900;'>تاريخ الحكم</td><td style='background:#FFF; color:{لون}; padding:8px; font-weight:900;'>{case.get('تاريخ_الحكم')}</td></tr>
-                <tr><td style='background:#1E2A47; color:#FFD700; padding:8px; font-weight:900;'>مسندة لـ</td><td style='background:#FFF; color:{لون}; padding:8px; font-weight:900;'>{case.get('مسندة_ل_الحكم')}</td></tr>
-                <tr><td style='background:#1E2A47; color:#FFD700; padding:8px; font-weight:900; border-radius:0 0 0 8px;'>المنطوق</td><td style='background:#FFF; color:{لون}; padding:8px; font-weight:900; border-radius:0 0 8px 0;'>{case.get('منطوق_الحكم')}</td></tr>
+                <tr><td style='background:#1E2A47; color:#FFD700; padding:8px; font-weight:900;'>المنطوق</td><td style='background:#FFF; color:{لون}; padding:8px; font-weight:900;'>{case.get('منطوق_الحكم')}</td></tr>
+                <tr><td style='background:#1E2A47; color:#FFD700; padding:8px; font-weight:900; border-radius:0 0 0 8px;'>مسندة لـ</td><td style='background:#FFF; color:{لون}; padding:8px; font-weight:900; border-radius:0 0 8px 0;'>{case.get('مسندة_ل_الحكم')}</td></tr>
             </table>
             """, unsafe_allow_html=True)
             
@@ -957,6 +975,18 @@ elif st.session_state.page == "الأرشيف":
 
     if قضايا_محفوظة:
         for case in قضايا_محفوظة:
+            # تحديد الخصوم حسب النوع
+            نوع = case.get('نوع', '').lower()
+            if 'استئناف' in نوع:
+                طرف1_عنوان = "المستأنف"
+                طرف2_عنوان = "المستأنف ضده"
+            elif 'طعن' in نوع:
+                طرف1_عنوان = "الطاعن"
+                طرف2_عنوان = "المطعون ضده"
+            else:
+                طرف1_عنوان = "المدعي"
+                طرف2_عنوان = "المدعي عليه"
+
             st.markdown(f"<div style='background:#142038; padding:15px; border-radius:12px; border:2px solid #4CAF50; margin-bottom:10px'>", unsafe_allow_html=True)
             st.markdown(f"""
             <table style='width:100%; border-collapse:collapse; margin-bottom:10px;'>
@@ -964,8 +994,8 @@ elif st.session_state.page == "الأرشيف":
                 <tr><td style='background:#1E2A47; color:#FFD700; padding:8px; width:35%; font-weight:900;'>المحكمة</td><td style='background:#FFF; color:#000; padding:8px; font-weight:700;'>{case.get('محكمة_اسم')} {f'- مأمورية {case.get("مأمورية")}' if case.get('مأمورية') else ''}</td></tr>
                 <tr><td style='background:#1E2A47; color:#FFD700; padding:8px; font-weight:900;'>الدائرة</td><td style='background:#FFF; color:#000; padding:8px; font-weight:700;'>{case.get('دائرة')}</td></tr>
                 <tr><td style='background:#1E2A47; color:#FFD700; padding:8px; font-weight:900;'>الموضوع</td><td style='background:#FFF; color:#000; padding:8px; font-weight:700;'>{case.get('موضوع')}</td></tr>
-                <tr><td style='background:#1E2A47; color:#FFD700; padding:8px; font-weight:900;'>المدعي</td><td style='background:#FFF; color:#000; padding:8px; font-weight:700;'>{case.get('مدعي')}</td></tr>
-                <tr><td style='background:#1E2A47; color:#FFD700; padding:8px; font-weight:900;'>المدعي عليه</td><td style='background:#FFF; color:#000; padding:8px; font-weight:700;'>{case.get('مدعي_عليه')}</td></tr>
+                <tr><td style='background:#1E2A47; color:#FFD700; padding:8px; font-weight:900;'>{طرف1_عنوان}</td><td style='background:#FFF; color:#000; padding:8px; font-weight:700;'>{case.get('مدعي')}</td></tr>
+                <tr><td style='background:#1E2A47; color:#FFD700; padding:8px; font-weight:900;'>{طرف2_عنوان}</td><td style='background:#FFF; color:#000; padding:8px; font-weight:700;'>{case.get('مدعي_عليه')}</td></tr>
                 <tr><td style='background:#1E2A47; color:#FFD700; padding:8px; font-weight:900;'>تاريخ الحفظ</td><td style='background:#FFF; color:#4CAF50; padding:8px; font-weight:900;'>{case.get('تاريخ_الحفظ')}</td></tr>
                 <tr><td style='background:#1E2A47; color:#FFD700; padding:8px; font-weight:900; border-radius:0 0 0 8px;'>سبب الحفظ</td><td style='background:#FFF; color:#FFD700; padding:8px; font-weight:900; border-radius:0 0 8px 0;'>{case.get('سبب_الحفظ')}</td></tr>
             </table>
