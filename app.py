@@ -1,4 +1,4 @@
-بعoimport json, os, bcrypt, smtplib, random
+oimport json, os, bcrypt, smtplib, random
 from email.mime.text import MIMEText
 import streamlit as st
 
