@@ -641,7 +641,7 @@ elif st.session_state.page == "الحصر":
                     st.session_state.selected_case_id = case['id']; st.session_state.page = "تفاصيل"; st.rerun()
 
 # ======================================
-# =======================================
+# ====================================
 # ================================================
 # ============ الجزء الرابع: تفاصيل القضية ============
 # ================================================
@@ -696,7 +696,7 @@ elif st.session_state.page == "تفاصيل":
     st.markdown("<div style='color:#D4AF37; font-size:20px; font-weight:900; text-align:center; margin-bottom:10px'>3- الجلسات والإجراءات</div>", unsafe_allow_html=True)
     if case.get("جلسات"):
         for i, ج in enumerate(case["جلسات"]):
-            st.markdown(f"<div style='background:#142038; padding:15px; border-radius:12px; border:2px solid #D4AF37; margin-bottom:10px; text-align:right; direction:rtl'><div style='display:flex; justify-content:flex-end; margin-bottom:10px'><div style='background:#D4AF37; color:#000; padding:5px 15px; border-radius:8px; font-weight:900; font-size:16px'>جلسة {i+1}</div></div><div style='margin-bottom:8px'><span style='color:#D4AF37; font-weight:900'>التاريخ:</span> <span style='color:#FFF'>{ج.get('تاريخ')}</span></div><div style='margin-bottom:8px'><span style='color:#D4AF37; font-weight:900'>الرول:</span> <span style='color:#FFF'>{ج.get('الرول')}</span></div><div style='margin-bottom:8px'><span style='color:#D4AF37; font-weight:900'>الاجراء:</span> <span style='color:#FFF'>{j.get('الاجراء')}</span></div><div><span style='color:#D4AF37; font-weight:900'>ملاحظات:</span> <span style='color:#FFF'>{j.get('ملاحظات')}</span></div></div>", unsafe_allow_html=True)
+            st.markdown(f"<div style='background:#142038; padding:15px; border-radius:12px; border:2px solid #D4AF37; margin-bottom:10px; text-align:right; direction:rtl'><div style='display:flex; justify-content:flex-end; margin-bottom:10px'><div style='background:#D4AF37; color:#000; padding:5px 15px; border-radius:8px; font-weight:900; font-size:16px'>جلسة {i+1}</div></div><div style='margin-bottom:8px'><span style='color:#D4AF37; font-weight:900'>التاريخ:</span> <span style='color:#FFF'>{ج.get('تاريخ')}</span></div><div style='margin-bottom:8px'><span style='color:#D4AF37; font-weight:900'>الرول:</span> <span style='color:#FFF'>{ج.get('الرول')}</span></div><div style='margin-bottom:8px'><span style='color:#D4AF37; font-weight:900'>الاجراء:</span> <span style='color:#FFF'>{ج.get('الاجراء')}</span></div><div><span style='color:#D4AF37; font-weight:900'>ملاحظات:</span> <span style='color:#FFF'>{ج.get('ملاحظات')}</span></div></div>", unsafe_allow_html=True)
             if st.button("✏️ تعديل الجلسة", key=f"edit_session_{i}", use_container_width=True):
                 st.session_state.edit_session_index = i; st.rerun()
         if 'edit_session_index' in st.session_state and st.session_state.edit_session_index is not None:
@@ -791,7 +791,7 @@ elif st.session_state.page == "تفاصيل":
             st.markdown("<label style='color:#FFD700; font-weight:900; font-size:16px'>2- منطوق الحكم</label>", unsafe_allow_html=True); منطوق_الحكم = st.text_area("منطوق الحكم", height=150, placeholder="اكتب منطوق الحكم هنا...", label_visibility="collapsed"); st.markdown("</div>", unsafe_allow_html=True)
             st.markdown("<div style='background:#142038; padding:10px; border-radius:10px; margin-bottom:10px'>", unsafe_allow_html=True)
             st.markdown("<label style='color:#FFD700; font-weight:900; font-size:16px'>3- مسندة لـ</label>", unsafe_allow_html=True); مسندة_ل = st.selectbox("مسندة لـ", ["الصالح", "الضد"], label_visibility="collapsed"); st.markdown("</div>", unsafe_allow_html=True)
-            st.markdown("<div style='background:#142038; padding:10px; border-radius:10px; margin-bottom:10px'>", unsafe_allow_html=True) # <-- اضافة سبب الحفظ
+            st.markdown("<div style='background:#142038; padding:10px; border-radius:10px; margin-bottom:10px'>", unsafe_allow_html=True)
             st.markdown("<label style='color:#FFD700; font-weight:900; font-size:16px'>4- سبب الحفظ</label>", unsafe_allow_html=True); سبب_الحفظ = st.text_area("سبب الحفظ", placeholder="عدم جدوى طعن / تم الطعن رقم...", label_visibility="collapsed"); st.markdown("</div>", unsafe_allow_html=True)
             if st.form_submit_button("💾 حفظ الحكم", use_container_width=True, type="primary"):
                 if not منطوق_الحكم: st.error("❌ لازم تكتب منطوق الحكم")
@@ -815,6 +815,7 @@ elif st.session_state.page == "تفاصيل":
 
     # 7- حذف نهائى
     st.markdown("<style>.delete-box {background:#1E2A47; padding:15px; border-radius:15px; border:2px solid #FF0000; margin-bottom:15px; text-align:center}</style>", unsafe_allow_html=True)
+# =============================================
 # =============================================
 # =============================================
 # ======= الجزء الخامس: الارشيف =======
