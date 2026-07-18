@@ -71,8 +71,33 @@ def is_admin_email(email):
 
 def login_page():
     st.markdown("<h3 style='text-align:center; color:#C9A961'>ادارة الاعضاء</h3>", unsafe_allow_html=True)
-    tab1, tab2 = st.tabs(["تسجيل الدخول", "تفعيل حساب جديد"])
+    
+    # متغير عشان نعرف احنا في انهي صفحة
+    if "page" not in st.session_state:
+        st.session_state.page = "login"
 
+    col1, col2 = st.columns(2)
+
+    with col1:
+        if st.button("تسجيل الدخول", key="login_tab", use_container_width=True):
+            st.session_state.page = "login"
+            st.rerun()
+
+    with col2:
+        if st.button("تفعيل حساب جديد", key="signup_tab", use_container_width=True):
+            st.session_state.page = "signup"
+            st.rerun()
+
+    # المحتوى بتاع التابات
+    if st.session_state.page == "login":
+        with st.container():
+            st.text_input("اسم المستخدم")
+            st.text_input("كلمة السر", type="password")
+            st.button("دخول")
+    else:
+        with st.container():
+            st.text_input("الايميل")
+            st.button("ارسال كود التفعيل")
     with tab1:
         username = st.text_input("اسم المستخدم")
         password = st.text_input("كلمة السر", type="password")
