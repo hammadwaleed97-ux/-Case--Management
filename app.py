@@ -184,12 +184,12 @@ def extract_member_page():
                     save_users(users); st.success(f"تم استخراج: {new_username}"); st.rerun()
             else: st.error("لازم تكتب اسم المستخدم")
 
-st.markdown("<h2 style='text-align:center; color:#C9A961'>ادارة القضايا</h2>", unsafe_allow_html=True)
-st.markdown("<h3 style='text-align:center; color:#C9A961; font-size:24px;'>دخول السادة الأعضاء</h3>", unsafe_allow_html=True)
-st.markdown("<h2 style='text-align:center; color:#dc3545; font-size:28px; font-weight:bold;'>مستشاري الهيئة</h2>", unsafe_allow_html=True)
-st.markdown("<hr style='border: 1px solid #C9A961;'>", unsafe_allow_html=True)
-st.markdown("---")
-for user in users:
+def manage_users_page():
+    st.markdown("<h2 style='text-align:center; color:#C9A961'>دخول السادة الاعضاء</h2>", unsafe_allow_html=True)
+    if st.button("العودة للرئيسية"): st.session_state.page = "الرئيسية"; st.rerun()
+    users = load_users()
+
+    st.markdown("---")
     for user in users:
         if user["role"] == "member":
             status = "مفعل" if user.get("password_set") else "غير مفعل"
@@ -273,7 +273,7 @@ if "user" not in st.session_state: st.session_state.user = None; st.session_stat
 if st.session_state.page == "login": login_page()
 elif st.session_state.page == "extract_member":
     if st.session_state.user and st.session_state.user["role"] == "admin": extract_member_page()
-elif st.session_state.page == "ادارة القضايا دخول السادة الاعضاء":
+elif st.session_state.page == "ادارة_الاعضاء":
     if st.session_state.user and st.session_state.user["role"] == "admin": manage_users_page()
 elif st.session_state.page == "recovery_settings": recovery_settings_page()
 elif st.session_state.page == "set_password": set_password_page()
@@ -287,6 +287,7 @@ elif st.session_state.page == "الرئيسية":
     if st.button("تغيير كلمة السر"): st.session_state.page = "change_password"; st.rerun()
     if st.button("تأكيد البريد الالكتروني"): st.session_state.page = "recovery_settings"; st.rerun()
     if st.button("تسجيل الخروج"): st.session_state.user = None; st.session_state.page = "login"; st.rerun()
+# ===========================================
 # ====================================
 # ============================================
 # ======= الجزء الاول: الاساسيات ==========
