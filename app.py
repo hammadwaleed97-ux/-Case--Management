@@ -474,7 +474,7 @@ if st.session_state.page == "الرئيسية":
 elif st.session_state.page == "تسجيل":
     data = load_data()
     st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
-    st.markdown("<h2 style='color:#D4AF37; text-align:center'>➕ تسجيل القضية</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='color:#D4AF37; text-align:center'> تسجيل القضية</h2>", unsafe_allow_html=True)
     if st.button("⬅️ العودة للرئيسية", key="back_add", use_container_width=True):
         st.session_state.page = "الرئيسية"
         st.rerun()
