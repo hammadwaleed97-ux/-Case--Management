@@ -713,8 +713,7 @@ elif st.session_state.page == "تفاصيل":
                 case["جلسات"].append({"تاريخ":str(تاريخ_جديد),"الرول":رول_جديد,"الاجراء":الاجراء_جديد,"ملاحظات":ملاحظات_جديدة})
                 case["تاريخ_جلسة"] = str(تاريخ_جديد); case["الاجراء"] = الاجراء_جديد; save_data(data); st.success("تم اضافة الجلسة"); st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
-
-    # 4- المستندات - النسخة النهائية المضمونة
+    # 4- المستندات
     st.markdown("<div style='background:#1E2A47; padding:15px; border-radius:15px; border:2px solid #D4AF37; margin-bottom:15px'>", unsafe_allow_html=True)
     st.markdown("<div style='color:#D4AF37; font-size:20px; font-weight:900; text-align:center; margin-bottom:10px'>4- المستندات</div>", unsafe_allow_html=True)
 
@@ -742,27 +741,41 @@ elif st.session_state.page == "تفاصيل":
                 st.error("❌ لازم تختار ملف وتكتب اسم المستند")
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # عرض المستندات - متأمن ضد الاخطاء
+    # عرض المستندات - متأمن ضد اي حاجة قديمة
     if case.get('مستندات'):
         st.markdown("<div style='background:#142038; padding:15px; border-radius:12px; margin-top:10px'>", unsafe_allow_html=True)
         st.markdown("<div style='color:#D4AF37; font-weight:900; margin-bottom:10px'>المستندات المرفوعة:</div>", unsafe_allow_html=True)
+        
+        مستندات_جديدة = [] # هنصلح الداتا القديمة هنا
+        
         for i, مستند in enumerate(case['مستندات']):
-            اسم_المستند = مستند.get('نوع', مستند.get('اسم', f'ملف رقم {i+1}')) # تأمين لو قديم
+            # لو المستند قديم ومتخزن string نحوله ل dict
+            if isinstance(مستند, str):
+                مستند = {"نوع": مستند, "محتوى": ""}
+            
+            اسم_المستند = مستند.get('نوع', f'ملف رقم {i+1}')
+            محتوى_المستند = مستند.get('محتوى', '')
+            
+            مستندات_جديدة.append({"نوع": اسم_المستند, "محتوى": محتوى_المستند}) # نحفظه صح
+
             col1, col2, col3 = st.columns([4,1,1])
             with col1:
                 st.write(f"📄 {اسم_المستند}")
             with col2:
-                if 'محتوى' in مستند and مستند['محتوى']:
+                if محتوى_المستند:
                     try:
-                        file_data = base64.b64decode(مستند['محتوى'])
+                        file_data = base64.b64decode(محتوى_المستند)
                         st.download_button("📥 تحميل", data=file_data, file_name=اسم_المستند, mime="application/octet-stream", key=f"dl_{i}", use_container_width=True)
-                    except: st.error("خطأ")
+                    except: st.write("❌")
             with col3:
                 if st.button("🗑️ حذف", key=f"del_{i}", use_container_width=True):
                     case['مستندات'].pop(i)
                     save_data(data); st.rerun()
+        
+        case['مستندات'] = مستندات_جديدة # نحدث الداتا القديمة
+        save_data(data)
+                    
         st.markdown("</div>", unsafe_allow_html=True)
-
     # 5- جلسة الحكم
     st.markdown("<div style='background:#1E2A47; padding:15px; border-radius:15px; border:2px solid #FF5252; margin-bottom:15px'>", unsafe_allow_html=True)
     st.markdown("<div style='color:#FF5252; font-size:20px; font-weight:900; text-align:center; margin-bottom:10px'>5- جلسة الحكم</div>", unsafe_allow_html=True)
