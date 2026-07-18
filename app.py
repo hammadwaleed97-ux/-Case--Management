@@ -538,8 +538,7 @@ elif st.session_state.page == "تسجيل":
                 save_data(data)
                 
                 st.success(f"✅ تم الحفظ بنجاح -ونقلت للحصر العام- جاهز لتسجيل قضية جديدة")
-                # =========================
-
+                # ========================
 # ====== الجزء الثالث: الحصر العام ============
 # ================================================
 elif st.session_state.page == "الحصر":
@@ -572,31 +571,41 @@ elif st.session_state.page == "الحصر":
         save_data(data)
         # ============================================
 
-        sorted_cases = sorted(data["cases"], key=lambda x: x.get("تاريخ_جلسة","9999-12-31"))
-        total = len(sorted_cases)
+        # ======= التعديل 1: نشيل المنتهية من الحصر =======
+        active_cases = [c for c in data["cases"] if c.get('حالة')!= 'منتهية']
+        # ==================================================
+
+        sorted_cases = sorted(active_cases, key=lambda x: x.get("تاريخ_جلسة","9999-12-31"))
+        total = len(data["cases"]) # اجمالي الكل زي ما هو
         today = datetime.now().date()
-        start_week = today - timedelta(days=(today.weekday() + 2) % 7)
-        end_week = start_week + timedelta(days=6)
-        this_week = len([c for c in sorted_cases if c.get('تاريخ_جلسة') and start_week <= datetime.strptime(c['تاريخ_جلسة'],'%Y-%m-%d').date() <= end_week])
-        ended = len([c for c in sorted_cases if c.get('حالة') == 'منتهية'])
+        start_week = today - timedelta(days=(today.weekday() + 2) % 7) # السبت
+        end_week = start_week + timedelta(days=5) # الخميس
+
+        # ======= التعديل 2: جلسات الاسبوع من السبت للخميس =======
+        this_week = len([c for c in data["cases"] if c.get('تاريخ_جلسة') and start_week <= datetime.strptime(c['تاريخ_جلسة'],'%Y-%m-%d').date() <= end_week])
+        # =========================================================
+
+        # ======= التعديل 3: المحجوزة للحكم بدل المنتهية =======
+        reserved = len([c for c in data["cases"] if 'محجوزة للحكم' in str(c.get('الاجراء',''))])
+        # =======================================================
 
         st.markdown(f"<div style='background:#1E2A47; padding:20px; border-radius:15px; border:2px solid #D4AF37; text-align:center; margin-bottom:20px'>", unsafe_allow_html=True)
         col1, col2, col3 = st.columns(3)
         with col1: st.markdown(f"<div style='font-size:28px; font-weight:900; color:#D4AF37'>📊 {total}</div><div style='font-size:18px; color:#FFF; font-weight:700'>اجمالي القضايا</div>", unsafe_allow_html=True)
         with col2: st.markdown(f"<div style='font-size:28px; font-weight:900; color:#4DA8DA'>📅 {this_week}</div><div style='font-size:18px; color:#FFF; font-weight:700'>جلسات هذا الاسبوع</div>", unsafe_allow_html=True)
-        with col3: st.markdown(f"<div style='font-size:28px; font-weight:900; color:#FF5252'>🚫 {ended}</div><div style='font-size:18px; color:#FFF; font-weight:700'>عدد المنتهية</div>", unsafe_allow_html=True)
+        with col3: st.markdown(f"<div style='font-size:28px; font-weight:900; color:#FF5252'>⚖️ {reserved}</div><div style='font-size:18px; color:#FFF; font-weight:700'>محجوزة للحكم</div>", unsafe_allow_html=True) # اتغيرت هنا
         st.markdown("</div>", unsafe_allow_html=True)
 
         st.markdown("""
         <style>
-  .case-table {width:100%; border-collapse: collapse; font-size:11px; color:white; text-align:center; margin-bottom:5px;}
-  .case-table th {background:#D4AF37; color:#0B1426; padding:6px; font-weight:900;}
-  .case-table td {background:#1E2A47; padding:6px; border:1px solid #D4AF37; vertical-align:top;}
-  .plaintiff {background:#FFF3CD; color:#000; font-weight:700; border-radius:6px; padding:6px; font-size:11px;}
-  .plaintiff-hey2a {background:#DC3545!important; color:#FFF!important; font-weight:900; border-radius:6px; padding:6px; font-size:11px;}
-  .defendant {background:#CFF4FC; color:#000; font-weight:700; border-radius:6px; padding:6px; font-size:11px;}
-  .date-gold {color:#FFD700; font-weight:900;}
-  .status-green {color:#4CAF50; font-weight:900;}
+ .case-table {width:100%; border-collapse: collapse; font-size:11px; color:white; text-align:center; margin-bottom:5px;}
+ .case-table th {background:#D4AF37; color:#0B1426; padding:6px; font-weight:900;}
+ .case-table td {background:#1E2A47; padding:6px; border:1px solid #D4AF37; vertical-align:top;}
+ .plaintiff {background:#FFF3CD; color:#000; font-weight:700; border-radius:6px; padding:6px; font-size:11px;}
+ .plaintiff-hey2a {background:#DC3545!important; color:#FFF!important; font-weight:900; border-radius:6px; padding:6px; font-size:11px;}
+ .defendant {background:#CFF4FC; color:#000; font-weight:700; border-radius:6px; padding:6px; font-size:11px;}
+ .date-gold {color:#FFD700; font-weight:900;}
+ .status-green {color:#4CAF50; font-weight:900;}
         </style>
         """, unsafe_allow_html=True)
 
