@@ -1500,7 +1500,7 @@ elif st.session_state.page == "بحث":
                     
                     st.markdown("</div>", unsafe_allow_html=True)
                     st.markdown("</div>", unsafe_allow_html=True)
-                    # ========== الجزء السابع: مركز التنبيهات ==========
+                    # ====== الجزء السابع: مركز التنبيهات ==========
 elif st.session_state.page == "تنبيهات":
     st.markdown("<h1 style='text-align: center; color: #C9A961;'>🔔 مركز التنبيهات</h1>", unsafe_allow_html=True)
     
@@ -1508,11 +1508,25 @@ elif st.session_state.page == "تنبيهات":
         st.session_state.page = "الرئيسية"
         st.rerun()
     
+    # ====== CSS خاص بالتنبيهات ======
+    st.markdown("""
+    <style>
+    .section-divider { border-top: 2px solid #C9A961; margin: 20px 0; }
+    .card-title { color: #C9A961; font-size: 18px; font-weight: bold; text-align: right; margin-bottom: 10px; }
+    .table-container { overflow-x: auto; margin: 10px 0; }
+    .case-table { width: 100%; border-collapse: collapse; background-color: white; color: black; border-radius: 8px; overflow: hidden; }
+    .case-table th { background-color: #C9A961; color: black; padding: 10px; text-align: center; font-weight: bold; }
+    .case-table td { padding: 8px; text-align: center; border: 1px solid #ddd; }
+    .case-table .row1 { background-color: #FFF8DC; }
+    .case-table .row-judgment { background-color: #FFE4E1; }
+    </style>
+    """, unsafe_allow_html=True)
+    
     # ====== 1. تسجيل الايميل ======
     st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
     with st.container(border=True):
         st.markdown("<div class='card-title'>📧 تسجيل الايميل لاستلام التنبيهات</div>", unsafe_allow_html=True)
-        user_email = st.text_input("ادخل ايميلك", placeholder="example@gmail.com", key="email_alert")
+        user_email = st.text_input("ادخل ايميلك", placeholder="example@gmail.com", key="email_alert", label_visibility="collapsed")
         if st.button("تسجيل الايميل", type="primary", use_container_width=True):
             if user_email:
                 st.session_state['saved_email'] = user_email
@@ -1530,7 +1544,6 @@ elif st.session_state.page == "تنبيهات":
     if alerts["sessions"]:
         for case in alerts["sessions"]:
             with st.container(border=True):
-                # نفس جدول الحصر
                 رقم_كامل = f"{case.get('رقم','')} لسنة {case.get('سنة','')}"
                 محكمة_كاملة = f"{case.get('نوع','')} {case.get('محكمة_اسم','')}"
                 if case.get('مأمورية',''): محكمة_كاملة += f"<br>مأمورية {case.get('مأمورية','')}"
