@@ -732,69 +732,45 @@ elif st.session_state.page == "تفاصيل":
     st.markdown("<div style='color:#D4AF37; font-size:20px; font-weight:900; text-align:center; margin-bottom:10px'>4- المستندات</div>", unsafe_allow_html=True)
 
     ANWA3_MOSTANDAT = [
-        "صحيفة دعوى",
-        "صحيفة استئناف",
-        "صحيفة طعن",
-        "مذكرة دفاع",
-        "حافظة مستندات",
-        "تقرير خبير",
-        "تقرير طب شرعى",
-        "تقرير لجنة طبية",
-        "صحيفة تجديد من الشطب",
-        "صحيفة تعجيل من الوقف",
-        "صورة حكم تمهيدى",
-        "أخرى"
+        "صحيفة دعوى", "صحيفة استئناف", "صحيفة طعن", "مذكرة دفاع", 
+        "حافظة مستندات", "تقرير خبير", "تقرير طب شرعى", "تقرير لجنة طبية", 
+        "صحيفة تجديد من الشطب", "صحيفة تعجيل من الوقف", "صورة حكم تمهيدى", "أخرى"
     ]
 
     نوع_المستند = st.selectbox("نوع المستند", ANWA3_MOSTANDAT, key="select_doc_type")
     
-    # خانة اخرى بتظهر تحتها
+    اسم_نهائي = نوع_المستند
     if نوع_المستند == "أخرى":
         اسم_نهائي = st.text_input("✍️ اكتب اسم المستند", placeholder="مثال: طلب / انذار / الخ")
-    else:
-        اسم_نهائي = نوع_المستند
         
     with st.form("upload_form"):
         uploaded_file = st.file_uploader("اختر الملف", type=['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx'])
         if st.form_submit_button("رفع المستند"):
-            if uploaded_file and اسم_نهائي and اسم_نهائي.strip() != "":
+            if uploaded_file and اسم_نهائي:
                 file_name = f"{اسم_نهائي}_{uploaded_file.name}"
-                file_bytes = uploaded_file.getvalue()
-                file_base64 = base64.b64encode(file_bytes).decode('utf-8')
+                file_base64 = base64.b64encode(uploaded_file.getvalue()).decode('utf-8')
                 case['مستندات'].append({"نوع": file_name, "محتوى": file_base64})
                 save_data(data); st.success("✅ تم رفع المستند"); st.rerun()
             else:
                 st.error("❌ لازم تختار ملف وتكتب اسم المستند")
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # عرض المستندات المرفوعة
+    # عرض المستندات
     if case.get('مستندات'):
         st.markdown("<div style='background:#142038; padding:15px; border-radius:12px; margin-top:10px'>", unsafe_allow_html=True)
         st.markdown("<div style='color:#D4AF37; font-weight:900; margin-bottom:10px'>المستندات المرفوعة:</div>", unsafe_allow_html=True)
         for i, مستند in enumerate(case['مستندات']):
             col1, col2, col3 = st.columns([4,1,1])
             with col1:
-                # هنا كان الخطأ وصلحته. الكلام ابيض
-                st.markdown(f"<div style='color:#FFFFFF; padding:8px; font-weight:700; direction:rtl; text-align:right'>{مستند.get('نوع', 'ملف بدون اسم')}</div>", unsafe_allow_html=True)
+                st.markdown(f"<p style='color: #FFFFFF; font-weight: 700; text-align: right; direction: rtl; padding:8px; margin:0'>{مستند.get('نوع', 'ملف بدون اسم')}</p>", unsafe_allow_html=True)
             with col2:
-                # التحميل شغال
-                if 'محتوى' in مستند and مستند['محتوى']:
+                if 'محتوى' in مستند:
                     file_data = base64.b64decode(مستند['محتوى'])
-                    st.download_button("📥 تحميل", data=file_data, file_name=مستند.get('نوع','file'), mime="application/octet-stream", key=f"dl_{i}", use_container_width=True)
+                    st.download_button("📥 تحميل", data=file_data, file_name=مستند.get('نوع','file'), mime="application/octet-stream", key=f"dl_{i}")
             with col3:
-                if st.button("🗑️ حذف", key=f"del_{i}", use_container_width=True):
-                    st.session_state[f"confirm_del_{i}"] = True
-
-            if st.session_state.get(f"confirm_del_{i}", False):
-                st.warning(f"متأكد من حذف {مستند.get('نوع','الملف')}؟")
-                c1,c2 = st.columns(2)
-                with c1:
-                    if st.button("نعم احذف", key=f"yes_del_{i}"):
-                        case['مستندات'].pop(i)
-                        save_data(data); st.session_state[f"confirm_del_{i}"] = False; st.rerun()
-                with c2:
-                    if st.button("الغاء", key=f"no_del_{i}"):
-                        st.session_state[f"confirm_del_{i}"] = False; st.rerun()
+                if st.button("🗑️ حذف", key=f"del_{i}"):
+                    case['مستندات'].pop(i)
+                    save_data(data); st.rerun()
         st.markdown("</div>", unsafe_allow_html=True)
     # 5- جلسة الحكم
     st.markdown("<div style='background:#1E2A47; padding:15px; border-radius:15px; border:2px solid #FF5252; margin-bottom:15px'>", unsafe_allow_html=True)
