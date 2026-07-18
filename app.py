@@ -6,11 +6,11 @@ import streamlit as st
 st.markdown("""
 <style>
  .stApp { background-color: #0E1117; }
+ div[data-testid="stText"], label, .stMarkdown { color: white; }
  .stButton>button { background-color: #C9A961; color: black; font-weight: bold; }
  .stTextInput>div>div>input { color: black; background-color: white; }
 </style>
 """, unsafe_allow_html=True)
-
 USERS_FILE = "users.json"
 SENDER_EMAIL = "hammadwaleed97@gmail.com"
 SENDER_PASSWORD = "r v y q q a y j o n w h u o x r"
