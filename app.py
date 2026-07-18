@@ -184,10 +184,10 @@ def extract_member_page():
                     save_users(users); st.success(f"تم استخراج: {new_username}"); st.rerun()
             else: st.error("لازم تكتب اسم المستخدم")
 
-def manage_users_page():
-    st.markdown("<h2 style='text-align:center; color:#C9A961'>ادارة الاعضاء</h2>", unsafe_allow_html=True)
-    if st.button("العودة للرئيسية"): st.session_state.page = "الرئيسية"; st.rerun()
-    users = load_users()
+st.markdown("<h2 style='text-align:center; color:#C9A961'>ادارة القضايا</h2>", unsafe_allow_html=True)
+st.markdown("<h3 style='text-align:center; color:#C9A961; font-size:24px;'>دخول السادة الأعضاء</h3>", unsafe_allow_html=True)
+st.markdown("<h2 style='text-align:center; color:#dc3545; font-size:28px; font-weight:bold;'>مستشاري الهيئة</h2>", unsafe_allow_html=True)
+st.markdown("<hr style='border: 1px solid #C9A961;'>", unsafe_allow_html=True)
 
     st.markdown("---")
     for user in users:
