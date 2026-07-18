@@ -79,7 +79,6 @@ def manage_users_page():
                     users = [u for u in users if u['id'] != user['id']]
                     save_users(users); st.rerun()
 
-# <<<< الدالة دي كانت جوه غلط طلعتها بره
 def set_password_page():
     st.markdown("<h1 style='text-align:center'>انشاء كلمة سر جديدة</h1>", unsafe_allow_html=True)
     new_pass = st.text_input("كلمة السر الجديدة", type="password")
@@ -96,7 +95,9 @@ def set_password_page():
                     st.rerun()
         else:
             st.error("الباسوردين مش زي بعض")
-            def change_password_page():
+
+# <<<< دي طلعتها بره وظبط المسافات
+def change_password_page():
     st.markdown("<h1 style='text-align:center; color:#C9A961'>تغيير كلمة السر</h1>", unsafe_allow_html=True)
     if st.button("العودة للرئيسية"): 
         st.session_state.page = "الرئيسية"
@@ -128,10 +129,15 @@ if st.session_state.page == "login":
 elif st.session_state.page == "ادارة_الاعضاء":
     if st.session_state.user and st.session_state.user["role"] == "admin":
         manage_users_page()
-elif st.session_state.page == "set_password":  # <<<< ضفت دي
+elif st.session_state.page == "set_password":
     set_password_page()
+elif st.session_state.page == "change_password":  # <<<< ضفت دي
+    change_password_page()
 elif st.session_state.page == "الرئيسية":
     st.write(f"اهلا {st.session_state.user['username']}")
+    if st.button("تغيير كلمة السر"):  # <<<< ودي
+        st.session_state.page = "change_password"
+        st.rerun()
     if st.session_state.user["role"] == "admin":
         if st.button("ادارة الاعضاء"):
             st.session_state.page = "ادارة_الاعضاء"
