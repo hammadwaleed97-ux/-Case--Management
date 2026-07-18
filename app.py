@@ -1,27 +1,17 @@
-
-import json, os, bcrypt, smtplib, random
-from email.mime.text import MIMEText
 import streamlit as st
+import json
+import os
+import smtplib
+import bcrypt
+import random
+from email.mime.text import MIMEText
 
-st.markdown("""
-<style>
- .stApp { background-color: #0E1117; }
- div[data-testid="stText"], label, .stMarkdown, .stTextInput label { color: #C9A961 !important; font-weight: bold; }
- 
- /* نووي للتابات */
- [data-baseweb="tab-list"] button * { color: #dc3545 !important; }
- [data-baseweb="tab-list"] button[aria-selected="true"] * { color: #dc3545 !important; border-bottom: 3px solid #dc3545; }
- 
- .stButton>button { background-color: #C9A961; color: black; font-weight: bold; }
- .stTextInput>div>div>input { color: black; background-color: white; }
-</style>
-""", unsafe_allow_html=True)
-
+# ======= المتغيرات الاساسية =======
 USERS_FILE = "users.json"
-SENDER_EMAIL = "hammadwaleed97@gmail.com"
-SENDER_PASSWORD = "r v y q q a y j o n w h u o x r"
 ADMIN_USERNAME = "admin"
 ADMIN_DEFAULT_PASS = "admin123"
+SENDER_EMAIL = "hammadwaleed97@gmail.com" # حط ايميلك
+SENDER_PASSWORD = "r v y q q a y j o n w h u o x r" # حط باسورد التطبيق
 
 if "RESET_CODES" not in st.session_state:
     st.session_state.RESET_CODES = {}
@@ -70,8 +60,10 @@ def is_admin_email(email):
     return email == admin["email"] or email == admin.get("recovery_email","")
 
 def login_page():
-    st.markdown("<h3 style='text-align:center; color:#C9A961'>ادارة الاعضاء</h3>", unsafe_allow_html=True)
-    
+    st.markdown("<h3 style='text-align:center; color:#C9A961'>إدارة القضايا</h3>", unsafe_allow_html=True)
+    st.markdown("<h4 style='text-align:center; color:#C9A961'>دخول السادة الأعضاء</h4>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align:center; color:#C9A961'>مستشارى الهيئة</p>", unsafe_allow_html=True)
+
     # متغير عشان نعرف احنا في انهي صفحة
     if "page" not in st.session_state:
         st.session_state.page = "login"
@@ -79,26 +71,19 @@ def login_page():
     col1, col2 = st.columns(2)
 
     with col1:
-        if st.button("تسجيل الدخول", key="login_tab", use_container_width=True):
+        if st.button("تسجيل الدخول", key="login_tab", use_container_width=True, type="primary" if st.session_state.page == "login" else "secondary"):
             st.session_state.page = "login"
             st.rerun()
 
     with col2:
-        if st.button("تفعيل حساب جديد", key="signup_tab", use_container_width=True):
+        if st.button("تفعيل حساب جديد", key="signup_tab", use_container_width=True, type="primary" if st.session_state.page == "signup" else "secondary"):
             st.session_state.page = "signup"
             st.rerun()
 
+    st.markdown("<hr>", unsafe_allow_html=True)
+
     # المحتوى بتاع التابات
     if st.session_state.page == "login":
-        with st.container():
-            st.text_input("اسم المستخدم")
-            st.text_input("كلمة السر", type="password")
-            st.button("دخول")
-    else:
-        with st.container():
-            st.text_input("الايميل")
-            st.button("ارسال كود التفعيل")
-    with tab1:
         username = st.text_input("اسم المستخدم")
         password = st.text_input("كلمة السر", type="password")
         if st.button("دخول", type="primary", use_container_width=True):
@@ -135,7 +120,7 @@ def login_page():
             found = [u for u in users if u.get("email") == member_recover_email]
             if found:
                 user = found[0]
-                code = str(random.randint(100000, 999999))
+                code = str(random.randint(100000, 999))
                 st.session_state.RESET_CODES[member_recover_email] = {"code": code, "user_id": user["id"]}
                 body = f"مرحبا {user['username']}\nاسم المستخدم: {user['username']}\nكود اعادة التعيين: {code}"
                 if send_email(member_recover_email, "استرجاع بيانات الدخول", body):
@@ -173,7 +158,7 @@ def login_page():
                     st.rerun()
                 else: st.error("الكود غلط")
 
-    with tab2:
+    else: # signup tab
         st.markdown("**ادخل كود التفعيل من الادمن**")
         activation_code = st.text_input("كود التفعيل", key="new_user")
         if st.button("تفعيل الحساب", use_container_width=True):
@@ -216,7 +201,7 @@ def extract_member_page():
             else: st.error("لازم تكتب اسم المستخدم")
 
 def manage_users_page():
-    st.markdown("<h2 style='text-align:center; color:#C9A961'>ادارة الاعضاء</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align:center; color:#C9A961'>إدارة القضايا</h2>", unsafe_allow_html=True)
     if st.button("العودة للرئيسية"): st.session_state.page = "الرئيسية"; st.rerun()
     users = load_users()
 
