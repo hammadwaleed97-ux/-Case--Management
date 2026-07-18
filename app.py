@@ -1,3 +1,93 @@
+import json, os, bcrypt
+import streamlit as st
+
+USERS_FILE = "users.json"
+ADMIN_EMAIL = "law-man89@yahoo.com"
+ADMIN_USERNAME = "admin"
+ADMIN_DEFAULT_PASS = "admin123"
+
+def load_users():
+    if not os.path.exists(USERS_FILE):
+        admin_pass = bcrypt.hashpw(ADMIN_DEFAULT_PASS.encode(), bcrypt.gensalt())
+        users = [{"id": 1, "username": ADMIN_USERNAME, "password": admin_pass.decode(), "email": ADMIN_EMAIL, "role": "admin", "status": "active", "password_set": True}]
+        save_users(users)
+        return users
+    with open(USERS_FILE, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+def save_users(users):
+    with open(USERS_FILE, "w", encoding="utf-8") as f:
+        json.dump(users, f, ensure_ascii=False, indent=4)
+
+def check_login(username, password):
+    users = load_users()
+    for user in users:
+        if user["username"] == username and user["status"] == "active":
+            if user["password"] and bcrypt.checkpw(password.encode(), user["password"].encode()):
+                return user
+    return None
+
+def login_page():
+    st.markdown("<h1 style='text-align:center; color:#C9A961'>تسجيل الدخول</h1>", unsafe_allow_html=True)
+    username = st.text_input("اسم المستخدم")
+    password = st.text_input("كلمة السر", type="password")
+    if st.button("دخول", type="primary", use_container_width=True):
+        user = check_login(username, password)
+        if user:
+            if user["role"] == "member" and not user.get("password_set", False):
+                st.session_state.page = "set_password"
+                st.session_state.temp_user = user["username"]
+            else:
+                st.session_state.user = user
+                st.session_state.page = "الرئيسية"
+            st.rerun()
+        else:
+            st.error("اسم المستخدم او كلمة السر غلط او العضوية موقوفة")
+
+def manage_users_page():
+    st.markdown("<h2 style='text-align:center; color:#C9A961'>ادارة الاعضاء</h2>", unsafe_allow_html=True)
+    if st.button("العودة للرئيسية"): 
+        st.session_state.page = "الرئيسية"
+        st.rerun()
+    users = load_users()
+    with st.container(border=True):
+        st.markdown("اضافة عضو جديد")
+        new_username = st.text_input("اسم المستخدم الجديد")
+        if st.button("انشاء العضو", use_container_width=True):
+            if new_username:
+                users = load_users()
+                new_id = max([u['id'] for u in users]) + 1
+                users.append({"id": new_id, "username": new_username, "password": "", "email": "", "role": "member", "status": "active", "password_set": False})
+                save_users(users)
+                st.success(f"تم انشاء العضو: {new_username}")
+                st.rerun()
+    for user in users:
+        if user["role"] == "member":
+            col1, col2, col3 = st.columns([3,2,2])
+            with col1: st.write(f"{user['username']} - الحالة: {user['status']}")
+            with col2: 
+                if user["status"] == "active":
+                    if st.button("ايقاف", key=f"ban_{user['id']}"):
+                        user["status"] = "banned"
+                        save_users(users); st.rerun()
+                else:
+                    if st.button("فك الحظر", key=f"unban_{user['id']}"):
+                        user["status"] = "active"
+                        save_users(users); st.rerun()
+            with col3:
+                if st.button("حذف", key=f"del_{user['id']}"):
+                    users = [u for u in users if u['id'] != user['id']]
+                    save_users(users); st.rerun()
+
+if "user" not in st.session_state:
+    st.session_state.user = None
+    st.session_state.page = "login"
+
+if st.session_state.page == "login":
+    login_page()
+elif st.session_state.page == "ادارة_الاعضاء":
+    if st.session_state.user and st.session_state.user["role"] == "admin":
+        manage_users_page()
 # ============================================
 # ======= الجزء الاول: الاساسيات ============
 # ============================================
