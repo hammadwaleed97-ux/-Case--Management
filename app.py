@@ -1,13 +1,13 @@
-import json, os, bcrypt, smtplib, random
+بعoimport json, os, bcrypt, smtplib, random
 from email.mime.text import MIMEText
 import streamlit as st
 
 st.markdown("""
 <style>
-  .stApp { background-color: #0E1117; color: white; }
+ .stApp { background-color: #0E1117; color: white; }
     h1, h2, h3, h4, h5, h6, p, label, div, span { color: white!important; }
-  .stButton>button { background-color: #C9A961; color: black; font-weight: bold; }
-  .stTextInput>div>div>input { color: black; background-color: white; }
+ .stButton>button { background-color: #C9A961; color: black; font-weight: bold; }
+ .stTextInput>div>div>input { color: black; background-color: white; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -90,7 +90,7 @@ def login_page():
         admin_recover_email = st.text_input("الادمن: ادخل ايميل من ايميلاتك", key="admin_recover")
         if st.button("ارسال كود للادمن", key="admin_send", use_container_width=True):
             if is_admin_email(admin_recover_email):
-                code = str(random.randint(100000, 999))
+                code = str(random.randint(100000, 999999))
                 st.session_state.RESET_CODES[admin_recover_email] = {"code": code, "role": "admin"}
                 body = f"كود اعادة تعيين كلمة سر الادمن: {code}"
                 if send_email(admin_recover_email, "كود استرجاع الادمن", body):
@@ -136,8 +136,6 @@ def login_page():
                     st.session_state.RESET_CODES.clear()
                     st.session_state.show_reset_admin = False
                     st.session_state.show_reset_member = False
-
-                    # يدخل جوه مباشرة بعد الاسترجاع
                     st.session_state.user = logged_user
                     st.session_state.page = "الرئيسية"
                     st.success("تم تسجيل الدخول بنجاح")
@@ -156,24 +154,21 @@ def login_page():
                 st.session_state.temp_user = found_user["username"]
                 st.rerun()
 
-def manage_users_page():
-    st.markdown("<h2 style='text-align:center; color:#C9A961'>ادارة الاعضاء</h2>", unsafe_allow_html=True)
+def extract_member_page():
+    st.markdown("<h2 style='text-align:center; color:#C9A961'>استخراج عضوية جديدة</h2>", unsafe_allow_html=True)
     if st.button("العودة للرئيسية"): st.session_state.page = "الرئيسية"; st.rerun()
-    users = load_users()
 
     with st.container(border=True):
-        st.markdown("استخراج عضو جديد / اعادة استخراج عضو فاقد بياناته")
         new_username = st.text_input("اسم المستخدم الجديد")
         new_email = st.text_input("البريد الالكتروني للعضو - اختياري")
 
-        if st.button("استخراج العضو", use_container_width=True):
+        if st.button("استخراج العضو", use_container_width=True, type="primary"):
             if new_username:
                 users = load_users()
                 existing_user = next((u for u in users if u['username'] == new_username), None)
 
                 if existing_user:
-                    # حالة 2: فقد بيانات - اعادة استخراج بنفس البيانات القديمة
-                    if existing_user["status"] == "banned":
+                    if existing_user["status"] == "banned" or not existing_user.get("password_set"):
                         existing_user["status"] = "active"
                         existing_user["password"] = ""
                         existing_user["password_set"] = False
@@ -184,35 +179,44 @@ def manage_users_page():
                     else:
                         st.error("الاسم موجود والعضو مفعل بالفعل")
                 else:
-                    # حالة عضو جديد
                     new_id = max([u['id'] for u in users]) + 1
                     users.append({"id": new_id, "username": new_username, "password": "", "email": new_email, "role": "member", "status": "active", "password_set": False, "activation_code": ""})
                     save_users(users); st.success(f"تم استخراج: {new_username}"); st.rerun()
             else: st.error("لازم تكتب اسم المستخدم")
 
+def manage_users_page():
+    st.markdown("<h2 style='text-align:center; color:#C9A961'>ادارة الاعضاء</h2>", unsafe_allow_html=True)
+    if st.button("العودة للرئيسية"): st.session_state.page = "الرئيسية"; st.rerun()
+    users = load_users()
+
     st.markdown("---")
-    st.markdown("**قائمة الاعضاء**")
     for user in users:
         if user["role"] == "member":
             status = "مفعل" if user.get("password_set") else "غير مفعل"
-            if user["status"] == "banned": status = "موقوف"
+            if user["status"] == "banned": status = "موقوف لمخالفة"
 
             with st.container(border=True):
-                col1, col2 = st.columns([3,1])
+                col1, col2 = st.columns([3,2])
                 with col1:
                     st.write(f"**{user['username']}** - {user.get('email','بدون ايميل')}")
                     st.write(f"الحالة: {status}")
                 with col2:
-                    if user["status"] == "active":
-                        # حالة 1: ايقاف تأديبي
-                        if st.button("ايقاف", key=f"ban_{user['id']}"):
+                    if user["status"] == "active" and user.get("password_set"):
+                        if st.button("ايقاف لمخالفة قواعد", key=f"ban_{user['id']}"):
                             user["status"] = "banned"; user["password"] = ""; user["password_set"] = False
                             save_users(users); st.rerun()
-                    else:
-                        # حالة 1: رجوع من ايقاف تأديبي
+                        if st.button("ايقاف لفقد البيانات", key=f"lose_{user['id']}"):
+                            user["password"] = ""; user["password_set"] = False
+                            save_users(users); st.rerun()
+                    elif user["status"] == "banned":
                         if st.button("تنشيط", key=f"unban_{user['id']}", type="primary"):
                             user["status"] = "active"
                             save_users(users); st.success(f"تم تنشيط {user['username']}"); st.rerun()
+                    else:
+                        if st.button("اعادة استخراج", key=f"re_extract_{user['id']}", type="primary"):
+                            user["status"] = "active"
+                            user["password"] = ""; user["password_set"] = False
+                            save_users(users); st.success(f"تم اعادة استخراج {user['username']}"); st.rerun()
 
                     if st.button("حذف", key=f"del_{user['id']}"):
                         users = [u for u in users if u['id']!= user['id']]; save_users(users); st.rerun()
@@ -267,6 +271,8 @@ def set_password_page():
 # ===== تشغيل الصفحات =====
 if "user" not in st.session_state: st.session_state.user = None; st.session_state.page = "login"
 if st.session_state.page == "login": login_page()
+elif st.session_state.page == "extract_member":
+    if st.session_state.user and st.session_state.user["role"] == "admin": extract_member_page()
 elif st.session_state.page == "ادارة_الاعضاء":
     if st.session_state.user and st.session_state.user["role"] == "admin": manage_users_page()
 elif st.session_state.page == "recovery_settings": recovery_settings_page()
@@ -274,10 +280,12 @@ elif st.session_state.page == "set_password": set_password_page()
 elif st.session_state.page == "change_password": change_password_page()
 elif st.session_state.page == "الرئيسية":
     st.write(f"اهلا {st.session_state.user['username']}")
+    if st.session_state.user["role"] == "admin":
+        if st.button("استخراج عضوية جديدة", use_container_width=True, type="primary"): st.session_state.page = "extract_member"; st.rerun()
+        if st.button("ادارة الاعضاء", use_container_width=True): st.session_state.page = "ادارة_الاعضاء"; st.rerun()
+
     if st.button("تغيير كلمة السر"): st.session_state.page = "change_password"; st.rerun()
     if st.button("تأكيد البريد الالكتروني"): st.session_state.page = "recovery_settings"; st.rerun()
-    if st.session_state.user["role"] == "admin":
-        if st.button("ادارة الاعضاء"): st.session_state.page = "ادارة_الاعضاء"; st.rerun()
     if st.button("تسجيل الخروج"): st.session_state.user = None; st.session_state.page = "login"; st.rerun()
 # ============================================
 # ======= الجزء الاول: الاساسيات ============
