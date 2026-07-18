@@ -88,6 +88,22 @@ if st.session_state.page == "login":
 elif st.session_state.page == "ادارة_الاعضاء":
     if st.session_state.user and st.session_state.user["role"] == "admin":
         manage_users_page()
+        def set_password_page():
+    st.markdown("<h1 style='text-align:center'>انشاء كلمة سر جديدة</h1>", unsafe_allow_html=True)
+    new_pass = st.text_input("كلمة السر الجديدة", type="password")
+    confirm_pass = st.text_input("تأكيد كلمة السر", type="password")
+    if st.button("حفظ"):
+        if new_pass == confirm_pass:
+            users = load_users()
+            for user in users:
+                if user["username"] == st.session_state.temp_user:
+                    user["password"] = bcrypt.hashpw(new_pass.encode(), bcrypt.gensalt()).decode()
+                    user["password_set"] = True
+                    save_users(users)
+                    st.session_state.page = "login"
+                    st.rerun()
+        else:
+            st.error("الباسوردين مش زي بعض")
 # ============================================
 # ======= الجزء الاول: الاساسيات ============
 # ============================================
