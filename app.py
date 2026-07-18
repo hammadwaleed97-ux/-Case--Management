@@ -4,10 +4,20 @@ import streamlit as st
 
 st.markdown("""
 <style>
-.stApp { background-color: #0E1117; color: white; }
-    h1, h2, h3, h4, h5, h6, p, label, div, span { color: #C9A961!important; } /* خليته دهبي */
-.stButton>button { background-color: #C9A961; color: black; font-weight: bold; }
-.stTextInput>div>div>input { color: black; background-color: white; }
+.stApp { background-color: #0E1117; }
+ /* 1. كل الكلام دهبي */
+ h1, h2, h3, h4, h5, h6, p, label, div, span { color: #C9A961!important; }
+ /* 2. الزراير دهبي بحد احمر */
+.stButton>button { background-color: #C9A961; color: #0E1117; font-weight: bold; border: 2px solid #dc3545; border-radius: 12px; }
+.stButton>button:hover { background-color: #dc3545; color: white; }
+ /* 3. الانبوت */
+.stTextInput>div>div>input { color: black; background-color: white; font-weight: bold; }
+ /* 4. التابات */
+ button[data-baseweb="tab"] p { color: #C9A961!important; font-weight: bold; }
+ button[data-baseweb="tab"][aria-selected="true"] { border-bottom: 3px solid #dc3545!important; }
+ button[data-baseweb="tab"][aria-selected="true"] p { color: #dc3545!important; }
+ /* 5. الكونتينر */
+ div[data-testid="stVerticalBlock"] > div[style*="border"] { border: 2px solid #C9A961!important; border-radius: 10px; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -64,10 +74,10 @@ def is_admin_email(email):
     return email == admin["email"] or email == admin.get("recovery_email","")
 
 def login_page():
-    # 1. العنوان الفخم 3 سطور
-    st.markdown("<h1 style='text-align:center; color:#C9A961; font-size:36px; font-weight:bold; text-shadow: 2px 2px 4px #000;'>إدارة القضايا</h1>", unsafe_allow_html=True)
+    # العنوان 3 سطور فخم بالوان
+    st.markdown("<h1 style='text-align:center; color:#C9A961; font-size:36px; font-weight:bold; text-shadow: 0 0 10px #C9A961;'>إدارة القضايا</h1>", unsafe_allow_html=True)
     st.markdown("<h3 style='text-align:center; color:#C9A961; font-size:24px;'>دخول السادة الأعضاء</h3>", unsafe_allow_html=True)
-    st.markdown("<h2 style='text-align:center; color:#dc3545; font-size:28px; font-weight:bold;'>مستشاري الهيئة</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align:center; color:#dc3545; font-size:28px; font-weight:bold; text-shadow: 0 0 8px #dc3545;'>مستشاري الهيئة</h2>", unsafe_allow_html=True)
     st.markdown("<hr style='border: 1px solid #C9A961;'>", unsafe_allow_html=True)
 
     tab1, tab2 = st.tabs(["تسجيل الدخول", "تفعيل حساب جديد"])
@@ -95,7 +105,7 @@ def login_page():
         admin_recover_email = st.text_input("الادمن: ادخل ايميل من ايميلاتك", key="admin_recover")
         if st.button("ارسال كود للادمن", key="admin_send", use_container_width=True):
             if is_admin_email(admin_recover_email):
-                code = str(random.randint(100000, 999))
+                code = str(random.randint(100000, 999999))
                 st.session_state.RESET_CODES[admin_recover_email] = {"code": code, "role": "admin"}
                 body = f"كود اعادة تعيين كلمة سر الادمن: {code}"
                 if send_email(admin_recover_email, "كود استرجاع الادمن", body):
@@ -190,7 +200,7 @@ def extract_member_page():
             else: st.error("لازم تكتب اسم المستخدم")
 
 def manage_users_page():
-    st.markdown("<h2 style='text-align:center; color:#C9A961'>إدارة القضايا</h2>", unsafe_allow_html=True) # غيرت الاسم هنا كمان
+    st.markdown("<h2 style='text-align:center; color:#C9A961'>إدارة القضايا</h2>", unsafe_allow_html=True)
     if st.button("العودة للرئيسية"): st.session_state.page = "الرئيسية"; st.rerun()
     users = load_users()
 
@@ -286,16 +296,13 @@ elif st.session_state.page == "change_password": change_password_page()
 elif st.session_state.page == "الرئيسية":
     st.write(f"اهلا {st.session_state.user['username']}")
 
-    # 3. الفوتر جوه بس
-    st.markdown("<p style='text-align:center; color:#C9A961; margin-top:50px; font-size:18px; font-weight:bold'>مع تحيات وليد حماد</p>", unsafe_allow_html=True)
-
     if st.session_state.user["role"] == "admin":
         if st.button("استخراج عضوية جديدة", use_container_width=True, type="primary"): st.session_state.page = "extract_member"; st.rerun()
         if st.button("ادارة الاعضاء", use_container_width=True): st.session_state.page = "ادارة_الاعضاء"; st.rerun()
 
     if st.button("تغيير كلمة السر"): st.session_state.page = "change_password"; st.rerun()
     if st.button("تأكيد البريد الالكتروني"): st.session_state.page = "recovery_settings"; st.rerun()
-    if st.button("تسجيل الخروج"): st.session_state.user = None; st.session_state.page = "login"; st.rerun()
+    if st.button("تسجيل الخروج"): st.session_state.user = None; st.session_state.page = "login"; st.rerun()      
 # ============================================
 # ======= الجزء الاول: الاساسيات ==========
 # ============================================
