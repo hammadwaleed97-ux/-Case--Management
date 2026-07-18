@@ -586,6 +586,69 @@ def get_alert_cases():
                     case_copy = case.copy(); case_copy["days_left_appeal"] = days_left_appeal; alerts["appeals"].append(case_copy)
             except Exception: pass
     return alerts
+    # ===== دوال التنبيهات ======
+def get_alert_cases():
+    data = load_data()
+    today = datetime.now().date()
+    all_cases = data.get("cases", [])
+    alerts = {"sessions": [], "appeals": []}
+    for case in all_cases:
+        if case.get("حالة") == "متداولة" and case.get("تاريخ_جلسة"):
+            try:
+                session_date = datetime.strptime(case["تاريخ_جلسة"], "%Y-%m-%d").date()
+                days_left = (session_date - today).days
+                if 0 <= days_left <= 7:
+                    case_copy = case.copy(); case_copy["days_left"] = days_left; alerts["sessions"].append(case_copy)
+            except Exception: pass
+        if case.get("حالة") == "منتهية" and case.get("مسندة_ل_الحكم") == "الضد" and case.get("تاريخ_الحكم"):
+            try:
+                judgment_date = datetime.strptime(case["تاريخ_الحكم"], "%Y-%m-%d").date()
+                appeal_days = 40 if case.get("نوع") == "دعوى" else 60
+                last_appeal_day = judgment_date + timedelta(days=appeal_days)
+                notify_start = last_appeal_day - timedelta(days=15)
+                days_left_appeal = (last_appeal_day - today).days
+                if notify_start <= today <= last_appeal_day and days_left_appeal >= 0:
+                    case_copy = case.copy(); case_copy["days_left_appeal"] = days_left_appeal; alerts["appeals"].append(case_copy)
+            except Exception: pass
+    return alerts
+
+# ===== ضيف دي تحتها على طول ======
+def send_alert_email(to_email, alerts):
+    subject = f"🔔 تنبيهات ادارة القضايا - {datetime.now().strftime('%Y-%m-%d')}"
+    
+    body = "<div style='direction:rtl; text-align:right; font-family:Arial;'>"
+    body += "<h2 style='color:#C9A961; text-align:center;'>مركز التنبيهات</h2>"
+    
+    if alerts["sessions"]:
+        body += "<h3 style='color:#FFD700;'>⚖️ جلسات خلال 7 ايام</h3>"
+        for case in alerts["sessions"]:
+            body += f"<p style='border:1px solid #C9A961; padding:10px; border-radius:8px;'>"
+            body += f"<b>قضية رقم:</b> {case.get('رقم')} لسنة {case.get('سنة')}<br>"
+            body += f"<b>المحكمة:</b> {case.get('محكمة_اسم')}<br>"
+            body += f"<b>الجلسة:</b> {case.get('تاريخ_جلسة')} - <b style='color:red;'>فاضل {case['days_left']} يوم</b>"
+            body += f"</p>"
+    else:
+        body += "<p>✅ مفيش جلسات خلال 7 ايام</p>"
+    
+    if alerts["appeals"]:
+        body += "<h3 style='color:#FF4500;'>📄 طعون خلال 15 يوم</h3>"
+        for case in alerts["appeals"]:
+            body += f"<p style='border:1px solid #FF4500; padding:10px; border-radius:8px;'>"
+            body += f"<b>قضية رقم:</b> {case.get('رقم')} لسنة {case.get('سنة')}<br>"
+            body += f"<b>تاريخ الحكم:</b> {case.get('تاريخ_الحكم')}<br>"
+            body += f"<b style='color:red;'>اخر ميعاد للطعن فاضل {case['days_left_appeal']} يوم</b>"
+            body += f"</p>"
+    else:
+        body += "<p>✅ مفيش طعون قريبة</p>"
+    
+    body += "</div>"
+    
+    try:
+        send_email(to_email, subject, body) # دي دالة الارسال اللي عندك
+        return True
+    except Exception as e:
+        st.error(f"فشل الارسال: {e}")
+        return False
 
 LIBRARY_SECTIONS = {
     "القوانين": "#FF4500", "القرارات الوزارية": "#FF8C00", "قرارات الهيئة": "#FFD700",
