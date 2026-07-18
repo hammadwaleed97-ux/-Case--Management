@@ -7,8 +7,10 @@ st.markdown("""
 .stApp { background-color: #0E1117; }
 h1, h2, h3, h4, h5, h6, p, label { color: #C9A961!important; }
 .stTextInput label { color: #C9A961!important; font-weight: bold; }
-.stTextInput>div>div>input { color: #000000!important; background-color: #FFFFFF!important; font-weight: bold; font-size: 16px; }
-.stButton>button { background-color: #C9A961!important; color: #000!important; font-weight: bold; font-size: 18px; }
+.stTextInput>div>div>input { color: #000!important; background-color: #FFFFFF!important; font-weight: bold; font-size: 16px; border: 2px solid #C9A961; }
+/* التعديل المهم: الزرار اسود والكلام دهبي وهيبان على طول */
+.stButton>button { background-color: #0E1117!important; color: #C9A961!important; font-weight: bold; font-size: 18px; border: 2px solid #C9A961; border-radius: 10px; }
+.stButton>button:hover { background-color: #C9A961!important; color: #0E1117!important; }
 button[data-baseweb="tab"] p { color: #C9A961!important; }
 button[data-baseweb="tab"][aria-selected="true"] p { color: #dc3545!important; }
 </style>
@@ -202,7 +204,7 @@ def manage_users_page():
                             user["status"] = "banned"; user["password"] = ""; user["password_set"] = False
                             save_users(users); st.rerun()
                         if st.button("ايقاف لفقد", key=f"lose_{user['id']}"):
-                            user["password"] = ""; user["password_set"] = False
+                            user["password"] = ""; user["password_set"] = false
                             save_users(users); st.rerun()
                     elif user["status"] == "banned":
                         if st.button("تنشيط", key=f"unban_{user['id']}"):
@@ -274,7 +276,7 @@ elif st.session_state.page == "set_password": set_password_page()
 elif st.session_state.page == "change_password": change_password_page()
 elif st.session_state.page == "الرئيسية":
     st.write(f"اهلا {st.session_state.user['username']}")
-    # الشريط الرايح جاي هنا بس
+    # الشريط ده في الرئيسية بس
     st.markdown("<marquee style='background:#C9A961; color:#000; font-weight:bold; padding:10px; margin-top:30px;'>مع تحيات وليد حماد</marquee>", unsafe_allow_html=True)
     if st.session_state.user["role"] == "admin":
         if st.button("استخراج عضوية جديدة", use_container_width=True): st.session_state.page = "extract_member"; st.rerun()
