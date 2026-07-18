@@ -6,8 +6,24 @@ st.markdown("""
 <style>
 .stApp { background-color: #0E1117; color: white; }
 h1, h2, h3, h4, h5, h6, p, label, div, span { color: white!important; }
+
+/* ده المهم للفورم والجداول */
 .stButton>button { background-color: #C9A961; color: black; font-weight: bold; border-radius: 10px; }
 .stTextInput>div>div>input { color: black; background-color: white; border-radius: 8px; }
+.stSelectbox>div>div>div { color: black; background-color: white; border-radius: 8px; }
+.stTextArea>div>div>textarea { color: black; background-color: white; border-radius: 8px; }
+
+/* ده اللي بيظهر اسم الحقل فوق الانبوت */
+div[data-testid="stWidgetLabel"] p { color: #C9A961 !important; font-weight: bold; font-size: 16px; }
+div[data-testid="stWidgetLabel"] { color: #C9A961 !important; }
+
+/* الجداول */
+.stDataFrame, .stTable { color: black !important; background-color: white !important; }
+thead tr th { color: black !important; background-color: #C9A961 !important; font-weight: bold; }
+tbody tr td { color: black !important; background-color: white !important; }
+
+/* placeholder */
+::placeholder { color: #555 !important; opacity: 1; }
 </style>
 """, unsafe_allow_html=True)
 
