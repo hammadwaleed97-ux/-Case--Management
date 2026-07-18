@@ -1565,106 +1565,77 @@ elif st.session_state.page == "بحث":
                     st.markdown("</div>", unsafe_allow_html=True)
                     st.markdown("</div>", unsafe_allow_html=True)
                     # ====== 
-# ====== الجزء السابع: مركز التنبيهات ==========
-elif st.session_state.page == "تنبيهات":
-    st.markdown("<h1 style='text-align: center; color: #C9A961;'>🔔 مركز التنبيهات</h1>", unsafe_allow_html=True)
+# ====== 7. صفحة التنبيهات ======
+with st.container(border=True):
+    st.markdown("<div class='card'>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align:center; color:#C9A961;'>7. التنبيهات</h2>", unsafe_allow_html=True)
     
-    if st.button("⬅️ العودة للرئيسية", use_container_width=True): 
-        st.session_state.page = "الرئيسية"
-        st.rerun()
-    
-    # ====== CSS خاص بالتنبيهات ======
-    st.markdown("""
-    <style>
-    .section-divider { border-top: 2px solid #C9A961; margin: 20px 0; }
-    .card-title { color: #C9A961; font-size: 18px; font-weight: bold; text-align: right; margin-bottom: 10px; }
-    .table-container { overflow-x: auto; margin: 10px 0; }
-    .case-table { width: 100%; border-collapse: collapse; background-color: white; color: black; border-radius: 8px; overflow: hidden; }
-    .case-table th { background-color: #C9A961; color: black; padding: 10px; text-align: center; font-weight: bold; }
-    .case-table td { padding: 8px; text-align: center; border: 1px solid #ddd; color: black; }
-    .case-table .row1 { background-color: #FFF8DC; }
-    .case-table .row-judgment { background-color: #FFE4E1; }
-    div[data-testid="stWidgetLabel"] p { color: #C9A961 !important; font-weight: bold; }
-    </style>
-    """, unsafe_allow_html=True)
-    
-    # ====== 1. تسجيل الايميل + ارسال ======
-    st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
-    with st.container(border=True):
-        st.markdown("<div class='card-title'>📧 تسجيل الايميل لاستلام التنبيهات</div>", unsafe_allow_html=True)
-        user_email = st.text_input("ادخل ايميلك", placeholder="example@gmail.com", key="email_alert")
-        
-        col1, col2 = st.columns(2)
-        with col1:
-            if st.button("1. تسجيل الايميل", use_container_width=True):
-                if user_email and "@" in user_email:
-                    st.session_state['saved_email'] = user_email
-                    st.success(f"✅ تم حفظ {user_email}")
+    user_email = st.text_input("سجل ايميلك عشان يجيلك التنبيهات", key="alert_email_input")
+
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("1. حفظ الايميل"):
+            if user_email and "@" in user_email:
+                st.session_state['saved_email'] = user_email
+                st.success(f"✅ تم حفظ الايميل: {user_email}")
+            else:
+                st.warning("دخل ايميل صحيح")
+
+    with col2:
+        if st.button("2. 📧 ارسل التنبيهات دلوقتي"):
+            if 'saved_email' in st.session_state:
+                alerts = get_alert_cases() # نجيب القضايا اللي قربت
+                
+                # نبني جسم الايميل HTML
+                body = "<h2 style='color:#C9A961;'>تنبيهات القضايا</h2>"
+                
+                body += "<h3>1. جلسات خلال 7 ايام</h3>"
+                if alerts["sessions"]:
+                    for case in alerts["sessions"]:
+                        body += f"<p><b>رقم:</b> {case.get('رقم_كامل','')} <br> <b>الجلسة:</b> {case.get('session_date','')} <br> <b>الموضوع:</b> {case.get('موضوع_الدعوى','')}</p><hr>"
                 else:
-                    st.warning("دخل ايميل صحيح")
-        
-        with col2:
-            if st.button("2. 📨 ارسل التنبيهات دلوقتي", type="primary", use_container_width=True):
-                if 'saved_email' in st.session_state:
-                    if send_alert_email(st.session_state['saved_email'], alerts):
-                        st.success("✅ تم الارسال على الايميل بنجاح")
+                    body += "<p>لا توجد جلسات قريبة</p>"
+
+                body += "<h3>2. طعون خلال 15 يوم</h3>"
+                if alerts["appeals"]:
+                    for case in alerts["appeals"]:
+                        body += f"<p><b>رقم:</b> {case.get('رقم_كامل','')} <br> <b>اخر ميعاد:</b> {case.get('deadline','')} <br> <b>الموضوع:</b> {case.get('موضوع_الدعوى','')}</p><hr>"
                 else:
-                    st.error("سجل الايميل الاول")
-    
+                    body += "<p>لا توجد طعون قريبة</p>"
+
+                if send_email(st.session_state['saved_email'], "تنبيهات القضايا من النظام", body):
+                    st.success("✅ تم ارسال التنبيهات بنجاح للايميل")
+            else:
+                st.error("❌ سجل الايميل الاول من الزرار اللي جنبه")
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
     alerts = get_alert_cases()
-    st.markdown(f"<h3 style='text-align:center; color:#FFFFFF;'>📅 تاريخ اليوم: {datetime.now().strftime('%Y-%m-%d')}</h3>", unsafe_allow_html=True)
-    
+    st.markdown(f"<h3 style='text-align:center; color:#C9A961;'>التنبيهات الموجوده حاليا</h3>", unsafe_allow_html=True)
+
     # ====== 2. الجلسات خلال 7 ايام ======
-    st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
-    st.markdown("<h2 style='text-align:center; color:#C9A961;'>⚖️ جلسات خلال 7 ايام القادمة</h2>", unsafe_allow_html=True)
-    
+    st.markdown("<h2 style='text-align:center; color:#C9A961;'>الجلسات خلال 7 ايام</h2>", unsafe_allow_html=True)
     if alerts["sessions"]:
         for case in alerts["sessions"]:
             with st.container(border=True):
-                رقم_كامل = f"{case.get('رقم','')} لسنة {case.get('سنة','')}"
-                محكمة_كاملة = f"{case.get('نوع','')} {case.get('محكمة_اسم','')}"
-                if case.get('مأمورية',''): محكمة_كاملة += f"<br>مأمورية {case.get('مأمورية','')}"
-                دائرة_كاملة = f"{case.get('دائرة','')} عمال" if case.get('دائرة','') else ""
-                محكمة_كاملة += f"<br>{دائرة_كاملة}"
-                خصوم = f"{case.get('مدعي','')}<br>ضد<br>{case.get('مدعي_عليه','')}"
-                
-                st.markdown(f"<h4 style='color:#FFD700; text-align:center;'>⚠️ فاضل {case['days_left']} يوم على الجلسة</h4>", unsafe_allow_html=True)
-                
-                table_html = f"<div class='table-container'><table class='case-table'><tr><th>الرقم والسنة</th><th>المحكمة والدائرة</th><th>الخصوم</th><th>الموضوع</th><th>تاريخ الجلسة</th></tr><tr class='row1'><td>{رقم_كامل}</td><td>{محكمة_كاملة}</td><td>{خصوم}</td><td>{case.get('موضوع','')}</td><td>{case.get('تاريخ_جلسة','')}</td></tr></table></div>"
-                st.markdown(table_html, unsafe_allow_html=True)
-                
-                if st.button("📂 فتح القضية", key=f"open_alert_{case['id']}", use_container_width=True):
-                    st.session_state.selected_case_id = case['id']
-                    st.session_state.page = "تفاصيل"
-                    st.rerun()
+                رقم_كامل = f"{case.get('رقم_كامل','')}"
+                st.write(f"**رقم القضية:** {رقم_كامل}")
+                st.write(f"**تاريخ الجلسة:** {case.get('session_date','')}")
+                st.write(f"**الموضوع:** {case.get('موضوع_الدعوى','')}")
     else:
-        st.success("✅ مفيش جلسات خلال 7 ايام")
-    
+        st.info("لا توجد جلسات خلال 7 ايام")
+
     # ====== 3. الطعون خلال 15 يوم ======
-    st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
-    st.markdown("<h2 style='text-align:center; color:#C9A961;'>📄 طعون خلال 15 يوم</h2>", unsafe_allow_html=True)
-    
+    st.markdown("<h2 style='text-align:center; color:#C9A961;'>الطعون خلال 15 يوم</h2>", unsafe_allow_html=True)
     if alerts["appeals"]:
         for case in alerts["appeals"]:
             with st.container(border=True):
-                رقم_كامل = f"{case.get('رقم','')} لسنة {case.get('سنة','')}"
-                محكمة_كاملة = f"{case.get('نوع','')} {case.get('محكمة_اسم','')}"
-                if case.get('مأمورية',''): محكمة_كاملة += f"<br>مأمورية {case.get('مأمورية','')}"
-                دائرة_كاملة = f"{case.get('دائرة','')} عمال" if case.get('دائرة','') else ""
-                محكمة_كاملة += f"<br>{دائرة_كاملة}"
-                خصوم = f"{case.get('مدعي','')}<br>ضد<br>{case.get('مدعي_عليه','')}"
-                
-                st.markdown(f"<h4 style='color:#FF4500; text-align:center;'>⏰ فاضل {case['days_left_appeal']} يوم على اخر ميعاد للطعن</h4>", unsafe_allow_html=True)
-                
-                table_html = f"<div class='table-container'><table class='case-table'><tr><th>الرقم والسنة</th><th>المحكمة والدائرة</th><th>الخصوم</th><th>الموضوع</th><th>تاريخ الحكم</th></tr><tr class='row-judgment'><td>{رقم_كامل}</td><td>{محكمة_كاملة}</td><td>{خصوم}</td><td>{case.get('موضوع','')}</td><td>{case.get('تاريخ_الحكم','')}</td></tr></table></div>"
-                st.markdown(table_html, unsafe_allow_html=True)
-                
-                if st.button("📂 فتح القضية", key=f"open_appeal_{case['id']}", use_container_width=True):
-                    st.session_state.selected_case_id = case['id']
-                    st.session_state.page = "تفاصيل"
-                    st.rerun()
+                رقم_كامل = f"{case.get('رقم_كامل','')}"
+                st.write(f"**رقم القضية:** {رقم_كامل}")
+                st.write(f"**اخر ميعاد للطعن:** {case.get('deadline','')}")
+                st.write(f"**الموضوع:** {case.get('موضوع_الدعوى','')}")
     else:
-        st.success("✅ مفيش طعون قريبة")
+        st.info("لا توجد طعون خلال 15 يوم")
         # ========= صفحة المكتبة القانونية =========
 elif st.session_state.page == "المكتبة":
     st.markdown('<h1 style="text-align: center; color: #FFD700;">المكتبة 📚<br>القانونية</h1>', unsafe_allow_html=True)
