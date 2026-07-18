@@ -585,8 +585,8 @@ elif st.session_state.page == "الحصر":
         this_week = len([c for c in data["cases"] if c.get('تاريخ_جلسة') and start_week <= datetime.strptime(c['تاريخ_جلسة'],'%Y-%m-%d').date() <= end_week])
         # =========================================================
 
-        # ======= التعديل 3: المحجوزة للحكم بدل المنتهية =======
-        reserved = len([c for c in data["cases"] if 'محجوزة للحكم' in str(c.get('الاجراء',''))])
+        # ====== التعديل 3: المحجوزة للحكم بدل المنتهية =======
+        reserved = len([c for c in data["cases"] if any(k in str(c.get('الاجراء','')) for k in ['حكم', 'للحكم', 'الحكم', 'محجوزة للحكم'])])
         # =======================================================
 
         st.markdown(f"<div style='background:#1E2A47; padding:20px; border-radius:15px; border:2px solid #D4AF37; text-align:center; margin-bottom:20px'>", unsafe_allow_html=True)
