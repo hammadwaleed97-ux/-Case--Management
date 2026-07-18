@@ -1036,11 +1036,31 @@ elif st.session_state.page == "الأرشيف":
             st.markdown("</div>", unsafe_allow_html=True)
     else: st.info("لا توجد قضايا محفوظة نهائي")
     st.markdown("</div>", unsafe_allow_html=True)
-# ==============================================
+# =========================================
+# ================================================
 # ============ الجزء السادس: البحث ============
 # ================================================
 elif st.session_state.page == "بحث":
     data = load_data()
+    
+    # تلوين اللابل والـ placeholder عشان يبانوا
+    st.markdown("""
+    <style>
+        label { color: #FFD700 !important; font-weight: 900 !important; font-size: 15px !important; }
+        input::placeholder {
+            color: #FFD700 !important;  /* اصفر دهبي */
+            opacity: 1 !important;
+            font-weight: 600;
+        }
+        .case-table {width:100%; border-collapse: collapse; font-size:12px; color:#FFF; text-align:center; margin-bottom:10px;}
+        .case-table th {background:#D4AF37; color:#0B1426; padding:8px; font-weight:900;}
+        .case-table td {background:#1E2A47; padding:8px; border:1px solid #D4AF37; vertical-align:top; color:#FFF;}
+        .plaintiff {background:#FFF3CD; color:#000; font-weight:700; border-radius:6px; padding:6px; font-size:12px;}
+        .plaintiff-hey2a {background:#DC3545!important; color:#FFF!important; font-weight:900; border-radius:6px; padding:6px; font-size:12px;}
+        .defendant {background:#CFF4FC; color:#000; font-weight:700; border-radius:6px; padding:6px; font-size:12px;}
+    </style>
+    """, unsafe_allow_html=True)
+    
     st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
     st.markdown("<h2 style='color:#4DA8DA; text-align:center'>🔍 البحث عن دعوى</h2>", unsafe_allow_html=True)
 
@@ -1049,98 +1069,82 @@ elif st.session_state.page == "بحث":
         st.rerun()
 
     st.markdown("<div style='background:#1E2A47; padding:20px; border-radius:15px; border:2px solid #4DA8DA; margin-bottom:20px'>", unsafe_allow_html=True)
-    search_type = st.selectbox("نوع البحث", [
-        "اسم المدعي او المدعى عليه",
-        "رقم الدعوى وسنتها - اول درجة",
-        "رقم الاستئناف وسنته - ثاني درجة",
-        "رقم الطعن بالنقض وسنته",
-        "رقم الدعوى وسنتها - المحكمة الادارية",
-        "رقم الدعوى وسنتها - محكمة القضاء الاداري",
-        "رقم الطعن وسنته - القضاء الاداري بهيئة استئنافية",
-        "رقم الدعوى وسنتها - المحكمة الادارية العليا"
-    ], key="search_type_select")
-
-    search_value = st.text_input("اكتب كلمة البحث", placeholder="للاسم: اكتب الاسم | للرقم: اكتب الرقم والسنة مثال 1234 2024", key="search_input")
+    st.markdown("<div style='color:#FFF; font-size:18px; font-weight:900; text-align:center; margin-bottom:15px'>ابحث بالاسم او برقم وسنة الدعوى</div>", unsafe_allow_html=True)
+    
+    col1, col2 = st.columns(2)
+    with col1: 
+        بحث_اسم = st.text_input("بحث بالاسم", placeholder="اكتب اسم المدعي او المدعى عليه")
+    with col2: 
+        بحث_رقم = st.text_input("بحث برقم وسنة", placeholder="مثال: 123 لسنة 2024")
+    
+    بحث_زر = st.button("🔍 بحث", use_container_width=True, type="primary")
     st.markdown("</div>", unsafe_allow_html=True)
 
-    if st.button("🔍 بحث", use_container_width=True, type="primary", key="do_search"):
-        if not search_value.strip():
-            st.error("اكتب حاجة تبحث بيها")
+    if بحث_زر:
+        if not بحث_اسم.strip() and not بحث_رقم.strip():
+            st.error("اكتب اسم او رقم للبحث")
         else:
             results = []
-            parts = search_value.split()
-            رقم_بحث = parts[0] if len(parts) > 0 else ""
-            سنة_بحث = parts[1] if len(parts) > 1 else ""
-
+            بحث_اسم = بحث_اسم.lower()
+            
+            # بندور في كل القضايا: الحصر والارشيف
             for case in data["cases"]:
                 match = False
-                نوع_الدعوى = str(case.get('نوع_الدعوى', '')).lower()
-
-                if search_type == "اسم المدعي او المدعى عليه":
-                    if search_value in str(case.get('مدعي','')) or search_value in str(case.get('مدعي_عليه','')):
+                
+                # بحث بالاسم في اي مكان
+                if بحث_اسم:
+                    if any(بحث_اسم in str(قيمة).lower() for قيمة in case.values() if isinstance(قيمة, str)):
                         match = True
-
-                elif "اول درجة" in search_type:
-                    if رقم_بحث == str(case.get('رقم','')) and سنة_بحث == str(case.get('سنة','')) and ("دعوى" in نوع_الدعوى or "عمال" in نوع_الدعوى):
-                        match = True
-
-                elif "استئناف" in search_type and "استئنافية" not in search_type:
-                    if رقم_بحث == str(case.get('رقم','')) and سنة_بحث == str(case.get('سنة','')) and "استئناف" in نوع_الدعوى:
-                        match = True
-
-                elif "الطعن بالنقض" in search_type:
-                    if رقم_بحث == str(case.get('رقم','')) and سنة_بحث == str(case.get('سنة','')) and "طعن" in نوع_الدعوى and "اداري" not in نوع_الدعوى:
-                        match = True
-
-                elif "المحكمة الادارية" in search_type and "العليا" not in search_type and "استئنافية" not in search_type:
-                    if رقم_بحث == str(case.get('رقم','')) and سنة_بحث == str(case.get('سنة','')) and "ادارية" in نوع_الدعوى and "عليا" not in نوع_الدعوى:
-                        match = True
-
-                elif "القضاء الاداري" in search_type and "استئنافية" not in search_type:
-                    if رقم_بحث == str(case.get('رقم','')) and سنة_بحث == str(case.get('سنة','')) and "قضاء اداري" in نوع_الدعوى:
-                        match = True
-
-                elif "استئنافية" in search_type:
-                    if رقم_بحث == str(case.get('رقم','')) and سنة_بحث == str(case.get('سنة','')) and "استئنافية" in نوع_الدعوى:
-                        match = True
-
-                elif "الادارية العليا" in search_type:
-                    if رقم_بحث == str(case.get('رقم','')) and سنة_بحث == str(case.get('سنة','')) and "ادارية عليا" in نوع_الدعوى:
+                
+                # بحث بالرقم والسنة
+                if بحث_رقم:
+                    رقم_كامل = f"{case.get('رقم','')} لسنة {case.get('سنة','')}"
+                    if بحث_رقم in رقم_كامل:
                         match = True
 
                 if match:
                     results.append(case)
 
             if not results:
-                st.warning("لم يتم العثور على نتائج")
+                st.warning("⚠️ لا يوجد بحث مطابق")
             else:
-                st.success(f"تم العثور على {len(results)} نتيجة")
+                st.success(f"✅ تم العثور على {len(results)} نتيجة")
                 for idx, case in enumerate(results, 1):
+                    
+                    # تحديد الخصوم حسب النوع
+                    نوع = case.get('نوع', '').lower()
+                    if 'استئناف' in نوع:
+                        لقب1, لقب2 = "المستأنف:", "المستأنف ضده:"
+                    elif 'طعن' in نوع:
+                        لقب1, لقب2 = "الطاعن:", "المطعون ضده:"
+                    else:
+                        لقب1, لقب2 = "المدعي:", "المدعي عليه:"
+
+                    if "الهيئة" in str(case.get('مدعي','')):
+                        طرف1_html = f"<div class='plaintiff-hey2a'><b>{لقب1}</b><br>{case.get('مدعي','')}</div>"
+                    else:
+                        طرف1_html = f"<div class='plaintiff'><b>{لقب1}</b><br>{case.get('مدعي','')}</div>"
+                    طرف2_html = f"<div class='defendant'><b>{لقب2}</b><br>{case.get('مدعي_عليه','')}</div>"
+                    خصوم = طرف1_html + "<div style='height:4px'></div>" + طرف2_html
+
                     رقم_كامل = f"{case.get('رقم','')} لسنة {case.get('سنة','')}"
-                    محكمة_كاملة = f"{case.get('نوع_الدعوى','')} - {case.get('محكمة_اسم','')}"
-                    if case.get('مأمورية',''):
-                        محكمة_كاملة += f"<br>مأمورية {case.get('مأمورية','')}"
-                    if case.get('دائرة',''):
-                        محكمة_كاملة += f"<br>دائرة {case.get('دائرة','')}"
+                    محكمة_كاملة = f"{case.get('نوع','')} {case.get('محكمة_اسم','')}"
+                    if case.get('مأمورية',''): محكمة_كاملة += f"<br>مأمورية {case.get('مأمورية','')}"
+                    if case.get('دائرة',''): محكمة_كاملة += f"<br>دائرة {case.get('دائرة','')}"
 
-                    خصوم = f"<div style='background:#FFF3CD; padding:8px; border-radius:8px; color:#000; margin-bottom:5px; text-align:center'><b>المدعى:</b><br>{case.get('مدعي','')}</div><div style='background:#CFF4FC; padding:8px; border-radius:8px; color:#000; text-align:center'><b>المدعى عليه:</b><br>{case.get('مدعي_عليه','')}</div>"
-
+                    # تحديد المكان واللون حسب الحالة
                     if case.get('حالة') == 'منتهية':
-                        row_class = "row-judgment"
                         حالة_لون = "#FF5252"
                         مكان = "📁 الأرشيف"
-                        الصفحة_المطلوبة = "الأرشيف" # <-- اتعدل هنا بالالف واللام
                     else:
-                        row_class = "row1" if idx % 2 == 1 else "row2"
                         حالة_لون = "#4CAF50"
                         مكان = "📋 الحصر العام"
-                        الصفحة_المطلوبة = "الحصر"
 
-                    st.markdown("<div class='table-container'>", unsafe_allow_html=True)
+                    st.markdown("<div style='background:#1E2A47; padding:15px; border-radius:15px; border:2px solid #D4AF37; margin-bottom:15px'>", unsafe_allow_html=True)
                     st.markdown(f"""
                     <table class='case-table'>
-                    <tr><th>م</th><th>الرقم والسنة</th><th>نوع الدعوى والمحكمة</th><th>الخصوم</th><th>الموضوع</th><th>اخر جلسة</th><th>الحالة</th><th>المكان</th></tr>
-                    <tr class='{row_class}'>
+                    <tr><th>م</th><th>الرقم والسنة</th><th>المحكمة والدائرة</th><th>الخصوم</th><th>الموضوع</th><th>اخر جلسة</th><th>الحالة</th><th>المكان</th></tr>
+                    <tr>
                         <td>{idx}</td>
                         <td>{رقم_كامل}</td>
                         <td>{محكمة_كاملة}</td>
@@ -1153,13 +1157,10 @@ elif st.session_state.page == "بحث":
                     </table>
                     """, unsafe_allow_html=True)
 
-                    c1, c2, c3 = st.columns([4,1,4])
-                    with c2:
-                        if st.button(f"📂 فتح في {مكان}", key=f"open_smart_btn_{case['id']}", use_container_width=True):
-                            st.session_state.selected_case_id = case['id']
-                            st.session_state.open_from_search = True # العلامة عشان الصفحة التانية تعرف
-                            st.session_state.page = الصفحة_المطلوبة
-                            st.rerun()
+                    if st.button(f"📂 فتح القضية", key=f"open_search_{case['id']}", use_container_width=True):
+                        st.session_state.selected_case_id = case['id']
+                        st.session_state.page = "تفاصيل"
+                        st.rerun()
                     st.markdown("</div>", unsafe_allow_html=True)
                     # ========== الجزء السابع: مركز التنبيهات ==========
 elif st.session_state.page == "تنبيهات":
