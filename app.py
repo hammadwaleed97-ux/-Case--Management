@@ -187,6 +187,7 @@ def extract_member_page():
 st.markdown("<h2 style='text-align:center; color:#C9A961'>ادارة القضايا</h2>", unsafe_allow_html=True)
 st.markdown("<h3 style='text-align:center; color:#C9A961; font-size:24px;'>دخول السادة الأعضاء</h3>", unsafe_allow_html=True)
 st.markdown("<h2 style='text-align:center; color:#dc3545; font-size:28px; font-weight:bold;'>مستشاري الهيئة</h2>", unsafe_allow_html=True)
+
 st.markdown("<hr style='border: 1px solid #C9A961;'>", unsafe_allow_html=True)  st.markdown("---")
     for user in users:
         if user["role"] == "member":
