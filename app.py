@@ -1037,6 +1037,7 @@ elif st.session_state.page == "الأرشيف":
     else: st.info("لا توجد قضايا محفوظة نهائي")
     st.markdown("</div>", unsafe_allow_html=True)
 # =========================================
+# ==========================================
 # ================================================
 # ============ الجزء السادس: البحث ============
 # ================================================
@@ -1044,7 +1045,7 @@ elif st.session_state.page == "بحث":
     import base64
     data = load_data()
     
-    # تلوين عشان الكلام يبان
+    # تلوين عشان الكلام يبان مع الخلفية الغامقة
     st.markdown("""
     <style>
         label { color: #FFD700 !important; font-weight: 900 !important; font-size: 15px !important; }
@@ -1158,13 +1159,16 @@ elif st.session_state.page == "بحث":
                     </table>
                     """, unsafe_allow_html=True)
 
-                    # زرار عرض التفاصيل كاملة
-                    if st.button(f"📂 عرض كل التفاصيل", key=f"open_search_{case['id']}", use_container_width=True):
-                        st.session_state[f"show_details_{case['id']}"] = True
-                        st.rerun()
+                    # زرار عرض التفاصيل كاملة - بيفتح ويقفل من غير rerun
+                    show_key = f"show_details_{case['id']}"
+                    if show_key not in st.session_state:
+                        st.session_state[show_key] = False
+
+                    if st.button(f"📂 عرض كل التفاصيل" if not st.session_state[show_key] else "📂 اغلاق التفاصيل", key=f"btn_{case['id']}", use_container_width=True):
+                        st.session_state[show_key] = not st.session_state[show_key]
 
                     # عرض التفاصيل كاملة تحت الزرار
-                    if st.session_state.get(f"show_details_{case['id']}", False):
+                    if st.session_state[show_key]:
                         st.markdown("<div style='background:#142038; padding:20px; border-radius:12px; border:2px solid #4DA8DA; margin-top:10px'>", unsafe_allow_html=True)
                         st.markdown(f"<div style='color:#4DA8DA; font-size:20px; font-weight:900; text-align:center; margin-bottom:15px'>📄 تفاصيل كاملة - {رقم_كامل}</div>", unsafe_allow_html=True)
                         
@@ -1197,6 +1201,8 @@ elif st.session_state.page == "بحث":
                             جلسات_مرتبة = sorted(case['جلسات'], key=lambda x: x.get("تاريخ",""), reverse=True)
                             for ج in جلسات_مرتبة:
                                 st.markdown(f"<div style='background:#1E2A47; padding:10px; border-radius:8px; margin-bottom:5px; border:1px solid #D4AF37'><b style='color:#FFD700'>تاريخ:</b> <span style='color:#FFF'>{ج.get('تاريخ')}</span> | <b style='color:#FFD700'>الاجراء:</b> <span style='color:#FFF'>{ج.get('الاجراء')}</span> | <b style='color:#FFD700'>الحالة:</b> <span style='color:#FFF'>{ج.get('الحالة')}</span></div>", unsafe_allow_html=True)
+                        else:
+                            st.info("لا يوجد سجل جلسات مسجل")
 
                         # 4- المستندات
                         if case.get('مستندات'):
@@ -1204,10 +1210,8 @@ elif st.session_state.page == "بحث":
                             for i, مستند in enumerate(case['مستندات']):
                                 file_data = base64.b64decode(مستند['محتوى'])
                                 st.download_button(f"📥 تحميل {مستند['نوع']}", data=file_data, file_name=مستند['نوع'], key=f"dl_search_{case['id']}_{i}", use_container_width=True)
-
-                        if st.button("اغلاق التفاصيل", key=f"close_{case['id']}", use_container_width=True):
-                            st.session_state[f"show_details_{case['id']}"] = False
-                            st.rerun()
+                        else:
+                            st.info("لا يوجد مستندات مرفقة")
                         
                         st.markdown("</div>", unsafe_allow_html=True)
                     st.markdown("</div>", unsafe_allow_html=True)
