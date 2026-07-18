@@ -840,7 +840,7 @@ elif st.session_state.page == "تفاصيل":
                 st.session_state.confirm_delete = False; st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
 # ======================================
-# ==============================================
+# ==========================================
 # ==============================================
 # ============ الجزء الخامس: الأرشيف ============
 # ==============================================
@@ -871,7 +871,7 @@ elif st.session_state.page == "الأرشيف":
     st.markdown("<div style='background:#1E2A47; padding:15px; border-radius:15px; border:2px solid #D4AF37; margin-bottom:15px'>", unsafe_allow_html=True)
     st.markdown("<div style='color:#FFF; font-size:18px; font-weight:900; text-align:center; margin-bottom:10px'>🔍 البحث عن قضية صدر فيها الحكم</div>", unsafe_allow_html=True)
     col1, col2, col3 = st.columns([3,3,1])
-    with col1: بحث_مدعي = st.text_input("بحث بالاسم المدعي", placeholder="اكتب اسم المدعي")
+    with col1: بحث_مدعي = st.text_input("بحث بالاسم", placeholder="اكتب اي اسم")
     with col2: بحث_رقم = st.text_input("بحث برقم وسنة", placeholder="مثال: 123 لسنة 2024")
     with col3: st.markdown("<div style='height:28px'></div>", unsafe_allow_html=True); بحث_زر = st.button("🔍 بحث", use_container_width=True, type="primary")
     st.markdown("</div>", unsafe_allow_html=True)
@@ -879,10 +879,17 @@ elif st.session_state.page == "الأرشيف":
     # فلترة القضايا المنتهية فقط
     قضايا_منتهية = [c for c in data["cases"] if c.get("حالة") == "منتهية"]
     
-    # فلترة البحث
+    # فلترة البحث - بيدور في اي حاجة
     if بحث_زر:
-        if بحث_مدعي: قضايا_منتهية = [c for c in قضايا_منتهية if بحث_مدعي.lower() in c.get("مدعي","").lower()]
-        if بحث_رقم: قضايا_منتهية = [c for c in قضايا_منتهية if بحث_رقم in f"{c.get('رقم')} لسنة {c.get('سنة')}"]
+        if بحث_مدعي: 
+            بحث_مدعي = بحث_مدعي.lower()
+            قضايا_منتهية = [c for c in قضايا_منتهية if any(
+                بحث_مدعي in str(قيمة).lower() 
+                for قيمة in c.values() 
+                if isinstance(قيمة, str)
+            )]
+        if بحث_رقم: 
+            قضايا_منتهية = [c for c in قضايا_منتهية if بحث_رقم in f"{c.get('رقم')} لسنة {c.get('سنة')}"]
 
     # نقسمهم 2
     قضايا_جاري = [c for c in قضايا_منتهية if not c.get("تم_الحفظ_النهائي")]
