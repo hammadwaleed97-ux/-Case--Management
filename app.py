@@ -1563,7 +1563,8 @@ elif st.session_state.page == "بحث":
                     
                     st.markdown("</div>", unsafe_allow_html=True)
                     st.markdown("</div>", unsafe_allow_html=True)
-                    # ====== الجزء السابع: مركز التنبيهات ==========
+                    # ====== 
+# ====== الجزء السابع: مركز التنبيهات ==========
 elif st.session_state.page == "تنبيهات":
     st.markdown("<h1 style='text-align: center; color: #C9A961;'>🔔 مركز التنبيهات</h1>", unsafe_allow_html=True)
     
@@ -1579,23 +1580,35 @@ elif st.session_state.page == "تنبيهات":
     .table-container { overflow-x: auto; margin: 10px 0; }
     .case-table { width: 100%; border-collapse: collapse; background-color: white; color: black; border-radius: 8px; overflow: hidden; }
     .case-table th { background-color: #C9A961; color: black; padding: 10px; text-align: center; font-weight: bold; }
-    .case-table td { padding: 8px; text-align: center; border: 1px solid #ddd; }
+    .case-table td { padding: 8px; text-align: center; border: 1px solid #ddd; color: black; }
     .case-table .row1 { background-color: #FFF8DC; }
     .case-table .row-judgment { background-color: #FFE4E1; }
+    div[data-testid="stWidgetLabel"] p { color: #C9A961 !important; font-weight: bold; }
     </style>
     """, unsafe_allow_html=True)
     
-    # ====== 1. تسجيل الايميل ======
+    # ====== 1. تسجيل الايميل + ارسال ======
     st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
     with st.container(border=True):
         st.markdown("<div class='card-title'>📧 تسجيل الايميل لاستلام التنبيهات</div>", unsafe_allow_html=True)
-        user_email = st.text_input("ادخل ايميلك", placeholder="example@gmail.com", key="email_alert", label_visibility="collapsed")
-        if st.button("تسجيل الايميل", type="primary", use_container_width=True):
-            if user_email:
-                st.session_state['saved_email'] = user_email
-                st.success(f"✅ تم حفظ الايميل {user_email}. هيجيلك تنبيهات قريب")
-            else:
-                st.warning("دخل الايميل الاول")
+        user_email = st.text_input("ادخل ايميلك", placeholder="example@gmail.com", key="email_alert")
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("1. تسجيل الايميل", use_container_width=True):
+                if user_email and "@" in user_email:
+                    st.session_state['saved_email'] = user_email
+                    st.success(f"✅ تم حفظ {user_email}")
+                else:
+                    st.warning("دخل ايميل صحيح")
+        
+        with col2:
+            if st.button("2. 📨 ارسل التنبيهات دلوقتي", type="primary", use_container_width=True):
+                if 'saved_email' in st.session_state:
+                    if send_alert_email(st.session_state['saved_email'], alerts):
+                        st.success("✅ تم الارسال على الايميل بنجاح")
+                else:
+                    st.error("سجل الايميل الاول")
     
     alerts = get_alert_cases()
     st.markdown(f"<h3 style='text-align:center; color:#FFFFFF;'>📅 تاريخ اليوم: {datetime.now().strftime('%Y-%m-%d')}</h3>", unsafe_allow_html=True)
