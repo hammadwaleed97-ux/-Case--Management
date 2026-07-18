@@ -538,7 +538,8 @@ elif st.session_state.page == "تسجيل":
                 save_data(data)
                 
                 st.success(f"✅ تم الحفظ بنجاح -ونقلت للحصر العام- جاهز لتسجيل قضية جديدة")
-                # ==========================
+                # =========================
+
 # ====== الجزء الثالث: الحصر العام ============
 # ================================================
 elif st.session_state.page == "الحصر":
@@ -574,7 +575,9 @@ elif st.session_state.page == "الحصر":
         sorted_cases = sorted(data["cases"], key=lambda x: x.get("تاريخ_جلسة","9999-12-31"))
         total = len(sorted_cases)
         today = datetime.now().date()
-        this_week = len([c for c in sorted_cases if c.get('تاريخ_جلسة') and datetime.strptime(c['تاريخ_جلسة'],'%Y-%m-%d').date() <= today + timedelta(days=7)])
+        start_week = today - timedelta(days=(today.weekday() + 2) % 7)
+        end_week = start_week + timedelta(days=6)
+        this_week = len([c for c in sorted_cases if c.get('تاريخ_جلسة') and start_week <= datetime.strptime(c['تاريخ_جلسة'],'%Y-%m-%d').date() <= end_week])
         ended = len([c for c in sorted_cases if c.get('حالة') == 'منتهية'])
 
         st.markdown(f"<div style='background:#1E2A47; padding:20px; border-radius:15px; border:2px solid #D4AF37; text-align:center; margin-bottom:20px'>", unsafe_allow_html=True)
@@ -586,14 +589,14 @@ elif st.session_state.page == "الحصر":
 
         st.markdown("""
         <style>
-    .case-table {width:100%; border-collapse: collapse; font-size:11px; color:white; text-align:center; margin-bottom:5px;}
-    .case-table th {background:#D4AF37; color:#0B1426; padding:6px; font-weight:900;}
-    .case-table td {background:#1E2A47; padding:6px; border:1px solid #D4AF37; vertical-align:top;}
-    .plaintiff {background:#FFF3CD; color:#000; font-weight:700; border-radius:6px; padding:6px; font-size:11px;}
-    .plaintiff-hey2a {background:#DC3545!important; color:#FFF!important; font-weight:900; border-radius:6px; padding:6px; font-size:11px;}
-    .defendant {background:#CFF4FC; color:#000; font-weight:700; border-radius:6px; padding:6px; font-size:11px;}
-    .date-gold {color:#FFD700; font-weight:900;}
-    .status-green {color:#4CAF50; font-weight:900;}
+  .case-table {width:100%; border-collapse: collapse; font-size:11px; color:white; text-align:center; margin-bottom:5px;}
+  .case-table th {background:#D4AF37; color:#0B1426; padding:6px; font-weight:900;}
+  .case-table td {background:#1E2A47; padding:6px; border:1px solid #D4AF37; vertical-align:top;}
+  .plaintiff {background:#FFF3CD; color:#000; font-weight:700; border-radius:6px; padding:6px; font-size:11px;}
+  .plaintiff-hey2a {background:#DC3545!important; color:#FFF!important; font-weight:900; border-radius:6px; padding:6px; font-size:11px;}
+  .defendant {background:#CFF4FC; color:#000; font-weight:700; border-radius:6px; padding:6px; font-size:11px;}
+  .date-gold {color:#FFD700; font-weight:900;}
+  .status-green {color:#4CAF50; font-weight:900;}
         </style>
         """, unsafe_allow_html=True)
 
@@ -629,6 +632,7 @@ elif st.session_state.page == "الحصر":
                     st.session_state.selected_case_id = case['id']; st.session_state.page = "تفاصيل"; st.rerun()
 
 # =========================================
+# ======================================
 # ================================================
 # ============ الجزء الرابع: تفاصيل القضية ============
 # ================================================
