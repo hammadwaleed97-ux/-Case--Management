@@ -96,6 +96,27 @@ def set_password_page():
                     st.rerun()
         else:
             st.error("الباسوردين مش زي بعض")
+            def change_password_page():
+    st.markdown("<h1 style='text-align:center; color:#C9A961'>تغيير كلمة السر</h1>", unsafe_allow_html=True)
+    if st.button("العودة للرئيسية"): 
+        st.session_state.page = "الرئيسية"
+        st.rerun()
+    
+    old_pass = st.text_input("كلمة السر القديمة", type="password")
+    new_pass = st.text_input("كلمة السر الجديدة", type="password")
+    
+    if st.button("تغيير", use_container_width=True):
+        if bcrypt.checkpw(old_pass.encode(), st.session_state.user["password"].encode()):
+            users = load_users()
+            for user in users:
+                if user["id"] == st.session_state.user["id"]:
+                    user["password"] = bcrypt.hashpw(new_pass.encode(), bcrypt.gensalt()).decode()
+                    save_users(users)
+                    st.session_state.user = user
+                    st.success("تم تغيير الباسورد")
+                    st.rerun()
+        else:
+            st.error("كلمة السر القديمة غلط")
 
 # ===== تشغيل الصفحات =====
 if "user" not in st.session_state:
