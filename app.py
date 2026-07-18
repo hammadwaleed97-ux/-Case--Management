@@ -7,8 +7,8 @@ st.markdown("""
 .stApp { background-color: #0E1117; }
  /* 1. كل الليبلز والكلام برا دهبي */
  h1, h2, h3, h4, h5, h6, p, label, div, span { color: #C9A961!important; }
- /* 2. جوا الانبوت الكلام اسود عشان يبان على الابيض */
-.stTextInput>div>div>input { color: black!important; background-color: white!important; font-weight: bold; }
+ /* 2. الانبوت ابيض والكلام اسود عشان يبان */
+.stTextInput>div>div>input { color: black!important; background-color: white!important; font-weight: bold; border: 2px solid #C9A961; }
  /* 3. الزراير دهبي والكلام اسود تقيل */
 .stButton>button { background-color: #C9A961!important; color: #0E1117!important; font-weight: bold; font-size: 18px; border: 2px solid #dc3545; border-radius: 12px; }
 .stButton>button:hover { background-color: #dc3545!important; color: white!important; }
@@ -16,6 +16,8 @@ st.markdown("""
  button[data-baseweb="tab"] p { color: #C9A961!important; font-weight: bold; font-size: 16px; }
  button[data-baseweb="tab"][aria-selected="true"] { border-bottom: 3px solid #dc3545!important; }
  button[data-baseweb="tab"][aria-selected="true"] p { color: #dc3545!important; }
+ /* 5. اخفاء الفوتر الافتراضي بتاع streamlit */
+ footer {visibility: hidden;}
 </style>
 """, unsafe_allow_html=True)
 
@@ -102,7 +104,7 @@ def login_page():
         admin_recover_email = st.text_input("الادمن: ادخل ايميل من ايميلاتك", key="admin_recover")
         if st.button("ارسال كود للادمن", key="admin_send", use_container_width=True):
             if is_admin_email(admin_recover_email):
-                code = str(random.randint(100000, 999))
+                code = str(random.randint(100000, 999999))
                 st.session_state.RESET_CODES[admin_recover_email] = {"code": code, "role": "admin"}
                 body = f"كود اعادة تعيين كلمة سر الادمن: {code}"
                 if send_email(admin_recover_email, "كود استرجاع الادمن", body):
@@ -116,7 +118,7 @@ def login_page():
             found = [u for u in users if u.get("email") == member_recover_email]
             if found:
                 user = found[0]
-                code = str(random.randint(100000, 999))
+                code = str(random.randint(100000, 999999))
                 st.session_state.RESET_CODES[member_recover_email] = {"code": code, "user_id": user["id"]}
                 body = f"مرحبا {user['username']}\nاسم المستخدم: {user['username']}\nكود اعادة التعيين: {code}"
                 if send_email(member_recover_email, "استرجاع بيانات الدخول", body):
@@ -286,6 +288,10 @@ elif st.session_state.page == "set_password": set_password_page()
 elif st.session_state.page == "change_password": change_password_page()
 elif st.session_state.page == "الرئيسية":
     st.write(f"اهلا {st.session_state.user['username']}")
+
+    # رقم 2: الفوتر ده هيظهر في الرئيسية بس
+    st.markdown("<marquee style='background-color:#C9A961; color:#0E1117; font-size:18px; font-weight:bold; padding:10px; margin-top:30px;'>مع تحيات وليد حماد - الإدارة العامة للشؤون القانونية بديوان عام منطقة البحيرة بالهيئة القومية للتأمين الاجتماعي</marquee>", unsafe_allow_html=True)
+
     if st.session_state.user["role"] == "admin":
         if st.button("استخراج عضوية جديدة", use_container_width=True, type="primary"): st.session_state.page = "extract_member"; st.rerun()
         if st.button("ادارة الاعضاء", use_container_width=True): st.session_state.page = "ادارة_الاعضاء"; st.rerun()
