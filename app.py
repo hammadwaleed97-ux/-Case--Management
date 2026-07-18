@@ -642,6 +642,7 @@ elif st.session_state.page == "الحصر":
 
 # ======================================
 # ====================================
+# =========================================
 # ================================================
 # ============ الجزء الرابع: تفاصيل القضية ============
 # ================================================
@@ -654,7 +655,6 @@ elif st.session_state.page == "تفاصيل":
 
     st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
     st.markdown(f"<h2 style='color:#D4AF37; text-align:center'>📄 تفاصيل القضية رقم {case.get('رقم')} لسنة {case.get('سنة')}</h2>", unsafe_allow_html=True)
-
     if st.button("⬅️ العودة للحصر", use_container_width=True): st.session_state.page = "الحصر"; st.rerun()
 
     # 1- بيانات القضية
@@ -666,11 +666,10 @@ elif st.session_state.page == "تفاصيل":
     with col3: دائرة_نص = f"{case.get('دائرة')}" if case.get('دائرة') else ""; st.markdown(f"<div style='background:#142038; padding:12px; border-radius:12px; border:1px solid #D4AF37; margin-bottom:10px; text-align:center'><div style='color:#D4AF37; font-weight:900; font-size:14px'>الدائرة</div><div style='color:#FFF; font-weight:900; font-size:18px'>{دائرة_نص}</div></div>", unsafe_allow_html=True)
     col1, col2, col3 = st.columns(3)
     with col1: st.markdown(f"<div style='background:#142038; padding:12px; border-radius:12px; border:1px solid #D4AF37; margin-bottom:10px; text-align:center'><div style='color:#D4AF37; font-weight:900; font-size:14px'>النوع</div><div style='color:#FFF; font-weight:900; font-size:18px'>{case.get('نوع')}</div></div>", unsafe_allow_html=True)
-    with col2: محكمة_كاملة = f"{case.get('محكمة_اسم')}";
+    with col2: محكمة_كاملة = f"{case.get('محكمة_اسم')}"; 
     if case.get('مأمورية'): محكمة_كاملة += f" - مأمورية {case.get('مأمورية')}"; st.markdown(f"<div style='background:#142038; padding:12px; border-radius:12px; border:1px solid #D4AF37; margin-bottom:10px; text-align:center'><div style='color:#D4AF37; font-weight:900; font-size:14px'>المحكمة</div><div style='color:#FFF; font-weight:700; font-size:14px'>{محكمة_كاملة}</div></div>", unsafe_allow_html=True)
     with col3: st.markdown(f"<div style='background:#142038; padding:12px; border-radius:12px; border:1px solid #D4AF37; margin-bottom:10px; text-align:center'><div style='color:#D4AF37; font-weight:900; font-size:14px'>الحالة</div><div style='color:#4CAF50; font-weight:900; font-size:18px'>{case.get('حالة')}</div></div>", unsafe_allow_html=True)
     st.markdown(f"<div style='background:#142038; padding:12px; border-radius:12px; border:1px solid #D4AF37; text-align:center'><div style='color:#D4AF37; font-weight:900; font-size:14px'>الموضوع</div><div style='color:#FFF; font-weight:700; font-size:16px'>{case.get('موضوع')}</div></div>", unsafe_allow_html=True)
-    st.markdown("<style>div[data-testid='stExpander'] summary p{color:#D4AF37!important; font-weight:900!important;}</style>", unsafe_allow_html=True)
     with st.expander("✏️ تعديل بيانات القضية"):
         with st.form("edit_case_form"):
             col1, col2, col3 = st.columns(3)
@@ -691,117 +690,78 @@ elif st.session_state.page == "تفاصيل":
     with col2: st.markdown(f"<div style='background:#CFF4FC; padding:10px; border-radius:10px; color:#000; text-align:center'><b>المدعى عليه:</b><br>{case.get('مدعي_عليه')}</div>", unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # 3- الجلسات والإجراءات
+    # 3- الجلسات
     st.markdown("<div style='background:#1E2A47; padding:15px; border-radius:15px; border:2px solid #D4AF37; margin-bottom:15px'>", unsafe_allow_html=True)
     st.markdown("<div style='color:#D4AF37; font-size:20px; font-weight:900; text-align:center; margin-bottom:10px'>3- الجلسات والإجراءات</div>", unsafe_allow_html=True)
     if case.get("جلسات"):
         for i, ج in enumerate(case["جلسات"]):
-            st.markdown(f"<div style='background:#142038; padding:15px; border-radius:12px; border:2px solid #D4AF37; margin-bottom:10px; text-align:right; direction:rtl'><div style='display:flex; justify-content:flex-end; margin-bottom:10px'><div style='background:#D4AF37; color:#000; padding:5px 15px; border-radius:8px; font-weight:900; font-size:16px'>جلسة {i+1}</div></div><div style='margin-bottom:8px'><span style='color:#D4AF37; font-weight:900'>التاريخ:</span> <span style='color:#FFF'>{ج.get('تاريخ')}</span></div><div style='margin-bottom:8px'><span style='color:#D4AF37; font-weight:900'>الرول:</span> <span style='color:#FFF'>{ج.get('الرول')}</span></div><div style='margin-bottom:8px'><span style='color:#D4AF37; font-weight:900'>الاجراء:</span> <span style='color:#FFF'>{ج.get('الاجراء')}</span></div><div><span style='color:#D4AF37; font-weight:900'>ملاحظات:</span> <span style='color:#FFF'>{ج.get('ملاحظات')}</span></div></div>", unsafe_allow_html=True)
-            if st.button("✏️ تعديل الجلسة", key=f"edit_session_{i}", use_container_width=True):
-                st.session_state.edit_session_index = i; st.rerun()
-        if 'edit_session_index' in st.session_state and st.session_state.edit_session_index is not None:
-            idx = st.session_state.edit_session_index; جلسة = case["جلسات"][idx]
-            with st.form("edit_session_form"):
-                st.warning(f"تعديل الجلسة رقم {idx+1}")
-                تاريخ_تعديل = st.date_input("التاريخ", value=datetime.strptime(جلسة.get('تاريخ'),'%Y-%m-%d'))
-                رول_تعديل = st.text_input("الرول", value=جلسة.get('الرول','')); اجراء_تعديل = st.text_input("الاجراء", value=جلسة.get('الاجراء','')); ملاحظات_تعديل = st.text_area("الملاحظات", value=جلسة.get('ملاحظات',''))
-                c1,c2 = st.columns(2)
-                with c1:
-                    if st.form_submit_button("💾 حفظ تعديل الجلسة", use_container_width=True):
-                        case["جلسات"][idx] = {"تاريخ":str(تاريخ_تعديل),"الرول":رول_تعديل,"الاجراء":اجراء_تعديل,"ملاحظات":ملاحظات_تعديل}
-                        جلسات_مرتبة = sorted(case["جلسات"], key=lambda x: x.get("تاريخ","9999-12-31"), reverse=True)
-                        case["تاريخ_جلسة"] = جلسات_مرتبة[0].get("تاريخ",""); case["الاجراء"] = جلسات_مرتبة[0].get("الاجراء","")
-                        save_data(data); st.session_state.edit_session_index = None; st.success("تم التعديل"); st.rerun()
-                with c2:
-                    if st.form_submit_button("❌ الغاء", use_container_width=True): st.session_state.edit_session_index = None; st.rerun()
+            st.markdown(f"<div style='background:#142038; padding:15px; border-radius:12px; border:2px solid #D4AF37; margin-bottom:10px'><div style='display:flex; justify-content:flex-end; margin-bottom:10px'><div style='background:#D4AF37; color:#000; padding:5px 15px; border-radius:8px; font-weight:900'>جلسة {i+1}</div></div><div><span style='color:#D4AF37; font-weight:900'>التاريخ:</span> <span style='color:#FFF'>{ج.get('تاريخ')}</span></div><div><span style='color:#D4AF37; font-weight:900'>الاجراء:</span> <span style='color:#FFF'>{ج.get('الاجراء')}</span></div></div>", unsafe_allow_html=True)
     else: st.info("لا توجد جلسات مسجلة")
-    st.markdown("<style>div[data-testid='stExpander'] summary p{color:white!important; font-weight:900!important;}</style>", unsafe_allow_html=True)
     with st.expander("اضافة جلسة جديدة"):
         with st.form("add_session"):
-            تاريخ_جديد = st.date_input("تاريخ الجلسة", value=datetime.now()); رول_جديد = st.text_input("الرول"); الاجراء_جديد = st.text_input("الاجراء"); ملاحظات_جديدة = st.text_area("ملاحظات")
+            تاريخ_جديد = st.date_input("تاريخ الجلسة", value=datetime.now()); الاجراء_جديد = st.text_input("الاجراء")
             if st.form_submit_button("حفظ الجلسة"):
-                case["جلسات"].append({"تاريخ":str(تاريخ_جديد),"الرول":رول_جديد,"الاجراء":الاجراء_جديد,"ملاحظات":ملاحظات_جديدة})
-                جلسات_مرتبة = sorted(case["جلسات"], key=lambda x: x.get("تاريخ","9999-12-31"), reverse=True)
-                case["تاريخ_جلسة"] = جلسات_مرتبة[0].get("تاريخ",""); case["الاجراء"] = جلسات_مرتبة[0].get("الاجراء","")
-                save_data(data); st.success("تم اضافة الجلسة"); st.rerun()
+                case["جلسات"].append({"تاريخ":str(تاريخ_جديد),"الاجراء":الاجراء_جديد}); save_data(data); st.success("تم اضافة الجلسة"); st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # 4- المستندات - متعدل
+    # 4- المستندات
     st.markdown("<div style='background:#1E2A47; padding:15px; border-radius:15px; border:2px solid #D4AF37; margin-bottom:15px'>", unsafe_allow_html=True)
     st.markdown("<div style='color:#D4AF37; font-size:20px; font-weight:900; text-align:center; margin-bottom:10px'>4- المستندات</div>", unsafe_allow_html=True)
-    ANWA3_MOSTANDAT = ["صحيفة دعوى", "صحيفة استئناف", "صحيفة طعن", "مذكرة دفاع","حافظة مستندات", "تقرير خبير", "تقرير طب شرعى", "تقرير لجنة طبية","صحيفة تجديد من الشطب", "صحيفة تعجيل من الوقف", "صورة حكم تمهيدى", "أخرى"]
-    نوع_المستند = st.selectbox("نوع المستند", ANWA3_MOSTANDAT, key="select_doc_type")
-    اسم_نهائي = نوع_المستند
-    if نوع_المستند == "أخرى": اسم_نهائي = st.text_input("✍️ اكتب اسم المستند", placeholder="مثال: طلب / انذار / الخ")
     with st.form("upload_form"):
         uploaded_file = st.file_uploader("اختر الملف", type=['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx'])
         if st.form_submit_button("رفع المستند"):
-            if uploaded_file and اسم_نهائي and اسم_نهائي.strip()!= "":
-                file_name = f"{اسم_نهائي}_{uploaded_file.name}"
+            if uploaded_file:
                 file_base64 = base64.b64encode(uploaded_file.getvalue()).decode('utf-8')
-                case['مستندات'].append({"نوع": file_name, "محتوى": file_base64})
+                case['مستندات'].append({"نوع": uploaded_file.name, "محتوى": file_base64})
                 save_data(data); st.success("✅ تم رفع المستند"); st.rerun()
-            else: st.error("❌ لازم تختار ملف وتكتب اسم المستند")
-
     if case.get('مستندات'):
-        # اصلاح الداتا القديمة
-        مستندات_متصلحة = []
-        for مستند in case['مستندات']:
-            if isinstance(مستند, str): مستندات_متصلحة.append({"نوع": مستند, "محتوى": ""})
-            else: مستندات_متصلحة.append(مستند)
-        case['مستندات'] = مستندات_متصلحة; save_data(data)
-
-        st.markdown("<div style='background:#142038; padding:15px; border-radius:12px; margin-top:10px'>", unsafe_allow_html=True)
-        st.markdown("<div style='color:#D4AF37; font-weight:900; margin-bottom:10px'>المستندات المرفوعة:</div>", unsafe_allow_html=True)
         for i, مستند in enumerate(case['مستندات']):
-            col1, col2, col3 = st.columns([4,1,1])
-            with col1: st.write(f"📄 {مستند.get('نوع', f'ملف رقم {i+1}')}")
+            col1, col2 = st.columns([4,1])
+            with col1: st.write(f"📄 {مستند.get('نوع')}")
             with col2:
                 if مستند.get('محتوى'):
-                    try: file_data = base64.b64decode(مستند['محتوى']); st.download_button("📥 تحميل", data=file_data, file_name=مستند.get('نوع'), mime="application/octet-stream", key=f"dl_{i}", use_container_width=True)
-                    except: st.write("❌")
-            with col3:
-                if st.button("🗑️ حذف", key=f"del_{i}", use_container_width=True): case['مستندات'].pop(i); save_data(data); st.rerun()
-        st.markdown("</div>", unsafe_allow_html=True)
+                    file_data = base64.b64decode(مستند['محتوى']); st.download_button("📥 تحميل", data=file_data, file_name=مستند.get('نوع'), key=f"dl_{i}")
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # 5- جلسة الحكم - متعدل نهائي
+    # 5- جلسة الحكم - النهائي بتاعك
     st.markdown("<div style='background:#1E2A47; padding:15px; border-radius:15px; border:2px solid #FF5252; margin-bottom:15px'>", unsafe_allow_html=True)
     st.markdown("<div style='color:#FF5252; font-size:20px; font-weight:900; text-align:center; margin-bottom:10px'>5- جلسة الحكم</div>", unsafe_allow_html=True)
     if case.get('حالة') == 'منتهية':
         لون = "#4CAF50" if case.get('مسندة_ل_الحكم') == "الصالح" else "#FF5252"
         st.markdown(f"<div style='background:#142038; padding:15px; border-radius:12px; border:2px solid {لون}; margin-bottom:10px'><b style='color:{لون}'>تاريخ جلسة الحكم:</b> {case.get('تاريخ_الحكم')}<br><b style='color:{لون}'>مسندة لـ:</b> {case.get('مسندة_ل_الحكم')}<br><b style='color:{لون}'>منطوق الحكم:</b> {case.get('منطوق_الحكم')}</div>", unsafe_allow_html=True)
         st.success("✅ حفظت ونقلت للارشيف للمتابعه يتم الانتقال للارشيف")
-        with st.expander("✏️ تعديل بيانات الحكم"):
-            with st.form("edit_judgment_form"):
-                تاريخ_حكم_تعديل = st.date_input("تاريخ الحكم", value=datetime.strptime(case.get('تاريخ_الحكم'),'%Y-%m-%d'))
-                منطوق_الحكم_تعديل = st.text_area("منطوق الحكم", value=case.get('منطوق_الحكم',''), height=150)
-                مسندة_ل_تعديل = st.selectbox("مسندة لـ", ["الصالح", "الضد"], index=["الصالح", "الضد"].index(case.get('مسندة_ل_الحكم','الصالح')))
-                if st.form_submit_button("💾 حفظ تعديل الحكم", use_container_width=True, type="primary"):
-                    case['تاريخ_الحكم'] = str(تاريخ_حكم_تعديل); case['منطوق_الحكم'] = منطوق_الحكم_تعديل; case['مسندة_ل_الحكم'] = مسندة_ل_تعديل
-                    for ج in reversed(case['جلسات']):
-                        if 'الحكم' in ج.get('الاجراء',''): ج['تاريخ'] = str(تاريخ_حكم_تعديل); ج['الاجراء'] = f'الحكم - مسندة لـ {مسندة_ل_تعديل}'; ج['ملاحظات'] = منطوق_الحكم_تعديل; break
-                    case['تاريخ_جلسة'] = str(تاريخ_حكم_تعديل); case['الاجراء'] = f'الحكم - مسندة لـ {مسندة_ل_تعديل}'
-                    save_data(data); st.success("✅ تم تعديل الحكم"); st.rerun()
     else:
         with st.form("judgment_form"):
-            st.markdown("<div style='background:#142038; padding:10px; border-radius:10px; margin-bottom:10px'>", unsafe_allow_html=True)
-            st.markdown("<label style='color:#FFD700; font-weight:900; font-size:16px'>1- تاريخ الجلسة</label>", unsafe_allow_html=True); تاريخ_حكم = st.date_input("تاريخ الجلسة", value=datetime.now().date(), label_visibility="collapsed"); st.markdown("</div>", unsafe_allow_html=True)
-            st.markdown("<div style='background:#142038; padding:10px; border-radius:10px; margin-bottom:10px'>", unsafe_allow_html=True)
-            st.markdown("<label style='color:#FFD700; font-weight:900; font-size:16px'>2- منطوق الحكم</label>", unsafe_allow_html=True); منطوق_الحكم = st.text_area("منطوق الحكم", height=150, placeholder="اكتب منطوق الحكم هنا...", label_visibility="collapsed"); st.markdown("</div>", unsafe_allow_html=True)
-            st.markdown("<div style='background:#142038; padding:10px; border-radius:10px; margin-bottom:10px'>", unsafe_allow_html=True)
-            st.markdown("<label style='color:#FFD700; font-weight:900; font-size:16px'>3- مسندة لـ</label>", unsafe_allow_html=True); مسندة_ل = st.selectbox("مسندة لـ", ["الصالح", "الضد"], label_visibility="collapsed"); st.markdown("</div>", unsafe_allow_html=True)
-            st.markdown("<div style='background:#142038; padding:10px; border-radius:10px; margin-bottom:10px'>", unsafe_allow_html=True)
-            st.markdown("<label style='color:#FFD700; font-weight:900; font-size:16px'>4- سبب الحفظ</label>", unsafe_allow_html=True); سبب_الحفظ = st.text_area("سبب الحفظ", placeholder="عدم جدوى طعن / تم الطعن رقم...", label_visibility="collapsed"); st.markdown("</div>", unsafe_allow_html=True)
+            تاريخ_حكم = st.date_input("1- تاريخ الجلسة", value=datetime.now().date())
+            منطوق_الحكم = st.text_area("2- منطوق الحكم", height=150)
+            مسندة_ل = st.selectbox("3- مسندة لـ", ["الصالح", "الضد"])
+            سبب_الحفظ = st.text_area("4- سبب الحفظ", placeholder="عدم جدوى طعن / تم الطعن رقم...")
             if st.form_submit_button("💾 حفظ الحكم", use_container_width=True, type="primary"):
                 if not منطوق_الحكم: st.error("❌ لازم تكتب منطوق الحكم")
                 else: case['حالة'] = 'منتهية'; case['تاريخ_الحكم'] = str(تاريخ_حكم); case['منطوق_الحكم'] = منطوق_الحكم; case['مسندة_ل_الحكم'] = مسندة_ل; case['سبب_الحفظ'] = سبب_الحفظ
-                case['جلسات'].append({'تاريخ':str(تاريخ_حكم),'الرول':'-','الاجراء':f'الحكم - مسندة لـ {مسندة_ل}','ملاحظات':منطوق_الحكم}); case['تاريخ_جلسة'] = str(تاريخ_حكم); case['الاجراء'] = f'الحكم - مسندة لـ {مسندة_ل}'; save_data(data); st.success(f"✅ حفظت ونقلت للارشيف للمتابعه يتم الانتقال للارشيف"); st.session_state.page = "الأرشيف"; st.rerun()
+                case['جلسات'].append({'تاريخ':str(تاريخ_حكم),'الاجراء':f'الحكم - مسندة لـ {مسندة_ل}'}); save_data(data); st.success(f"✅ حفظت ونقلت للارشيف للمتابعه يتم الانتقال للارشيف"); st.session_state.page = "الأرشيف"; st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # 7- حذف نهائى
-    st.markdown("<style>.delete-box {background:#1E2A47; padding:15px; border-radius:15px; border:2px solid #FF0000; margin-bottom:15px; text-align:center}</style>", unsafe_allow_html=True)
-# =============================================
+    # 6- التقرير والطباعة
+    st.markdown("<div style='background:#1E2A47; padding:15px; border-radius:15px; border:2px solid #D4AF37; margin-bottom:15px; text-align:center'>", unsafe_allow_html=True)
+    st.markdown("<div style='color:#D4AF37; font-size:20px; font-weight:900; margin-bottom:10px'>6- الطباعة والتقرير</div>", unsafe_allow_html=True)
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("🖨️ عرض التقرير", use_container_width=True, type="primary"):
+            html_report = print_case_report(case)
+            st.components.v1.html(html_report, height=600, scrolling=True)
+    with col2:
+        html_report = print_case_report(case)
+        st.download_button(label="📥 تحميل التقرير",data=html_report.encode('utf-8'),file_name=f"تقرير_{case.get('رقم')}.html",mime="text/html",use_container_width=True)
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    # 7- حذف القضية
+    st.markdown("<div style='background:#1E2A47; padding:15px; border-radius:15px; border:2px solid #FF0000; margin-bottom:15px; text-align:center'>", unsafe_allow_html=True)
+    st.markdown("<div style='color:#FF0000; font-size:20px; font-weight:900; margin-bottom:10px'>7- حذف القضية نهائي</div>", unsafe_allow_html=True)
+    if st.button("🗑️ حذف القضية", use_container_width=True, type="secondary"):
+        data["cases"] = [c for c in data["cases"] if c["id"] != case["id"]]
+        save_data(data); st.success("✅ تم حذف القضية"); st.session_state.page = "الحصر"; st.rerun()
+    st.markdown("</div>", unsafe_allow_html=True)
 # =============================================
 # =============================================
 # ======= الجزء الخامس: الارشيف =======
