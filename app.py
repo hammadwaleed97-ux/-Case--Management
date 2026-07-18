@@ -645,7 +645,7 @@ if st.session_state.page == "الرئيسية":
         )
 
         if st.button(
-            "➕ تسجيل القضايا",
+            " تسجيل القضايا",
             use_container_width=True
         ):
             st.session_state.page = "تسجيل"
