@@ -849,7 +849,9 @@ elif st.session_state.page == "تفاصيل":
    .delete-btn {background:#FF3B3B; color:#000; font-weight:900; font-size:18px; padding:14px; border-radius:12px; border:none; width:100%; cursor:pointer; margin-bottom:10px}
    .delete-btn:hover {background:#FF5252}
    .warning-box {background:#2A1A1A; padding:12px; border-radius:12px; margin:10px 0; color:#FF5252; font-weight:900}
-   .confirm-btn {background:#FF0000; color:#000; font-weight:90
+   .confirm-btn {background:#FF0000; color:#000; font-weight:900; padding:10px; border-radius:8px; width:100%}
+</style>
+    """, unsafe_allow_html=True)
 # ==============================================
 # ============ الجزء الخامس: الأرشيف ============
 # ================================================
