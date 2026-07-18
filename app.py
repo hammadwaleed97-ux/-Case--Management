@@ -755,12 +755,26 @@ elif st.session_state.page == "تفاصيل":
         st.download_button(label="📥 تحميل التقرير",data=html_report.encode('utf-8'),file_name=f"تقرير_{case.get('رقم')}.html",mime="text/html",use_container_width=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # 7- حذف القضية
-    st.markdown("<div style='background:#1E2A47; padding:15px; border-radius:15px; border:2px solid #FF0000; margin-bottom:15px; text-align:center'>", unsafe_allow_html=True)
-    st.markdown("<div style='color:#FF0000; font-size:20px; font-weight:900; margin-bottom:10px'>7- حذف القضية نهائي</div>", unsafe_allow_html=True)
-    if st.button("🗑️ حذف القضية", use_container_width=True, type="secondary"):
-        data["cases"] = [c for c in data["cases"] if c["id"] != case["id"]]
-        save_data(data); st.success("✅ تم حذف القضية"); st.session_state.page = "الحصر"; st.rerun()
+    # 7- حذف القضية - منطقة خطر
+    st.markdown("<div style='background:#2A0A0A; padding:20px; border-radius:15px; border:3px solid #FF0000; margin-bottom:15px; text-align:center'>", unsafe_allow_html=True)
+    st.markdown("<div style='color:#FF0000; font-size:22px; font-weight:900; margin-bottom:10px'>⚠️ منطقة خطر</div>", unsafe_allow_html=True)
+    st.markdown("<div style='color:#FFF; font-size:14px; margin-bottom:15px'>تحذير: حذف القضية نهائي ولا يمكن التراجع عنه</div>", unsafe_allow_html=True)
+    
+    if st.button("🗑️ حذف القضية نهائي", use_container_width=True, type="secondary"):
+        st.session_state.confirm_delete = True
+        st.rerun()
+
+    if st.session_state.get('confirm_delete', False):
+        st.warning("⚠️ هل انت متأكد 100% انك عايز تحذف القضية دي؟")
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("نعم احذفها", use_container_width=True, type="primary"):
+                data["cases"] = [c for c in data["cases"] if c["id"] != case["id"]]
+                save_data(data); st.session_state.confirm_delete = False
+                st.success("✅ تم حذف القضية بنجاح"); st.session_state.page = "الحصر"; st.rerun()
+        with col2:
+            if st.button("الغاء", use_container_width=True):
+                st.session_state.confirm_delete = False; st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
 # =============================================
 # =============================================
