@@ -4,10 +4,10 @@ import streamlit as st
 
 st.markdown("""
 <style>
- .stApp { background-color: #0E1117; color: white; }
+.stApp { background-color: #0E1117; color: white; }
     h1, h2, h3, h4, h5, h6, p, label, div, span { color: white!important; }
- .stButton>button { background-color: #C9A961; color: black; font-weight: bold; }
- .stTextInput>div>div>input { color: black; background-color: white; }
+.stButton>button { background-color: #C9A961; color: black; font-weight: bold; }
+.stTextInput>div>div>input { color: black; background-color: white; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -143,19 +143,19 @@ def login_page():
                 else: st.error("الكود غلط")
 
     with tab2:
-    st.markdown("**تفعيل حساب عضو**")
-    member_name = st.text_input("اكتب اسم العضو للتفعيل", key="new_user")
-    if st.button("تفعيل الحساب", use_container_width=True):
-        users = load_users()
-        found_user = next((u for u in users if u.get('username') == member_name), None)
-        if not found_user: 
-            st.error("الاسم ده مش موجود")
-        elif found_user.get("password_set"):
-            st.error("العضو ده مفعل بالفعل")
-        else:
-            st.session_state.page = "set_password"
-            st.session_state.temp_user = found_user["username"]
-            st.rerun()
+        st.markdown("**تفعيل حساب عضو**")
+        member_name = st.text_input("اكتب اسم العضو للتفعيل", key="new_user")
+        if st.button("تفعيل الحساب", use_container_width=True):
+            users = load_users()
+            found_user = next((u for u in users if u.get('username') == member_name), None)
+            if not found_user:
+                st.error("الاسم ده مش موجود")
+            elif found_user.get("password_set"):
+                st.error("العضو ده مفعل بالفعل")
+            else:
+                st.session_state.page = "set_password"
+                st.session_state.temp_user = found_user["username"]
+                st.rerun()
 
 def extract_member_page():
     st.markdown("<h2 style='text-align:center; color:#C9A961'>استخراج عضوية جديدة</h2>", unsafe_allow_html=True)
@@ -183,7 +183,7 @@ def extract_member_page():
                         st.error("الاسم موجود والعضو مفعل بالفعل")
                 else:
                     new_id = max([u['id'] for u in users]) + 1
-                    users.append({"id": new_id, "username": new_username, "password": "", "email": new_email, "role": "member", "status": "active", "password_set": False, "activation_code": ""})
+                    users.append({"id": new_id, "username": new_username, "password": "", "email": new_email, "role": "member", "status": "active", "password_set": False})
                     save_users(users); st.success(f"تم استخراج: {new_username}"); st.rerun()
             else: st.error("لازم تكتب اسم المستخدم")
 
@@ -204,7 +204,7 @@ def manage_users_page():
                     st.write(f"**{user['username']}** - {user.get('email','بدون ايميل')}")
                     st.write(f"الحالة: {status}")
                 with col2:
-                    if user["status"] == "active" and user.get("password_set"):
+                    if user["status"] == "active":
                         if st.button("ايقاف لمخالفة قواعد", key=f"ban_{user['id']}"):
                             user["status"] = "banned"; user["password"] = ""; user["password_set"] = False
                             save_users(users); st.rerun()
@@ -290,7 +290,8 @@ elif st.session_state.page == "الرئيسية":
     if st.button("تغيير كلمة السر"): st.session_state.page = "change_password"; st.rerun()
     if st.button("تأكيد البريد الالكتروني"): st.session_state.page = "recovery_settings"; st.rerun()
     if st.button("تسجيل الخروج"): st.session_state.user = None; st.session_state.page = "login"; st.rerun()
-# =======================================
+# ============================================
+# ======= الجزء الاول: الاساسيات ==========
 # ============================================
 # ======= الجزء الاول: الاساسيات ==========
 # ============================================
