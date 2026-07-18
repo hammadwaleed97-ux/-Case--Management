@@ -1041,14 +1041,15 @@ elif st.session_state.page == "الأرشيف":
 # ============ الجزء السادس: البحث ============
 # ================================================
 elif st.session_state.page == "بحث":
+    import base64
     data = load_data()
     
-    # تلوين اللابل والـ placeholder عشان يبانوا
+    # تلوين عشان الكلام يبان
     st.markdown("""
     <style>
         label { color: #FFD700 !important; font-weight: 900 !important; font-size: 15px !important; }
         input::placeholder {
-            color: #FFD700 !important;  /* اصفر دهبي */
+            color: #FFD700 !important;
             opacity: 1 !important;
             font-weight: 600;
         }
@@ -1157,10 +1158,58 @@ elif st.session_state.page == "بحث":
                     </table>
                     """, unsafe_allow_html=True)
 
-                    if st.button(f"📂 فتح القضية", key=f"open_search_{case['id']}", use_container_width=True):
-                        st.session_state.selected_case_id = case['id']
-                        st.session_state.page = "تفاصيل"
+                    # زرار عرض التفاصيل كاملة
+                    if st.button(f"📂 عرض كل التفاصيل", key=f"open_search_{case['id']}", use_container_width=True):
+                        st.session_state[f"show_details_{case['id']}"] = True
                         st.rerun()
+
+                    # عرض التفاصيل كاملة تحت الزرار
+                    if st.session_state.get(f"show_details_{case['id']}", False):
+                        st.markdown("<div style='background:#142038; padding:20px; border-radius:12px; border:2px solid #4DA8DA; margin-top:10px'>", unsafe_allow_html=True)
+                        st.markdown(f"<div style='color:#4DA8DA; font-size:20px; font-weight:900; text-align:center; margin-bottom:15px'>📄 تفاصيل كاملة - {رقم_كامل}</div>", unsafe_allow_html=True)
+                        
+                        # 1- بيانات القضية الاساسية
+                        st.markdown("<div style='color:#FFD700; font-size:16px; font-weight:900; margin-bottom:10px'>1- البيانات الاساسية</div>", unsafe_allow_html=True)
+                        st.markdown(f"""
+                        <table style='width:100%; border-collapse:collapse; margin-bottom:15px;'>
+                            <tr><td style='background:#1E2A47; color:#FFD700; padding:8px; width:30%; font-weight:900;'>نوع الدعوى</td><td style='background:#FFF; color:#000; padding:8px; font-weight:700;'>{case.get('نوع')}</td></tr>
+                            <tr><td style='background:#1E2A47; color:#FFD700; padding:8px; font-weight:900;'>المحكمة</td><td style='background:#FFF; color:#000; padding:8px; font-weight:700;'>{case.get('محكمة_اسم')} {f'- مأمورية {case.get("مأمورية")}' if case.get('مأمورية') else ''}</td></tr>
+                            <tr><td style='background:#1E2A47; color:#FFD700; padding:8px; font-weight:900;'>الدائرة</td><td style='background:#FFF; color:#000; padding:8px; font-weight:700;'>{case.get('دائرة')}</td></tr>
+                            <tr><td style='background:#1E2A47; color:#FFD700; padding:8px; font-weight:900;'>الموضوع</td><td style='background:#FFF; color:#000; padding:8px; font-weight:700;'>{case.get('موضوع')}</td></tr>
+                            <tr><td style='background:#1E2A47; color:#FFD700; padding:8px; font-weight:900;'>{لقب1}</td><td style='background:#FFF; color:#000; padding:8px; font-weight:700;'>{case.get('مدعي')}</td></tr>
+                            <tr><td style='background:#1E2A47; color:#FFD700; padding:8px; font-weight:900;'>{لقب2}</td><td style='background:#FFF; color:#000; padding:8px; font-weight:700;'>{case.get('مدعي_عليه')}</td></tr>
+                            <tr><td style='background:#1E2A47; color:#FFD700; padding:8px; font-weight:900;'>الحالة الحالية</td><td style='background:#FFF; color:{حالة_لون}; padding:8px; font-weight:900;'>{case.get('حالة','متداولة')} - {مكان}</td></tr>
+                        </table>
+                        """, unsafe_allow_html=True)
+
+                        # 2- اخر اجراء
+                        st.markdown("<div style='color:#FFD700; font-size:16px; font-weight:900; margin-bottom:10px'>2- اخر اجراء</div>", unsafe_allow_html=True)
+                        st.markdown(f"""
+                        <table style='width:100%; border-collapse:collapse; margin-bottom:15px;'>
+                            <tr><td style='background:#1E2A47; color:#FFD700; padding:8px; width:30%; font-weight:900;'>تاريخ اخر جلسة</td><td style='background:#FFF; color:#000; padding:8px; font-weight:700;'>{case.get('تاريخ_جلسة','-')}</td></tr>
+                            <tr><td style='background:#1E2A47; color:#FFD700; padding:8px; font-weight:900;'>الاجراء</td><td style='background:#FFF; color:#000; padding:8px; font-weight:700;'>{case.get('الاجراء','-')}</td></tr>
+                        </table>
+                        """, unsafe_allow_html=True)
+
+                        # 3- سجل الجلسات
+                        if case.get('جلسات'):
+                            st.markdown("<div style='color:#FFD700; font-size:16px; font-weight:900; margin-bottom:10px'>3- سجل الجلسات</div>", unsafe_allow_html=True)
+                            جلسات_مرتبة = sorted(case['جلسات'], key=lambda x: x.get("تاريخ",""), reverse=True)
+                            for ج in جلسات_مرتبة:
+                                st.markdown(f"<div style='background:#1E2A47; padding:10px; border-radius:8px; margin-bottom:5px; border:1px solid #D4AF37'><b style='color:#FFD700'>تاريخ:</b> <span style='color:#FFF'>{ج.get('تاريخ')}</span> | <b style='color:#FFD700'>الاجراء:</b> <span style='color:#FFF'>{ج.get('الاجراء')}</span> | <b style='color:#FFD700'>الحالة:</b> <span style='color:#FFF'>{ج.get('الحالة')}</span></div>", unsafe_allow_html=True)
+
+                        # 4- المستندات
+                        if case.get('مستندات'):
+                            st.markdown("<div style='color:#FFD700; font-size:16px; font-weight:900; margin:15px 0 10px 0'>4- المستندات المرفقة</div>", unsafe_allow_html=True)
+                            for i, مستند in enumerate(case['مستندات']):
+                                file_data = base64.b64decode(مستند['محتوى'])
+                                st.download_button(f"📥 تحميل {مستند['نوع']}", data=file_data, file_name=مستند['نوع'], key=f"dl_search_{case['id']}_{i}", use_container_width=True)
+
+                        if st.button("اغلاق التفاصيل", key=f"close_{case['id']}", use_container_width=True):
+                            st.session_state[f"show_details_{case['id']}"] = False
+                            st.rerun()
+                        
+                        st.markdown("</div>", unsafe_allow_html=True)
                     st.markdown("</div>", unsafe_allow_html=True)
                     # ========== الجزء السابع: مركز التنبيهات ==========
 elif st.session_state.page == "تنبيهات":
