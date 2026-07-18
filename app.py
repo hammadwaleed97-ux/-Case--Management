@@ -29,20 +29,46 @@ def check_login(username, password):
 
 def login_page():
     st.markdown("<h1 style='text-align:center; color:#C9A961'>تسجيل الدخول</h1>", unsafe_allow_html=True)
-    username = st.text_input("اسم المستخدم")
-    password = st.text_input("كلمة السر", type="password")
-    if st.button("دخول", type="primary", use_container_width=True):
-        user = check_login(username, password)
-        if user:
-            if user["role"] == "member" and not user.get("password_set", False):
-                st.session_state.page = "set_password"
-                st.session_state.temp_user = user["username"]
+    
+    tab1, tab2 = st.tabs(["تسجيل الدخول", "تفعيل حساب جديد"])
+    
+    with tab1:
+        username = st.text_input("اسم المستخدم")
+        password = st.text_input("كلمة السر", type="password")
+        if st.button("دخول", type="primary", use_container_width=True):
+            user = check_login(username, password)
+            if user:
+                if user["role"] == "member" and not user.get("password_set", False):
+                    st.session_state.page = "set_password"
+                    st.session_state.temp_user = user["username"]
+                    st.rerun()
+                else:
+                    st.session_state.user = user
+                    st.session_state.page = "الرئيسية"
+                    st.rerun()
             else:
-                st.session_state.user = user
-                st.session_state.page = "الرئيسية"
-            st.rerun()
-        else:
-            st.error("اسم المستخدم او كلمة السر غلط او العضوية موقوفة")
+                st.error("اسم المستخدم او كلمة السر غلط او العضوية موقوفة")
+
+    with tab2:
+        st.markdown("**من فضلك ادخل اسم العضو الذي استخرجه لك الادمن فقط**")
+        new_username = st.text_input("اسم العضو", key="new_user")
+        if st.button("تفعيل الحساب", use_container_width=True):
+            if new_username:
+                users = load_users()
+                found_user = None
+                for u in users:
+                    if u['username'] == new_username:
+                        found_user = u
+                        break
+                
+                if not found_user:
+                    st.error("الاسم ده مش موجود. لازم الادمن يستخرجهولك الاول")
+                elif found_user["password_set"] == True:
+                    st.error("الحساب ده اتفعل قبل كده ومينفعش يدخل بيه اكتر من واحد")
+                else:
+                    st.session_state.page = "set_password"
+                    st.session_state.temp_user = new_username
+                    st.rerun()
 
 def manage_users_page():
     st.markdown("<h2 style='text-align:center; color:#C9A961'>ادارة الاعضاء</h2>", unsafe_allow_html=True)
@@ -51,20 +77,25 @@ def manage_users_page():
         st.rerun()
     users = load_users()
     with st.container(border=True):
-        st.markdown("اضافة عضو جديد")
+        st.markdown("استخراج عضو جديد")
         new_username = st.text_input("اسم المستخدم الجديد")
-        if st.button("انشاء العضو", use_container_width=True):
+        if st.button("استخراج العضو", use_container_width=True):
             if new_username:
                 users = load_users()
-                new_id = max([u['id'] for u in users]) + 1
-                users.append({"id": new_id, "username": new_username, "password": "", "email": "", "role": "member", "status": "active", "password_set": False})
-                save_users(users)
-                st.success(f"تم انشاء العضو: {new_username}")
-                st.rerun()
+                if any(u['username'] == new_username for u in users):
+                    st.error("الاسم ده موجود بالفعل")
+                else:
+                    new_id = max([u['id'] for u in users]) + 1
+                    users.append({"id": new_id, "username": new_username, "password": "", "email": "", "role": "member", "status": "active", "password_set": False})
+                    save_users(users)
+                    st.success(f"تم استخراج العضو: {new_username}")
+                    st.info("اديله الاسم ده يدخل يفعله من تاب تفعيل حساب جديد")
+                    st.rerun()
     for user in users:
         if user["role"] == "member":
+            status = "مفعل" if user.get("password_set") else "غير مفعل"
             col1, col2, col3 = st.columns([3,2,2])
-            with col1: st.write(f"{user['username']} - الحالة: {user['status']}")
+            with col1: st.write(f"{user['username']} - الحالة: {status}")
             with col2: 
                 if user["status"] == "active":
                     if st.button("ايقاف", key=f"ban_{user['id']}"):
@@ -81,6 +112,7 @@ def manage_users_page():
 
 def set_password_page():
     st.markdown("<h1 style='text-align:center'>انشاء كلمة سر جديدة</h1>", unsafe_allow_html=True)
+    st.info("من فضلك ادخل كلمة مرور خاصة بك")
     new_pass = st.text_input("كلمة السر الجديدة", type="password")
     confirm_pass = st.text_input("تأكيد كلمة السر", type="password")
     if st.button("حفظ"):
@@ -92,11 +124,11 @@ def set_password_page():
                     user["password_set"] = True
                     save_users(users)
                     st.session_state.page = "login"
+                    st.success("تم تفعيل الحساب بنجاح")
                     st.rerun()
         else:
             st.error("الباسوردين مش زي بعض")
 
-# <<<< دي طلعتها بره وظبط المسافات
 def change_password_page():
     st.markdown("<h1 style='text-align:center; color:#C9A961'>تغيير كلمة السر</h1>", unsafe_allow_html=True)
     if st.button("العودة للرئيسية"): 
@@ -131,17 +163,21 @@ elif st.session_state.page == "ادارة_الاعضاء":
         manage_users_page()
 elif st.session_state.page == "set_password":
     set_password_page()
-elif st.session_state.page == "change_password":  # <<<< ضفت دي
+elif st.session_state.page == "change_password":
     change_password_page()
 elif st.session_state.page == "الرئيسية":
     st.write(f"اهلا {st.session_state.user['username']}")
-    if st.button("تغيير كلمة السر"):  # <<<< ودي
+    if st.button("تغيير كلمة السر"):
         st.session_state.page = "change_password"
         st.rerun()
     if st.session_state.user["role"] == "admin":
         if st.button("ادارة الاعضاء"):
             st.session_state.page = "ادارة_الاعضاء"
             st.rerun()
+    if st.button("تسجيل الخروج"):
+        st.session_state.user = None
+        st.session_state.page = "login"
+        st.rerun()
 # ============================================
 # ======= الجزء الاول: الاساسيات ============
 # ============================================
