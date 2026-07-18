@@ -6,8 +6,10 @@ import streamlit as st
 st.markdown("""
 <style>
  .stApp { background-color: #0E1117; }
- /* ده الجديد - يلون كل النصوص والليبل في تسجيل الدخول */
  div[data-testid="stText"], label, .stMarkdown, .stTextInput label { color: #C9A961 !important; font-weight: bold; }
+ /* ده الجديد بتاع التابات */
+ button[data-baseweb="tab"] { color: #C9A961 !important; font-weight: bold; font-size: 16px; }
+ button[data-baseweb="tab"][aria-selected="true"] { color: #C9A961 !important; border-bottom: 3px solid #C9A961; }
  .stButton>button { background-color: #C9A961; color: black; font-weight: bold; }
  .stTextInput>div>div>input { color: black; background-color: white; }
 </style>
