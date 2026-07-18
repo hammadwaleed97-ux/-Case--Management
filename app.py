@@ -185,7 +185,7 @@ def extract_member_page():
             else: st.error("لازم تكتب اسم المستخدم")
 
 def manage_users_page():
-    st.markdown("<h2 style='text-align:center; color:#C9A961'>دخول السادة الاعضاء</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align:center; color:#C9A961'>ادارة الاعضاء</h2>", unsafe_allow_html=True)
     if st.button("العودة للرئيسية"): st.session_state.page = "الرئيسية"; st.rerun()
     users = load_users()
 
@@ -287,8 +287,7 @@ elif st.session_state.page == "الرئيسية":
     if st.button("تغيير كلمة السر"): st.session_state.page = "change_password"; st.rerun()
     if st.button("تأكيد البريد الالكتروني"): st.session_state.page = "recovery_settings"; st.rerun()
     if st.button("تسجيل الخروج"): st.session_state.user = None; st.session_state.page = "login"; st.rerun()
-# ===========================================
-# ====================================
+# =======================================
 # ============================================
 # ======= الجزء الاول: الاساسيات ==========
 # ============================================
