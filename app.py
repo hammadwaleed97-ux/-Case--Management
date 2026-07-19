@@ -1632,6 +1632,7 @@ elif st.session_state.page == "التنبيهات":
     else:
         st.info("لا توجد طعون خلال 15 يوم")
         # ================================================
+        # ================================================
 # ============ صفحة المكتبة القانونية ============
 # ==================================================
 elif st.session_state.page == "مكتبة":
@@ -1644,7 +1645,14 @@ elif st.session_state.page == "مكتبة":
             st.session_state.pop(k, None)
         st.rerun()
 
-    # البحث
+    # فلترة اساسية: كل واحد يشوف بتاعه بس
+    library_data = data.get("library", [])
+    if st.session_state.user["role"] == "admin":
+        my_library = library_data
+    else:
+        my_library = [f for f in library_data if f.get("user_id") == st.session_state.user["id"]]
+
+    # 1. البحث
     st.markdown("### 🔍 البحث في مكتبتك")
     search_query = st.text_input("ابحث باسم الموضوع", key="search_q")
     col1, col2 = st.columns(2)
@@ -1653,98 +1661,102 @@ elif st.session_state.page == "مكتبة":
     
     if st.button("بحث", use_container_width=True, type="primary"):
         st.session_state.search_filters = {"q": search_query, "num": search_number, "year": search_year}
+        st.session_state.pop("selected_section", None) # نمسح اختيار القسم
         st.rerun()
 
     st.divider()
 
-    # الاقسام
-    st.markdown("### 📁 اختار القسم")
+    # 2. الاقسام
+    st.markdown("### 📁 اضغط على القسم عشان تشوف اللي فيه")
     cols = st.columns(4)
     for i, (section, color) in enumerate(LIBRARY_SECTIONS.items()):
         with cols[i % 4]:
             if st.button(f"{section}", key=f"sec_{section}", use_container_width=True):
                 st.session_state.selected_section = section
-                st.session_state.pop("search_filters", None)
+                st.session_state.pop("search_filters", None) # نمسح البحث
                 st.rerun()
             st.markdown(f'<div style="background:{color};height:5px;border-radius:5px;"></div>', unsafe_allow_html=True)
 
-    # العرض
-    if "selected_section" in st.session_state or "search_filters" in st.session_state:
-        st.divider()
-        library_data = data.get("library", [])
+    st.divider()
+    
+    # 3. تحديد الملفات اللي هتتعرض
+    files_to_show = []
+    title = ""
+    
+    if "selected_section" in st.session_state:
+        sec = st.session_state.selected_section
+        title = f"📂 {sec}"
+        files_to_show = [f for f in my_library if f.get("section") == sec]
         
-        # فلترة: كل واحد يشوف بتاعه بس
-        if st.session_state.user["role"] == "admin":
-            my_library = library_data
-        else:
-            my_library = [f for f in library_data if f.get("user_id") == st.session_state.user["id"]]
-        
-        if "selected_section" in st.session_state:
-            sec = st.session_state.selected_section
-            st.subheader(f"📂 {sec}")
-            files = [f for f in my_library if f.get("section") == sec]
-        else:
-            sec = "نتائج البحث"
-            st.subheader("🔍 نتائج البحث")
-            f = st.session_state.search_filters
-            files = [item for item in my_library if 
-                     f["q"].lower() in item.get("name","").lower() and
-                     f["num"] in item.get("number","") and
-                     f["year"] in item.get("year","")]
-        
-        # اضافة
-        if st.button("➕ اضافة مادة قانونية لمكتبتك", key="add_doc", type="primary"):
-            st.session_state.show_upload = True
+    elif "search_filters" in st.session_state:
+        title = "🔍 نتائج البحث"
+        f = st.session_state.search_filters
+        files_to_show = [item for item in my_library if 
+                         f["q"].lower() in item.get("name","").lower() and
+                         f["num"] in item.get("number","") and
+                         f["year"] in item.get("year","")]
+    
+    if title: st.subheader(title)
 
-        if st.session_state.get("show_upload", False):
-            with st.form("form_add_doc"):
-                section_select = st.selectbox("اختر القسم", list(LIBRARY_SECTIONS.keys()))
-                doc_name = st.text_input("اسم المستند")
-                doc_number = st.text_input("الرقم")
-                doc_year = st.text_input("السنة")
-                uploaded_file = st.file_uploader("ارفع الملف", type=['pdf', 'doc', 'docx', 'jpg', 'png'])
-                
-                if st.form_submit_button("💾 حفظ في مكتبتي"):
-                    if uploaded_file and doc_name:
-                        file_base64 = base64.b64encode(uploaded_file.getvalue()).decode('utf-8')
-                        new_doc = {
-                            "id": secrets.token_hex(6),
-                            "user_id": st.session_state.user["id"],
-                            "name": doc_name, 
-                            "section": section_select,
-                            "number": doc_number,
-                            "year": doc_year,
-                            "file_type": uploaded_file.name.split('.')[-1],
-                            "content": file_base64
-                        }
-                        data.setdefault("library", []).append(new_doc)
-                        save_data(data)
-                        st.success("تم الحفظ في مكتبتك")
-                        st.session_state.show_upload = False
-                        st.rerun()
-                    else:
-                        st.error("لازم اسم وملف")
+    # 4. زر الاضافة - ظاهر على طول
+    if st.button("➕ اضافة مادة قانونية لمكتبتك", key="add_doc", type="primary"):
+        st.session_state.show_upload = True
 
-        st.divider()
-        # عرض
-        if files:
-            for doc in files:
-                color = LIBRARY_SECTIONS.get(doc.get("section"), "#7F8C8D")
-                st.markdown(f'<div style="border-left:5px solid {color}; padding:10px; margin:5px 0; background:#1e1e1e;">', unsafe_allow_html=True)
-                st.write(f"**{doc.get('name')}**")
-                st.caption(f"رقم: {doc.get('number','-')} | سنة: {doc.get('year','-')}")
-                
-                col1, col2 = st.columns(2)
-                with col1:
+    if st.session_state.get("show_upload", False):
+        with st.form("form_add_doc"):
+            section_select = st.selectbox("اختر القسم", list(LIBRARY_SECTIONS.keys()))
+            doc_name = st.text_input("اسم المستند", placeholder="مثال: قانون التأمينات 148 لسنة 2019")
+            doc_number = st.text_input("الرقم", placeholder="148")
+            doc_year = st.text_input("السنة", placeholder="2019")
+            uploaded_file = st.file_uploader("ارفع الملف", type=['pdf', 'doc', 'docx', 'jpg', 'png'])
+            
+            if st.form_submit_button("💾 حفظ في مكتبتي"):
+                if uploaded_file and doc_name:
+                    file_base64 = base64.b64encode(uploaded_file.getvalue()).decode('utf-8')
+                    new_doc = {
+                        "id": secrets.token_hex(6),
+                        "user_id": st.session_state.user["id"],
+                        "name": doc_name, 
+                        "section": section_select,
+                        "number": doc_number,
+                        "year": doc_year,
+                        "file_type": uploaded_file.name.split('.')[-1],
+                        "content": file_base64
+                    }
+                    data.setdefault("library", []).append(new_doc)
+                    save_data(data)
+                    st.success(f"✅ تم حفظ {doc_name} في قسم {section_select}")
+                    st.session_state.show_upload = False
+                    st.rerun()
+                else:
+                    st.error("لازم اسم وملف")
+
+    # 5. عرض الملفات
+    if files_to_show:
+        st.write(f"عدد الملفات: {len(files_to_show)}")
+        for doc in files_to_show:
+            color = LIBRARY_SECTIONS.get(doc.get("section"), "#7F8C8D")
+            st.markdown(f'<div style="border-left:5px solid {color}; padding:10px; margin:5px 0; background:#1e1e1e;">', unsafe_allow_html=True)
+            st.write(f"**{doc.get('name')}**")
+            st.caption(f"رقم: {doc.get('number','-')} | سنة: {doc.get('year','-')} | القسم: {doc.get('section')}")
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                if doc.get("content"):
                     file_data = base64.b64decode(doc["content"])
-                    st.download_button("⬇️ تحميل", data=file_data, file_name=f"{doc.get('name')}.{doc.get('file_type')}", key=f"dl_{doc['id']}", use_container_width=True)
-                
-                with col2:
-                    if doc.get("user_id") == st.session_state.user["id"] or st.session_state.user["role"] == "admin":
-                        if st.button("🗑️ حذف", key=f"del_{doc['id']}", use_container_width=True):
-                            data["library"] = [d for d in data["library"] if d["id"] != doc["id"]]
-                            save_data(data)
-                            st.rerun()
-                st.markdown('</div>', unsafe_allow_html=True)
+                    file_name = f"{doc.get('name')}.{doc.get('file_type')}"
+                    mime_type = {"pdf":"application/pdf","doc":"application/msword","docx":"application/vnd.openxmlformats-officedocument.wordprocessingml.document","jpg":"image/jpeg","png":"image/png"}.get(doc.get('file_type'),"application/octet-stream")
+                    st.download_button("⬇️ تحميل", data=file_data, file_name=file_name, mime=mime_type, key=f"dl_{doc['id']}", use_container_width=True)
+            
+            with col2:
+                if doc.get("user_id") == st.session_state.user["id"] or st.session_state.user["role"] == "admin":
+                    if st.button("🗑️ حذف", key=f"del_{doc['id']}", use_container_width=True):
+                        data["library"] = [d for d in data["library"] if d["id"] != doc["id"]]
+                        save_data(data)
+                        st.rerun()
+            st.markdown('</div>', unsafe_allow_html=True)
+    else:
+        if "selected_section" in st.session_state or "search_filters" in st.session_state:
+            st.info("مفيش ملفات في القسم ده. ارفع اول ملف")
         else:
-            st.info("مكتبتك فاضية. دوس ➕ اضافة مادة قانونية")
+            st.info("اختار قسم من فوق او ابحث عشان تشوف ملفاتك")
