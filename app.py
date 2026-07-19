@@ -739,7 +739,7 @@ if st.session_state.page == "الرئيسية":
             "🔴 مركز التنبيهات",
             use_container_width=True
         ):
-            st.session_state.page = "تنبيهات"
+            st.session_state.page = "التنبيهات" # <-- ضفنا ال
             st.rerun()
 
         st.markdown(
