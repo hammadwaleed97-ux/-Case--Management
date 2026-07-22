@@ -404,28 +404,33 @@ def to_pdf(df, title, region):
     pdf.add_page()
     pdf.add_font('Cairo', '', 'Cairo-Regular.ttf', uni=True)
 
-    pdf.set_font('Cairo', '', 14)
-    pdf.cell(0, 8, fix_arabic('الهيئة القومية للتأمين الاجتماعى'), 0, 1, 'R')
-    pdf.cell(0, 8, fix_arabic('الإدارة المركزية للإدارات القانونية'), 0, 1, 'R')
-    pdf.cell(0, 8, fix_arabic('الإدارة العامة للقضايا'), 0, 1, 'R')
-    pdf.cell(0, 8, fix_arabic(f'ديوان عام {region}'), 0, 1, 'R')
-    pdf.ln(3)
+    # 1. العنوان في النص زي الصورة
+    pdf.set_font('Cairo', '', 16)
+    pdf.cell(0, 10, fix_arabic('الهيئة القومية للتأمين الاجتماعى'), 0, 1, 'C')
     pdf.set_font('Cairo', '', 12)
-    pdf.cell(0, 8, fix_arabic(title), 0, 1, 'R')
-    pdf.ln(3)
+    pdf.cell(0, 8, fix_arabic('الإدارة المركزية للإدارات القانونية'), 0, 1, 'C')
+    pdf.cell(0, 8, fix_arabic('الإدارة العامة للقضايا'), 0, 1, 'C')
+    pdf.cell(0, 8, fix_arabic(f'ديوان عام {region}'), 0, 1, 'C')
+    pdf.cell(0, 8, fix_arabic(title), 0, 1, 'C')
+    pdf.ln(5)
 
-    # شلنا سطر العكس
-
-    pdf.set_font('Cairo', '', 7)
-    col_width = pdf.w / (len(df.columns) + 1)
+    # 2. الجدول
+    pdf.set_font('Cairo', '', 8)
+    col_width = pdf.w / len(df.columns) # قسمنا العرض صح
+    row_height = 8
+    
+    # الهيدر
     for col in df.columns:
-        pdf.cell(col_width, 7, fix_arabic(col), 1, 0, 'R')
+        pdf.cell(col_width, row_height, fix_arabic(str(col)), 1, 0, 'C')
     pdf.ln()
+    
+    # الداتا
     for _, row in df.iterrows():
         for item in row:
-            pdf.cell(col_width, 7, fix_arabic(item), 1, 0, 'R')
+            pdf.cell(col_width, row_height, fix_arabic(str(item)), 1, 0, 'C')
         pdf.ln()
 
+    # 3. الخاتمة يمين
     pdf.ln(5)
     pdf.set_font('Cairo', '', 11)
     pdf.cell(0, 8, fix_arabic('تفضلوا بقبول وافر الاحترام'), 0, 1, 'R')
@@ -433,6 +438,7 @@ def to_pdf(df, title, region):
     pdf.cell(0, 8, fix_arabic(f'تحر في {datetime.now().strftime("%Y-%m-%d")}'), 0, 1, 'R')
 
     return bytes(pdf.output(dest='S')) # <-- التعديل المهم عشان التحميل
+# ====== دالة حفظ صحيفة الدعوى ===
 # ====== دالة حفظ صحيفة الدعوى ======
 def create_paper_pdf(case_data):
     if not os.path.exists("papers"): os.makedirs("papers")
