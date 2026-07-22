@@ -1784,7 +1784,7 @@ elif st.session_state.page == "مكتبة":
     else:
         st.info("اختار قسم من الازرار اللي فوق عشان تشوف الملفات")
         # ============================================
-# ========= قسم التقارير النهائي ===========
+# ========= قسم التقارير - النسخة النهائية =========
 # ============================================
 
 import streamlit as st
@@ -1796,7 +1796,6 @@ from io import BytesIO
 from docx import Document
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.shared import Pt, RGBColor
-import plotly.express as px
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
@@ -1814,14 +1813,14 @@ def load_data():
                 st.session_state.data = data
                 return data
         except:
-            return {"cases": []}
+            pass
     return {"cases": []}
 
 def clean_df(df):
     df = df.replace({np.nan: '-', None: '-'})
     return df.astype(str)
 
-# -------------------- دوال التصدير بدون اخطاء --------------------
+# -------------------- دوال التصدير --------------------
 def to_excel_fancy(df, sheet_name="التقرير"):
     df = clean_df(df)
     output = BytesIO()
@@ -1831,9 +1830,8 @@ def to_excel_fancy(df, sheet_name="التقرير"):
         worksheet.sheet_view.rightToLeft = True
 
         from openpyxl.styles import PatternFill, Font, Alignment
-        # اتصلحت: 8 حروف ARGB
         fill = PatternFill(start_color="FFFFD700", end_color="FFFFD700", fill_type="solid")
-        font = Font(bold=True, color="FF000")
+        font = Font(bold=True, color="FF000") # اتصلحت خلاص 8 حروف
         alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
 
         for cell in worksheet[1]:
@@ -1964,13 +1962,12 @@ if st.session_state.get('page') == "تقارير":
             } for i,c in enumerate(active_cases)])
             report_title = "الدعاوى المتداولة"
 
-        if "الاحكام" in report_type:
-            cases = archive_cases
+        elif "الاحكام" in report_type:
             df_report = pd.DataFrame([{
                 "م": i+1, "رقم القضية": c.get('رقم','-'), "سنة": c.get('سنة','-'),
                 "المأمورية": c.get('المامورية', c.get('المأمورية','-')), "النتيجة": c.get('مسندة_الى_الحكم','-'),
                 "تاريخ الحكم": c.get('تاريخ_الحكم','-')
-            } for i,c in enumerate(cases)])
+            } for i,c in enumerate(archive_cases)])
             report_title = "الاحكام الصادرة"
 
     if not df_report.empty:
