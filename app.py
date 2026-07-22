@@ -1,7 +1,7 @@
 import json, os, bcrypt, smtplib, random, io
 from datetime import datetime
 from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart  # <-- ضيف ده بس
+from email.mime.multipart import MIMEMultipart
 
 import streamlit as st
 import pandas as pd
@@ -10,7 +10,7 @@ import pandas as pd
 from fpdf import FPDF
 from docx import Document
 from docx.shared import Pt
-from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_TABLE_ALIGNMENT
+from docx.enum.text import WD_ALIGN_PARAGRAPH  # <-- شيلت WD_TABLE_ALIGNMENT
 import arabic_reshaper
 from bidi.algorithm import get_display
 
@@ -392,22 +392,25 @@ def to_word(df, title, region):
     doc.add_heading(fix_arabic(title), 2).alignment = WD_ALIGN_PARAGRAPH.CENTER
     doc.add_paragraph()
 
-    # شلنا سطر العكس
-
     table = doc.add_table(rows=1, cols=len(df.columns))
     table.style = 'Table Grid'
     hdr_cells = table.rows[0].cells
     for i, col_name in enumerate(df.columns):
-        hdr_cells[i].text = fix_arabic(col_name)
+        hdr_cells[i].text = fix_arabic(str(col_name))
         hdr_cells[i].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
 
     for _, row in df.iterrows():
         row_cells = table.add_row().cells
         for i, val in enumerate(row):
-            row_cells[i].text = fix_arabic(val)
+            row_cells[i].text = fix_arabic(str(val))
             row_cells[i].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
 
-    doc.add_paragraph(fix_arabic(f'\nتفضلوا بقبول وافر الاحترام\nعضو الادارة.................. مدير الإدارة..................\nتحر في {datetime.now().strftime("%Y-%m-%d")}'))
+    p = doc.add_paragraph()
+    p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+    p.add_run(fix_arabic('تفضلوا بقبول وافر الاحترام\n'))
+    p.add_run(fix_arabic('عضو الادارة.................. مدير الإدارة..................\n'))
+    p.add_run(fix_arabic(f'تحر في {datetime.now().strftime("%Y-%m-%d")}'))
+
     output = io.BytesIO()
     doc.save(output)
     return output.getvalue()
@@ -432,12 +435,12 @@ def to_pdf(df, title, region):
     pdf.set_font('Cairo', '', 8)
     col_width = pdf.w / len(df.columns) # قسمنا العرض صح
     row_height = 8
-    
+
     # الهيدر
     for col in df.columns:
         pdf.cell(col_width, row_height, fix_arabic(str(col)), 1, 0, 'C')
     pdf.ln()
-    
+
     # الداتا
     for _, row in df.iterrows():
         for item in row:
@@ -451,8 +454,8 @@ def to_pdf(df, title, region):
     pdf.cell(0, 8, fix_arabic('عضو الادارة.................. مدير الإدارة..................'), 0, 1, 'R')
     pdf.cell(0, 8, fix_arabic(f'تحر في {datetime.now().strftime("%Y-%m-%d")}'), 0, 1, 'R')
 
-    return bytes(pdf.output(dest='S')) # <-- التعديل المهم عشان التحميل
-# ====== دالة حفظ صحيفة الدعوى ===
+    return bytes(pdf.output(dest='S'))
+# ====== دالة حفظ صحيفة الدعوى === 
 # ====== دالة حفظ صحيفة الدعوى ======
 def create_paper_pdf(case_data):
     if not os.path.exists("papers"): os.makedirs("papers")
