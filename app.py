@@ -1802,58 +1802,70 @@ elif st.session_state.page == "مكتبة":
         st.info("مفيش نتائج للبحث ده")
     else:
         st.info("اختار قسم من الازرار اللي فوق عشان تشوف الملفات")
-        # ==============================================
-# ============ الجزء السادس: التقارير ============
-# ==============================================
+        # ======= قسم التقارير ==========
 elif st.session_state.page == "تقارير":
-    data = load_data()
-    st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
-    st.markdown("<h2 style='color:#D4AF37; text-align:center'>📊 مركز التقارير</h2>", unsafe_allow_html=True)
-    if st.button("⬅️ العودة للرئيسية", use_container_width=True): 
+    st.markdown("<h2 style='color:#D4AF37; text-align:center'>📊 التقارير</h2>", unsafe_allow_html=True)
+    if st.button("⬅️ العودة للرئيسية", use_container_width=True):
         st.session_state.page = "الرئيسية"
         st.rerun()
 
-    if not data["cases"]:
-        st.warning("⚠️ مفيش قضايا مسجلة")
-        st.stop()
+    data = load_data()
+    all_cases = data.get("cases", [])
+    
+    if not all_cases:
+        st.warning("مفيش قضايا متسجلة عشان نعمل تقرير")
+    else:
+        report_type = st.selectbox("اختار نوع التقرير", 
+            ["الدعاوى المتداولة", "الدعاوى المنتهية", "جلسات الاسبوع", "كل القضايا"])
 
-    active_cases = [c for c in data["cases"] if c.get('حالة') == 'متداولة']
-    archive_cases = [c for c in data["cases"] if c.get('حالة') == 'منتهية' and c.get('مسندة_ل_الحكم') in ['الصالح', 'الضد']]
+        region = st.text_input("اسم المنطقة/الديوان", "البحيرة")
 
-    st.info(f"📊 المتداولة: {len(active_cases)} | الاحكام: {len(archive_cases)}")
+        # فلترة الداتا حسب النوع
+        if report_type == "الدعاوى المتداولة":
+            df = pd.DataFrame([c for c in all_cases if c.get('حالة') == 'متداولة'])
+            title = "الدعاوى المتداولة"
+        elif report_type == "الدعاوى المنتهية":
+            df = pd.DataFrame([c for c in all_cases if c.get('حالة') == 'منتهية'])
+            title = "الدعاوى المنتهية"
+        elif report_type == "جلسات الاسبوع":
+            today = datetime.now().date()
+            week_later = today + timedelta(days=7)
+            df_list = []
+            for c in all_cases:
+                if c.get('تاريخ_جلسة'):
+                    try:
+                        session_date = datetime.strptime(c['تاريخ_جلسة'], "%Y-%m-%d").date()
+                        if today <= session_date <= week_later:
+                            df_list.append(c)
+                    except: pass
+            df = pd.DataFrame(df_list)
+            title = "جلسات الاسبوع"
+        else: # كل القضايا
+            df = pd.DataFrame(all_cases)
+            title = "الحصر العام للقضايا"
 
-    region = st.text_input("🏛️ ديوان عام منطقة", key="region_rep")
-    report_type = st.selectbox("اختر نوع البيان", ["المتداولة - بيان بجميع الدعاوى", "الاحكام - بيان بجميع الاحكام"], key="report_select")
+        if df.empty:
+            st.info("مفيش بيانات في التقرير ده")
+        else:
+            # نظبط الاعمدة ونرتبها RTL
+            cols_order = ['م', 'رقم_القضية', 'سنة', 'نوع', 'محكمة_اسم', 'دائرة', 'مدعي', 'مدعي_عليه', 'موضوع', 'تاريخ_جلسة', 'ملاحظات']
+            df = df.reindex(columns=[col for col in cols_order if col in df.columns])
+            df.insert(0, 'م', range(1, len(df) + 1))
+            
+            # نسمي الاعمدة عربي
+            df.rename(columns={
+                'رقم_القضية': 'رقم القضية', 'سنة': 'سنة', 'نوع': 'النوع', 
+                'محكمة_اسم': 'المحكمة', 'دائرة': 'الدائرة', 'مدعي': 'المدعي', 
+                'مدعي_عليه': 'المدعى عليه', 'موضوع': 'الموضوع', 
+                'تاريخ_جلسة': 'تاريخ الجلسة', 'ملاحظات': 'ملاحظات'
+            }, inplace=True)
 
-    df_report = pd.DataFrame()
-    report_title = ""
+            st.dataframe(df, use_container_width=True, hide_index=True)
 
-    if st.button("🔍 عرض التقرير", type="primary", use_container_width=True):
-        if "المتداولة" in report_type:
-            df_report = pd.DataFrame([{
-                "م": i+1, "رقم القضية": c.get('رقم','-'), "السنة": c.get('سنة','-'), "المأمورية": c.get('مأمورية','-'),
-                "الدائرة": c.get('دائرة','-'), "النوع": c.get('نوع','-'), "المحكمة": c.get('محكمة_اسم','-'),
-                "المدعي": c.get('مدعي','-'), "المدعى عليه": c.get('مدعي_عليه','-'), "الموضوع": c.get('موضوع','-'),
-                "الاجراء": c.get('الاجراء','-'), "تاريخ الجلسة": c.get('تاريخ_جلسة','-'), "ملاحظات": c.get('ملاحظات','-')
-            } for i,c in enumerate(active_cases)])
-            report_title = "الدعاوى المتداولة"
-
-        elif "الاحكام" in report_type:
-            df_report = pd.DataFrame([{
-                "م": i+1, "رقم القضية": c.get('رقم','-'), "السنة": c.get('سنة','-'), "المأمورية": c.get('مأمورية','-'),
-                "النتيجة": c.get('مسندة_ل_الحكم','-'), "تاريخ الحكم": c.get('تاريخ_الحكم','-'), "منطوق الحكم": c.get('منطوق_الحكم','-')
-            } for i,c in enumerate(archive_cases)])
-            report_title = "الاحكام الصادرة"
-
-    if not df_report.empty:
-        st.success(f"تم العثور على {len(df_report)} سجل")
-        
-        st.markdown('<div dir="rtl">', unsafe_allow_html=True)
-        st.dataframe(df_report, use_container_width=True)
-        st.markdown('</div>', unsafe_allow_html=True)
-
-        c1, c2, c3 = st.columns(3)
-        with c1: st.download_button("⬇️ تحميل Excel", to_excel(df_report), f"{report_title}.xlsx", use_container_width=True)
-        with c2: st.download_button("📄 تحميل Word", to_word(df_report, report_title, region), f"{report_title}.docx", use_container_width=True)
-        with c3: st.download_button("📕 تحميل PDF", to_pdf(df_report, report_title, region), f"{report_title}.pdf", use_container_width=True)
-# هنا القوس اتقفل اهو ^
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.download_button("📥 تحميل Excel", to_excel(df), f"{title}.xlsx", use_container_width=True)
+            with col2:
+                st.download_button("📥 تحميل Word", to_word(df, title, region), f"{title}.docx", use_container_width=True)
+            with col3:
+                st.download_button("📥 تحميل PDF", to_pdf(df, title, region), f"{title}.pdf", use_container_width=True, mime="application/pdf")
