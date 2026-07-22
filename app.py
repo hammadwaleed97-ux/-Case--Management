@@ -1811,70 +1811,106 @@ elif st.session_state.page == "مكتبة":
         st.info("مفيش نتائج للبحث ده")
     else:
         st.info("اختار قسم من الازرار اللي فوق عشان تشوف الملفات")
-        # ======= قسم التقارير ==========
-elif st.session_state.page == "تقارير":
-    st.markdown("<h2 style='color:#D4AF37; text-align:center'>📊 التقارير</h2>", unsafe_allow_html=True)
-    if st.button("⬅️ العودة للرئيسية", use_container_width=True):
-        st.session_state.page = "الرئيسية"
-        st.rerun()
+        # ====== دوال التصدير للتقارير ======
+import io
+from datetime import datetime
 
-    data = load_data()
-    all_cases = data.get("cases", [])
-    
-    if not all_cases:
-        st.warning("مفيش قضايا متسجلة عشان نعمل تقرير")
-    else:
-        report_type = st.selectbox("اختار نوع التقرير", 
-            ["الدعاوى المتداولة", "الدعاوى المنتهية", "جلسات الاسبوع", "كل القضايا"])
+def to_excel(df):
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        df.to_excel(writer, index=False, sheet_name='Report')
+        workbook = writer.book
+        worksheet = writer.sheets['Report']
 
-        region = st.text_input("اسم المنطقة/الديوان", "البحيرة")
+        # تنسيق RTL وتوسيط
+        right_align_format = workbook.add_format({'align': 'right', 'valign': 'vcenter'})
+        center_align_format = workbook.add_format({'align': 'center', 'valign': 'vcenter'})
 
-        # فلترة الداتا حسب النوع
-        if report_type == "الدعاوى المتداولة":
-            df = pd.DataFrame([c for c in all_cases if c.get('حالة') == 'متداولة'])
-            title = "الدعاوى المتداولة"
-        elif report_type == "الدعاوى المنتهية":
-            df = pd.DataFrame([c for c in all_cases if c.get('حالة') == 'منتهية'])
-            title = "الدعاوى المنتهية"
-        elif report_type == "جلسات الاسبوع":
-            today = datetime.now().date()
-            week_later = today + timedelta(days=7)
-            df_list = []
-            for c in all_cases:
-                if c.get('تاريخ_جلسة'):
-                    try:
-                        session_date = datetime.strptime(c['تاريخ_جلسة'], "%Y-%m-%d").date()
-                        if today <= session_date <= week_later:
-                            df_list.append(c)
-                    except: pass
-            df = pd.DataFrame(df_list)
-            title = "جلسات الاسبوع"
-        else: # كل القضايا
-            df = pd.DataFrame(all_cases)
-            title = "الحصر العام للقضايا"
+        worksheet.set_column('A:Z', 15, right_align_format)
+        worksheet.set_right_to_left()
 
-        if df.empty:
-            st.info("مفيش بيانات في التقرير ده")
-        else:
-            # نظبط الاعمدة ونرتبها RTL
-            cols_order = ['م', 'رقم_القضية', 'سنة', 'نوع', 'محكمة_اسم', 'دائرة', 'مدعي', 'مدعي_عليه', 'موضوع', 'تاريخ_جلسة', 'ملاحظات']
-            df = df.reindex(columns=[col for col in cols_order if col in df.columns])
-            df.insert(0, 'م', range(1, len(df) + 1))
-            
-            # نسمي الاعمدة عربي
-            df.rename(columns={
-                'رقم_القضية': 'رقم القضية', 'سنة': 'سنة', 'نوع': 'النوع', 
-                'محكمة_اسم': 'المحكمة', 'دائرة': 'الدائرة', 'مدعي': 'المدعي', 
-                'مدعي_عليه': 'المدعى عليه', 'موضوع': 'الموضوع', 
-                'تاريخ_جلسة': 'تاريخ الجلسة', 'ملاحظات': 'ملاحظات'
-            }, inplace=True)
+        for col_num, value in enumerate(df.columns.values):
+            worksheet.write(0, col_num, value, center_align_format)
 
-            st.dataframe(df, use_container_width=True, hide_index=True)
+    return output.getvalue()
 
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                st.download_button("📥 تحميل Excel", to_excel(df), f"{title}.xlsx", use_container_width=True)
-            with col2:
-                st.download_button("📥 تحميل Word", to_word(df, title, region), f"{title}.docx", use_container_width=True)
-            with col3:
-                st.download_button("📥 تحميل PDF", to_pdf(df, title, region), f"{title}.pdf", use_container_width=True, mime="application/pdf")
+def to_word(df, title, region):
+    doc = Document()
+    doc.add_paragraph() # مسافة
+
+    # العنوان
+    p = doc.add_paragraph()
+    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p.add_run('الهيئة القومية للتأمين الاجتماعى').bold = True
+    p.add_run('\nالإدارة المركزية للإدارات القانونية')
+    p.add_run('\nالإدارة العامة للقضايا')
+    p.add_run(f'\nديوان عام {region}')
+    p.add_run(f'\n{title}').bold = True
+
+    doc.add_paragraph() # مسافة
+
+    # الجدول
+    table = doc.add_table(rows=1, cols=len(df.columns))
+    table.style = 'Table Grid'
+    table.alignment = WD_TABLE_ALIGNMENT.CENTER
+
+    hdr_cells = table.rows[0].cells
+    for i, col in enumerate(df.columns):
+        hdr_cells[i].text = fix_arabic(str(col))
+        hdr_cells[i].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+    for _, row in df.iterrows():
+        row_cells = table.add_row().cells
+        for i, item in enumerate(row):
+            row_cells[i].text = fix_arabic(str(item))
+            row_cells[i].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+    doc.add_paragraph() # مسافة
+
+    # الخاتمة
+    p = doc.add_paragraph()
+    p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+    p.add_run('تفضلوا بقبول وافر الاحترام\n')
+    p.add_run('عضو الادارة.................. مدير الإدارة..................\n')
+    p.add_run(f'تحر في {datetime.now().strftime("%Y-%m-%d")}')
+
+    buffer = io.BytesIO()
+    doc.save(buffer)
+    return buffer.getvalue()
+
+# ====== دالة التصدير للـ PDF ======
+def to_pdf(df, title, region):
+    pdf = FPDF(orientation='L', unit='mm', format='A4')
+    pdf.add_page()
+    pdf.add_font('Cairo', '', 'Cairo-Regular.ttf', uni=True)
+
+    # العنوان في النص
+    pdf.set_font('Cairo', '', 16)
+    pdf.cell(0, 10, fix_arabic('الهيئة القومية للتأمين الاجتماعى'), 0, 1, 'C')
+    pdf.set_font('Cairo', '', 12)
+    pdf.cell(0, 8, fix_arabic('الإدارة المركزية للإدارات القانونية'), 0, 1, 'C')
+    pdf.cell(0, 8, fix_arabic('الإدارة العامة للقضايا'), 0, 1, 'C')
+    pdf.cell(0, 8, fix_arabic(f'ديوان عام {region}'), 0, 1, 'C')
+    pdf.cell(0, 8, fix_arabic(title), 0, 1, 'C')
+    pdf.ln(5)
+
+    # الجدول
+    pdf.set_font('Cairo', '', 8)
+    col_width = pdf.w / len(df.columns)
+    row_height = 8
+    for col in df.columns:
+        pdf.cell(col_width, row_height, fix_arabic(str(col)), 1, 0, 'C')
+    pdf.ln()
+    for _, row in df.iterrows():
+        for item in row:
+            pdf.cell(col_width, row_height, fix_arabic(str(item)), 1, 0, 'C')
+        pdf.ln()
+
+    # الخاتمة يمين
+    pdf.ln(5)
+    pdf.set_font('Cairo', '', 11)
+    pdf.cell(0, 8, fix_arabic('تفضلوا بقبول وافر الاحترام'), 0, 1, 'R')
+    pdf.cell(0, 8, fix_arabic('عضو الادارة.................. مدير الإدارة..................'), 0, 1, 'R')
+    pdf.cell(0, 8, fix_arabic(f'تحر في {datetime.now().strftime("%Y-%m-%d")}'), 0, 1, 'R')
+
+    return bytes(pdf.output(dest='S'))
