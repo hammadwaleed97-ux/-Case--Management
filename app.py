@@ -367,6 +367,7 @@ def to_excel(df):
                 cell.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
 
     return output.getvalue()
+
 # ====== دالة التصدير للورد ======
 def to_word(df, title, region):
     doc = Document()
@@ -377,7 +378,7 @@ def to_word(df, title, region):
     doc.add_heading(fix_arabic(title), 2).alignment = WD_ALIGN_PARAGRAPH.CENTER
     doc.add_paragraph()
 
-    df = df.iloc[:, ::-1] # نعكس الاعمدة
+    # شلنا سطر العكس
 
     table = doc.add_table(rows=1, cols=len(df.columns))
     table.style = 'Table Grid'
@@ -404,25 +405,25 @@ def to_pdf(df, title, region):
     pdf.add_font('Cairo', '', 'Cairo-Regular.ttf', uni=True)
 
     pdf.set_font('Cairo', '', 14)
-    pdf.cell(0, 8, fix_arabic('الهيئة القومية للتأمين الاجتماعى'), 0, 1, 'C')
-    pdf.cell(0, 8, fix_arabic('الإدارة المركزية للإدارات القانونية'), 0, 1, 'C')
-    pdf.cell(0, 8, fix_arabic('الإدارة العامة للقضايا'), 0, 1, 'C')
-    pdf.cell(0, 8, fix_arabic(f'ديوان عام {region}'), 0, 1, 'C')
+    pdf.cell(0, 8, fix_arabic('الهيئة القومية للتأمين الاجتماعى'), 0, 1, 'R')
+    pdf.cell(0, 8, fix_arabic('الإدارة المركزية للإدارات القانونية'), 0, 1, 'R')
+    pdf.cell(0, 8, fix_arabic('الإدارة العامة للقضايا'), 0, 1, 'R')
+    pdf.cell(0, 8, fix_arabic(f'ديوان عام {region}'), 0, 1, 'R')
     pdf.ln(3)
     pdf.set_font('Cairo', '', 12)
-    pdf.cell(0, 8, fix_arabic(title), 0, 1, 'C')
+    pdf.cell(0, 8, fix_arabic(title), 0, 1, 'R')
     pdf.ln(3)
 
-    df = df.iloc[:, ::-1] # نعكس الاعمدة
+    # شلنا سطر العكس
 
     pdf.set_font('Cairo', '', 7)
     col_width = pdf.w / (len(df.columns) + 1)
     for col in df.columns:
-        pdf.cell(col_width, 7, fix_arabic(col), 1, 0, 'C')
+        pdf.cell(col_width, 7, fix_arabic(col), 1, 0, 'R')
     pdf.ln()
     for _, row in df.iterrows():
         for item in row:
-            pdf.cell(col_width, 7, fix_arabic(item), 1, 0, 'C')
+            pdf.cell(col_width, 7, fix_arabic(item), 1, 0, 'R')
         pdf.ln()
 
     pdf.ln(5)
@@ -432,7 +433,6 @@ def to_pdf(df, title, region):
     pdf.cell(0, 8, fix_arabic(f'تحر في {datetime.now().strftime("%Y-%m-%d")}'), 0, 1, 'R')
 
     return bytes(pdf.output(dest='S')) # <-- التعديل المهم عشان التحميل
-
 # ====== دالة حفظ صحيفة الدعوى ======
 def create_paper_pdf(case_data):
     if not os.path.exists("papers"): os.makedirs("papers")
