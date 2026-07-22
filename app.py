@@ -1784,7 +1784,7 @@ elif st.session_state.page == "مكتبة":
     else:
         st.info("اختار قسم من الازرار اللي فوق عشان تشوف الملفات")
         # ============================================
-# ========= الجزء النهائي: التقارير =========
+# ========= الجزء النهائي: التقارير RTL ======
 # ============================================
 
 import streamlit as st
@@ -1819,25 +1819,28 @@ def load_data():
     return {"cases": []}
 
 def clean_df(df):
-    """نضف الداتا من None و NaN"""
     df = df.replace({np.nan: '-', None: '-'})
     return df.astype(str)
 
 # -------------------- دوال التصدير --------------------
-def to_excel_fancy(df, sheet_name="تقرير"):
+def to_excel_fancy(df, sheet_name="التقرير"):
     df = clean_df(df)
     output = BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
         df.to_excel(writer, index=False, sheet_name=sheet_name)
         worksheet = writer.sheets[sheet_name]
+        worksheet.sheet_view.rightToLeft = True # RTL
+
         from openpyxl.styles import PatternFill, Font, Alignment
-        # التعديل: الالوان 8 حروف ARGB
         fill = PatternFill(start_color="FFFFD700", end_color="FFFFD700", fill_type="solid")
-        font = Font(bold=True, color="FF000")
+        font = Font(bold=True, color="FF000") # اسود 8 حروف
+        alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+
         for cell in worksheet[1]:
             cell.fill = fill
             cell.font = font
-            cell.alignment = Alignment(horizontal="center")
+            cell.alignment = alignment
+
         for col in worksheet.columns:
             max_length = 0
             column = col[0].column_letter
@@ -1846,7 +1849,7 @@ def to_excel_fancy(df, sheet_name="تقرير"):
                     if len(str(cell.value)) > max_length:
                         max_length = len(str(cell.value))
                 except: pass
-            worksheet.column_dimensions[column].width = max_length + 2
+            worksheet.column_dimensions[column].width = max_length + 3
     return output.getvalue()
 
 def to_word_fancy(df, title, region):
