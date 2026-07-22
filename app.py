@@ -1784,7 +1784,7 @@ elif st.session_state.page == "مكتبة":
     else:
         st.info("اختار قسم من الازرار اللي فوق عشان تشوف الملفات")
         # ============================================
-# ========= الجزء النهائي: التقارير RTL ======
+# ========= قسم التقارير النهائي ===========
 # ============================================
 
 import streamlit as st
@@ -1801,8 +1801,6 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
 from reportlab.platypus import Table, TableStyle
-from docx.oxml import OxmlElement
-from docx.oxml.ns import qn
 
 DATA_FILE = "cases_data.json"
 
@@ -1815,25 +1813,27 @@ def load_data():
                 data = json.load(f)
                 st.session_state.data = data
                 return data
-        except: pass
+        except:
+            return {"cases": []}
     return {"cases": []}
 
 def clean_df(df):
     df = df.replace({np.nan: '-', None: '-'})
     return df.astype(str)
 
-# -------------------- دوال التصدير --------------------
+# -------------------- دوال التصدير بدون اخطاء --------------------
 def to_excel_fancy(df, sheet_name="التقرير"):
     df = clean_df(df)
     output = BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
         df.to_excel(writer, index=False, sheet_name=sheet_name)
         worksheet = writer.sheets[sheet_name]
-        worksheet.sheet_view.rightToLeft = True # RTL
+        worksheet.sheet_view.rightToLeft = True
 
         from openpyxl.styles import PatternFill, Font, Alignment
+        # اتصلحت: 8 حروف ARGB
         fill = PatternFill(start_color="FFFFD700", end_color="FFFFD700", fill_type="solid")
-        font = Font(bold=True, color="FF000") # اسود 8 حروف
+        font = Font(bold=True, color="FF000")
         alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
 
         for cell in worksheet[1]:
@@ -1875,16 +1875,10 @@ def to_word_fancy(df, title, region):
         hdr_cells = table.rows[0].cells
         for i, col in enumerate(df.columns):
             hdr_cells[i].text = str(col)
-            shading = OxmlElement('w:shd')
-            shading.set(qn('w:fill'), 'FFD700')
-            hdr_cells[i]._tc.get_or_add_tcPr().append(shading)
-            hdr_cells[i].paragraphs[0].runs[0].bold = True
         for _, row in df.iterrows():
             row_cells = table.add_row().cells
             for i, val in enumerate(row):
                 row_cells[i].text = str(val)
-                row_cells[i].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
-    doc.add_paragraph("\nوتفضلوا بقبول وافر الاحترام،").alignment = WD_ALIGN_PARAGRAPH.CENTER
     f = BytesIO()
     doc.save(f)
     return f.getvalue()
@@ -1906,17 +1900,11 @@ def to_pdf_fancy(df, title, region):
         t = Table(data)
         t.setStyle(TableStyle([
             ('BACKGROUND', (0,0), (-1,0), colors.gold),
-            ('TEXTCOLOR', (0,0), (-1,0), colors.black),
             ('ALIGN', (0,0), (-1,-1), 'CENTER'),
             ('GRID', (0,0), (-1,-1), 1, colors.black),
-            ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
         ]))
         t.wrapOn(p, 500, 600)
         t.drawOn(p, 30, 650)
-    p.drawCentredString(300, 100, "وتفضلوا بقبول وافر الاحترام،")
-    p.drawString(50, 70, "عضو الادارة القانونية")
-    p.drawRightString(550, 70, "مدير الادارة القانونية")
-    p.drawCentredString(300, 50, "مدير عام الادارات القانونية")
     p.save()
     return buffer.getvalue()
 
@@ -1946,7 +1934,7 @@ if st.session_state.get('page') == "تقارير":
     all_cases = data.get("cases", [])
 
     if len(all_cases) == 0:
-        st.warning("⚠️ مفيش بيانات لسه. ارجع للرئيسية واعمل تحميل او اضافة قضايا الاول")
+        st.warning("⚠️ مفيش بيانات. ارجع للرئيسية واعمل تحميل او اضافة قضايا الاول")
         st.stop()
 
     active_cases = [c for c in all_cases if c.get('الحالة') == 'متداولة']
@@ -1954,57 +1942,42 @@ if st.session_state.get('page') == "تقارير":
 
     st.info(f"📊 المتداولة: {len(active_cases)} | الاحكام النهائية: {len(archive_cases)}")
 
-    col1, col2 = st.columns(2)
-    with col1: region = st.text_input("🏛️ ديوان عام منطقة", key="region_rep")
+    region = st.text_input("🏛️ ديوان عام منطقة", key="region_rep")
 
     report_type = st.selectbox(
         "اختر نوع البيان",
-        ["المتداولة - بيان بجميع الدعاوى", "الاحكام - بيان بجميع الاحكام", "احصائيات - لوحة الاحصائيات البيانية"],
+        ["المتداولة - بيان بجميع الدعاوى", "الاحكام - بيان بجميع الاحكام"],
         key="report_select"
     )
 
     df_report = pd.DataFrame()
     report_title = ""
 
-    if "المتداولة" in report_type and st.button("🔍 عرض التقرير", type="primary", use_container_width=True):
-        df_report = pd.DataFrame([{
-            "م": i+1,
-            "رقم القضية": c.get('رقم','-'),
-            "سنة": c.get('سنة','-'),
-            "المأمورية": c.get('المامورية', c.get('المأمورية','-')),
-            "الدائرة": c.get('دائرة','-'),
-            "نوعها": c.get('نوع','-'),
-            "المحكمة": c.get('محكمة_اسم','-'),
-            "الخصوم": get_khosom(c),
-            "الموضوع": c.get('موضوع','-'),
-            "السبب": c.get('السبب','-'),
-            "اخر جلسة": c.get('تاريخ_جلسة','-'),
-            "ملاحظات": c.get('ملاحظات','-')
-        } for i,c in enumerate(active_cases)])
-        report_title = "الدعاوى المتداولة"
+    if st.button("🔍 عرض التقرير", type="primary", use_container_width=True):
+        if "المتداولة" in report_type:
+            df_report = pd.DataFrame([{
+                "م": i+1, "رقم القضية": c.get('رقم','-'), "سنة": c.get('سنة','-'),
+                "المأمورية": c.get('المامورية', c.get('المأمورية','-')), "الدائرة": c.get('دائرة','-'),
+                "نوعها": c.get('نوع','-'), "المحكمة": c.get('محكمة_اسم','-'), "الخصوم": get_khosom(c),
+                "الموضوع": c.get('موضوع','-'), "السبب": c.get('السبب','-'),
+                "اخر جلسة": c.get('تاريخ_جلسة','-'), "ملاحظات": c.get('ملاحظات','-')
+            } for i,c in enumerate(active_cases)])
+            report_title = "الدعاوى المتداولة"
 
-    elif "الاحكام" in report_type and st.button("🔍 عرض التقرير", type="primary", use_container_width=True):
-        cases = archive_cases
-        df_report = pd.DataFrame([{
-            "م": i+1,
-            "رقم القضية": c.get('رقم','-'),
-            "سنة": c.get('سنة','-'),
-            "المأمورية": c.get('المامورية', c.get('المأمورية','-')),
-            "النتيجة": c.get('مسندة_الى_الحكم','-'),
-            "تاريخ الحكم": c.get('تاريخ_الحكم','-')
-        } for i,c in enumerate(cases)])
-        report_title = "الاحكام الصادرة"
-
-    elif "احصائيات" in report_type:
-        df_stats = pd.DataFrame(archive_cases)
-        if not df_stats.empty:
-            st.plotly_chart(px.pie(df_stats, names='مسندة_الى_الحكم', title='نسبة الاحكام'), use_container_width=True)
+        if "الاحكام" in report_type:
+            cases = archive_cases
+            df_report = pd.DataFrame([{
+                "م": i+1, "رقم القضية": c.get('رقم','-'), "سنة": c.get('سنة','-'),
+                "المأمورية": c.get('المامورية', c.get('المأمورية','-')), "النتيجة": c.get('مسندة_الى_الحكم','-'),
+                "تاريخ الحكم": c.get('تاريخ_الحكم','-')
+            } for i,c in enumerate(cases)])
+            report_title = "الاحكام الصادرة"
 
     if not df_report.empty:
         st.success(f"تم العثور على {len(df_report)} سجل")
         st.dataframe(style_dataframe(df_report), use_container_width=True)
 
         c1, c2, c3 = st.columns(3)
-        with c1: st.download_button("⬇️ Excel فخم", to_excel_fancy(df_report), f"{report_title}.xlsx", use_container_width=True)
-        with c2: st.download_button("📄 Word رسمي", to_word_fancy(df_report, report_title, region), f"{report_title}.docx", use_container_width=True)
-        with c3: st.download_button("📕 PDF رسمي", to_pdf_fancy(df_report, report_title, region), f"{report_title}.pdf", use_container_width=True)
+        with c1: st.download_button("⬇️ Excel", to_excel_fancy(df_report), f"{report_title}.xlsx", use_container_width=True)
+        with c2: st.download_button("📄 Word", to_word_fancy(df_report, report_title, region), f"{report_title}.docx", use_container_width=True)
+        with c3: st.download_button("📕 PDF", to_pdf_fancy(df_report, report_title, region), f"{report_title}.pdf", use_container_width=True)
