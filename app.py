@@ -1784,14 +1784,14 @@ elif st.session_state.page == "مكتبة":
     else:
         st.info("اختار قسم من الازرار اللي فوق عشان تشوف الملفات")
         # ============================================
-# ========= الجزء الجديد: التقارير ===========
-# ========= الهيئة القومية للتأمين ===========
+# ========= الجزء النهائي: التقارير =========
 # ============================================
 
 import streamlit as st
 import pandas as pd
 import json
 import os
+import numpy as np
 from io import BytesIO
 from docx import Document
 from docx.enum.text import WD_ALIGN_PARAGRAPH
@@ -1804,41 +1804,41 @@ from reportlab.platypus import Table, TableStyle
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 
-DATA_FILE = "cases_data.json" # اسم ملف الداتا بتاعك
+DATA_FILE = "cases_data.json"
 
 def load_data():
-    """نحمل الداتا من الملف لو مش موجودة في session_state"""
     if 'data' in st.session_state and st.session_state.data.get("cases"):
         return st.session_state.data
-
     if os.path.exists(DATA_FILE):
         try:
             with open(DATA_FILE, "r", encoding="utf-8") as f:
                 data = json.load(f)
-                st.session_state.data = data # نخزنها عشان المرة الجاية
+                st.session_state.data = data
                 return data
-        except:
-            pass
-
+        except: pass
     return {"cases": []}
 
-# -------------------- دوال التصدير الفخمة --------------------
+def clean_df(df):
+    """نضف الداتا من None و NaN عشان التصدير ميضربش"""
+    df = df.replace({np.nan: '-', None: '-'})
+    return df.astype(str)
+
+# -------------------- دوال التصدير --------------------
 def to_excel_fancy(df, sheet_name="تقرير"):
+    df = clean_df(df)
     output = BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        df.to_excel(writer, index=False, sheet_name=sheet_name)
+        df.to_excel(writer, index=False, sheet_name=sheet_name) # index=False مهم
         worksheet = writer.sheets[sheet_name]
         from openpyxl.styles import PatternFill, Font, Alignment
         fill = PatternFill(start_color="FFD700", end_color="FFD700", fill_type="solid")
         font = Font(bold=True, color="000")
         for cell in worksheet[1]:
             cell.fill = fill; cell.font = font; cell.alignment = Alignment(horizontal="center")
-        for col in worksheet.columns:
-            max_length = max(len(str(cell.value)) for cell in col) + 2
-            worksheet.column_dimensions[col[0].column_letter].width = max_length
     return output.getvalue()
 
 def to_word_fancy(df, title, region):
+    df = clean_df(df)
     doc = Document()
     for txt in ["الهيئة القومية للتأمين الاجتماعي", "الادارة المركزية للادارات القانونية",
                 "الادارة العامة للشئون القانونية", f"ديوان عام منطقة: {region}"]:
@@ -1854,15 +1854,13 @@ def to_word_fancy(df, title, region):
             hdr_cells[i].text = str(col)
             shading = OxmlElement('w:shd'); shading.set(qn('w:fill'), 'FFD700')
             hdr_cells[i]._tc.get_or_add_tcPr().append(shading)
-            hdr_cells[i].paragraphs[0].runs[0].bold = True
         for _, row in df.iterrows():
             row_cells = table.add_row().cells
-            for i, val in enumerate(row):
-                row_cells[i].text = str(val); row_cells[i].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
-    doc.add_paragraph("\nوتفضلوا بقبول وافر الاحترام،").alignment = WD_ALIGN_PARAGRAPH.CENTER
+            for i, val in enumerate(row): row_cells[i].text = str(val)
     f = BytesIO(); doc.save(f); return f.getvalue()
 
 def to_pdf_fancy(df, title, region):
+    df = clean_df(df)
     buffer = BytesIO()
     p = canvas.Canvas(buffer, pagesize=A4)
     p.setFont("Helvetica-Bold", 12)
@@ -1874,23 +1872,17 @@ def to_pdf_fancy(df, title, region):
     if not df.empty:
         data = [list(df.columns)] + df.values.tolist()
         t = Table(data); t.setStyle(TableStyle([
-            ('BACKGROUND', (0,0), (-1,0), colors.gold), ('TEXTCOLOR', (0,0), (-1,0), colors.black),
-            ('ALIGN', (0,0), (-1,-1), 'CENTER'), ('GRID', (0,0), (-1,-1), 1, colors.black),
-            ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+            ('BACKGROUND', (0,0), (-1,0), colors.gold), ('GRID', (0,0), (-1,-1), 1, colors.black),
+            ('ALIGN', (0,0), (-1,-1), 'CENTER')
         ]))
         t.wrapOn(p, 500, 600); t.drawOn(p, 30, 650)
-    p.drawCentredString(300, 100, "وتفضلوا بقبول وافر الاحترام،")
-    p.drawString(50, 70, "عضو الادارة القانونية"); p.drawRightString(550, 70, "مدير الادارة القانونية")
-    p.drawCentredString(300, 50, "مدير عام الادارات القانونية"); p.save()
-    return buffer.getvalue()
+    p.save(); return buffer.getvalue()
 
 def style_dataframe(df):
     return df.style.set_table_styles([
-        {'selector': 'th', 'props': [('background-color', '#FFD700'), ('color', 'black'), ('font-weight', 'bold'), ('text-align', 'center'), ('border', '1px solid black')]},
-        {'selector': 'td', 'props': [('text-align', 'center'), ('border', '1px solid #FFD700')]},
-        {'selector': 'tr:nth-child(even)', 'props': [('background-color', '#1e1e1e')]},
-        {'selector': 'tr:nth-child(odd)', 'props': [('background-color', '#2a2a2a')]}
-    ])
+        {'selector': 'th', 'props': [('background-color', '#FFD700'), ('color', 'black'), ('font-weight', 'bold'), ('text-align', 'center')]},
+        {'selector': 'td', 'props': [('text-align', 'center')]},
+    ]).hide(axis="index") # <<<< دي بتشيل العمود الاصفر 0
 
 def get_khosom(case):
     hala = case.get('الحالة_نوع', 'دعوى')
@@ -1898,13 +1890,13 @@ def get_khosom(case):
     elif hala == 'طعن': return f"طاعن: {case.get('مدعي','-')} / مطعون ضده: {case.get('مدعي_عليه','-')}"
     else: return f"مدعي: {case.get('مدعي','-')} / مدعي عليه: {case.get('مدعي_عليه','-')}"
 
+
 # -------------------- واجهة صفحة التقارير --------------------
 if st.session_state.get('page') == "تقارير":
     st.markdown('<h1 style="text-align: center; color: #FFD700;">📑 مركز التقارير القضائية</h1>', unsafe_allow_html=True)
     if st.button("⬅️ العودة للرئيسية", use_container_width=True):
         st.session_state.page = "الرئيسية"; st.rerun()
 
-    # <<<<< الحل الجديد: نحمل من الملف لو فاضي >>>>>
     data = load_data()
     all_cases = data.get("cases", [])
 
@@ -1917,18 +1909,12 @@ if st.session_state.get('page') == "تقارير":
 
     st.info(f"📊 المتداولة: {len(active_cases)} | الاحكام النهائية: {len(archive_cases)}")
 
-    col1, col2, col3, col4 = st.columns(4)
+    col1, col2 = st.columns(2)
     with col1: region = st.text_input("🏛️ ديوان عام منطقة", key="region_rep")
-    with col2: member = st.text_input("👨‍⚖️ عضو الادارة", key="member_rep")
-    with col3: manager = st.text_input("👨‍💼 مدير الادارة", key="manager_rep")
-    with col4: general_manager = st.text_input("👔 مدير عام", key="general_rep")
-
+    
     report_type = st.selectbox(
         "اختر نوع البيان",
-        ["المتداولة - بيان بجميع الدعاوى", "الاحكام - بيان بجميع الاحكام",
-         "الاحكام - بيان بالاحكام للصالح", "الاحكام - بيان بالاحكام للضد",
-         "عددي - بيان عددي بالدعاوى", "عددي - بيان عددي بالاحكام",
-         "احصائيات - لوحة الاحصائيات البيانية"],
+        ["المتداولة - بيان بجميع الدعاوى", "الاحكام - بيان بجميع الاحكام", "احصائيات - لوحة الاحصائيات البيانية"],
         key="report_select"
     )
 
@@ -1936,52 +1922,39 @@ if st.session_state.get('page') == "تقارير":
 
     if "المتداولة" in report_type and st.button("🔍 عرض التقرير", type="primary", use_container_width=True):
         df_report = pd.DataFrame([{
-            "م": i+1, "رقم القضية": c.get('رقم'), "سنة": c.get('سنة'), "المأمورية": c.get('المامورية',''),
-            "الدائرة": c.get('دائرة'), "نوعها": c.get('نوع'), "المحكمة": c.get('محكمة_اسم'),
-            "الخصوم": get_khosom(c), "الموضوع": c.get('موضوع'), "اخر جلسة": c.get('تاريخ_جلسة'),
-            "السبب": c.get('سبب'), "ملاحظات": c.get('ملاحظات')
+            "م": i+1, 
+            "رقم القضية": c.get('رقم','-'), 
+            "سنة": c.get('سنة','-'), 
+            "المأمورية": c.get('المامورية', c.get('المأمورية','-')), # <<<< حل مشكلة الاسم
+            "الدائرة": c.get('دائرة','-'), 
+            "نوعها": c.get('نوع','-'), 
+            "المحكمة": c.get('محكمة_اسم','-'),
+            "الخصوم": get_khosom(c), 
+            "الموضوع": c.get('موضوع','-'), 
+            "السبب": c.get('السبب','-'), # <<<< ضفت السبب
+            "اخر جلسة": c.get('تاريخ_جلسة','-'),
+            "ملاحظات": c.get('ملاحظات','-')
         } for i,c in enumerate(active_cases)])
         report_title = "الدعاوى المتداولة"
 
     elif "الاحكام" in report_type and st.button("🔍 عرض التقرير", type="primary", use_container_width=True):
         cases = archive_cases
-        if "للصالح" in report_type: cases = [c for c in cases if c.get('مسندة_الى_الحكم')=='للصالح']
-        if "للضد" in report_type: cases = [c for c in cases if c.get('مسندة_الى_الحكم')=='للضد']
         df_report = pd.DataFrame([{
-            "م": i+1, "رقم القضية": c.get('رقم'), "سنة": c.get('سنة'), "المأمورية": c.get('المامورية',''),
-            "الدائرة": c.get('دائرة'), "نوعها": c.get('نوع'), "المحكمة": c.get('محكمة_اسم'),
-            "الخصوم": get_khosom(c), "الموضوع": c.get('موضوع'), "تاريخ الحكم": c.get('تاريخ_الحكم'),
-            "المنطوق": c.get('منطوق'), "النتيجة": c.get('مسندة_الى_الحكم'), "ملاحظات": c.get('ملاحظات')
+            "م": i+1, "رقم القضية": c.get('رقم','-'), "سنة": c.get('سنة','-'), 
+            "المأمورية": c.get('المامورية', c.get('المأمورية','-')),
+            "النتيجة": c.get('مسندة_الى_الحكم','-'), "تاريخ الحكم": c.get('تاريخ_الحكم','-')
         } for i,c in enumerate(cases)])
         report_title = "الاحكام الصادرة"
 
-    elif "عددي" in report_type and st.button("🔍 عرض التقرير", type="primary", use_container_width=True):
-        cases = active_cases if "الدعاوى" in report_type else archive_cases
-        df_temp = pd.DataFrame(cases)
-        if not df_temp.empty:
-            summary = df_temp.groupby('نوع').size().reset_index(name='العدد')
-            total = pd.DataFrame([{"نوع": "الاجمالي", "العدد": len(cases)}])
-            df_report = pd.concat([summary, total], ignore_index=True)
-        report_title = "البيان العددي"
-
     elif "احصائيات" in report_type:
-        st.markdown("<h3 style='text-align:center; color:#FFD700;'>📊 لوحة الاحصائيات البيانية</h3>", unsafe_allow_html=True)
         df_stats = pd.DataFrame(archive_cases)
-        if not df_stats.empty:
-            col1, col2 = st.columns(2)
-            with col1: st.plotly_chart(px.pie(df_stats, names='مسندة_الى_الحكم', title='نسبة الاحكام'), use_container_width=True)
-            with col2: st.plotly_chart(px.bar(df_stats, x='دائرة', color='مسندة_الى_الحكم', title='حسب الدائرة'), use_container_width=True)
-            st.plotly_chart(px.bar(df_stats, x='محكمة_اسم', color='مسندة_الى_الحكم', title='حسب المحكمة'), use_container_width=True)
-        else: st.warning("لا توجد بيانات")
+        if not df_stats.empty: st.plotly_chart(px.pie(df_stats, names='مسندة_الى_الحكم', title='نسبة الاحكام'), use_container_width=True)
 
     if not df_report.empty:
         st.success(f"تم العثور على {len(df_report)} سجل")
-        st.markdown(style_dataframe(df_report).to_html(), unsafe_allow_html=True)
+        st.dataframe(style_dataframe(df_report), use_container_width=True) # استخدمت dataframe بدل to_html
+        
         c1, c2, c3 = st.columns(3)
         with c1: st.download_button("⬇️ Excel فخم", to_excel_fancy(df_report), f"{report_title}.xlsx", use_container_width=True)
         with c2: st.download_button("📄 Word رسمي", to_word_fancy(df_report, report_title, region), f"{report_title}.docx", use_container_width=True)
         with c3: st.download_button("📕 PDF رسمي", to_pdf_fancy(df_report, report_title, region), f"{report_title}.pdf", use_container_width=True)
-
-# ==========================================================
-# ================== نهاية قسم التقارير ===================
-# ==========================================================
