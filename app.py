@@ -334,9 +334,12 @@ from fpdf import FPDF
 st.set_page_config(page_title="إدارة القضايا", layout="wide", page_icon="⚖️")
 # دالة عشان تظبط العربي وتوصله
 def fix_arabic(text):
-    reshaped_text = arabic_reshaper.reshape(str(text))
-    return get_display(reshaped_text)
-
+    if not text:
+        return ""
+    text = str(text)
+    reshaped_text = arabic_reshaper.reshape(text)
+    bidi_text = get_display(reshaped_text)
+    return bidi_text
 # ====== دالة التصدير للاكسل RTL صح 100% ======
 def to_excel(df):
     df = df.fillna('-') # عشان ميضربش لو في خلايا فاضية
