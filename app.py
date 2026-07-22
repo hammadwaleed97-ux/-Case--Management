@@ -1,7 +1,18 @@
-import json, os, bcrypt, smtplib, random
+import json, os, bcrypt, smtplib, random, io
+from datetime import datetime
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart  # <-- ضيف ده بس
+
 import streamlit as st
+import pandas as pd
+
+# بتوع التقارير
+from fpdf import FPDF
+from docx import Document
+from docx.shared import Pt
+from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_TABLE_ALIGNMENT
+import arabic_reshaper
+from bidi.algorithm import get_display
 
 st.markdown("""
 <style>
@@ -26,7 +37,6 @@ thead tr th { color: black !important; background-color: #C9A961 !important; fon
 tbody tr td { color: black !important; background-color: white !important; }
 </style>
 """, unsafe_allow_html=True)
-
 USERS_FILE = "users.json"
 SENDER_EMAIL = "hammadwaleed97@gmail.com"
 SENDER_PASSWORD = "t w on he mw ox c nl hl v"
