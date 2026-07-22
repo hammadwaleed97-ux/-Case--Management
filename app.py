@@ -337,17 +337,36 @@ def fix_arabic(text):
     reshaped_text = arabic_reshaper.reshape(str(text))
     return get_display(reshaped_text)
 
-# ====== دالة التصدير للاكسل RTL صح ======
+# ====== دالة التصدير للاكسل RTL صح 100% ======
 def to_excel(df):
+    df = df.fillna('-') # عشان ميضربش لو في خلايا فاضية
+    df = df.astype(str) # نحول كله لنص
+
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
         df.to_excel(writer, index=False, sheet_name='التقرير')
         worksheet = writer.sheets['التقرير']
-        worksheet.sheet_view.rightToLeft = True
-        for col in worksheet.columns:
-            worksheet.column_dimensions[col[0].column_letter].width = 20
-    return output.getvalue()
+        worksheet.sheet_view.rightToLeft = True # RTL
 
+        # نظبط عرض الاعمدة تلقائي
+        for col in worksheet.columns:
+            max_length = 0
+            column = col[0].column_letter
+            for cell in col:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(str(cell.value))
+                except:
+                    pass
+            worksheet.column_dimensions[column].width = max_length + 2
+
+        # نوسط الكلام
+        from openpyxl.styles import Alignment
+        for row in worksheet.iter_rows():
+            for cell in row:
+                cell.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+
+    return output.getvalue()
 # ====== دالة التصدير للورد ======
 def to_word(df, title, region):
     doc = Document()
