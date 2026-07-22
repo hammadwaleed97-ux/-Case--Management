@@ -1802,20 +1802,21 @@ elif st.session_state.page == "مكتبة":
         st.info("مفيش نتائج للبحث ده")
     else:
         st.info("اختار قسم من الازرار اللي فوق عشان تشوف الملفات")
-        # ============================================
+        # ==============================================
 # ============ الجزء السادس: التقارير ============
 # ==============================================
 elif st.session_state.page == "تقارير":
     data = load_data()
     st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
     st.markdown("<h2 style='color:#D4AF37; text-align:center'>📊 مركز التقارير</h2>", unsafe_allow_html=True)
-    if st.button("⬅️ العودة للرئيسية", use_container_width=True): st.session_state.page = "الرئيسية"; st.rerun()
+    if st.button("⬅️ العودة للرئيسية", use_container_width=True): 
+        st.session_state.page = "الرئيسية"
+        st.rerun()
 
     if not data["cases"]:
         st.warning("⚠️ مفيش قضايا مسجلة")
         st.stop()
 
-    # فلترة البيانات
     active_cases = [c for c in data["cases"] if c.get('حالة') == 'متداولة']
     archive_cases = [c for c in data["cases"] if c.get('حالة') == 'منتهية' and c.get('مسندة_ل_الحكم') in ['الصالح', 'الضد']]
 
@@ -1830,44 +1831,29 @@ elif st.session_state.page == "تقارير":
     if st.button("🔍 عرض التقرير", type="primary", use_container_width=True):
         if "المتداولة" in report_type:
             df_report = pd.DataFrame([{
-                "م": i+1,
-                "رقم القضية": c.get('رقم','-'),
-                "السنة": c.get('سنة','-'),
-                "المأمورية": c.get('مأمورية','-'), # اتصلحت
-                "الدائرة": c.get('دائرة','-'),
-                "النوع": c.get('نوع','-'),
-                "المحكمة": c.get('محكمة_اسم','-'),
-                "المدعي": c.get('مدعي','-'),
-                "المدعى عليه": c.get('مدعي_عليه','-'),
-                "الموضوع": c.get('موضوع','-'),
-                "الاجراء": c.get('الاجراء','-'), # السبب = الاجراء عندك
-                "تاريخ الجلسة": c.get('تاريخ_جلسة','-'),
-                "ملاحظات": c.get('ملاحظات','-')
+                "م": i+1, "رقم القضية": c.get('رقم','-'), "السنة": c.get('سنة','-'), "المأمورية": c.get('مأمورية','-'),
+                "الدائرة": c.get('دائرة','-'), "النوع": c.get('نوع','-'), "المحكمة": c.get('محكمة_اسم','-'),
+                "المدعي": c.get('مدعي','-'), "المدعى عليه": c.get('مدعي_عليه','-'), "الموضوع": c.get('موضوع','-'),
+                "الاجراء": c.get('الاجراء','-'), "تاريخ الجلسة": c.get('تاريخ_جلسة','-'), "ملاحظات": c.get('ملاحظات','-')
             } for i,c in enumerate(active_cases)])
             report_title = "الدعاوى المتداولة"
 
         elif "الاحكام" in report_type:
             df_report = pd.DataFrame([{
-                "م": i+1,
-                "رقم القضية": c.get('رقم','-'),
-                "السنة": c.get('سنة','-'),
-                "المأمورية": c.get('مأمورية','-'),
-                "النتيجة": c.get('مسندة_ل_الحكم','-'),
-                "تاريخ الحكم": c.get('تاريخ_الحكم','-'),
-                "منطوق الحكم": c.get('منطوق_الحكم','-')
+                "م": i+1, "رقم القضية": c.get('رقم','-'), "السنة": c.get('سنة','-'), "المأمورية": c.get('مأمورية','-'),
+                "النتيجة": c.get('مسندة_ل_الحكم','-'), "تاريخ الحكم": c.get('تاريخ_الحكم','-'), "منطوق الحكم": c.get('منطوق_الحكم','-')
             } for i,c in enumerate(archive_cases)])
             report_title = "الاحكام الصادرة"
 
     if not df_report.empty:
         st.success(f"تم العثور على {len(df_report)} سجل")
-
-        # عرض الجدول RTL بدون عكس
+        
+        st.markdown('<div dir="rtl">', unsafe_allow_html=True)
         st.dataframe(df_report, use_container_width=True)
+        st.markdown('</div>', unsafe_allow_html=True)
 
         c1, c2, c3 = st.columns(3)
-        with c1:
-            st.download_button("⬇️ تحميل Excel", to_excel(df_report), f"{report_title}.xlsx", use_container_width=True)
-        with c2:
-            st.download_button("📄 تحميل Word", to_word(df_report, report_title, region), f"{report_title}.docx", use_container_width=True)
-        with c3:
-            st.download_button("📕 تحميل PDF", to_pdf(df_report, report_title, region), f"{report_title}.pdf", use_container_width=True)
+        with c1: st.download_button("⬇️ تحميل Excel", to_excel(df_report), f"{report_title}.xlsx", use_container_width=True)
+        with c2: st.download_button("📄 تحميل Word", to_word(df_report, report_title, region), f"{report_title}.docx", use_container_width=True)
+        with c3: st.download_button("📕 تحميل PDF", to_pdf(df_report, report_title, region), f"{report_title}.pdf", use_container_width=True)
+# هنا القوس اتقفل اهو ^
