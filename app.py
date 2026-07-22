@@ -37,6 +37,7 @@ thead tr th { color: black !important; background-color: #C9A961 !important; fon
 tbody tr td { color: black !important; background-color: white !important; }
 </style>
 """, unsafe_allow_html=True)
+
 USERS_FILE = "users.json"
 SENDER_EMAIL = "hammadwaleed97@gmail.com"
 SENDER_PASSWORD = "t w on he mw ox c nl hl v"
