@@ -1783,30 +1783,29 @@ elif st.session_state.page == "مكتبة":
         st.info("مفيش نتائج للبحث ده")
     else:
         st.info("اختار قسم من الازرار اللي فوق عشان تشوف الملفات")
-        # ==========================================================
-# ================== قسم التقارير القضائية ===============
-# ================== الهيئة القومية للتأمين ==============
-# ==========================================================
+        # ============================================
+# ========= الجزء الجديد: التقارير ===========
+# ========= الهيئة القومية للتأمين ===========
+# ============================================
 
 import streamlit as st
 import pandas as pd
-import plotly.express as px
-from datetime import datetime
 from io import BytesIO
 from docx import Document
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.shared import Pt, RGBColor
-from docx.oxml import OxmlElement
-from docx.oxml.ns import qn
+import plotly.express as px
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
 from reportlab.platypus import Table, TableStyle
+from docx.oxml import OxmlElement
+from docx.oxml.ns import qn
 
 # -------------------- دوال التصدير الفخمة --------------------
 
 def to_excel_fancy(df, sheet_name="تقرير"):
-    """تصدير Excel بهيدر دهبي واعمدة متظبطة"""
+    """تصدير Excel بهيدر دهبي"""
     output = BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
         df.to_excel(writer, index=False, sheet_name=sheet_name)
@@ -1830,11 +1829,18 @@ def to_word_fancy(df, title, region):
     # الهيدر الرسمي
     for txt in ["الهيئة القومية للتأمين الاجتماعي", "الادارة المركزية للادارات القانونية",
                 "الادارة العامة للشئون القانونية", f"ديوان عام منطقة: {region}"]:
-        p = doc.add_paragraph(); p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        run = p.add_run(txt); run.bold = True; run.font.size = Pt(12)
+        p = doc.add_paragraph()
+        p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        run = p.add_run(txt)
+        run.bold = True
+        run.font.size = Pt(12)
 
-    p = doc.add_paragraph(); p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    run = p.add_run(f"بيان بـ {title}"); run.bold = True; run.font.size = Pt(14); run.font.color.rgb = RGBColor(0xFF, 0xD7, 0x00)
+    p = doc.add_paragraph()
+    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    run = p.add_run(f"بيان بـ {title}")
+    run.bold = True
+    run.font.size = Pt(14)
+    run.font.color.rgb = RGBColor(0xFF, 0xD7, 0x00)
     doc.add_paragraph()
 
     # الجدول
@@ -1844,7 +1850,8 @@ def to_word_fancy(df, title, region):
         hdr_cells = table.rows[0].cells
         for i, col in enumerate(df.columns):
             hdr_cells[i].text = str(col)
-            shading = OxmlElement('w:shd'); shading.set(qn('w:fill'), 'FFD700')
+            shading = OxmlElement('w:shd')
+            shading.set(qn('w:fill'), 'FFD700')
             hdr_cells[i]._tc.get_or_add_tcPr().append(shading)
             hdr_cells[i].paragraphs[0].runs[0].bold = True
 
@@ -1852,12 +1859,18 @@ def to_word_fancy(df, title, region):
             row_cells = table.add_row().cells
             for i, val in enumerate(row):
                 row_cells[i].text = str(val)
+                row_cells[i].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
 
     doc.add_paragraph("\nوتفضلوا بقبول وافر الاحترام،").alignment = WD_ALIGN_PARAGRAPH.CENTER
-    p = doc.add_paragraph(); p.add_run("عضو الادارة القانونية").bold = True; p.add_run(" " * 30); p.add_run("مدير الادارة القانونية").bold = True
+    p = doc.add_paragraph()
+    p.add_run("عضو الادارة القانونية").bold = True
+    p.add_run(" " * 30)
+    p.add_run("مدير الادارة القانونية").bold = True
     doc.add_paragraph().add_run("مدير عام الادارات القانونية").bold = True
 
-    f = BytesIO(); doc.save(f); return f.getvalue()
+    f = BytesIO()
+    doc.save(f)
+    return f.getvalue()
 
 def to_pdf_fancy(df, title, region):
     """تصدير PDF بهيدر رسمي وجدول ملون"""
@@ -1882,7 +1895,8 @@ def to_pdf_fancy(df, title, region):
             ('GRID', (0,0), (-1,-1), 1, colors.black),
             ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
         ]))
-        t.wrapOn(p, 500, 600); t.drawOn(p, 30, 650)
+        t.wrapOn(p, 500, 600)
+        t.drawOn(p, 30, 650)
 
     p.drawCentredString(300, 100, "وتفضلوا بقبول وافر الاحترام،")
     p.drawString(50, 70, "عضو الادارة القانونية")
@@ -1903,17 +1917,26 @@ def style_dataframe(df):
 def get_khosom(case):
     """تحديد الخصوم حسب نوع القضية"""
     hala = case.get('الحالة_نوع', 'دعوى')
-    if hala == 'استئناف': return f"مستأنف: {case.get('مدعي','-')} / مستأنف ضده: {case.get('مدعي_عليه','-')}"
-    elif hala == 'طعن': return f"طاعن: {case.get('مدعي','-')} / مطعون ضده: {case.get('مدعي_عليه','-')}"
-    else: return f"مدعي: {case.get('مدعي','-')} / مدعي عليه: {case.get('مدعي_عليه','-')}"
+    if hala == 'استئناف':
+        return f"مستأنف: {case.get('مدعي','-')} / مستأنف ضده: {case.get('مدعي_عليه','-')}"
+    elif hala == 'طعن':
+        return f"طاعن: {case.get('مدعي','-')} / مطعون ضده: {case.get('مدعي_عليه','-')}"
+    else:
+        return f"مدعي: {case.get('مدعي','-')} / مدعي عليه: {case.get('مدعي_عليه','-')}"
 
 # -------------------- واجهة صفحة التقارير --------------------
 
-if st.session_state.page == "تقارير":
+if st.session_state.get('page') == "تقارير":
     st.markdown('<h1 style="text-align: center; color: #FFD700;">📑 مركز التقارير القضائية</h1>', unsafe_allow_html=True)
 
     if st.button("⬅️ العودة للرئيسية", use_container_width=True):
-        st.session_state.page = "الرئيسية"; st.rerun()
+        st.session_state.page = "الرئيسية"
+        st.rerun()
+
+    # تشييك الداتا عشان الايرور
+    if 'data' not in st.session_state:
+        st.warning("⚠️ مفيش بيانات لسه. ارجع للرئيسية واعمل تحميل او اضافة قضايا الاول")
+        st.stop()
 
     data = st.session_state.data
     all_cases = data.get("cases", [])
@@ -1934,7 +1957,6 @@ if st.session_state.page == "تقارير":
         "اختر نوع البيان",
         [
             "المتداولة - بيان بجميع الدعاوى",
-            "المتداولة - بيان خلال فترة",
             "الاحكام - بيان بجميع الاحكام",
             "الاحكام - بيان بالاحكام للصالح",
             "الاحكام - بيان بالاحكام للضد",
@@ -1945,7 +1967,8 @@ if st.session_state.page == "تقارير":
         key="report_select"
     )
 
-    df_report = pd.DataFrame(); report_title = ""
+    df_report = pd.DataFrame()
+    report_title = ""
 
     # ===== 1. المتداولة =====
     if "المتداولة" in report_type:
