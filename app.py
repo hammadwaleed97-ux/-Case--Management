@@ -10,7 +10,7 @@ import pandas as pd
 from fpdf import FPDF
 from docx import Document
 from docx.shared import Pt
-from docx.enum.text import WD_ALIGN_PARAGRAPH  # <-- شيلت WD_TABLE_ALIGNMENT
+from docx.enum.text import WD_ALIGN_PARAGRAPH
 import arabic_reshaper
 from bidi.algorithm import get_display
 
