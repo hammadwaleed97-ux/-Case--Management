@@ -1865,24 +1865,27 @@ if st.session_state.page == "تقارير":
         """, unsafe_allow_html=True)
 
     def report_footer(member_name, manager_name, general_name):
-        # التوقيعات هتظهر تحت وفيها الاسماء اللي كتبتها فوق
+        # التوقيعات مظبوطة - الاسم فوق الخط
         st.markdown(f"""
         <div style='margin-top:50px; direction:rtl; font-size:15px; color:#D4AF37; font-family:Cairo'>
             <table style='width:100%; border-collapse:collapse; text-align:center'>
                 <tr>
-                    <td style='width:50%; padding:15px; border:2px solid #D4AF37'>
-                        <div style='font-weight:bold; margin-bottom:10px'>العضو القانوني</div>
-                        <div style='height:35px; border-bottom:1px solid #D4AF37; margin:0 20px; font-size:16px'>{member_name}</div>
+                    <td style='width:50%; padding:15px; border:2px solid #D4AF37; vertical-align:top'>
+                        <div style='font-weight:bold; margin-bottom:15px'>العضو القانوني</div>
+                        <div style='font-size:16px; font-weight:500; margin-bottom:5px; min-height:30px'>{member_name if member_name else "&nbsp;"}</div>
+                        <div style='border-bottom:1px solid #D4AF37; margin:0 20px'></div>
                     </td>
-                    <td style='width:50%; padding:15px; border:2px solid #D4AF37'>
-                        <div style='font-weight:bold; margin-bottom:10px; white-space:nowrap'>مدير إدارة القضايا</div>
-                        <div style='height:35px; border-bottom:1px solid #D4AF37; margin:0 20px; font-size:16px'>{manager_name}</div>
+                    <td style='width:50%; padding:15px; border:2px solid #D4AF37; vertical-align:top'>
+                        <div style='font-weight:bold; margin-bottom:15px; white-space:nowrap'>مدير إدارة القضايا</div>
+                        <div style='font-size:16px; font-weight:500; margin-bottom:5px; min-height:30px'>{manager_name if manager_name else "&nbsp;"}</div>
+                        <div style='border-bottom:1px solid #D4AF37; margin:0 20px'></div>
                     </td>
                 </tr>
                 <tr>
-                    <td colspan='2' style='padding:15px; border:2px solid #D4AF37; border-top:none'>
-                        <div style='font-weight:bold; margin-bottom:10px'>مدير عام الادارات القانونية</div>
-                        <div style='height:35px; border-bottom:1px solid #D4AF37; margin:0 30%; font-size:16px'>{general_name}</div>
+                    <td colspan='2' style='padding:15px; border:2px solid #D4AF37; border-top:none; vertical-align:top'>
+                        <div style='font-weight:bold; margin-bottom:15px'>مدير عام الادارات القانونية</div>
+                        <div style='font-size:16px; font-weight:500; margin-bottom:5px; min-height:30px'>{general_name if general_name else "&nbsp;"}</div>
+                        <div style='border-bottom:1px solid #D4AF37; margin:0 30%'></div>
                     </td>
                 </tr>
                 <tr>
