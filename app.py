@@ -1852,7 +1852,7 @@ if st.session_state.page == "تقارير":
 
     tab1, tab2, tab3 = st.tabs(["📊 بيان الدعاوى المتداولة", "⚖️ بيان الاحكام", "📈 الإحصائيات"])
 
-    def report_header(region, title):
+    def report_header(region, title, member_name, manager_name, general_name):
         st.markdown(f"""
         <div style='text-align:center; color:#D4AF37; border:3px double #D4AF37; padding:20px 15px; background: linear-gradient(135deg, #0A1428 0%, #1E2A47 100%); border-radius:12px; margin-bottom:25px; font-family:Cairo'>
             <h2 style='margin:4px 0; font-size:20px; font-weight:bold'>الهيئة القومية للتأمين الاجتماعى</h2>
@@ -1864,25 +1864,25 @@ if st.session_state.page == "تقارير":
         </div>
         """, unsafe_allow_html=True)
 
-    def report_footer():
-        # توقيعات بـ 3 خانات جنب بعض تكتب فيها الاسم
+    def report_footer(member_name, manager_name, general_name):
+        # التوقيعات هتظهر تحت وفيها الاسماء اللي كتبتها فوق
         st.markdown(f"""
         <div style='margin-top:50px; direction:rtl; font-size:15px; color:#D4AF37; font-family:Cairo'>
             <table style='width:100%; border-collapse:collapse; text-align:center'>
                 <tr>
                     <td style='width:50%; padding:15px; border:2px solid #D4AF37'>
                         <div style='font-weight:bold; margin-bottom:10px'>العضو القانوني</div>
-                        <input type='text' placeholder='اكتب الاسم هنا' style='width:80%; height:35px; text-align:center; border:1px dashed #D4AF37; background:#0A1428; color:#D4AF37; font-family:Cairo; font-size:14px; border-radius:5px'>
+                        <div style='height:35px; border-bottom:1px solid #D4AF37; margin:0 20px; font-size:16px'>{member_name}</div>
                     </td>
                     <td style='width:50%; padding:15px; border:2px solid #D4AF37'>
                         <div style='font-weight:bold; margin-bottom:10px; white-space:nowrap'>مدير إدارة القضايا</div>
-                        <input type='text' placeholder='اكتب الاسم هنا' style='width:80%; height:35px; text-align:center; border:1px dashed #D4AF37; background:#0A1428; color:#D4AF37; font-family:Cairo; font-size:14px; border-radius:5px'>
+                        <div style='height:35px; border-bottom:1px solid #D4AF37; margin:0 20px; font-size:16px'>{manager_name}</div>
                     </td>
                 </tr>
                 <tr>
                     <td colspan='2' style='padding:15px; border:2px solid #D4AF37; border-top:none'>
                         <div style='font-weight:bold; margin-bottom:10px'>مدير عام الادارات القانونية</div>
-                        <input type='text' placeholder='اكتب الاسم هنا' style='width:50%; height:35px; text-align:center; border:1px dashed #D4AF37; background:#0A1428; color:#D4AF37; font-family:Cairo; font-size:14px; border-radius:5px'>
+                        <div style='height:35px; border-bottom:1px solid #D4AF37; margin:0 30%; font-size:16px'>{general_name}</div>
                     </td>
                 </tr>
                 <tr>
@@ -1910,6 +1910,14 @@ if st.session_state.page == "تقارير":
         with col1: from_date = st.date_input("من الفترة", key="from1")
         with col2: to_date = st.date_input("حتى الفترة", key="to1")
         with col3: lawyer = st.text_input("طرف الاستاذ/ المحامي", key="lawyer1")
+        
+        st.markdown("<hr style='border:1px dashed #D4AF37'>", unsafe_allow_html=True)
+        st.markdown("<h4 style='color:#D4AF37; text-align:center'>✍️ بيانات التوقيعات</h4>", unsafe_allow_html=True)
+        col4, col5, col6 = st.columns(3)
+        with col4: member_name = st.text_input("اسم العضو القانوني", key="member1")
+        with col5: manager_name = st.text_input("اسم مدير إدارة القضايا", key="manager1")
+        with col6: general_name = st.text_input("اسم مدير عام الادارات القانونية", key="general1")
+        
         topic = st.text_input("موضوع الدعوى للفلترة", key="topic1")
         st.markdown("</div>", unsafe_allow_html=True)
 
@@ -1920,7 +1928,7 @@ if st.session_state.page == "تقارير":
             cases = sorted(cases, key=lambda x: x.get("تاريخ_جلسة","9999-12-31"), reverse=True)
 
             title = f"بيان بالدعاوى المتداولة خلال الفترة من {from_date} حتى {to_date} طرف الاستاذ/ {lawyer} المحامي"
-            report_header(region, title)
+            report_header(region, title, member_name, manager_name, general_name)
 
             if not cases: st.warning("لا توجد دعاوى متداولة")
             else:
@@ -1931,7 +1939,7 @@ if st.session_state.page == "تقارير":
                         "م": i, "رقم القضية": c.get('رقم',''), "السنة": c.get('سنة',''), "الدائرة": c.get('دائرة',''), "النوع": c.get('نوع',''),
                         "المحكمة": c.get('محكمة_اسم',''), "المأمورية": c.get('مأمورية',''), p1: c.get('مدعي',''), p2: c.get('مدعي_عليه',''),
                         "الموضوع": c.get('موضوع',''), "تاريخ الجلسة": c.get('تاريخ_جلسة',''), "الإجراء": c.get('الاجراء',''), 
-                        "ملاحظات": str(c.get('ملاحظات','')).replace('\n', ' ').replace('\\n', ' ') # شلنا السطر الجديد
+                        "ملاحظات": str(c.get('ملاحظات','')).replace('\n', ' ').replace('\\n', ' ')
                     })
                 df_export = pd.DataFrame(export_data)
                 html = f"""
@@ -1951,7 +1959,7 @@ if st.session_state.page == "تقارير":
                 with c2: st.download_button("📄 Word", data=to_word(df_export, title, region), file_name=f"بيان_المتداولة_{datetime.now().strftime('%Y%m%d')}.docx", use_container_width=True)
                 with c3: st.download_button("📕 PDF", data=to_pdf(df_export, title, region), file_name=f"بيان_المتداولة_{datetime.now().strftime('%Y%m%d')}.pdf", use_container_width=True)
                 with c4: st.download_button("🖨️ HTML", data=html.encode('utf-8-sig'), file_name=f"بيان_المتداولة_{datetime.now().strftime('%Y%m%d')}.html", use_container_width=True)
-                report_footer()
+                report_footer(member_name, manager_name, general_name)
 
     # ========== تبويب 2: الاحكام ==========
     with tab2:
@@ -1962,6 +1970,14 @@ if st.session_state.page == "تقارير":
         with col2: to_date2 = st.date_input("حتى الفترة", key="to2")
         with col3: result_filter = st.selectbox("النتيجة", ["الكل", "الصالح", "ضد"], key="result2")
         with col4: topic2 = st.text_input("موضوع الدعوى", key="topic2")
+        
+        st.markdown("<hr style='border:1px dashed #D4AF37'>", unsafe_allow_html=True)
+        st.markdown("<h4 style='color:#D4AF37; text-align:center'>✍️ بيانات التوقيعات</h4>", unsafe_allow_html=True)
+        col5, col6, col7 = st.columns(3)
+        with col5: member_name2 = st.text_input("اسم العضو القانوني", key="member2")
+        with col6: manager_name2 = st.text_input("اسم مدير إدارة القضايا", key="manager2")
+        with col7: general_name2 = st.text_input("اسم مدير عام الادارات القانونية", key="general2")
+        
         st.markdown("</div>", unsafe_allow_html=True)
 
         if st.button("🔍 عرض بيان الاحكام", use_container_width=True, type="primary", key="show2"):
@@ -1972,7 +1988,7 @@ if st.session_state.page == "تقارير":
             cases = sorted(cases, key=lambda x: x.get("تاريخ_الحكم","9999-12-31"), reverse=True)
 
             title = f"بيان بالاحكام الصادرة خلال الفترة من {from_date2} حتى {to_date2}"
-            report_header(region2, title)
+            report_header(region2, title, member_name2, manager_name2, general_name2)
 
             if not cases: st.warning("لا توجد احكام في الفترة المحددة")
             else:
@@ -1988,7 +2004,7 @@ if st.session_state.page == "تقارير":
                         "المحكمة": c.get('محكمة_اسم',''), p1: c.get('مدعي',''), p2: c.get('مدعي_عليه',''),
                         "الموضوع": c.get('موضوع',''), "تاريخ الحكم": c.get('تاريخ_الحكم',''), "النتيجة": c.get('مسندة_ل',''),
                         "الإجراء": c.get('الاجراء',''), "منطوق الحكم": c.get('منطوق_الحكم',''), 
-                        "ملاحظات": str(c.get('ملاحظات','')).replace('\n', ' ').replace('\\n', ' ') # شلنا السطر الجديد
+                        "ملاحظات": str(c.get('ملاحظات','')).replace('\n', ' ').replace('\\n', ' ')
                     })
                 df_export = pd.DataFrame(export_data)
                 html = f"""
@@ -2007,7 +2023,7 @@ if st.session_state.page == "تقارير":
                 with c1: st.download_button("⬇️ Excel", data=to_excel(df_export), file_name=f"بيان_الاحكام_{datetime.now().strftime('%Y%m%d')}.xlsx", use_container_width=True)
                 with c2: st.download_button("📄 Word", data=to_word(df_export, title, region2), file_name=f"بيان_الاحكام_{datetime.now().strftime('%Y%m%d')}.docx", use_container_width=True)
                 with c3: st.download_button("📕 PDF", data=to_pdf(df_export, title, region2), file_name=f"بيان_الاحكام_{datetime.now().strftime('%Y%m%d')}.pdf", use_container_width=True)
-                report_footer()
+                report_footer(member_name2, manager_name2, general_name2)
 
     # ========== تبويب 3: الاحصائيات ==========
     with tab3:
