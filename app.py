@@ -1592,6 +1592,9 @@ elif st.session_state.page == "بحث":
                     # ======
 elif st.session_state.page == "التنبيهات":
     st.markdown("<h1 style='text-align:center; color:#C9A961;'>مركز التنبيهات</h1>", unsafe_allow_html=True)
+    if st.button("⬅️ العودة للرئيسية", use_container_width=True):
+    st.session_state.page = "الرئيسية"
+    st.rerun()
     
     with st.container(border=True):
         st.markdown("<h2 style='text-align:center; color:#C9A961;'>ارسال التنبيهات بالايميل</h2>", unsafe_allow_html=True)
