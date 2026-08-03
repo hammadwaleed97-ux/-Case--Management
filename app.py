@@ -1930,7 +1930,7 @@ if st.session_state.page == "تقارير":
             html += f"<td style='padding:8px; border:1px solid #D4AF37'>{c.get('دائرة','')}</td>"
             html += f"<td style='padding:8px; border:1px solid #D4AF37'>{c.get('نوع','')}</td>"
             html += f"<td style='padding:8px; border:1px solid #D4AF37'>{c.get('محكمة_اسم','')}</td>"
-            html += f"<td style='padding:8px; border:1px solid #D4AF37'>{c.get('مأمورية','')}</td>" # المأمورية هنا
+            html += f"<td style='padding:8px; border:1px solid #D4AF37'>{c.get('مأمورية','')}</td>" # المأمورية
             html += f"<td style='padding:8px; border:1px solid #D4AF37'>{c.get('مدعي','')}</td>"
             html += f"<td style='padding:8px; border:1px solid #D4AF37'>{c.get('مدعي_عليه','')}</td>"
             html += f"<td style='padding:8px; border:1px solid #D4AF37'>{c.get('موضوع','')}</td>"
@@ -1944,6 +1944,13 @@ if st.session_state.page == "تقارير":
             html += "</tr>"
         html += "</tbody></table>"
         return html
+
+    def show_export_buttons(df_export, title, region):
+        st.markdown("<hr style='border:1px dashed #D4AF37; margin:20px 0'>", unsafe_allow_html=True)
+        c1, c2, c3 = st.columns(3)
+        with c1: st.download_button("⬇️ Excel", data=to_excel(df_export), file_name=f"{title}_{datetime.now().strftime('%Y%m%d')}.xlsx", use_container_width=True)
+        with c2: st.download_button("📄 Word", data=to_word(df_export, title, region), file_name=f"{title}_{datetime.now().strftime('%Y%m%d')}.docx", use_container_width=True)
+        with c3: st.download_button("📕 PDF", data=to_pdf(df_export, title, region), file_name=f"{title}_{datetime.now().strftime('%Y%m%d')}.pdf", use_container_width=True)
 
     st.markdown("<div style='background:#1E2A47; padding:20px; border-radius:15px; border:2px solid #D4AF37; margin-bottom:15px; font-family:Cairo'>", unsafe_allow_html=True)
     region = st.text_input("ديوان عام منطقة", key="region_gen")
@@ -1974,7 +1981,17 @@ if st.session_state.page == "تقارير":
             if not cases: st.warning("لا توجد بيانات")
             else:
                 cols = ["م", "رقم القضية", "السنة", "الدائرة", "النوع", "المحكمة", "المأمورية", "المدعي", "المدعي عليه", "الموضوع", "تاريخ الجلسة", "الإجراء", "ملاحظات"]
+                export_data = []
+                for i, c in enumerate(cases, 1):
+                    export_data.append({
+                        "م": i, "رقم القضية": c.get('رقم',''), "السنة": c.get('سنة',''), "الدائرة": c.get('دائرة',''), "النوع": c.get('نوع',''),
+                        "المحكمة": c.get('محكمة_اسم',''), "المأمورية": c.get('مأمورية',''), "المدعي": c.get('مدعي',''), "المدعي عليه": c.get('مدعي_عليه',''),
+                        "الموضوع": c.get('موضوع',''), "تاريخ الجلسة": c.get('تاريخ_جلسة',''), "الإجراء": c.get('الاجراء',''), 
+                        "ملاحظات": str(c.get('ملاحظات','')).replace('\n', ' ')
+                    })
+                df_export = pd.DataFrame(export_data)
                 st.markdown(build_html_table(cases, cols, "جلسة"), unsafe_allow_html=True)
+                show_export_buttons(df_export, title, region) # الازرار رجعت هنا
                 report_footer(member_name, manager_name, general_name)
 
         elif "بيان بجميع الاحكام" in selected_report:
@@ -1989,5 +2006,15 @@ if st.session_state.page == "تقارير":
             if not cases: st.warning("لا توجد بيانات")
             else:
                 cols = ["م", "رقم القضية", "السنة", "النوع", "المحكمة", "المأمورية", "المدعي", "المدعي عليه", "الموضوع", "تاريخ الحكم", "النتيجة", "منطوق الحكم", "ملاحظات"]
+                export_data = []
+                for i, c in enumerate(cases, 1):
+                    export_data.append({
+                        "م": i, "رقم القضية": c.get('رقم',''), "السنة": c.get('سنة',''), "النوع": c.get('نوع',''),
+                        "المحكمة": c.get('محكمة_اسم',''), "المأمورية": c.get('مأمورية',''), "المدعي": c.get('مدعي',''), "المدعي عليه": c.get('مدعي_عليه',''),
+                        "الموضوع": c.get('موضوع',''), "تاريخ الحكم": c.get('تاريخ_الحكم',''), "النتيجة": c.get('مسندة_ل',''), 
+                        "منطوق الحكم": c.get('منطوق_الحكم',''), "ملاحظات": str(c.get('ملاحظات','')).replace('\n', ' ')
+                    })
+                df_export = pd.DataFrame(export_data)
                 st.markdown(build_html_table(cases, cols, "حكم"), unsafe_allow_html=True)
+                show_export_buttons(df_export, title, region) # الازرار رجعت هنا
                 report_footer(member_name, manager_name, general_name)
