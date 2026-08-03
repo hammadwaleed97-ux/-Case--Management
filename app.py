@@ -1844,6 +1844,27 @@ elif st.session_state.page == "مكتبة":
 # ============ الجزء الثامن: التقارير ============
 # ================================================
 if st.session_state.page == "تقارير":
+    # CSS خاص بالتقارير بس
+    st.markdown("""
+    <style>
+    /* تظبيط ليبلات بيانات التوقيعات جوه التقارير بس */
+    div[data-testid="stTextInput"] label {
+        color: #D4AF37 !important;
+        font-weight: bold !important;
+        font-size: 15px !important;
+        font-family: Cairo !important;
+    }
+    /* تظبيط مكان الكتابة نفسه */
+    div[data-testid="stTextInput"] input {
+        color: #000 !important;
+        background: #fff !important;
+        font-family: Cairo !important;
+        font-weight: 500;
+        text-align: right;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
     data = load_data()
     st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
     st.markdown("<h2 style='color:#D4AF37; text-align:center; font-family:Cairo'>📑 مركز التقارير الحكومية</h2>", unsafe_allow_html=True)
@@ -1865,7 +1886,6 @@ if st.session_state.page == "تقارير":
         """, unsafe_allow_html=True)
 
     def report_footer(member_name, manager_name, general_name):
-        # التوقيعات مظبوطة - الاسم فوق الخط
         st.markdown(f"""
         <div style='margin-top:50px; direction:rtl; font-size:15px; color:#D4AF37; font-family:Cairo'>
             <table style='width:100%; border-collapse:collapse; text-align:center'>
