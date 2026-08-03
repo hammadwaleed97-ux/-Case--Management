@@ -1920,19 +1920,8 @@ if st.session_state.page == "تقارير":
         </div>
         """, unsafe_allow_html=True)
 
-    def get_parties(case): # دي اللي اتغيرت
-        case_type = str(case.get('نوع',''))
-        p1 = case.get('مدعي','')
-        p2 = case.get('مدعي_عليه','')
-        if "استئناف" in case_type:
-            return f"المستأنف: {p1}\nضد\nالمستأنف ضده: {p2}"
-        elif "طعن" in case_type:
-            return f"الطاعن: {p1}\nضد\nالمطعون ضده: {p2}"
-        else:
-            return f"المدعي: {p1}\nضد\nالمدعي عليه: {p2}"
-
     def show_table_and_download(df_export, title, region):
-        html = f"<div dir='rtl' style='font-family:Cairo; font-size:14px'>{df_export.to_html(index=False, classes='case-table', border=0)}</div><style>.case-table {{width:100%; border-collapse:collapse; text-align:center; white-space: pre-line;}}.case-table th {{background:#0A1428; color:#D4AF37; padding:10px; border:1px solid #D4AF37; font-weight:bold}}.case-table td {{padding:8px; border:1px solid #D4AF37}}</style>"
+        html = f"<div dir='rtl' style='font-family:Cairo; font-size:14px'>{df_export.to_html(index=False, classes='case-table', border=0)}</div><style>.case-table {{width:100%; border-collapse:collapse; text-align:center}}.case-table th {{background:#0A1428; color:#D4AF37; padding:10px; border:1px solid #D4AF37; font-weight:bold}}.case-table td {{padding:8px; border:1px solid #D4AF37}}</style>"
         st.markdown(html, unsafe_allow_html=True)
         st.markdown("<hr>", unsafe_allow_html=True)
         c1, c2, c3 = st.columns(3)
@@ -1959,6 +1948,7 @@ if st.session_state.page == "تقارير":
     if st.button("🔍 عرض التقرير", use_container_width=True, type="primary"):
         cases = data.get("cases", [])
         
+        # 1 و 2: بيان المتداولة - مرتب من الاقدم للاحدث
         if selected_report in ["بيان بجميع الدعاوي المتداولة", "بيان بجميع الدعاوي المتداولة حسب موضوع الدعوى"]:
             cases = [c for c in cases if c.get('حالة') == 'متداولة']
             cases = [c for c in cases if c.get('تاريخ_جلسة') and from_date <= datetime.strptime(c['تاريخ_جلسة'], '%Y-%m-%d').date() <= to_date]
@@ -1970,11 +1960,16 @@ if st.session_state.page == "تقارير":
             else:
                 export_data = []
                 for i, c in enumerate(cases, 1):
-                    parties = get_parties(c) # عمود واحد
-                    export_data.append({"م": i, "رقم القضية": c.get('رقم',''), "السنة": c.get('سنة',''), "الدائرة": c.get('دائرة',''), "النوع": c.get('نوع',''),"المحكمة": c.get('محكمة_اسم',''), "الخصوم": parties,"الموضوع": c.get('موضوع',''), "تاريخ الجلسة": c.get('تاريخ_جلسة',''), "الإجراء": c.get('الاجراء',''), "ملاحظات": str(c.get('ملاحظات','')).replace('\n', ' ')})
+                    export_data.append({
+                        "م": i, "رقم القضية": c.get('رقم',''), "السنة": c.get('سنة',''), "الدائرة": c.get('دائرة',''), "النوع": c.get('نوع',''),
+                        "المحكمة": c.get('محكمة_اسم',''), "المدعي": c.get('مدعي',''), "المدعي عليه": c.get('مدعي_عليه',''),
+                        "الموضوع": c.get('موضوع',''), "تاريخ الجلسة": c.get('تاريخ_جلسة',''), "الإجراء": c.get('الاجراء',''), 
+                        "ملاحظات": str(c.get('ملاحظات','')).replace('\n', ' ')
+                    })
                 show_table_and_download(pd.DataFrame(export_data), selected_report, region)
                 report_footer(member_name, manager_name, general_name)
 
+        # 5 الى 8: بيان الاحكام - مرتب من الاقدم للاحدث
         elif "بيان بجميع الاحكام" in selected_report:
             cases = [c for c in cases if c.get('حالة') == 'منتهية' and c.get('تاريخ_الحكم')]
             cases = [c for c in cases if from_date <= datetime.strptime(c['تاريخ_الحكم'], '%Y-%m-%d').date() <= to_date]
@@ -1988,11 +1983,16 @@ if st.session_state.page == "تقارير":
             else:
                 export_data = []
                 for i, c in enumerate(cases, 1):
-                    parties = get_parties(c) # عمود واحد
-                    export_data.append({"م": i, "رقم القضية": c.get('رقم',''), "السنة": c.get('سنة',''), "النوع": c.get('نوع',''),"المحكمة": c.get('محكمة_اسم',''), "الخصوم": parties,"الموضوع": c.get('موضوع',''), "تاريخ الحكم": c.get('تاريخ_الحكم',''), "النتيجة": c.get('مسندة_ل',''), "منطوق الحكم": c.get('منطوق_الحكم',''), "ملاحظات": str(c.get('ملاحظات','')).replace('\n', ' ')})
+                    export_data.append({
+                        "م": i, "رقم القضية": c.get('رقم',''), "السنة": c.get('سنة',''), "النوع": c.get('نوع',''),
+                        "المحكمة": c.get('محكمة_اسم',''), "المدعي": c.get('مدعي',''), "المدعي عليه": c.get('مدعي_عليه',''),
+                        "الموضوع": c.get('موضوع',''), "تاريخ الحكم": c.get('تاريخ_الحكم',''), "النتيجة": c.get('مسندة_ل',''), 
+                        "منطوق الحكم": c.get('منطوق_الحكم',''), "ملاحظات": str(c.get('ملاحظات','')).replace('\n', ' ')
+                    })
                 show_table_and_download(pd.DataFrame(export_data), selected_report, region)
                 report_footer(member_name, manager_name, general_name)
 
+        # 3 و 4 و 9 الى 12: التقارير العددية
         elif "عددي" in selected_report:
             if "المتداولة" in selected_report: cases = [c for c in cases if c.get('حالة') == 'متداولة']
             else: cases = [c for c in cases if c.get('حالة') == 'منتهية' and c.get('تاريخ_الحكم')]
@@ -2010,6 +2010,7 @@ if st.session_state.page == "تقارير":
                 else: st.bar_chart(df['محكمة_اسم'].value_counts())
             else: st.warning("لا توجد بيانات")
 
+        # 13: بيان احصائي
         elif selected_report == "بيان احصائي":
             title = "بيان احصائي عام"
             report_header(region, title, member_name, manager_name, general_name)
