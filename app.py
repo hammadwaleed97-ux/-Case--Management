@@ -1844,23 +1844,34 @@ elif st.session_state.page == "مكتبة":
 # ============ الجزء الثامن: التقارير ============
 # ================================================
 if st.session_state.page == "تقارير":
-    # CSS خاص بالتقارير بس
+    # CSS خاص بالتقارير بس - شامل التابات والتواريخ
     st.markdown("""
     <style>
-    /* تظبيط ليبلات بيانات التوقيعات جوه التقارير بس */
-    div[data-testid="stTextInput"] label {
+    /* 1. تظبيط ليبلات التكست والديت */
+    div[data-testid="stTextInput"] label, div[data-testid="stDateInput"] label {
         color: #D4AF37 !important;
         font-weight: bold !important;
         font-size: 15px !important;
         font-family: Cairo !important;
     }
-    /* تظبيط مكان الكتابة نفسه */
-    div[data-testid="stTextInput"] input {
+    /* 2. تظبيط مكان الكتابة نفسه */
+    div[data-testid="stTextInput"] input, div[data-testid="stDateInput"] input {
         color: #000 !important;
         background: #fff !important;
         font-family: Cairo !important;
         font-weight: 500;
         text-align: right;
+    }
+    /* 3. تظبيط التابات اللي فوق */
+    button[data-baseweb="tab"] {
+        color: #D4AF37 !important;
+        font-family: Cairo !important;
+        font-weight: bold !important;
+        font-size: 16px !important;
+    }
+    button[data-baseweb="tab"][aria-selected="true"] {
+        color: #FFD700 !important;
+        border-bottom: 3px solid #FFD700 !important;
     }
     </style>
     """, unsafe_allow_html=True)
