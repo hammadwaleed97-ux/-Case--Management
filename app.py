@@ -1844,11 +1844,11 @@ elif st.session_state.page == "مكتبة":
 # ============ الجزء الثامن: التقارير ============
 # ================================================
 if st.session_state.page == "تقارير":
-    # CSS خاص بالتقارير بس - شامل التابات والتواريخ
+    # CSS خاص بالتقارير بس - شامل التابات والتواريخ وال placeholder
     st.markdown("""
     <style>
     /* 1. تظبيط ليبلات التكست والديت */
-    div[data-testid="stTextInput"] label, div[data-testid="stDateInput"] label {
+    div[data-testid="stTextInput"] label, div[data-testid="stDateInput"] label, div[data-testid="stSelectbox"] label {
         color: #D4AF37 !important;
         font-weight: bold !important;
         font-size: 15px !important;
@@ -1862,15 +1862,21 @@ if st.session_state.page == "تقارير":
         font-weight: 500;
         text-align: right;
     }
-    /* 3. تظبيط التابات اللي فوق */
-    button[data-baseweb="tab"] {
-        color: #D4AF37 !important;
+    /* 3. نشيل الـ placeholder الانجليزي الرخم */
+    input::placeholder {
+        color: transparent !important;
+    }
+    /* 4. تظبيط التابات اللي فوق - المهمة دي */
+    div[data-baseweb="tab-list"] button p {
+        color: #999 !important;
         font-family: Cairo !important;
         font-weight: bold !important;
         font-size: 16px !important;
     }
-    button[data-baseweb="tab"][aria-selected="true"] {
+    div[data-baseweb="tab-list"] button[aria-selected="true"] p {
         color: #FFD700 !important;
+    }
+    div[data-baseweb="tab-list"] button[aria-selected="true"] {
         border-bottom: 3px solid #FFD700 !important;
     }
     </style>
