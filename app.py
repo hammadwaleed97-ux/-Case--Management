@@ -1590,11 +1590,19 @@ elif st.session_state.page == "بحث":
                     st.markdown("</div>", unsafe_allow_html=True)
                     st.markdown("</div>", unsafe_allow_html=True)
                     # ======
+# ================================================
+# ============ مركز التنبيهات ====================
+# ================================================
 elif st.session_state.page == "التنبيهات":
     st.markdown("<h1 style='text-align:center; color:#C9A961;'>مركز التنبيهات</h1>", unsafe_allow_html=True)
-         if st.button("⬅️ العودة للرئيسية", use_container_width=True):
-    st.session_state.page = "الرئيسية"
-    st.rerun()
+    
+    # === زر العودة للرئيسية ===
+    if st.button("⬅️ العودة للرئيسية", use_container_width=True):
+        st.session_state.page = "الرئيسية"
+        st.rerun()
+    # ===========================
+
+    st.divider() # فاصل فوق
     
     with st.container(border=True):
         st.markdown("<h2 style='text-align:center; color:#C9A961;'>ارسال التنبيهات بالايميل</h2>", unsafe_allow_html=True)
@@ -1676,7 +1684,10 @@ elif st.session_state.page == "التنبيهات":
                 st.write(f"**فاضل:** {case.get('days_left_appeal',0)} يوم")
     else:
         st.info("لا توجد طعون خلال 15 يوم")
-        # ================================================
+        
+    st.divider() # فاصل تحت
+# ================================================
+# ============ صفحة المكتبة القانونية ============
         # ================================================
 # ============ صفحة المكتبة القانونية ============
 # ==================================================
