@@ -1853,7 +1853,6 @@ if st.session_state.page == "تقارير":
     tab1, tab2, tab3 = st.tabs(["📊 بيان الدعاوى المتداولة", "⚖️ بيان الاحكام", "📈 الإحصائيات"])
 
     def report_header(region, title):
-        # هيدر منسق بمحاذاة ومقاسات مظبوطة
         st.markdown(f"""
         <div style='text-align:center; color:#D4AF37; border:3px double #D4AF37; padding:20px 15px; background: linear-gradient(135deg, #0A1428 0%, #1E2A47 100%); border-radius:12px; margin-bottom:25px; font-family:Cairo'>
             <h2 style='margin:4px 0; font-size:20px; font-weight:bold'>الهيئة القومية للتأمين الاجتماعى</h2>
@@ -1866,7 +1865,6 @@ if st.session_state.page == "تقارير":
         """, unsafe_allow_html=True)
 
     def report_footer():
-        # توقيعات بمحاذاة مظبوطة
         st.markdown(f"""
         <div style='margin-top:50px; direction:rtl; font-size:15px; color:#D4AF37; font-family:Cairo'>
             <table style='width:100%; border-collapse:collapse'>
@@ -1878,7 +1876,7 @@ if st.session_state.page == "تقارير":
                     <td colspan='2' style='text-align:center; padding-bottom:30px'>مدير عام الادارات القانونية</td>
                 </tr>
                 <tr>
-                    <td colspan='2' style='text-align:right'>تحرر في: {datetime.now().strftime('%Y-%m-%d')}</td>
+                    <td colspan='2' style='text-align:right'>تحر في: {datetime.now().strftime('%Y-%m-%d')}</td>
                 </tr>
             </table>
         </div>
@@ -1923,7 +1921,6 @@ if st.session_state.page == "تقارير":
                         "الموضوع": c.get('موضوع',''), "تاريخ الجلسة": c.get('تاريخ_جلسة',''), "الإجراء": c.get('الاجراء',''), "ملاحظات": c.get('ملاحظات','')
                     })
                 df_export = pd.DataFrame(export_data)
-                # جدول منسق
                 html = f"""
                 <div dir='rtl' style='font-family:Cairo; font-size:14px'>
                     {df_export.to_html(index=False, classes='case-table', border=0)}
@@ -1941,7 +1938,6 @@ if st.session_state.page == "تقارير":
                 with c2: st.download_button("📄 Word", data=to_word(df_export, title, region), file_name=f"بيان_المتداولة_{datetime.now().strftime('%Y%m%d')}.docx", use_container_width=True)
                 with c3: st.download_button("📕 PDF", data=to_pdf(df_export, title, region), file_name=f"بيان_المتداولة_{datetime.now().strftime('%Y%m%d')}.pdf", use_container_width=True)
                 with c4: st.download_button("🖨️ HTML", data=html.encode('utf-8-sig'), file_name=f"بيان_المتداولة_{datetime.now().strftime('%Y%m%d')}.html", use_container_width=True)
-                
                 report_footer()
 
     # ========== تبويب 2: الاحكام ==========
@@ -1996,8 +1992,7 @@ if st.session_state.page == "تقارير":
                 c1, c2, c3 = st.columns(3)
                 with c1: st.download_button("⬇️ Excel", data=to_excel(df_export), file_name=f"بيان_الاحكام_{datetime.now().strftime('%Y%m%d')}.xlsx", use_container_width=True)
                 with c2: st.download_button("📄 Word", data=to_word(df_export, title, region2), file_name=f"بيان_الاحكام_{datetime.now().strftime('%Y%m%d')}.docx", use_container_width=True)
-                with c3: st.download_button("📕 PDF", data=to_pdf(df_export, title, region2), file_name=f"بيان_الاحكام_{datetime.now().strftime('%Y%m%d')].pdf", use_container_width=True)
-                
+                with c3: st.download_button("📕 PDF", data=to_pdf(df_export, title, region2), file_name=f"بيان_الاحكام_{datetime.now().strftime('%Y%m%d')}.pdf", use_container_width=True)
                 report_footer()
 
     # ========== تبويب 3: الاحصائيات ==========
