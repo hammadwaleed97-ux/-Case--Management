@@ -1865,18 +1865,30 @@ if st.session_state.page == "تقارير":
         """, unsafe_allow_html=True)
 
     def report_footer():
+        # توقيعات بـ 3 خانات جنب بعض تكتب فيها الاسم
         st.markdown(f"""
         <div style='margin-top:50px; direction:rtl; font-size:15px; color:#D4AF37; font-family:Cairo'>
-            <table style='width:100%; border-collapse:collapse'>
+            <table style='width:100%; border-collapse:collapse; text-align:center'>
                 <tr>
-                    <td style='width:50%; text-align:right; padding-bottom:40px'>العضو القانوني..................</td>
-                    <td style='width:50%; text-align:left; padding-bottom:40px'>مدير إدارة القضايا..................</td>
+                    <td style='width:50%; padding:15px; border:2px solid #D4AF37'>
+                        <div style='font-weight:bold; margin-bottom:10px'>العضو القانوني</div>
+                        <input type='text' placeholder='اكتب الاسم هنا' style='width:80%; height:35px; text-align:center; border:1px dashed #D4AF37; background:#0A1428; color:#D4AF37; font-family:Cairo; font-size:14px; border-radius:5px'>
+                    </td>
+                    <td style='width:50%; padding:15px; border:2px solid #D4AF37'>
+                        <div style='font-weight:bold; margin-bottom:10px; white-space:nowrap'>مدير إدارة القضايا</div>
+                        <input type='text' placeholder='اكتب الاسم هنا' style='width:80%; height:35px; text-align:center; border:1px dashed #D4AF37; background:#0A1428; color:#D4AF37; font-family:Cairo; font-size:14px; border-radius:5px'>
+                    </td>
                 </tr>
                 <tr>
-                    <td colspan='2' style='text-align:center; padding-bottom:30px'>مدير عام الادارات القانونية</td>
+                    <td colspan='2' style='padding:15px; border:2px solid #D4AF37; border-top:none'>
+                        <div style='font-weight:bold; margin-bottom:10px'>مدير عام الادارات القانونية</div>
+                        <input type='text' placeholder='اكتب الاسم هنا' style='width:50%; height:35px; text-align:center; border:1px dashed #D4AF37; background:#0A1428; color:#D4AF37; font-family:Cairo; font-size:14px; border-radius:5px'>
+                    </td>
                 </tr>
                 <tr>
-                    <td colspan='2' style='text-align:right'>تحر في: {datetime.now().strftime('%Y-%m-%d')}</td>
+                    <td colspan='2' style='text-align:right; padding:10px 15px; border:2px solid #D4AF37; border-top:none'>
+                        تحر في: {datetime.now().strftime('%Y-%m-%d')}
+                    </td>
                 </tr>
             </table>
         </div>
@@ -1918,7 +1930,8 @@ if st.session_state.page == "تقارير":
                     export_data.append({
                         "م": i, "رقم القضية": c.get('رقم',''), "السنة": c.get('سنة',''), "الدائرة": c.get('دائرة',''), "النوع": c.get('نوع',''),
                         "المحكمة": c.get('محكمة_اسم',''), "المأمورية": c.get('مأمورية',''), p1: c.get('مدعي',''), p2: c.get('مدعي_عليه',''),
-                        "الموضوع": c.get('موضوع',''), "تاريخ الجلسة": c.get('تاريخ_جلسة',''), "الإجراء": c.get('الاجراء',''), "ملاحظات": c.get('ملاحظات','')
+                        "الموضوع": c.get('موضوع',''), "تاريخ الجلسة": c.get('تاريخ_جلسة',''), "الإجراء": c.get('الاجراء',''), 
+                        "ملاحظات": str(c.get('ملاحظات','')).replace('\n', ' ').replace('\\n', ' ') # شلنا السطر الجديد
                     })
                 df_export = pd.DataFrame(export_data)
                 html = f"""
@@ -1974,7 +1987,8 @@ if st.session_state.page == "تقارير":
                         "م": i, "رقم القضية": c.get('رقم',''), "السنة": c.get('سنة',''), "الدائرة": c.get('دائرة',''), "النوع": c.get('نوع',''),
                         "المحكمة": c.get('محكمة_اسم',''), p1: c.get('مدعي',''), p2: c.get('مدعي_عليه',''),
                         "الموضوع": c.get('موضوع',''), "تاريخ الحكم": c.get('تاريخ_الحكم',''), "النتيجة": c.get('مسندة_ل',''),
-                        "الإجراء": c.get('الاجراء',''), "منطوق الحكم": c.get('منطوق_الحكم',''), "ملاحظات": c.get('ملاحظات','')
+                        "الإجراء": c.get('الاجراء',''), "منطوق الحكم": c.get('منطوق_الحكم',''), 
+                        "ملاحظات": str(c.get('ملاحظات','')).replace('\n', ' ').replace('\\n', ' ') # شلنا السطر الجديد
                     })
                 df_export = pd.DataFrame(export_data)
                 html = f"""
