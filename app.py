@@ -1844,23 +1844,14 @@ elif st.session_state.page == "مكتبة":
 # ============ الجزء الثامن: التقارير ============
 # ================================================
 if st.session_state.page == "تقارير":
-    # CSS تقيل عشان Streamlit العنيد
+    # CSS
     st.markdown("""
     <style>
-    /* نشيل البلاس هولدر الانجليزي */
-    ::placeholder {color: transparent !important; opacity: 0 !important;}
-    
-    /* ليبلات كل حاجة */
+    ::placeholder {color: transparent !important;}
     label {color: #D4AF37 !important; font-weight: bold !important; font-family: Cairo !important;}
-    
-    /* الانبوت نفسه */
     input {color: #000 !important; background: #fff !important; text-align: right !important; font-family: Cairo !important;}
-    
-    /* التابات - دي اهم حاجة */
-    [data-baseweb="tab-list"] {gap: 10px;}
-    [data-baseweb="tab"] p {color: #888 !important; font-size: 16px !important; font-weight: bold !important; font-family: Cairo !important;}
-    [data-baseweb="tab"][aria-selected="true"] p {color: #FFD700 !important;}
-    [data-baseweb="tab"][aria-selected="true"] {border-bottom: 3px solid #FFD700 !important;}
+    .tab-btn {background:#1E2A47; color:#D4AF37; border:2px solid #D4AF37; border-radius:10px 10px 0 0; padding:12px; font-family:Cairo; font-weight:bold; font-size:16px;}
+    .tab-btn.active {background:#D4AF37; color:#0A1428;}
     </style>
     """, unsafe_allow_html=True)
 
@@ -1870,7 +1861,19 @@ if st.session_state.page == "تقارير":
     if st.button("⬅️ العودة للرئيسية", use_container_width=True): 
         st.session_state.page = "الرئيسية"; st.rerun()
 
-    tab1, tab2, tab3 = st.tabs(["📊 بيان الدعاوى المتداولة", "⚖️ بيان الاحكام", "📈 الإحصائيات"])
+    # هنا الخدعة - عملنا التابات بايدينا
+    if 'report_tab' not in st.session_state: st.session_state.report_tab = "متداولة"
+    
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        if st.button("📊 بيان الدعاوى المتداولة", use_container_width=True, key="tab1_btn"):
+            st.session_state.report_tab = "متداولة"; st.rerun()
+    with col2:
+        if st.button("⚖️ بيان الاحكام", use_container_width=True, key="tab2_btn"):
+            st.session_state.report_tab = "احكام"; st.rerun()
+    with col3:
+        if st.button("📈 الإحصائيات", use_container_width=True, key="tab3_btn"):
+            st.session_state.report_tab = "احصائيات"; st.rerun()
 
     def report_header(region, title, member_name, manager_name, general_name):
         st.markdown(f"""
@@ -1917,28 +1920,24 @@ if st.session_state.page == "تقارير":
         """, unsafe_allow_html=True)
 
     def get_parties_names(case_type):
-        if "استئناف" in str(case_type):
-            return "المستأنف", "المستأنف ضده"
-        elif "طعن" in str(case_type):
-            return "الطاعن", "المطعون ضده"
-        else:
-            return "المدعي", "المدعي عليه"
+        if "استئناف" in str(case_type): return "المستأنف", "المستأنف ضده"
+        elif "طعن" in str(case_type): return "الطاعن", "المطعون ضده"
+        else: return "المدعي", "المدعي عليه"
 
-    with tab1:
-        st.markdown("<div style='background:#1E2A47; padding:20px; border-radius:15px; border:2px solid #D4AF37; margin-bottom:15px; font-family:Cairo'>", unsafe_allow_html=True)
+    # ========== تبويب 1: المتداولة ==========
+    if st.session_state.report_tab == "متداولة":
+        st.markdown("<div style='background:#1E2A47; padding:20px; border-radius:0 0 15px 15px; border:2px solid #D4AF37; border-top:none; margin-bottom:15px; font-family:Cairo'>", unsafe_allow_html=True)
         region = st.text_input("ديوان عام منطقة", key="region1")
         col1, col2, col3 = st.columns(3)
         with col1: from_date = st.date_input("من الفترة", key="from1")
         with col2: to_date = st.date_input("حتى الفترة", key="to1")
         with col3: lawyer = st.text_input("طرف الاستاذ/ المحامي", key="lawyer1")
-        
         st.markdown("<hr style='border:1px dashed #D4AF37'>", unsafe_allow_html=True)
         st.markdown("<h4 style='color:#D4AF37; text-align:center'>✍️ بيانات التوقيعات</h4>", unsafe_allow_html=True)
         col4, col5, col6 = st.columns(3)
         with col4: member_name = st.text_input("اسم العضو القانوني", key="member1")
         with col5: manager_name = st.text_input("اسم مدير إدارة القضايا", key="manager1")
         with col6: general_name = st.text_input("اسم مدير عام الادارات القانونية", key="general1")
-        
         topic = st.text_input("موضوع الدعوى للفلترة", key="topic1")
         st.markdown("</div>", unsafe_allow_html=True)
 
@@ -1966,8 +1965,9 @@ if st.session_state.page == "تقارير":
                 with c4: st.download_button("🖨️ HTML", data=html.encode('utf-8-sig'), file_name=f"بيان_المتداولة_{datetime.now().strftime('%Y%m%d')}.html", use_container_width=True)
                 report_footer(member_name, manager_name, general_name)
 
-    with tab2:
-        st.markdown("<div style='background:#1E2A47; padding:20px; border-radius:15px; border:2px solid #D4AF37; margin-bottom:15px; font-family:Cairo'>", unsafe_allow_html=True)
+    # ========== تبويب 2: الاحكام ==========
+    if st.session_state.report_tab == "احكام":
+        st.markdown("<div style='background:#1E2A47; padding:20px; border-radius:0 0 15px 15px; border:2px solid #D4AF37; border-top:none; margin-bottom:15px; font-family:Cairo'>", unsafe_allow_html=True)
         region2 = st.text_input("ديوان عام منطقة", key="region2")
         col1, col2, col3, col4 = st.columns(4)
         with col1: from_date2 = st.date_input("من الفترة", key="from2")
@@ -2007,7 +2007,9 @@ if st.session_state.page == "تقارير":
                 with c3: st.download_button("📕 PDF", data=to_pdf(df_export, title, region2), file_name=f"بيان_الاحكام_{datetime.now().strftime('%Y%m%d')}.pdf", use_container_width=True)
                 report_footer(member_name2, manager_name2, general_name2)
 
-    with tab3:
+    # ========== تبويب 3: الاحصائيات ==========
+    if st.session_state.report_tab == "احصائيات":
+        st.markdown("<div style='background:#1E2A47; padding:20px; border-radius:0 0 15px 15px; border:2px solid #D4AF37; border-top:none; margin-bottom:15px; font-family:Cairo'>", unsafe_allow_html=True)
         st.markdown("<h3 style='color:#D4AF37; text-align:center; font-family:Cairo'>📊 احصائيات عامة عن القضايا</h3>", unsafe_allow_html=True)
         cases = data.get("cases", [])
         total = len(cases); motadawela = len([c for c in cases if c.get('حالة') == 'متداولة']); montahia = len([c for c in cases if c.get('حالة') == 'منتهية'])
@@ -2017,3 +2019,4 @@ if st.session_state.page == "تقارير":
         st.divider()
         st.markdown("<h4 style='color:#D4AF37; font-family:Cairo'>توزيع القضايا حسب المحكمة</h4>", unsafe_allow_html=True)
         if cases: df_stats = pd.DataFrame(cases); st.bar_chart(df_stats['محكمة_اسم'].value_counts())
+        st.markdown("</div>", unsafe_allow_html=True)
