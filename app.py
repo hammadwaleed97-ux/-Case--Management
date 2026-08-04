@@ -1872,17 +1872,9 @@ elif st.session_state.page == "مكتبة":
         # ============ الجزء الثامن: التقارير ============
 # ================================================
 if st.session_state.page == "تقارير":
-    st.markdown("""
-    <style>
-    ::placeholder {color: transparent!important;}
-    label {color: #D4AF37!important; font-weight: bold!important; font-family: Cairo!important;}
-    input, select {color: #000!important; background: #fff!important; text-align: right!important; font-family: Cairo!important;}
-    </style>
-    """, unsafe_allow_html=True)
-
     data = load_data()
     st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
-    st.markdown("<h2 style='color:#D4AF37; text-align:center; font-family:Cairo'>📑 مركز التقارير الحكومية</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='color:#C9A961; text-align:center;'>📑 مركز التقارير الحكومية</h2>", unsafe_allow_html=True)
 
     if st.button("⬅️ العودة للرئيسية", use_container_width=True):
         st.session_state.page = "الرئيسية"; st.rerun()
@@ -1891,19 +1883,38 @@ if st.session_state.page == "تقارير":
     selected_report = st.selectbox("اختر نوع التقرير", report_options, key="report_type")
 
     def report_header(region, title):
-        st.markdown(f"<div style='text-align:center; color:#D4AF37; border:3px double #D4AF37; padding:20px 15px; background: linear-gradient(135deg, #0A1428 0%, #1E2A47 100%); border-radius:12px; margin-bottom:25px; font-family:Cairo'><h2 style='margin:4px 0; font-size:20px; font-weight:bold; color:#FFD700'>الهيئة القومية للتأمين الاجتماعى</h2><h3 style='margin:4px 0; font-size:17px; font-weight:500; color:#FFD700'>الإدارة المركزية للإدارات القانونية</h3><h3 style='margin:4px 0; font-size:17px; font-weight:500; color:#FFD700'>ديوان عام {region}</h3><hr style='border:1px solid #D4AF37; margin:12px 20%'><h3 style='margin:8px 0; font-size:19px; font-weight:bold; color:#FFD700'>{title}</h3></div>", unsafe_allow_html=True)
+        st.markdown(f"""
+        <div style='text-align:center; color:#C9A961; border:3px double #C9A961; padding:20px 15px; background: #1E2A47; border-radius:12px; margin-bottom:25px;'>
+            <h2 style='margin:4px 0; font-size:20px; font-weight:bold; color:#C9A961'>الهيئة القومية للتأمين الاجتماعى</h2>
+            <h3 style='margin:4px 0; font-size:17px; font-weight:500; color:#C9A961'>الإدارة المركزية للإدارات القانونية</h3>
+            <h3 style='margin:4px 0; font-size:17px; font-weight:500; color:#C9A961'>ديوان عام {region}</h3>
+            <hr style='border:1px solid #C9A961; margin:12px 20%'>
+            <h3 style='margin:8px 0; font-size:19px; font-weight:bold; color:#C9A961'>{title}</h3>
+        </div>
+        """, unsafe_allow_html=True)
 
     def report_footer(member_name, manager_name, general_name):
-        st.markdown(f"<div style='margin-top:50px; direction:rtl; font-size:16px; color:#D4AF37; font-family:Cairo'><div style='text-align:left; margin-bottom:20px; font-weight:bold; color:#FFD700'>تحر في: {datetime.now().strftime('%d-%m-%Y')}</div><table style='width:100%; border-collapse:collapse; text-align:center'><tr><td style='width:33%; padding:15px; border:2px solid #D4AF37; background:#fff; color:#000'><div style='font-weight:bold'>العضو القانوني</div><div style='min-height:40px'>{member_name if member_name else '&nbsp;'}</div><div style='border-bottom:2px solid #000'></div></td><td style='width:33%; padding:15px; border:2px solid #D4AF37; background:#fff; color:#000'><div style='font-weight:bold'>مدير إدارة القضايا</div><div style='min-height:40px'>{manager_name if manager_name else '&nbsp;'}</div><div style='border-bottom:2px solid #000'></div></td><td style='width:33%; padding:15px; border:2px solid #D4AF37; background:#fff; color:#000'><div style='font-weight:bold'>مدير عام الإدارات القانونية</div><div style='min-height:40px'>{general_name if general_name else '&nbsp;'}</div><div style='border-bottom:2px solid #000'></div></td></tr></table></div>", unsafe_allow_html=True)
+        st.markdown(f"""
+        <div style='margin-top:50px; direction:rtl; font-size:16px; color:#C9A961;'>
+            <div style='text-align:left; margin-bottom:20px; font-weight:bold; color:#C9A961'>تحر في: {datetime.now().strftime('%d-%m-%Y')}</div>
+            <table style='width:100%; border-collapse:collapse; text-align:center'>
+                <tr>
+                    <td style='width:33%; padding:15px; border:2px solid #C9A961; background:#fff; color:#000'><div style='font-weight:bold'>العضو القانوني</div><div style='min-height:40px'>{member_name if member_name else "&nbsp;"}</div><div style='border-bottom:2px solid #000'></div></td>
+                    <td style='width:33%; padding:15px; border:2px solid #C9A961; background:#fff; color:#000'><div style='font-weight:bold'>مدير إدارة القضايا</div><div style='min-height:40px'>{manager_name if manager_name else "&nbsp;"}</div><div style='border-bottom:2px solid #000'></div></td>
+                    <td style='width:33%; padding:15px; border:2px solid #C9A961; background:#fff; color:#000'><div style='font-weight:bold'>مدير عام الإدارات القانونية</div><div style='min-height:40px'>{general_name if general_name else "&nbsp;"}</div><div style='border-bottom:2px solid #000'></div></td>
+                </tr>
+            </table>
+        </div>
+        """, unsafe_allow_html=True)
 
     def build_html_table(df):
-        html = "<table dir='rtl' style='width:100%; border-collapse:collapse; text-align:center; font-family:Cairo; font-size:14px; margin-top:15px; border:3px solid #D4AF37; border-radius:10px; overflow:hidden'>"
-        html += "<thead><tr style='background:#D4AF37; color:#000'>"
+        html = "<table dir='rtl' style='width:100%; border-collapse:collapse; text-align:center; font-size:14px; margin-top:15px; border:3px solid #C9A961; border-radius:10px; overflow:hidden'>"
+        html += "<thead><tr style='background:#C9A961; color:#000'>"
         for col in df.columns: html += f"<th style='padding:12px; border:1px solid #8B7355; font-weight:bold'>{col}</th>"
         html += "</tr></thead><tbody>"
         for i, row in df.iterrows():
             html += "<tr style='background:#1E2A47; color:#fff'>"
-            for cell in row: html += f"<td style='padding:10px; border:1px solid #D4AF37'>{cell}</td>"
+            for cell in row: html += f"<td style='padding:10px; border:1px solid #C9A961'>{cell}</td>"
             html += "</tr>"
         html += "</tbody></table>"
         return html
@@ -1922,7 +1933,7 @@ if st.session_state.page == "تقارير":
                 worksheet.merge_cells(f'A{r}:M{r}')
                 worksheet.cell(r,1).alignment = Alignment(horizontal='center')
                 worksheet.cell(r,1).font = Font(bold=True, size=14)
-            header_fill = PatternFill(start_color='D4AF37', end_color='D4AF37', fill_type='solid')
+            header_fill = PatternFill(start_color='C9A961', end_color='C9A961', fill_type='solid')
             for cell in worksheet[6]:
                 cell.fill = header_fill
                 cell.font = Font(bold=True)
@@ -1933,7 +1944,7 @@ if st.session_state.page == "تقارير":
     def to_word(df, title, region):
         doc = Document()
         for text in ['الهيئة القومية للتأمين الاجتماعى','الإدارة المركزية للإدارات القانونية',f'ديوان عام {region}', title]:
-            p = doc.add_paragraph(text); p.alignment = WD_ALIGN_PARAGRAPH.CENTER; p.runs[0].font.bold = True
+            p = doc.add_paragraph(fix_arabic(text)); p.alignment = WD_ALIGN_PARAGRAPH.CENTER; p.runs[0].font.bold = True
         table = doc.add_table(rows=len(df)+1, cols=len(df.columns))
         for j, col in enumerate(df.columns): table.cell(0,j).text = fix_arabic(col)
         for i, row in enumerate(df.values):
@@ -1944,16 +1955,21 @@ if st.session_state.page == "تقارير":
     def to_pdf(df, title, region):
         pdf = FPDF(orientation='L', unit='mm', format='A4')
         pdf.add_page()
-        pdf.add_font('Cairo', '', 'Cairo-Regular.ttf', uni=True)
-        pdf.set_font('Cairo', '', 16)
+        try:
+            pdf.add_font('Cairo', '', 'Cairo-Regular.ttf', uni=True)
+            pdf.set_font('Cairo', '', 16)
+        except:
+            pdf.set_font('Arial', '', 10)
+
         pdf.cell(0, 10, fix_arabic('الهيئة القومية للتأمين الاجتماعى'), 0, 1, 'C')
-        pdf.set_font('Cairo', '', 12)
+        pdf.set_font('Cairo', '', 12) if 'Cairo' in pdf.fonts else pdf.set_font('Arial', '', 10)
         pdf.cell(0, 8, fix_arabic('الإدارة المركزية للإدارات القانونية'), 0, 1, 'C')
         pdf.cell(0, 8, fix_arabic('الإدارة العامة للقضايا'), 0, 1, 'C')
         pdf.cell(0, 8, fix_arabic(f'ديوان عام {region}'), 0, 1, 'C')
         pdf.cell(0, 8, fix_arabic(title), 0, 1, 'C')
         pdf.ln(5)
-        pdf.set_font('Cairo', '', 7)
+
+        pdf.set_font('Cairo', '', 7) if 'Cairo' in pdf.fonts else pdf.set_font('Arial', '', 6)
         col_width = 270 / len(df.columns)
         row_height = 8
         for col in df.columns: pdf.cell(col_width, row_height, fix_arabic(str(col)), 1, 0, 'C')
@@ -1962,11 +1978,10 @@ if st.session_state.page == "تقارير":
             for item in row: pdf.cell(col_width, row_height, fix_arabic(str(item)), 1, 0, 'C')
             pdf.ln()
         pdf.ln(8)
-        pdf.set_font('Cairo', '', 11)
+        pdf.set_font('Cairo', '', 11) if 'Cairo' in pdf.fonts else pdf.set_font('Arial', '', 10)
         pdf.cell(0, 8, fix_arabic('تفضلوا بقبول وافر الاحترام'), 0, 1, 'R')
         pdf.ln(5)
         cell_w = 90
-        pdf.set_font('Cairo', '', 10)
         pdf.cell(cell_w, 8, fix_arabic('العضو القانوني'), 0, 0, 'C')
         pdf.cell(cell_w, 8, fix_arabic('مدير إدارة القضايا'), 0, 0, 'C')
         pdf.cell(cell_w, 8, fix_arabic('مدير عام الإدارات القانونية'), 0, 1, 'C')
@@ -1980,15 +1995,15 @@ if st.session_state.page == "تقارير":
         pdf.output(buffer)
         return buffer.getvalue()
 
-    st.markdown("<div style='background:#1E2A47; padding:20px; border-radius:15px; border:2px solid #D4AF37; margin-bottom:15px; font-family:Cairo'>", unsafe_allow_html=True)
+    st.markdown("<div style='background:#1E2A47; padding:20px; border-radius:15px; border:2px solid #C9A961; margin-bottom:15px;'>", unsafe_allow_html=True)
     region = st.text_input("ديوان عام منطقة", key="region_gen")
     col1, col2, col3 = st.columns(3)
     with col1: from_date = st.date_input("من الفترة", key="from_gen")
     with col2: to_date = st.date_input("حتى الفترة", key="to_gen")
     with col3: lawyer = st.text_input("طرف الاستاذ/ المحامي", key="lawyer_gen")
     topic = st.text_input("موضوع الدعوى للفلترة", key="topic_gen") if "موضوع" in selected_report else None
-    st.markdown("<hr style='border:1px dashed #D4AF37'>", unsafe_allow_html=True)
-    st.markdown("<h4 style='color:#D4AF37; text-align:center'>✍️ بيانات التوقيعات</h4>", unsafe_allow_html=True)
+    st.markdown("<hr style='border:1px dashed #C9A961'>", unsafe_allow_html=True)
+    st.markdown("<h4 style='color:#C9A961; text-align:center'>✍️ بيانات التوقيعات</h4>", unsafe_allow_html=True)
     col4, col5, col6 = st.columns(3)
     with col4: member_name = st.text_input("اسم العضو القانوني", key="member_gen")
     with col5: manager_name = st.text_input("اسم مدير إدارة القضايا", key="manager_gen")
@@ -2013,7 +2028,7 @@ if st.session_state.page == "تقارير":
             df_export = pd.DataFrame(export_data)
 
             st.markdown(build_html_table(df_export), unsafe_allow_html=True)
-            st.markdown("<hr style='border:2px dashed #D4AF37; margin:20px 0'>", unsafe_allow_html=True)
+            st.markdown("<hr style='border:2px dashed #C9A961; margin:20px 0'>", unsafe_allow_html=True)
 
             c1, c2, c3 = st.columns(3)
             with c1: st.download_button("⬇️ Excel", data=to_excel(df_export), file_name=f"{title}.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True)
