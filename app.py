@@ -460,7 +460,7 @@ def to_pdf(df, title, region):
     pdf.cell(0, 8, fix_arabic('عضو الادارة.................. مدير الإدارة..................'), 0, 1, 'R')
     pdf.cell(0, 8, fix_arabic(f'تحر في {datetime.now().strftime("%Y-%m-%d")}'), 0, 1, 'R')
 
-    return bytes(pdf.output(dest='S'))
+     return pdf.output(dest='S').encode('latin-1')
 # ====== دالة حفظ صحيفة الدعوى === 
 # ====== دالة حفظ صحيفة الدعوى ======
 def create_paper_pdf(case_data):
