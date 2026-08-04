@@ -1934,47 +1934,49 @@ if st.session_state.page == "تقارير":
         return output.getvalue()
 
     def to_pdf(df, title, region):
-        from fpdf import FPDF # fpdf2 بيدعم العربي
+        from reportlab.pdfbase import pdfmetrics
+        from reportlab.pdfbase.ttfonts import TTFont
+        from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+        from reportlab.lib import colors
+        from reportlab.lib.pagesizes import landscape, A4
+        from reportlab.lib.units import cm
 
-        pdf = FPDF(orientation='L', unit='mm', format='A4')
-        pdf.add_page()
-
-        # نضيف الخط مباشر - fpdf2 شغال
-        pdf.add_font("Cairo", "", "Cairo-Regular.ttf")
-        pdf.set_font("Cairo", size=16)
-
-        pdf.cell(0, 10, fix_arabic('الهيئة القومية للتأمين الاجتماعى'), 0, 1, 'C')
-        pdf.set_font("Cairo", size=12)
-        pdf.cell(0, 8, fix_arabic('الإدارة المركزية للإدارات القانونية'), 0, 1, 'C')
-        pdf.cell(0, 8, fix_arabic('الإدارة العامة للقضايا'), 0, 1, 'C')
-        pdf.cell(0, 8, fix_arabic(f'ديوان عام {region}'), 0, 1, 'C')
-        pdf.cell(0, 8, fix_arabic(title), 0, 1, 'C')
-        pdf.ln(5)
-
-        pdf.set_font("Cairo", size=7)
-        col_width = 270 / len(df.columns)
-        row_height = 8
-        for col in df.columns: pdf.cell(col_width, row_height, fix_arabic(str(col)), 1, 0, 'C')
-        pdf.ln()
-        for _, row in df.iterrows():
-            for item in row: pdf.cell(col_width, row_height, fix_arabic(str(item)), 1, 0, 'C')
-            pdf.ln()
-        pdf.ln(8)
-        pdf.set_font("Cairo", size=11)
-        pdf.cell(0, 8, fix_arabic('تفضلوا بقبول وافر الاحترام'), 0, 1, 'R')
-        pdf.ln(5)
-        cell_w = 90
-        pdf.cell(cell_w, 8, fix_arabic('العضو القانوني'), 0, 0, 'C')
-        pdf.cell(cell_w, 8, fix_arabic('مدير إدارة القضايا'), 0, 0, 'C')
-        pdf.cell(cell_w, 8, fix_arabic('مدير عام الإدارات القانونية'), 0, 1, 'C')
-        pdf.ln(10)
-        pdf.cell(cell_w, 8, '..................', 0, 0, 'C')
-        pdf.cell(cell_w, 8, '..................', 0, 0, 'C')
-        pdf.cell(cell_w, 8, '..................', 0, 1, 'C')
-        pdf.ln(5)
-        pdf.cell(0, 8, fix_arabic(f'تحر في {datetime.now().strftime("%d-%m-%Y")}'), 0, 1, 'L')
         buffer = io.BytesIO()
-        pdf.output(buffer)
+        doc = SimpleDocTemplate(buffer, pagesize=landscape(A4), rightMargin=1*cm, leftMargin=1*cm, topMargin=1*cm, bottomMargin=1*cm)
+
+        pdfmetrics.registerFont(TTFont('Cairo', 'Cairo-Regular.ttf'))
+
+        styles = getSampleStyleSheet()
+        style_center = ParagraphStyle('center', parent=styles['Normal'], fontName='Cairo', fontSize=14, alignment=1, textColor=colors.HexColor('#C9A961'))
+        style_cell = ParagraphStyle('cell', parent=styles['Normal'], fontName='Cairo', fontSize=7, alignment=1, textColor=colors.white)
+        style_head = ParagraphStyle('head', parent=styles['Normal'], fontName='Cairo', fontSize=7, alignment=1, textColor=colors.black)
+
+        story = []
+        story.append(Paragraph(fix_arabic('الهيئة القومية للتأمين الاجتماعى'), style_center))
+        story.append(Paragraph(fix_arabic('الإدارة المركزية للإدارات القانونية'), style_center))
+        story.append(Paragraph(fix_arabic(f'ديوان عام {region}'), style_center))
+        story.append(Paragraph(fix_arabic(title), style_center))
+        story.append(Spacer(1, 12))
+
+        table_data = [[Paragraph(fix_arabic(str(col)), style_head) for col in df.columns]]
+        for _, row in df.iterrows():
+            table_data.append([Paragraph(fix_arabic(str(x)), style_cell) for x in row])
+
+        col_width = (27*cm) / len(df.columns)
+        table = Table(table_data, colWidths=[col_width]*len(df.columns), repeatRows=1)
+        table.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#C9A961')),
+            ('GRID', (0,0), (-1,-1), 1, colors.HexColor('#C9A961')),
+            ('BACKGROUND', (0,1), (-1,-1), colors.HexColor('#1E2A47')),
+        ]))
+        story.append(table)
+        story.append(Spacer(1, 20))
+        story.append(Paragraph(fix_arabic('تفضلوا بقبول وافر الاحترام'), style_center))
+        story.append(Spacer(1, 20))
+        story.append(Paragraph(fix_arabic(f'تحر في {datetime.now().strftime("%d-%m-%Y")}'), style_center))
+
+        doc.build(story)
         return buffer.getvalue()
 
     st.markdown("<div style='background:#1E2A47; padding:20px; border-radius:15px; border:2px solid #C9A961; margin-bottom:15px;'>", unsafe_allow_html=True)
