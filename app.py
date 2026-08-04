@@ -1871,6 +1871,8 @@ elif st.session_state.page == "مكتبة":
 # ============ الجزء الثامن: التقارير ============
 # ================================================
 if st.session_state.page == "تقارير":
+    import io  # <--- ضيف ده هنا عشان ال PDF
+    
     st.markdown("""
     <style>
     ::placeholder {color: transparent!important;}
@@ -1933,6 +1935,55 @@ if st.session_state.page == "تقارير":
         html += "</tbody></table>"
         return html
 
+    # ================== دالة ال PDF المتعدلة ==================
+    def to_pdf(df, title, region):
+        pdf = FPDF(orientation='L', unit='mm', format='A4')
+        pdf.add_page()
+        pdf.add_font('Cairo', '', 'Cairo-Regular.ttf', uni=True)
+
+        # 1. الهيدر
+        pdf.set_font('Cairo', '', 16)
+        pdf.cell(0, 10, fix_arabic('الهيئة القومية للتأمين الاجتماعى'), 0, 1, 'C')
+        pdf.set_font('Cairo', '', 12)
+        pdf.cell(0, 8, fix_arabic('الإدارة المركزية للإدارات القانونية'), 0, 1, 'C')
+        pdf.cell(0, 8, fix_arabic('الإدارة العامة للقضايا'), 0, 1, 'C')
+        pdf.cell(0, 8, fix_arabic(f'ديوان عام {region}'), 0, 1, 'C')
+        pdf.cell(0, 8, fix_arabic(title), 0, 1, 'C')
+        pdf.ln(5)
+
+        # 2. الجدول
+        pdf.set_font('Cairo', '', 8)
+        col_width = 280 / len(df.columns)
+        row_height = 8
+        for col in df.columns:
+            pdf.cell(col_width, row_height, fix_arabic(str(col)), 1, 0, 'C')
+        pdf.ln()
+        for _, row in df.iterrows():
+            for item in row:
+                pdf.cell(col_width, row_height, fix_arabic(str(item)), 1, 0, 'C')
+            pdf.ln()
+
+        # 3. الخاتمة 3 توقيعات
+        pdf.ln(8)
+        pdf.set_font('Cairo', '', 11)
+        pdf.cell(0, 8, fix_arabic('تفضلوا بقبول وافر الاحترام'), 0, 1, 'R')
+        pdf.ln(5)
+        cell_w = 90
+        pdf.set_font('Cairo', '', 10)
+        pdf.cell(cell_w, 8, fix_arabic('العضو القانوني'), 0, 0, 'C')
+        pdf.cell(cell_w, 8, fix_arabic('مدير إدارة القضايا'), 0, 0, 'C')
+        pdf.cell(cell_w, 8, fix_arabic('مدير عام الإدارات القانونية'), 0, 1, 'C')
+        pdf.ln(10)
+        pdf.cell(cell_w, 8, '..................', 0, 0, 'C')
+        pdf.cell(cell_w, 8, '..................', 0, 0, 'C')
+        pdf.cell(cell_w, 8, '..................', 0, 1, 'C')
+        pdf.ln(5)
+        pdf.cell(0, 8, fix_arabic(f'تحر في {datetime.now().strftime("%d-%m-%Y")}'), 0, 1, 'L')
+
+        buffer = io.BytesIO()
+        pdf.output(buffer)
+        return buffer.getvalue()  # <--- ده اللي ظبط الايرور
+
     st.markdown("<div style='background:#1E2A47; padding:20px; border-radius:15px; border:2px solid #D4AF37; margin-bottom:15px; font-family:Cairo'>", unsafe_allow_html=True)
     region = st.text_input("ديوان عام منطقة", key="region_gen")
     col1, col2, col3 = st.columns(3)
@@ -1975,8 +2026,8 @@ if st.session_state.page == "تقارير":
             st.markdown("<hr style='border:2px dashed #D4AF37; margin:20px 0'>", unsafe_allow_html=True)
             
             c1, c2, c3 = st.columns(3)
-            with c1: st.download_button("⬇️ Excel", data=to_excel(df_export), file_name=f"{title}.xlsx", use_container_width=True)
-            with c2: st.download_button("📄 Word", data=to_word(df_export, title, region), file_name=f"{title}.docx", use_container_width=True)
-            st.download_button("📕 PDF", data=to_pdf(df_export, title, region), file_name=f"{title}.pdf", mime="application/pdf", use_container_width=True)
+            with c1: st.download_button("⬇️ Excel", data=to_excel(df_export), file_name=f"{title}.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True)
+            with c2: st.download_button("📄 Word", data=to_word(df_export, title, region), file_name=f"{title}.docx", mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document", use_container_width=True)
+            with c3: st.download_button("📕 PDF", data=to_pdf(df_export, title, region), file_name=f"{title}.pdf", mime="application/pdf", use_container_width=True)  # <--- ضفت mime هنا
             
             report_footer(member_name, manager_name, general_name)
