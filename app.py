@@ -453,14 +453,29 @@ def to_pdf(df, title, region):
             pdf.cell(col_width, row_height, fix_arabic(str(item)), 1, 0, 'C')
         pdf.ln()
 
-    # 3. الخاتمة يمين
-    pdf.ln(5)
+        # 3. الخاتمة يمين مع 3 توقيعات
+    pdf.ln(8)
     pdf.set_font('Cairo', '', 11)
     pdf.cell(0, 8, fix_arabic('تفضلوا بقبول وافر الاحترام'), 0, 1, 'R')
-    pdf.cell(0, 8, fix_arabic('عضو الادارة.................. مدير الإدارة..................'), 0, 1, 'R')
-    pdf.cell(0, 8, fix_arabic(f'تحر في {datetime.now().strftime("%Y-%m-%d")}'), 0, 1, 'R')
+    pdf.ln(5)
+    
+    # جدول التوقيعات 3 خانات
+    pdf.set_font('Cairo', '', 10)
+    cell_w = 90
+    pdf.cell(cell_w, 8, fix_arabic('العضو القانوني'), 0, 0, 'C')
+    pdf.cell(cell_w, 8, fix_arabic('مدير إدارة القضايا'), 0, 0, 'C')
+    pdf.cell(cell_w, 8, fix_arabic('مدير عام الإدارات القانونية'), 0, 1, 'C')
+    
+    pdf.ln(10)
+    pdf.cell(cell_w, 8, '..................', 0, 0, 'C')
+    pdf.cell(cell_w, 8, '..................', 0, 0, 'C')
+    pdf.cell(cell_w, 8, '..................', 0, 1, 'C')
 
- return pdf.output(dest='S').encode('latin-1')
+    pdf.ln(5)
+    pdf.set_font('Cairo', '', 10)
+    pdf.cell(0, 8, fix_arabic(f'تحر في {datetime.now().strftime("%d-%m-%Y")}'), 0, 1, 'L')
+
+    return pdf.output(dest='S').encode('latin-1')
 # ====== دالة حفظ صحيفة الدعوى === 
 # ====== دالة حفظ صحيفة الدعوى ======
 def create_paper_pdf(case_data):
