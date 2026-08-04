@@ -1884,11 +1884,10 @@ if st.session_state.page == "تقارير":
     from docx.enum.text import WD_ALIGN_PARAGRAPH
     from docx.enum.table import WD_TABLE_ALIGNMENT, WD_TABLE_DIRECTION
 
-    def ar(text): # دالة تظبط العربي للـ PDF والـ Word
+    def ar(text): # تظبط العربي
         if not text: return ""
         reshaped_text = arabic_reshaper.reshape(str(text))
-        bidi_text = get_display(reshaped_text)
-        return bidi_text
+        return get_display(reshaped_text)
 
     st.markdown("""
     <style>
@@ -1915,26 +1914,26 @@ if st.session_state.page == "تقارير":
     selected_report = st.selectbox("اختر نوع التقرير", report_options, key="report_type")
 
     def build_html_table(df):
-        html = "<table dir='rtl' style='width:100%; border-collapse:collapse; text-align:center; font-family:Cairo; font-size:12px; margin-top:15px; border:3px solid #D4AF37; border-radius:10px; overflow:hidden'>" # صغرت الخط ل 12px
+        html = "<table dir='rtl' style='width:100%; border-collapse:collapse; text-align:center; font-family:Cairo; font-size:12px; margin-top:15px; border:3px solid #D4AF37; border-radius:10px; overflow:hidden'>"
         html += "<thead><tr style='background:#D4AF37; color:#000'>"
-        for col in df.columns: html += f"<th style='padding:8px; border:1px solid #8B7355; font-weight:bold'>{col}</th>" # قللت البادينج
+        for col in df.columns: html += f"<th style='padding:8px; border:1px solid #8B7355; font-weight:bold'>{col}</th>"
         html += "</tr></thead><tbody>"
         for i, row in df.iterrows():
             html += "<tr style='background:#1E2A47; color:#fff'>"
             for cell in row:
-                html += f"<td style='padding:6px; border:1px solid #D4AF37'>{cell}</td>" # قللت البادينج
+                html += f"<td style='padding:6px; border:1px solid #D4AF37'>{cell}</td>"
             html += "</tr>"
         html += "</tbody></table>"
         return html
 
-    # ================== دالة PDF ب reportlab - خط اصغر وعرض اكبر ==================
+    # ================== PDF نهائي RTL ==================
     def to_pdf(df, title, region):
         pdfmetrics.registerFont(TTFont('Cairo', 'Cairo-Regular.ttf'))
         buffer = io.BytesIO()
-        doc = SimpleDocTemplate(buffer, pagesize=landscape(A4), rightMargin=10, leftMargin=10, topMargin=15, bottomMargin=15) # قللت المارجن عشان العرض يزيد
+        doc = SimpleDocTemplate(buffer, pagesize=landscape(A4), rightMargin=10, leftMargin=10, topMargin=15, bottomMargin=15)
 
-        styleH = ParagraphStyle('Header', fontName='Cairo', fontSize=12, alignment=2, textColor=colors.HexColor('#D4AF37'), leading=14) # صغرت من 14 ل 12
-        styleT = ParagraphStyle('Table', fontName='Cairo', fontSize=6, alignment=2, leading=8) # صغرت من 7 ل 6
+        styleH = ParagraphStyle('Header', fontName='Cairo', fontSize=12, alignment=2, textColor=colors.HexColor('#D4AF37'), leading=14)
+        styleT = ParagraphStyle('Table', fontName='Cairo', fontSize=6, alignment=2, leading=8)
 
         elements = []
         elements.append(Paragraph(ar('الهيئة القومية للتأمين الاجتماعى'), styleH))
@@ -1944,23 +1943,23 @@ if st.session_state.page == "تقارير":
         elements.append(Paragraph(ar(title), styleH))
         elements.append(Spacer(1, 10))
 
-        data_table = [list(df.columns)]
+        # السر: نعكس الاعمدة والصفوف عشان يبدأ من اليمين
+        cols_reversed = list(df.columns)[::-1]
+        data_table = [cols_reversed]
         for _, row in df.iterrows():
-            data_table.append(list(row))
+            data_table.append(list(row)[::-1])
 
         data_table_para = [[Paragraph(ar(str(cell)), styleT) for cell in row] for row in data_table]
 
-        col_width = 277 / len(df.columns) # 277 عشان المارجن قل
+        col_width = 277 / len(df.columns)
         t = Table(data_table_para, colWidths=[col_width]*len(df.columns), repeatRows=1)
         t.setStyle(TableStyle([
             ('FONTNAME', (0,0), (-1,-1), 'Cairo'),
             ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#D4AF37')),
             ('TEXTCOLOR', (0,0), (-1,0), colors.black),
-            ('ALIGN', (0,0), (-1,-1), 'RIGHT'),
-            ('GRID', (0,0), (-1,-1), 0.5, colors.black), # رفعت الخط ل 0.5
+            ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+            ('GRID', (0,0), (-1,-1), 0.5, colors.black),
             ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-            ('LEFTPADDING', (0,0), (-1,-1), 2), # قللت البادينج
-            ('RIGHTPADDING', (0,0), (-1,-1), 2),
         ]))
         elements.append(t)
         elements.append(Spacer(1, 15))
@@ -1971,20 +1970,20 @@ if st.session_state.page == "تقارير":
         doc.build(elements)
         return buffer.getvalue()
 
-    # ================== دالة Word مظبوطة RTL - خط اصغر ==================
+    # ================== Word نهائي RTL ==================
     def to_word(df, title, region):
         doc = Document()
         section = doc.sections[0]
         section.right_margin = Cm(1)
-        section.left_margin = Cm(1) # قللت المارجن عشان العرض
+        section.left_margin = Cm(1)
 
         p = doc.add_paragraph()
         p.alignment = WD_ALIGN_PARAGRAPH.CENTER
         run = p.add_run(ar('الهيئة القومية للتأمين الاجتماعى\n'))
-        run.font.name = 'Cairo'; run.font.size = Pt(14); run.bold = True; run.font.color.rgb = RGBColor(212, 175, 55) # صغرت من 16 ل 14
+        run.font.name = 'Cairo'; run.font.size = Pt(14); run.bold = True; run.font.color.rgb = RGBColor(212, 175, 55)
 
         p = doc.add_paragraph(); p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        run = p.add_run(ar('الإدارة المركزية للإدارات القانونية\n')); run.font.name = 'Cairo'; run.font.size = Pt(11) # صغرت من 12 ل 11
+        run = p.add_run(ar('الإدارة المركزية للإدارات القانونية\n')); run.font.name = 'Cairo'; run.font.size = Pt(11)
 
         p = doc.add_paragraph(); p.alignment = WD_ALIGN_PARAGRAPH.CENTER
         run = p.add_run(ar(f'ديوان عام {region}\n')); run.font.name = 'Cairo'; run.font.size = Pt(11)
@@ -1997,20 +1996,23 @@ if st.session_state.page == "تقارير":
         table.alignment = WD_TABLE_ALIGNMENT.RIGHT
         table.direction = WD_TABLE_DIRECTION.RTL
 
+        # السر: نعكس الاعمدة
+        cols_reversed = list(df.columns)[::-1]
         hdr_cells = table.rows[0].cells
-        for i, col in enumerate(df.columns[::-1]):
+        for i, col in enumerate(cols_reversed):
             hdr_cells[i].text = ar(col)
             for p in hdr_cells[i].paragraphs:
                 p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-                for run in p.runs: run.font.name = 'Cairo'; run.font.bold = True; run.font.size = Pt(8) # صغرت الخط ل 8
+                for run in p.runs: run.font.name = 'Cairo'; run.font.bold = True; run.font.size = Pt(8)
 
         for _, row in df.iterrows():
             row_cells = table.add_row().cells
-            for i, item in enumerate(list(row)[::-1]):
+            row_reversed = list(row)[::-1] # نعكس البيانات
+            for i, item in enumerate(row_reversed):
                 row_cells[i].text = ar(item)
                 for p in row_cells[i].paragraphs:
                     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-                    for run in p.runs: run.font.name = 'Cairo'; run.font.size = Pt(8) # صغرت الخط ل 8
+                    for run in p.runs: run.font.name = 'Cairo'; run.font.size = Pt(8)
 
         buffer = io.BytesIO()
         doc.save(buffer)
