@@ -1868,196 +1868,59 @@ elif st.session_state.page == "مكتبة":
         st.info("اختار قسم من الازرار اللي فوق عشان تشوف الملفات")
         # ================================================
         # ============ الجزء الثامن: التقارير ============
-# ================================================
 if st.session_state.page == "تقارير":
-    import io
-    import arabic_reshaper
-    from bidi.algorithm import get_display
-    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
-    from reportlab.lib.pagesizes import A4, landscape
-    from reportlab.pdfbase import pdfmetrics
-    from reportlab.pdfbase.ttfonts import TTFont
-    from reportlab.lib import colors
-    from reportlab.lib.styles import ParagraphStyle
-    from docx import Document
-    from docx.shared import Pt, RGBColor, Cm
-    from docx.enum.text import WD_ALIGN_PARAGRAPH
-    from docx.enum.table import WD_TABLE_ALIGNMENT, WD_TABLE_DIRECTION
-
-    def ar(text): # للـ Word بس
-        if not text: return ""
-        reshaped_text = arabic_reshaper.reshape(str(text))
-        return get_display(reshaped_text)
-
-    st.markdown("""
-    <style>
-    ::placeholder {color: transparent!important;}
-    label {color: #D4AF37!important; font-weight: bold!important; font-family: Cairo!important;}
-    input, select {color: #000!important; background: #fff!important; text-align: right!important; font-family: Cairo!important;}
-    </style>
-    """, unsafe_allow_html=True)
-
     data = load_data()
-    st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
     st.markdown("<h2 style='color:#D4AF37; text-align:center; font-family:Cairo'>📑 مركز التقارير الحكومية</h2>", unsafe_allow_html=True)
     if st.button("⬅️ العودة للرئيسية", use_container_width=True):
         st.session_state.page = "الرئيسية"; st.rerun()
 
-    report_options = [
-        "بيان بجميع الدعاوي المتداولة",
-        "بيان بجميع الدعاوي المتداولة حسب موضوع الدعوى",
-        "بيان بجميع الاحكام الصادرة للصالح والضد",
-        "بيان بجميع الاحكام الصادرة للصالح",
-        "بيان بجميع الاحكام الصادرة للضد",
-    ]
-
-    selected_report = st.selectbox("اختر نوع التقرير", report_options, key="report_type")
-
-    def build_html_table(df):
-        html = "<table dir='rtl' style='width:100%; border-collapse:collapse; text-align:center; font-family:Cairo; font-size:12px; margin-top:15px; border:3px solid #D4AF37; border-radius:10px; overflow:hidden'>"
-        html += "<thead><tr style='background:#D4AF37; color:#000'>"
-        for col in df.columns: html += f"<th style='padding:8px; border:1px solid #8B7355; font-weight:bold'>{col}</th>"
-        html += "</tr></thead><tbody>"
-        for i, row in df.iterrows():
-            html += "<tr style='background:#1E2A47; color:#fff'>"
-            for cell in row:
-                html += f"<td style='padding:6px; border:1px solid #D4AF37'>{cell}</td>"
-            html += "</tr>"
-        html += "</tbody></table>"
-        return html
-
-    # ================== PDF نهائي بدون bidi ==================
-    def to_pdf(df, title, region):
-        pdfmetrics.registerFont(TTFont('Cairo', 'Cairo-Regular.ttf'))
-        buffer = io.BytesIO()
-        doc = SimpleDocTemplate(buffer, pagesize=landscape(A4), rightMargin=10, leftMargin=10, topMargin=15, bottomMargin=15)
-
-        styleH = ParagraphStyle('Header', fontName='Cairo', fontSize=12, alignment=2, textColor=colors.HexColor('#D4AF37'), leading=14)
-        styleT = ParagraphStyle('Table', fontName='Cairo', fontSize=6, alignment=2, leading=8, wordWrap='CJK') # wordWrap مهم
-
-        elements = []
-        elements.append(Paragraph(title, styleH)) # شلنا ar() من هنا
-        elements.append(Paragraph(f'ديوان عام {region}', styleH))
-        elements.append(Paragraph('الإدارة العامة للقضايا', styleH))
-        elements.append(Paragraph('الإدارة المركزية للإدارات القانونية', styleH))
-        elements.append(Paragraph('الهيئة القومية للتأمين الاجتماعى', styleH))
-        elements.append(Spacer(1, 10))
-
-        # نعكس الاعمدة بس من غير bidi
-        cols_reversed = list(df.columns)[::-1]
-        data_table = [cols_reversed]
-        for _, row in df.iterrows():
-            data_table.append(list(row)[::-1])
-
-        data_table_para = [[Paragraph(str(cell), styleT) for cell in row] for row in data_table] # شلنا ar()
-
-        col_width = 277 / len(df.columns)
-        t = Table(data_table_para, colWidths=[col_width]*len(df.columns), repeatRows=1)
-        t.setStyle(TableStyle([
-            ('FONTNAME', (0,0), (-1,-1), 'Cairo'),
-            ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#D4AF37')),
-            ('TEXTCOLOR', (0,0), (-1,0), colors.black),
-            ('ALIGN', (0,0), (-1,-1), 'RIGHT'), # RIGHT مهم جدا للـ RTL
-            ('GRID', (0,0), (-1,-1), 0.5, colors.black),
-            ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-        ]))
-        elements.append(t)
-        elements.append(Spacer(1, 15))
-        elements.append(Paragraph('تفضلوا بقبول وافر الاحترام', styleH))
-        elements.append(Spacer(1, 15))
-        elements.append(Paragraph(f'تحر في: {datetime.now().strftime("%d-%m-%Y")}', ParagraphStyle('Date', fontName='Cairo', fontSize=9, alignment=0)))
-
-        doc.build(elements)
-        return buffer.getvalue()
-
-    # ================== Word نهائي ب bidi ==================
-    def to_word(df, title, region):
-        doc = Document()
-        section = doc.sections[0]
-        section.right_margin = Cm(1)
-        section.left_margin = Cm(1)
-
-        p = doc.add_paragraph()
-        p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        run = p.add_run(ar('الهيئة القومية للتأمين الاجتماعى\n'))
-        run.font.name = 'Cairo'; run.font.size = Pt(14); run.bold = True; run.font.color.rgb = RGBColor(212, 175, 55)
-
-        p = doc.add_paragraph(); p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        run = p.add_run(ar('الإدارة المركزية للإدارات القانونية\n')); run.font.name = 'Cairo'; run.font.size = Pt(11)
-
-        p = doc.add_paragraph(); p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        run = p.add_run(ar(f'ديوان عام {region}\n')); run.font.name = 'Cairo'; run.font.size = Pt(11)
-
-        p = doc.add_paragraph(); p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        run = p.add_run(ar(f'{title}\n')); run.font.name = 'Cairo'; run.font.size = Pt(11); run.bold = True
-
-        table = doc.add_table(rows=1, cols=len(df.columns))
-        table.style = 'Table Grid'
-        table.alignment = WD_TABLE_ALIGNMENT.RIGHT
-        table.direction = WD_TABLE_DIRECTION.RTL
-
-        cols_reversed = list(df.columns)[::-1]
-        hdr_cells = table.rows[0].cells
-        for i, col in enumerate(cols_reversed):
-            hdr_cells[i].text = ar(col)
-            for p in hdr_cells[i].paragraphs:
-                p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-                for run in p.runs: run.font.name = 'Cairo'; run.font.bold = True; run.font.size = Pt(8)
-
-        for _, row in df.iterrows():
-            row_cells = table.add_row().cells
-            row_reversed = list(row)[::-1]
-            for i, item in enumerate(row_reversed):
-                row_cells[i].text = ar(item)
-                for p in row_cells[i].paragraphs:
-                    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-                    for run in p.runs: run.font.name = 'Cairo'; run.font.size = Pt(8)
-
-        buffer = io.BytesIO()
-        doc.save(buffer)
-        return buffer.getvalue()
-
-    st.markdown("<div style='background:#1E2A47; padding:20px; border-radius:15px; border:2px solid #D4AF37; margin-bottom:15px; font-family:Cairo'>", unsafe_allow_html=True)
+    selected_report = st.selectbox("اختر نوع التقرير", ["بيان بجميع الدعاوي المتداولة"], key="report_type")
     region = st.text_input("ديوان عام منطقة", key="region_gen")
-    col1, col2, col3 = st.columns(3)
+    col1, col2 = st.columns(2)
     with col1: from_date = st.date_input("من الفترة", key="from_gen")
     with col2: to_date = st.date_input("حتى الفترة", key="to_gen")
-    with col3: lawyer = st.text_input("طرف الاستاذ/ المحامي", key="lawyer_gen")
-    topic = st.text_input("موضوع الدعوى للفلترة", key="topic_gen") if "موضوع" in selected_report else None
-
-    st.markdown("<hr style='border:1px dashed #D4AF37'>", unsafe_allow_html=True)
-    st.markdown("<h4 style='color:#D4AF37; text-align:center'>✍️ بيانات التوقيعات</h4>", unsafe_allow_html=True)
-    col4, col5, col6 = st.columns(3)
-    with col4: member_name = st.text_input("اسم العضو القانوني", key="member_gen")
-    with col5: manager_name = st.text_input("اسم مدير إدارة القضايا", key="manager_gen")
-    with col6: general_name = st.text_input("اسم مدير عام الادارات القانونية", key="general_gen")
-    st.markdown("</div>", unsafe_allow_html=True)
+    lawyer = st.text_input("طرف الاستاذ/ المحامي", key="lawyer_gen")
 
     if st.button("🔍 عرض التقرير", use_container_width=True, type="primary"):
         cases = [c for c in data.get("cases", []) if c.get('حالة') == 'متداولة']
         cases = [c for c in cases if c.get('تاريخ_جلسة') and from_date <= datetime.strptime(c['تاريخ_جلسة'], '%Y-%m-%d').date() <= to_date]
-        if topic: cases = [c for c in cases if topic in str(c.get('موضوع',''))]
         cases = sorted(cases, key=lambda x: x.get("تاريخ_جلسة","9999-12-31"))
-
-        title = f"بيان بجميع الدعاوى المتداولة خلال الفترة من {from_date.strftime('%d-%m-%Y')} حتى {to_date.strftime('%d-%m-%Y')} - طرف الاستاذ/ {lawyer} المحامي"
 
         if not cases:
             st.warning("لا توجد بيانات")
         else:
             export_data = []
             for i, c in enumerate(cases, 1):
-                export_data.append({
-                    "م": i, "رقم القضية": c.get('رقم',''), "السنة": c.get('سنة',''), "الدائرة": c.get('دائرة',''),
-                    "النوع": c.get('نوع',''), "المحكمة": c.get('محكمة_اسم',''), "المأمورية": c.get('مأمورية',''),
-                    "المدعي": c.get('مدعي',''), "المدعي عليه": c.get('مدعي_عليه',''), "الموضوع": c.get('موضوع',''),
-                    "تاريخ الجلسة": c.get('تاريخ_جلسة',''), "الإجراء": c.get('الاجراء',''), "ملاحظات": str(c.get('ملاحظات','')).replace('\n', ' ')
-                })
-            df_export = pd.DataFrame(export_data)
+                export_data.append([
+                    i, c.get('رقم',''), c.get('سنة',''), c.get('دائرة',''), c.get('نوع',''), 
+                    c.get('محكمة_اسم',''), c.get('مأمورية',''), c.get('مدعي',''), 
+                    c.get('مدعي_عليه',''), c.get('موضوع',''), c.get('تاريخ_جلسة',''), 
+                    c.get('الاجراء',''), c.get('ملاحظات','')
+                ])
+            
+            columns = ["م", "رقم القضية", "السنة", "الدائرة", "النوع", "المحكمة", "المأمورية", "المدعي", "المدعي عليه", "الموضوع", "تاريخ الجلسة", "الإجراء", "ملاحظات"]
+            df_export = pd.DataFrame(export_data, columns=columns)
 
-            st.markdown(build_html_table(df_export), unsafe_allow_html=True)
-            st.markdown("<hr style='border:2px dashed #D4AF37; margin:20px 0'>", unsafe_allow_html=True)
+            st.dataframe(df_export, use_container_width=True, height=400)
 
-            c1, c2, c3 = st.columns(3)
-            with c1: st.download_button("⬇️ Excel", data=to_excel(df_export), file_name=f"{title}.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True)
-            with c2: st.download_button("📄 Word", data=to_word(df_export, title, region), file_name=f"{title}.docx", mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document", use_container_width=True)
-            with c3: st.download_button("📕 PDF", data=to_pdf(df_export, title, region), file_name=f"{title}.pdf", mime="application/pdf", use_container_width=True)
+            # الحل: نستخدم xlsxwriter عشان نعمل RTL من جوه الاكسيل
+            output = io.BytesIO()
+            with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+                df_export.to_excel(writer, sheet_name='التقرير', index=False, startrow=4)
+                workbook = writer.book
+                worksheet = writer.sheets['التقرير']
+                
+                # نعمل RTL للشيت كله
+                worksheet.right_to_left()
+                
+                # نكتب الهيدر الحكومي
+                merge_format = workbook.add_format({'bold': 1, 'align': 'center', 'valign': 'vcenter', 'font_name': 'Cairo', 'font_size': 14, 'font_color': '#D4AF37'})
+                worksheet.merge_range('A1:M1', 'الهيئة القومية للتأمين الاجتماعى', merge_format)
+                worksheet.merge_range('A2:M2', 'الإدارة المركزية للإدارات القانونية', merge_format)
+                worksheet.merge_range('A3:M3', f'ديوان عام {region}', merge_format)
+                
+                worksheet.set_column(0, 12, 15) # عرض الاعمدة
+
+            st.download_button("⬇️ تحميل Excel جاهز للطباعة", data=output.getvalue(), file_name="التقرير.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+            
+            st.info("افتح ملف الاكسيل ده وبعدين File > Save As > PDF او Word. هيطلع مظبوط 100%")
