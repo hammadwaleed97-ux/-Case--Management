@@ -481,7 +481,7 @@ def to_pdf(df, title, region):
     pdf.set_font('Cairo', '', 10)
     pdf.cell(0, 8, fix_arabic(f'تحر في {datetime.now().strftime("%d-%m-%Y")}'), 0, 1, 'L')
 
-    return pdf.output()  # <--- ده التعديل النهائي
+    return pdf.output()  # في fpdf2 الجديدة ده بيرجع bytes اصلا
 # ====== دالة حفظ صحيفة الدعوى === 
 # ====== دالة حفظ صحيفة الدعوى ======
 def create_paper_pdf(case_data):
@@ -1977,6 +1977,6 @@ if st.session_state.page == "تقارير":
             c1, c2, c3 = st.columns(3)
             with c1: st.download_button("⬇️ Excel", data=to_excel(df_export), file_name=f"{title}.xlsx", use_container_width=True)
             with c2: st.download_button("📄 Word", data=to_word(df_export, title, region), file_name=f"{title}.docx", use_container_width=True)
-            with c3: st.download_button("📕 PDF", data=to_pdf(df_export, title, region), file_name=f"{title}.pdf", use_container_width=True)
+            st.download_button("📕 PDF", data=to_pdf(df_export, title, region), file_name=f"{title}.pdf", mime="application/pdf", use_container_width=True)
             
             report_footer(member_name, manager_name, general_name)
