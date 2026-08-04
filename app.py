@@ -1871,14 +1871,14 @@ elif st.session_state.page == "مكتبة":
 # ================================================
 if st.session_state.page == "تقارير":
     import io 
-    import arabic_reshaper
-    from bidi.algorithm import get_display
-    
-    def ar(text): # دالة واحدة تظبط العربي كله
-        if not text: return ""
-        reshaped_text = arabic_reshaper.reshape(str(text))
-        bidi_text = get_display(reshaped_text)
-        return bidi_text
+    from reportlab.lib.pagesizes import A4, landscape
+    from reportlab.pdfbase import pdfmetrics
+    from reportlab.pdfbase.ttfonts import TTFont
+    from reportlab.platypus import Table, TableStyle, Paragraph, Spacer
+    from reportlab.lib import colors
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from docx.shared import Pt, RGBColor
+    from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_TABLE_ALIGNMENT
     
     st.markdown("""
     <style>
@@ -1904,31 +1904,6 @@ if st.session_state.page == "تقارير":
 
     selected_report = st.selectbox("اختر نوع التقرير", report_options, key="report_type")
 
-    def report_header(region, title):
-        st.markdown(f"""
-        <div style='text-align:center; color:#D4AF37; border:3px double #D4AF37; padding:20px 15px; background: linear-gradient(135deg, #0A1428 0%, #1E2A47 100%); border-radius:12px; margin-bottom:25px; font-family:Cairo'>
-            <h2 style='margin:4px 0; font-size:20px; font-weight:bold; color:#FFD700'>الهيئة القومية للتأمين الاجتماعى</h2>
-            <h3 style='margin:4px 0; font-size:17px; font-weight:500; color:#FFD700'>الإدارة المركزية للإدارات القانونية</h3>
-            <h3 style='margin:4px 0; font-size:17px; font-weight:500; color:#FFD700'>ديوان عام {region}</h3>
-            <hr style='border:1px solid #D4AF37; margin:12px 20%'>
-            <h3 style='margin:8px 0; font-size:19px; font-weight:bold; color:#FFD700'>{title}</h3>
-        </div>
-        """, unsafe_allow_html=True)
-
-    def report_footer(member_name, manager_name, general_name):
-        st.markdown(f"""
-        <div style='margin-top:50px; direction:rtl; font-size:16px; color:#D4AF37; font-family:Cairo'>
-            <div style='text-align:left; margin-bottom:20px; font-weight:bold; color:#FFD700'>تحر في: {datetime.now().strftime('%d-%m-%Y')}</div>
-            <table style='width:100%; border-collapse:collapse; text-align:center'>
-                <tr>
-                    <td style='width:33%; padding:15px; border:2px solid #D4AF37; background:#fff; color:#000'><div style='font-weight:bold'>العضو القانوني</div><div style='min-height:40px'>{member_name if member_name else "&nbsp;"}</div><div style='border-bottom:2px solid #000'></div></td>
-                    <td style='width:33%; padding:15px; border:2px solid #D4AF37; background:#fff; color:#000'><div style='font-weight:bold'>مدير إدارة القضايا</div><div style='min-height:40px'>{manager_name if manager_name else "&nbsp;"}</div><div style='border-bottom:2px solid #000'></div></td>
-                    <td style='width:33%; padding:15px; border:2px solid #D4AF37; background:#fff; color:#000'><div style='font-weight:bold'>مدير عام الإدارات القانونية</div><div style='min-height:40px'>{general_name if general_name else "&nbsp;"}</div><div style='border-bottom:2px solid #000'></div></td>
-                </tr>
-            </table>
-        </div>
-        """, unsafe_allow_html=True)
-
     def build_html_table(df):
         html = "<table dir='rtl' style='width:100%; border-collapse:collapse; text-align:center; font-family:Cairo; font-size:14px; margin-top:15px; border:3px solid #D4AF37; border-radius:10px; overflow:hidden'>"
         html += "<thead><tr style='background:#D4AF37; color:#000'>"
@@ -1942,66 +1917,80 @@ if st.session_state.page == "تقارير":
         html += "</tbody></table>"
         return html
 
-    # ================== دالة ال PDF المظبوطة اخيرا ==================
+    # ================== دالة PDF ب reportlab ==================
     def to_pdf(df, title, region):
-        pdf = FPDF(orientation='L', unit='mm', format='A4')
-        pdf.add_page()
-        pdf.add_font('Cairo', '', 'Cairo-Regular.ttf', uni=True)
+        pdfmetrics.registerFont(TTFont('Cairo', 'Cairo-Regular.ttf'))
+        buffer = io.BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=landscape(A4), rightMargin=20, leftMargin=20, topMargin=20, bottomMargin=20)
+        
+        styles = getSampleStyleSheet()
+        styleN = ParagraphStyle('Normal', fontName='Cairo', fontSize=8, alignment=1, leading=12)
+        styleH = ParagraphStyle('Header', fontName='Cairo', fontSize=14, alignment=2, textColor=colors.HexColor('#D4AF37'))
+        
+        elements = []
+        elements.append(Paragraph('الهيئة القومية للتأمين الاجتماعى', styleH))
+        elements.append(Paragraph('الإدارة المركزية للإدارات القانونية', styleH))
+        elements.append(Paragraph(f'ديوان عام {region}', styleH))
+        elements.append(Paragraph(title, styleH))
+        elements.append(Spacer(1, 12))
 
-        # 1. الهيدر
-        pdf.set_font('Cairo', '', 14)
-        pdf.cell(0, 8, ar('الهيئة القومية للتأمين الاجتماعى'), 0, 1, 'R')
-        pdf.set_font('Cairo', '', 10)
-        pdf.cell(0, 6, ar('الإدارة المركزية للإدارات القانونية'), 0, 1, 'R')
-        pdf.cell(0, 6, ar('الإدارة العامة للقضايا'), 0, 1, 'R')
-        pdf.cell(0, 6, ar(f'ديوان عام {region}'), 0, 1, 'R')
-        pdf.set_font('Cairo', '', 11)
-        pdf.cell(0, 7, ar(title), 0, 1, 'R')
-        pdf.ln(3)
+        # نعكس الاعمدة عشان RTL
+        data_table = [list(df.columns)[::-1]]
+        for _, row in df.iterrows():
+            data_table.append(list(row)[::-1])
+        
+        t = Table(data_table)
+        t.setStyle(TableStyle([
+            ('FONTNAME', (0,0), (-1,-1), 'Cairo'),
+            ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#D4AF37')),
+            ('TEXTCOLOR', (0,0), (-1,0), colors.black),
+            ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+            ('GRID', (0,0), (-1,-1), 1, colors.black),
+            ('FONTSIZE', (0,0), (-1,-1), 7),
+        ]))
+        elements.append(t)
+        elements.append(Spacer(1, 20))
+        elements.append(Paragraph('تفضلوا بقبول وافر الاحترام', styleH))
+        
+        doc.build(elements)
+        return buffer.getvalue()
 
-        # 2. الجدول - نعكسه عشان يبدأ من اليمين
-        pdf.set_font('Cairo', '', 7)
-        col_width = 280 / len(df.columns)
-        row_height = 6
+    # ================== دالة Word مظبوطة RTL ==================
+    def to_word(df, title, region):
+        doc = Document()
+        section = doc.sections[0]
+        section.right_margin = Cm(1.5)
+        section.left_margin = Cm(1.5)
 
-        cols_reversed = list(df.columns)[::-1]
-        for col in cols_reversed:
-            pdf.cell(col_width, row_height, ar(col), 1, 0, 'C')
-        pdf.ln()
+        p = doc.add_paragraph()
+        p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        run = p.add_run('الهيئة القومية للتأمين الاجتماعى\n')
+        run.font.name = 'Cairo'; run.font.size = Pt(16); run.bold = True; run.font.color.rgb = RGBColor(212, 175, 55)
+        
+        p = doc.add_paragraph(); p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        run = p.add_run(f'ديوان عام {region}\n'); run.font.name = 'Cairo'; run.font.size = Pt(12)
+        
+        p = doc.add_paragraph(); p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        run = p.add_run(f'{title}\n'); run.font.name = 'Cairo'; run.font.size = Pt(12); run.bold = True
+
+        table = doc.add_table(rows=1, cols=len(df.columns))
+        table.style = 'Table Grid'
+        table.alignment = WD_TABLE_ALIGNMENT.RIGHT
+        table.direction = WD_TABLE_DIRECTION.RTL # <--- دي اللي بتظبط اتجاه الجدول
+
+        hdr_cells = table.rows[0].cells
+        for i, col in enumerate(df.columns[::-1]): # نعكس الاعمدة
+            hdr_cells[i].text = col
+            for p in hdr_cells[i].paragraphs: p.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
         for _, row in df.iterrows():
-            row_reversed = list(row)[::-1]
-            for item in row_reversed:
-                pdf.cell(col_width, row_height, ar(item), 1, 0, 'C')
-            pdf.ln()
-
-        # 3. الخاتمة - 2 فوق و 1 في النص
-        pdf.ln(8)
-        pdf.set_font('Cairo', '', 10)
-        pdf.cell(0, 6, ar('تفضلوا بقبول وافر الاحترام'), 0, 1, 'R')
-        pdf.ln(5)
+            row_cells = table.add_row().cells
+            for i, item in enumerate(list(row)[::-1]): # نعكس البيانات
+                row_cells[i].text = str(item)
+                for p in row_cells[i].paragraphs: p.alignment = WD_ALIGN_PARAGRAPH.CENTER
         
-        cell_w = 95
-        pdf.set_font('Cairo', '', 9)
-        pdf.cell(cell_w, 6, ar('العضو القانوني'), 0, 0, 'C')
-        pdf.cell(cell_w, 6, ar('مدير إدارة القضايا'), 0, 1, 'C')
-        pdf.cell(cell_w, 6, '..................', 0, 0, 'C')
-        pdf.cell(cell_w, 6, '..................', 0, 1, 'C')
-        
-        pdf.ln(6)
-        pdf.cell(cell_w, 6, '', 0, 0, 'C')
-        pdf.cell(cell_w, 6, ar('مدير عام الإدارات القانونية'), 0, 0, 'C')
-        pdf.cell(cell_w, 6, '', 0, 1, 'C')
-        pdf.cell(cell_w, 6, '', 0, 0, 'C')
-        pdf.cell(cell_w, 6, '..................', 0, 0, 'C')
-        pdf.cell(cell_w, 6, '', 0, 1, 'C')
-
-        pdf.ln(5)
-        pdf.set_font('Cairo', '', 9)
-        pdf.cell(0, 6, ar(f'تحر في {datetime.now().strftime("%d-%m-%Y")}'), 0, 1, 'L')
-
         buffer = io.BytesIO()
-        pdf.output(buffer)
+        doc.save(buffer)
         return buffer.getvalue()
 
     st.markdown("<div style='background:#1E2A47; padding:20px; border-radius:15px; border:2px solid #D4AF37; margin-bottom:15px; font-family:Cairo'>", unsafe_allow_html=True)
@@ -2027,7 +2016,6 @@ if st.session_state.page == "تقارير":
         cases = sorted(cases, key=lambda x: x.get("تاريخ_جلسة","9999-12-31"))
         
         title = f"بيان بجميع الدعاوى المتداولة خلال الفترة من {from_date.strftime('%d-%m-%Y')} حتى {to_date.strftime('%d-%m-%Y')} - طرف الاستاذ/ {lawyer} المحامي"
-        report_header(region, title)
         
         if not cases: 
             st.warning("لا توجد بيانات")
@@ -2049,5 +2037,3 @@ if st.session_state.page == "تقارير":
             with c1: st.download_button("⬇️ Excel", data=to_excel(df_export), file_name=f"{title}.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True)
             with c2: st.download_button("📄 Word", data=to_word(df_export, title, region), file_name=f"{title}.docx", mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document", use_container_width=True)
             with c3: st.download_button("📕 PDF", data=to_pdf(df_export, title, region), file_name=f"{title}.pdf", mime="application/pdf", use_container_width=True)
-            
-            report_footer(member_name, manager_name, general_name)
