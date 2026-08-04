@@ -1871,7 +1871,14 @@ elif st.session_state.page == "مكتبة":
 # ================================================
 if st.session_state.page == "تقارير":
     import io 
-    from bidi.algorithm import get_display # مهم للعربي
+    import arabic_reshaper
+    from bidi.algorithm import get_display
+    
+    def ar(text): # دالة واحدة تظبط العربي كله
+        if not text: return ""
+        reshaped_text = arabic_reshaper.reshape(str(text))
+        bidi_text = get_display(reshaped_text)
+        return bidi_text
     
     st.markdown("""
     <style>
@@ -1935,58 +1942,55 @@ if st.session_state.page == "تقارير":
         html += "</tbody></table>"
         return html
 
-    def ar_pdf(text): # تظبيط العربي للـ PDF
-        return get_display(fix_arabic(str(text)))
-
-    # ================== دالة ال PDF بالخط الصغير ==================
+    # ================== دالة ال PDF المظبوطة اخيرا ==================
     def to_pdf(df, title, region):
         pdf = FPDF(orientation='L', unit='mm', format='A4')
         pdf.add_page()
         pdf.add_font('Cairo', '', 'Cairo-Regular.ttf', uni=True)
 
-        # 1. الهيدر - خط اصغر
+        # 1. الهيدر
         pdf.set_font('Cairo', '', 14)
-        pdf.cell(0, 8, ar_pdf('الهيئة القومية للتأمين الاجتماعى'), 0, 1, 'R')
+        pdf.cell(0, 8, ar('الهيئة القومية للتأمين الاجتماعى'), 0, 1, 'R')
         pdf.set_font('Cairo', '', 10)
-        pdf.cell(0, 6, ar_pdf('الإدارة المركزية للإدارات القانونية'), 0, 1, 'R')
-        pdf.cell(0, 6, ar_pdf('الإدارة العامة للقضايا'), 0, 1, 'R')
-        pdf.cell(0, 6, ar_pdf(f'ديوان عام {region}'), 0, 1, 'R')
+        pdf.cell(0, 6, ar('الإدارة المركزية للإدارات القانونية'), 0, 1, 'R')
+        pdf.cell(0, 6, ar('الإدارة العامة للقضايا'), 0, 1, 'R')
+        pdf.cell(0, 6, ar(f'ديوان عام {region}'), 0, 1, 'R')
         pdf.set_font('Cairo', '', 11)
-        pdf.cell(0, 7, ar_pdf(title), 0, 1, 'R')
+        pdf.cell(0, 7, ar(title), 0, 1, 'R')
         pdf.ln(3)
 
-        # 2. الجدول - خط 7 وارتفاع 6
+        # 2. الجدول - نعكسه عشان يبدأ من اليمين
         pdf.set_font('Cairo', '', 7)
         col_width = 280 / len(df.columns)
         row_height = 6
 
-        for col in df.columns:
-            pdf.cell(col_width, row_height, ar_pdf(col), 1, 0, 'C')
+        cols_reversed = list(df.columns)[::-1]
+        for col in cols_reversed:
+            pdf.cell(col_width, row_height, ar(col), 1, 0, 'C')
         pdf.ln()
 
         for _, row in df.iterrows():
-            for item in row:
-                pdf.cell(col_width, row_height, ar_pdf(item), 1, 0, 'C')
+            row_reversed = list(row)[::-1]
+            for item in row_reversed:
+                pdf.cell(col_width, row_height, ar(item), 1, 0, 'C')
             pdf.ln()
 
-        # 3. الخاتمة - 2 فوق و 1 في النص وخط اصغر
+        # 3. الخاتمة - 2 فوق و 1 في النص
         pdf.ln(8)
         pdf.set_font('Cairo', '', 10)
-        pdf.cell(0, 6, ar_pdf('تفضلوا بقبول وافر الاحترام'), 0, 1, 'R')
+        pdf.cell(0, 6, ar('تفضلوا بقبول وافر الاحترام'), 0, 1, 'R')
         pdf.ln(5)
         
         cell_w = 95
         pdf.set_font('Cairo', '', 9)
-        # سطر 1
-        pdf.cell(cell_w, 6, ar_pdf('العضو القانوني'), 0, 0, 'C')
-        pdf.cell(cell_w, 6, ar_pdf('مدير إدارة القضايا'), 0, 1, 'C')
+        pdf.cell(cell_w, 6, ar('العضو القانوني'), 0, 0, 'C')
+        pdf.cell(cell_w, 6, ar('مدير إدارة القضايا'), 0, 1, 'C')
         pdf.cell(cell_w, 6, '..................', 0, 0, 'C')
         pdf.cell(cell_w, 6, '..................', 0, 1, 'C')
         
-        # سطر 2 - مدير عام في النص
         pdf.ln(6)
         pdf.cell(cell_w, 6, '', 0, 0, 'C')
-        pdf.cell(cell_w, 6, ar_pdf('مدير عام الإدارات القانونية'), 0, 0, 'C')
+        pdf.cell(cell_w, 6, ar('مدير عام الإدارات القانونية'), 0, 0, 'C')
         pdf.cell(cell_w, 6, '', 0, 1, 'C')
         pdf.cell(cell_w, 6, '', 0, 0, 'C')
         pdf.cell(cell_w, 6, '..................', 0, 0, 'C')
@@ -1994,7 +1998,7 @@ if st.session_state.page == "تقارير":
 
         pdf.ln(5)
         pdf.set_font('Cairo', '', 9)
-        pdf.cell(0, 6, ar_pdf(f'تحر في {datetime.now().strftime("%d-%m-%Y")}'), 0, 1, 'L')
+        pdf.cell(0, 6, ar(f'تحر في {datetime.now().strftime("%d-%m-%Y")}'), 0, 1, 'L')
 
         buffer = io.BytesIO()
         pdf.output(buffer)
