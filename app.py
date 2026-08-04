@@ -439,7 +439,7 @@ def to_pdf(df, title, region):
 
     # 2. الجدول
     pdf.set_font('Cairo', '', 8)
-    col_width = pdf.w / len(df.columns) # قسمنا العرض صح
+    col_width = 280 / len(df.columns)
     row_height = 8
 
     # الهيدر
