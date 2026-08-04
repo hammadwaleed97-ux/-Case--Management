@@ -1840,7 +1840,7 @@ elif st.session_state.page == "مكتبة":
     else:
         st.info("اختار قسم من الازرار اللي فوق عشان تشوف الملفات")
         # ================================================
-# ================================================
+        # ================================================
 # ============ الجزء الثامن: التقارير ============
 # ================================================
 if st.session_state.page == "تقارير":
@@ -1849,10 +1849,7 @@ if st.session_state.page == "تقارير":
     ::placeholder {color: transparent!important;}
     label {color: #D4AF37!important; font-weight: bold!important; font-family: Cairo!important;}
     input, select {color: #000!important; background: #fff!important; text-align: right!important; font-family: Cairo!important;}
- .case-card {border-radius:15px; padding:15px; margin-bottom:25px; font-family:Cairo; box-shadow: 0 4px 15px rgba(0,0,0,0.4); border:2px solid #D4AF37}
- .card-title {text-align:center; color:#fff; font-weight:bold; font-size:17px; margin-bottom:12px; padding:10px; border-radius:8px}
- .field {background:#fff; padding:10px 15px; margin:6px 0; border-radius:8px; display:flex; justify-content:space-between; color:#000; font-size:15px; border:1px solid #ddd}
- .field span:first-child {font-weight:bold; color:#0A1428}
+    .stDataFrame {border:2px solid #D4AF37; border-radius:10px}
     </style>
     """, unsafe_allow_html=True)
 
@@ -1875,61 +1872,68 @@ if st.session_state.page == "تقارير":
         "بيان عددي بجميع الاحكام الصادرة للصالح",
         "بيان عددي بجميع الاحكام الصادرة للضد",
         "بيان عددي بجميع الاحكام حسب موضوع الدعوى",
-        "بيان احصائي",
-        "تقرير تفاصيل قضية"
+        "بيان احصائي"
     ]
+
     selected_report = st.selectbox("اختر نوع التقرير", report_options, key="report_type")
 
-    def report_header(region, title, member_name, manager_name, general_name):
-        st.markdown(f"<div style='text-align:center; color:#D4AF37; border:3px double #D4AF37; padding:20px 15px; background: linear-gradient(135deg, #0A1428 0%, #1E2A47 100%); border-radius:12px; margin-bottom:25px; font-family:Cairo'><h2>الهيئة القومية للتأمين الاجتماعى</h2><h3>الإدارة المركزية للإدارات القانونية</h3><h3>الإدارة العامة للقضايا</h3><h3>ديوان عام {region}</h3><hr style='border:1px solid #D4AF37; margin:12px 20%'><h3>{title}</h3></div>", unsafe_allow_html=True)
+    def report_header(region, title):
+        st.markdown(f"""
+        <div style='text-align:center; color:#D4AF37; border:3px double #D4AF37; padding:20px 15px; background: linear-gradient(135deg, #0A1428 0%, #1E2A47 100%); border-radius:12px; margin-bottom:25px; font-family:Cairo'>
+            <h2 style='margin:4px 0; font-size:20px; font-weight:bold'>الهيئة القومية للتأمين الاجتماعى</h2>
+            <h3 style='margin:4px 0; font-size:17px; font-weight:500'>الإدارة المركزية للإدارات القانونية</h3>
+            <h3 style='margin:4px 0; font-size:17px; font-weight:500'>الإدارة العامة للقضايا</h3>
+            <h3 style='margin:4px 0; font-size:17px; font-weight:500'>ديوان عام {region}</h3>
+            <hr style='border:1px solid #D4AF37; margin:12px 20%'>
+            <h3 style='margin:8px 0; font-size:19px; font-weight:bold'>{title}</h3>
+        </div>
+        """, unsafe_allow_html=True)
 
     def report_footer(member_name, manager_name, general_name):
-        st.markdown(f"<div style='margin-top:50px; direction:rtl; font-size:15px; color:#D4AF37; font-family:Cairo'><div style='text-align:left; margin-bottom:20px'>تحر في: {datetime.now().strftime('%d-%m-%Y')}</div><table style='width:100%; border-collapse:collapse; text-align:center'><tr><td style='width:50%; padding:15px; border:2px solid #D4AF37'><div style='font-weight:bold'>العضو القانوني</div><div style='min-height:30px'>{member_name}</div><div style='border-bottom:1px solid #D4AF37; margin:0 20px'></div></td><td style='width:50%; padding:15px; border:2px solid #D4AF37'><div style='font-weight:bold'>مدير إدارة القضايا</div><div style='min-height:30px'>{manager_name}</div><div style='border-bottom:1px solid #D4AF37; margin:0 20px'></div></td></tr><tr><td colspan='2' style='padding:15px; border:2px solid #D4AF37; border-top:none'><div style='font-weight:bold'>مدير عام الادارات القانونية</div><div style='min-height:30px'>{general_name}</div><div style='border-bottom:1px solid #D4AF37; margin:0 30%'></div></td></tr></table></div>", unsafe_allow_html=True)
-
-    # دي اللي بتطبع نفس الخانات بس في كروت
-    def case_detail_report(c, report_type):
-        # الكارت الازرق - نفس خانات الجدول الحكومي
-        st.markdown(f"<div class='case-card' style='background:linear-gradient(135deg, #0D47A1, #1976D2)'><div class='card-title' style='background:#0D47A1'>1- بيانات القضية</div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='field'><span>م:</span> <span></span></div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='field'><span>رقم القضية:</span> <span>{c.get('رقم','')}</span></div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='field'><span>السنة:</span> <span>{c.get('سنة','')}</span></div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='field'><span>الدائرة:</span> <span>{c.get('دائرة','')}</span></div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='field'><span>النوع:</span> <span>{c.get('نوع','')}</span></div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='field'><span>المحكمة:</span> <span>{c.get('محكمة_اسم','')}</span></div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='field'><span>المأمورية:</span> <span>{c.get('مأمورية','')}</span></div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='field'><span>المدعي:</span> <span>{c.get('مدعي','')}</span></div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='field'><span>المدعي عليه:</span> <span>{c.get('مدعي_عليه','')}</span></div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='field'><span>الموضوع:</span> <span>{c.get('موضوع','')}</span></div>", unsafe_allow_html=True)
-        if report_type == "متداولة":
-            st.markdown(f"<div class='field'><span>تاريخ الجلسة:</span> <span>{c.get('تاريخ_جلسة','')}</span></div>", unsafe_allow_html=True)
-        if report_type == "حكم":
-            st.markdown(f"<div class='field'><span>تاريخ الحكم:</span> <span>{c.get('تاريخ_الحكم','')}</span></div>", unsafe_allow_html=True)
-            st.markdown(f"<div class='field'><span>النتيجة:</span> <span>{c.get('مسندة_ل','')}</span></div>", unsafe_allow_html=True)
-            st.markdown(f"<div class='field'><span>منطوق الحكم:</span> <span>{c.get('منطوق_الحكم','')}</span></div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='field'><span>الإجراء:</span> <span>{c.get('الاجراء','')}</span></div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='field'><span>ملاحظات:</span> <span>{c.get('ملاحظات','')}</span></div>", unsafe_allow_html=True)
-        st.markdown("</div>", unsafe_allow_html=True)
+        st.markdown(f"""
+        <div style='margin-top:50px; direction:rtl; font-size:15px; color:#D4AF37; font-family:Cairo'>
+            <div style='text-align:left; margin-bottom:20px'>تحر في: {datetime.now().strftime('%Y-%m-%d')}</div>
+            <table style='width:100%; border-collapse:collapse; text-align:center'>
+                <tr>
+                    <td style='width:50%; padding:15px; border:2px solid #D4AF37; vertical-align:top; background:#fff; color:#000'>
+                        <div style='font-weight:bold; margin-bottom:15px; color:#000'>العضو القانوني</div>
+                        <div style='font-size:16px; font-weight:500; margin-bottom:5px; min-height:30px; color:#000'>{member_name if member_name else "&nbsp;"}</div>
+                        <div style='border-bottom:1px solid #000; margin:0 20px'></div>
+                    </td>
+                    <td style='width:50%; padding:15px; border:2px solid #D4AF37; vertical-align:top; background:#fff; color:#000'>
+                        <div style='font-weight:bold; margin-bottom:15px; white-space:nowrap; color:#000'>مدير إدارة القضايا</div>
+                        <div style='font-size:16px; font-weight:500; margin-bottom:5px; min-height:30px; color:#000'>{manager_name if manager_name else "&nbsp;"}</div>
+                        <div style='border-bottom:1px solid #000; margin:0 20px'></div>
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan='2' style='padding:15px; border:2px solid #D4AF37; border-top:none; vertical-align:top; background:#fff; color:#000'>
+                        <div style='font-weight:bold; margin-bottom:15px; color:#000'>مدير عام الادارات القانونية</div>
+                        <div style='font-size:16px; font-weight:500; margin-bottom:5px; min-height:30px; color:#000'>{general_name if general_name else "&nbsp;"}</div>
+                        <div style='border-bottom:1px solid #000; margin:0 30%'></div>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        """, unsafe_allow_html=True)
 
     def show_export_buttons(df_export, title, region):
-        st.markdown("<hr>", unsafe_allow_html=True)
+        st.markdown("<hr style='border:1px dashed #D4AF37; margin:20px 0'>", unsafe_allow_html=True)
         c1, c2, c3 = st.columns(3)
-        with c1: st.download_button("⬇️ Excel", data=to_excel(df_export), file_name=f"{title}.xlsx", use_container_width=True)
-        with c2: st.download_button("📄 Word", data=to_word(df_export, title, region), file_name=f"{title}.docx", use_container_width=True)
-        with c3: st.download_button("📕 PDF", data=to_pdf(df_export, title, region), file_name=f"{title}.pdf", use_container_width=True)
+        with c1: st.download_button("Excel ⬇️", data=to_excel(df_export), file_name=f"{title}_{datetime.now().strftime('%Y%m%d')}.xlsx", use_container_width=True)
+        with c2: st.download_button("Word 📄", data=to_word(df_export, title, region), file_name=f"{title}_{datetime.now().strftime('%Y%m%d')}.docx", use_container_width=True)
+        with c3: st.download_button("PDF 📕", data=to_pdf(df_export, title, region), file_name=f"{title}_{datetime.now().strftime('%Y%m%d')}.pdf", use_container_width=True)
 
-    st.markdown("<div style='background:#1E2A47; padding:20px; border-radius:15px; border:2px solid #D4AF37; margin-bottom:15px'>", unsafe_allow_html=True)
+    st.markdown("<div style='background:#1E2A47; padding:20px; border-radius:15px; border:2px solid #D4AF37; margin-bottom:15px; font-family:Cairo'>", unsafe_allow_html=True)
     region = st.text_input("ديوان عام منطقة", key="region_gen")
-    if selected_report == "تقرير تفاصيل قضية":
-        case_nums = [f"{c.get('رقم','')} - {c.get('سنة','')}" for c in data.get("cases",[])]
-        selected_case_str = st.selectbox("اختر القضية", [""] + case_nums, key="case_select")
-        case_num = selected_case_str.split(" - ")[0] if selected_case_str else ""
-    else:
-        col1, col2, col3 = st.columns(3)
-        with col1: from_date = st.date_input("من الفترة", key="from_gen")
-        with col2: to_date = st.date_input("حتى الفترة", key="to_gen")
-        with col3: lawyer = st.text_input("طرف الاستاذ/ المحامي", key="lawyer_gen")
-        topic = st.text_input("موضوع الدعوى للفلترة", key="topic_gen") if "موضوع" in selected_report else None
+    col1, col2, col3 = st.columns(3)
+    with col1: from_date = st.date_input("من الفترة", key="from_gen")
+    with col2: to_date = st.date_input("حتى الفترة", key="to_gen")
+    with col3: lawyer = st.text_input("طرف الاستاذ/ المحامي", key="lawyer_gen")
+    topic = st.text_input("موضوع الدعوى للفلترة", key="topic_gen") if "موضوع" in selected_report else None
+    
     st.markdown("<hr style='border:1px dashed #D4AF37'>", unsafe_allow_html=True)
+    st.markdown("<h4 style='color:#D4AF37; text-align:center'>✍️ بيانات التوقيعات</h4>", unsafe_allow_html=True)
     col4, col5, col6 = st.columns(3)
     with col4: member_name = st.text_input("اسم العضو القانوني", key="member_gen")
     with col5: manager_name = st.text_input("اسم مدير إدارة القضايا", key="manager_gen")
@@ -1938,36 +1942,26 @@ if st.session_state.page == "تقارير":
 
     if st.button("🔍 عرض التقرير", use_container_width=True, type="primary"):
         cases = data.get("cases", [])
-
-        if selected_report == "تقرير تفاصيل قضية":
-            if not case_num: st.warning("اختر قضية اولا")
-            else:
-                case = next((c for c in cases if str(c.get('رقم','')) == case_num), None)
-                if not case: st.error("القضية غير موجودة")
-                else:
-                    report_type_flag = "متداولة" if case.get('حالة') == 'متداولة' else "حكم"
-                    title = f"تقرير تفاصيل القضية رقم {case.get('رقم','')} لسنة {case.get('سنة','')} ق"
-                    report_header(region, title, member_name, manager_name, general_name)
-                    case_detail_report(case, report_type_flag)
-                    df_single = pd.DataFrame([case])
-                    show_export_buttons(df_single, title, region)
-                    report_footer(member_name, manager_name, general_name)
-
-        # باقي التقارير كلها زي ما هي بالجدول
-        elif selected_report in ["بيان بجميع الدعاوي المتداولة", "بيان بجميع الدعاوي المتداولة حسب موضوع الدعوى"]:
+        
+        if selected_report in ["بيان بجميع الدعاوي المتداولة", "بيان بجميع الدعاوي المتداولة حسب موضوع الدعوى"]:
             cases = [c for c in cases if c.get('حالة') == 'متداولة']
             cases = [c for c in cases if c.get('تاريخ_جلسة') and from_date <= datetime.strptime(c['تاريخ_جلسة'], '%Y-%m-%d').date() <= to_date]
             if topic: cases = [c for c in cases if topic in str(c.get('موضوع',''))]
             cases = sorted(cases, key=lambda x: x.get("تاريخ_جلسة","9999-12-31"))
             title = selected_report + f" خلال الفترة من {from_date} حتى {to_date} طرف الاستاذ/ {lawyer} المحامي"
-            report_header(region, title, member_name, manager_name, general_name)
+            report_header(region, title)
             if not cases: st.warning("لا توجد بيانات")
             else:
                 export_data = []
                 for i, c in enumerate(cases, 1):
-                    export_data.append({"م": i, "رقم القضية": c.get('رقم',''), "السنة": c.get('سنة',''), "الدائرة": c.get('دائرة',''), "النوع": c.get('نوع',''), "المحكمة": c.get('محكمة_اسم',''), "المأمورية": c.get('مأمورية',''), "المدعي": c.get('مدعي',''), "المدعي عليه": c.get('مدعي_عليه',''), "الموضوع": c.get('موضوع',''), "تاريخ الجلسة": c.get('تاريخ_جلسة',''), "الإجراء": c.get('الاجراء',''), "ملاحظات": str(c.get('ملاحظات','')).replace('\n', ' ')})
+                    export_data.append({
+                        "م": i, "رقم القضية": c.get('رقم',''), "السنة": c.get('سنة',''), "الدائرة": c.get('دائرة',''), "النوع": c.get('نوع',''),
+                        "المحكمة": c.get('محكمة_اسم',''), "المأمورية": c.get('مأمورية',''), "المدعي": c.get('مدعي',''), "المدعي عليه": c.get('مدعي_عليه',''),
+                        "الموضوع": c.get('موضوع',''), "تاريخ الجلسة": c.get('تاريخ_جلسة',''), "الإجراء": c.get('الاجراء',''),
+                        "ملاحظات": str(c.get('ملاحظات','')).replace('\n', ' ')
+                    })
                 df_export = pd.DataFrame(export_data)
-                st.dataframe(df_export, use_container_width=True)
+                st.dataframe(df_export, use_container_width=True, hide_index=True)
                 show_export_buttons(df_export, title, region)
                 report_footer(member_name, manager_name, general_name)
 
@@ -1979,14 +1973,18 @@ if st.session_state.page == "تقارير":
             if "موضوع" in selected_report and topic: cases = [c for c in cases if topic in str(c.get('موضوع',''))]
             cases = sorted(cases, key=lambda x: x.get("تاريخ_الحكم","9999-12-31"))
             title = selected_report + f" خلال الفترة من {from_date} حتى {to_date} طرف الاستاذ/ {lawyer} المحامي"
-            report_header(region, title, member_name, manager_name, general_name)
+            report_header(region, title)
             if not cases: st.warning("لا توجد بيانات")
             else:
                 export_data = []
                 for i, c in enumerate(cases, 1):
-                    export_data.append({"م": i, "رقم القضية": c.get('رقم',''), "السنة": c.get('سنة',''), "النوع": c.get('نوع',''), "المحكمة": c.get('محكمة_اسم',''), "المأمورية": c.get('مأمورية',''), "المدعي": c.get('مدعي',''), "المدعي عليه": c.get('مدعي_عليه',''), "الموضوع": c.get('موضوع',''), "تاريخ الحكم": c.get('تاريخ_الحكم',''), "النتيجة": c.get('مسندة_ل',''), "منطوق الحكم": c.get('منطوق_الحكم',''), "ملاحظات": str(c.get('ملاحظات','')).replace('\n', ' ')})
+                    export_data.append({
+                        "م": i, "رقم القضية": c.get('رقم',''), "السنة": c.get('سنة',''), "النوع": c.get('نوع',''),
+                        "المحكمة": c.get('محكمة_اسم',''), "المأمورية": c.get('مأمورية',''), "المدعي": c.get('مدعي',''), "المدعي عليه": c.get('مدعي_عليه',''),
+                        "الموضوع": c.get('موضوع',''), "تاريخ الحكم": c.get('تاريخ_الحكم',''), "النتيجة": c.get('مسندة_ل',''),
+                        "منطوق الحكم": c.get('منطوق_الحكم',''), "ملاحظات": str(c.get('ملاحظات','')).replace('\n', ' ')
+                    })
                 df_export = pd.DataFrame(export_data)
-                st.dataframe(df_export, use_container_width=True)
+                st.dataframe(df_export, use_container_width=True, hide_index=True)
                 show_export_buttons(df_export, title, region)
                 report_footer(member_name, manager_name, general_name)
-        
