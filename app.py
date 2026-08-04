@@ -1870,16 +1870,18 @@ elif st.session_state.page == "مكتبة":
         # ============ الجزء الثامن: التقارير ============
 # ================================================
 if st.session_state.page == "تقارير":
-    import io 
+    import io
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
     from reportlab.lib.pagesizes import A4, landscape
     from reportlab.pdfbase import pdfmetrics
     from reportlab.pdfbase.ttfonts import TTFont
-    from reportlab.platypus import Table, TableStyle, Paragraph, Spacer
     from reportlab.lib import colors
     from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-    from docx.shared import Pt, RGBColor
-    from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_TABLE_ALIGNMENT
-    
+    from docx import Document
+    from docx.shared import Pt, RGBColor, Cm
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
+    from docx.enum.table import WD_TABLE_ALIGNMENT, WD_TABLE_DIRECTION # <--- المهمه دي
+
     st.markdown("""
     <style>
     ::placeholder {color: transparent!important;}
@@ -1922,14 +1924,15 @@ if st.session_state.page == "تقارير":
         pdfmetrics.registerFont(TTFont('Cairo', 'Cairo-Regular.ttf'))
         buffer = io.BytesIO()
         doc = SimpleDocTemplate(buffer, pagesize=landscape(A4), rightMargin=20, leftMargin=20, topMargin=20, bottomMargin=20)
-        
+
         styles = getSampleStyleSheet()
-        styleN = ParagraphStyle('Normal', fontName='Cairo', fontSize=8, alignment=1, leading=12)
-        styleH = ParagraphStyle('Header', fontName='Cairo', fontSize=14, alignment=2, textColor=colors.HexColor('#D4AF37'))
-        
+        styleH = ParagraphStyle('Header', fontName='Cairo', fontSize=14, alignment=2, textColor=colors.HexColor('#D4AF37'), leading=16)
+        styleT = ParagraphStyle('Table', fontName='Cairo', fontSize=7, alignment=1, leading=10)
+
         elements = []
         elements.append(Paragraph('الهيئة القومية للتأمين الاجتماعى', styleH))
         elements.append(Paragraph('الإدارة المركزية للإدارات القانونية', styleH))
+        elements.append(Paragraph('الإدارة العامة للقضايا', styleH))
         elements.append(Paragraph(f'ديوان عام {region}', styleH))
         elements.append(Paragraph(title, styleH))
         elements.append(Spacer(1, 12))
@@ -1938,8 +1941,8 @@ if st.session_state.page == "تقارير":
         data_table = [list(df.columns)[::-1]]
         for _, row in df.iterrows():
             data_table.append(list(row)[::-1])
-        
-        t = Table(data_table)
+
+        t = Table(data_table, repeatRows=1)
         t.setStyle(TableStyle([
             ('FONTNAME', (0,0), (-1,-1), 'Cairo'),
             ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#D4AF37')),
@@ -1947,11 +1950,14 @@ if st.session_state.page == "تقارير":
             ('ALIGN', (0,0), (-1,-1), 'CENTER'),
             ('GRID', (0,0), (-1,-1), 1, colors.black),
             ('FONTSIZE', (0,0), (-1,-1), 7),
+            ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
         ]))
         elements.append(t)
         elements.append(Spacer(1, 20))
         elements.append(Paragraph('تفضلوا بقبول وافر الاحترام', styleH))
-        
+        elements.append(Spacer(1, 20))
+        elements.append(Paragraph(f'تحر في: {datetime.now().strftime("%d-%m-%Y")}', ParagraphStyle('Date', fontName='Cairo', fontSize=10, alignment=0)))
+
         doc.build(elements)
         return buffer.getvalue()
 
@@ -1966,29 +1972,36 @@ if st.session_state.page == "تقارير":
         p.alignment = WD_ALIGN_PARAGRAPH.CENTER
         run = p.add_run('الهيئة القومية للتأمين الاجتماعى\n')
         run.font.name = 'Cairo'; run.font.size = Pt(16); run.bold = True; run.font.color.rgb = RGBColor(212, 175, 55)
-        
+
+        p = doc.add_paragraph(); p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        run = p.add_run('الإدارة المركزية للإدارات القانونية\n'); run.font.name = 'Cairo'; run.font.size = Pt(12)
+
         p = doc.add_paragraph(); p.alignment = WD_ALIGN_PARAGRAPH.CENTER
         run = p.add_run(f'ديوان عام {region}\n'); run.font.name = 'Cairo'; run.font.size = Pt(12)
-        
+
         p = doc.add_paragraph(); p.alignment = WD_ALIGN_PARAGRAPH.CENTER
         run = p.add_run(f'{title}\n'); run.font.name = 'Cairo'; run.font.size = Pt(12); run.bold = True
 
         table = doc.add_table(rows=1, cols=len(df.columns))
         table.style = 'Table Grid'
         table.alignment = WD_TABLE_ALIGNMENT.RIGHT
-        table.direction = WD_TABLE_DIRECTION.RTL # <--- دي اللي بتظبط اتجاه الجدول
+        table.direction = WD_TABLE_DIRECTION.RTL # <--- دي اللي ظبطت الاتجاه
 
         hdr_cells = table.rows[0].cells
         for i, col in enumerate(df.columns[::-1]): # نعكس الاعمدة
             hdr_cells[i].text = col
-            for p in hdr_cells[i].paragraphs: p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            for p in hdr_cells[i].paragraphs:
+                p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                for run in p.runs: run.font.name = 'Cairo'; run.font.bold = True
 
         for _, row in df.iterrows():
             row_cells = table.add_row().cells
             for i, item in enumerate(list(row)[::-1]): # نعكس البيانات
                 row_cells[i].text = str(item)
-                for p in row_cells[i].paragraphs: p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        
+                for p in row_cells[i].paragraphs:
+                    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                    for run in p.runs: run.font.name = 'Cairo'
+
         buffer = io.BytesIO()
         doc.save(buffer)
         return buffer.getvalue()
@@ -2014,25 +2027,25 @@ if st.session_state.page == "تقارير":
         cases = [c for c in cases if c.get('تاريخ_جلسة') and from_date <= datetime.strptime(c['تاريخ_جلسة'], '%Y-%m-%d').date() <= to_date]
         if topic: cases = [c for c in cases if topic in str(c.get('موضوع',''))]
         cases = sorted(cases, key=lambda x: x.get("تاريخ_جلسة","9999-12-31"))
-        
+
         title = f"بيان بجميع الدعاوى المتداولة خلال الفترة من {from_date.strftime('%d-%m-%Y')} حتى {to_date.strftime('%d-%m-%Y')} - طرف الاستاذ/ {lawyer} المحامي"
-        
-        if not cases: 
+
+        if not cases:
             st.warning("لا توجد بيانات")
         else:
             export_data = []
             for i, c in enumerate(cases, 1):
                 export_data.append({
-                    "م": i, "رقم القضية": c.get('رقم',''), "السنة": c.get('سنة',''), "الدائرة": c.get('دائرة',''), 
-                    "النوع": c.get('نوع',''), "المحكمة": c.get('محكمة_اسم',''), "المأمورية": c.get('مأمورية',''), 
-                    "المدعي": c.get('مدعي',''), "المدعي عليه": c.get('مدعي_عليه',''), "الموضوع": c.get('موضوع',''), 
+                    "م": i, "رقم القضية": c.get('رقم',''), "السنة": c.get('سنة',''), "الدائرة": c.get('دائرة',''),
+                    "النوع": c.get('نوع',''), "المحكمة": c.get('محكمة_اسم',''), "المأمورية": c.get('مأمورية',''),
+                    "المدعي": c.get('مدعي',''), "المدعي عليه": c.get('مدعي_عليه',''), "الموضوع": c.get('موضوع',''),
                     "تاريخ الجلسة": c.get('تاريخ_جلسة',''), "الإجراء": c.get('الاجراء',''), "ملاحظات": str(c.get('ملاحظات','')).replace('\n', ' ')
                 })
             df_export = pd.DataFrame(export_data)
-            
+
             st.markdown(build_html_table(df_export), unsafe_allow_html=True)
             st.markdown("<hr style='border:2px dashed #D4AF37; margin:20px 0'>", unsafe_allow_html=True)
-            
+
             c1, c2, c3 = st.columns(3)
             with c1: st.download_button("⬇️ Excel", data=to_excel(df_export), file_name=f"{title}.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True)
             with c2: st.download_button("📄 Word", data=to_word(df_export, title, region), file_name=f"{title}.docx", mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document", use_container_width=True)
