@@ -1911,10 +1911,22 @@ if st.session_state.page == "تقارير":
     def to_excel(df):
         output = io.BytesIO()
         with pd.ExcelWriter(output, engine='openpyxl') as writer:
-            df.to_excel(writer, sheet_name='التقرير', index=False)
+            df.to_excel(writer, sheet_name='التقرير', index=False, startrow=5)
             worksheet = writer.sheets['التقرير']
+            region_val = st.session_state.get('region_gen', '')
+            worksheet['A1'] = 'الهيئة القومية للتأمين الاجتماعى'
+            worksheet['A2'] = 'الإدارة المركزية للإدارات القانونية'
+            worksheet['A3'] = 'الإدارة العامة للقضايا'
+            worksheet['A4'] = f'ديوان عام {region_val}'
+            for r in range(1,5):
+                worksheet.merge_cells(f'A{r}:M{r}')
+                worksheet.cell(r,1).alignment = Alignment(horizontal='center')
+                worksheet.cell(r,1).font = Font(bold=True, size=14)
             header_fill = PatternFill(start_color='D4AF37', end_color='D4AF37', fill_type='solid')
-            for cell in worksheet[1]: cell.fill = header_fill; cell.font = Font(bold=True); cell.alignment = Alignment(horizontal='center')
+            for cell in worksheet[6]:
+                cell.fill = header_fill
+                cell.font = Font(bold=True)
+                cell.alignment = Alignment(horizontal='center')
             worksheet.sheet_view.rightToLeft = True
         return output.getvalue()
 
@@ -1941,8 +1953,8 @@ if st.session_state.page == "تقارير":
         pdf.cell(0, 8, fix_arabic(f'ديوان عام {region}'), 0, 1, 'C')
         pdf.cell(0, 8, fix_arabic(title), 0, 1, 'C')
         pdf.ln(5)
-        pdf.set_font('Cairo', '', 8)
-        col_width = 280 / len(df.columns)
+        pdf.set_font('Cairo', '', 7)
+        col_width = 270 / len(df.columns)
         row_height = 8
         for col in df.columns: pdf.cell(col_width, row_height, fix_arabic(str(col)), 1, 0, 'C')
         pdf.ln()
