@@ -1879,25 +1879,37 @@ if st.session_state.page == "تقارير":
     def report_header(region, title):
         st.markdown(f"""
         <div style='text-align:center; color:#D4AF37; border:3px double #D4AF37; padding:20px 15px; background: linear-gradient(135deg, #0A1428 0%, #1E2A47 100%); border-radius:12px; margin-bottom:25px; font-family:Cairo'>
-            <h2 style='margin:4px 0; font-size:22px; font-weight:bold; color:#FFD700'>{title}</h2>
+            <h2 style='margin:4px 0; font-size:20px; font-weight:bold; color:#FFD700'>الهيئة القومية للتأمين الاجتماعى</h2>
+            <h3 style='margin:4px 0; font-size:17px; font-weight:500; color:#FFD700'>الإدارة المركزية للإدارات القانونية</h3>
+            <h3 style='margin:4px 0; font-size:17px; font-weight:500; color:#FFD700'>الإدارة العامة للقضايا</h3>
+            <h3 style='margin:4px 0; font-size:17px; font-weight:500; color:#FFD700'>ديوان عام {region}</h3>
+            <hr style='border:1px solid #D4AF37; margin:12px 20%'>
+            <h3 style='margin:8px 0; font-size:19px; font-weight:bold; color:#FFD700'>{title}</h3>
         </div>
         """, unsafe_allow_html=True)
 
-    def report_footer(member_name, manager_name):
+    def report_footer(member_name, manager_name, general_name):
         st.markdown(f"""
         <div style='margin-top:50px; direction:rtl; font-size:16px; color:#D4AF37; font-family:Cairo'>
             <div style='text-align:left; margin-bottom:20px; font-weight:bold; color:#FFD700'>تحر في: {datetime.now().strftime('%d-%m-%Y')}</div>
             <table style='width:100%; border-collapse:collapse; text-align:center'>
                 <tr>
                     <td style='width:50%; padding:15px; border:2px solid #D4AF37; vertical-align:top; background:#fff; color:#000'>
+                        <div style='font-weight:bold; margin-bottom:15px; color:#000; font-size:17px'>العضو القانوني</div>
+                        <div style='font-size:16px; font-weight:500; margin-bottom:5px; min-height:40px; color:#000'>{member_name if member_name else "&nbsp;"}</div>
+                        <div style='border-bottom:2px solid #000; margin:0 20px'></div>
+                    </td>
+                    <td style='width:50%; padding:15px; border:2px solid #D4AF37; vertical-align:top; background:#fff; color:#000'>
                         <div style='font-weight:bold; margin-bottom:15px; color:#000; font-size:17px'>مدير إدارة القضايا</div>
                         <div style='font-size:16px; font-weight:500; margin-bottom:5px; min-height:40px; color:#000'>{manager_name if manager_name else "&nbsp;"}</div>
                         <div style='border-bottom:2px solid #000; margin:0 20px'></div>
                     </td>
-                    <td style='width:50%; padding:15px; border:2px solid #D4AF37; vertical-align:top; background:#fff; color:#000'>
-                        <div style='font-weight:bold; margin-bottom:15px; color:#000; font-size:17px'>العضو القانوني</div>
-                        <div style='font-size:16px; font-weight:500; margin-bottom:5px; min-height:40px; color:#000'>{member_name if member_name else "&nbsp;"}</div>
-                        <div style='border-bottom:2px solid #000; margin:0 20px'></div>
+                </tr>
+                <tr>
+                    <td colspan='2' style='padding:15px; border:2px solid #D4AF37; border-top:none; vertical-align:top; background:#fff; color:#000'>
+                        <div style='font-weight:bold; margin-bottom:15px; color:#000; font-size:17px'>مدير عام الإدارات القانونية</div>
+                        <div style='font-size:16px; font-weight:500; margin-bottom:5px; min-height:40px; color:#000'>{general_name if general_name else "&nbsp;"}</div>
+                        <div style='border-bottom:2px solid #000; margin:0 30%'></div>
                     </td>
                 </tr>
             </table>
@@ -1906,7 +1918,7 @@ if st.session_state.page == "تقارير":
 
     def build_html_table(cases_list):
         html = "<table dir='rtl' style='width:100%; border-collapse:collapse; text-align:center; font-family:Cairo; font-size:14px; margin-top:15px; border:3px solid #D4AF37; border-radius:10px; overflow:hidden'>"
-        html += "<thead><tr style='background:#D4AF37; color:#000'>" # هيدر دهبي زي الصورة
+        html += "<thead><tr style='background:#D4AF37; color:#000'>" # هيدر دهبي
         headers = ["م", "رقم القضية", "السنة", "الدائرة", "النوع", "المحكمة", "المأمورية", "المدعي", "المدعي عليه", "الموضوع", "تاريخ الجلسة", "الإجراء", "ملاحظات"]
         for col in headers: html += f"<th style='padding:12px; border:1px solid #8B7355; font-weight:bold'>{col}</th>"
         html += "</tr></thead><tbody>"
@@ -1922,9 +1934,9 @@ if st.session_state.page == "تقارير":
             html += f"<td style='padding:10px; border:1px solid #D4AF37'>{c.get('مدعي','')}</td>"
             html += f"<td style='padding:10px; border:1px solid #D4AF37'>{c.get('مدعي_عليه','')}</td>"
             html += f"<td style='padding:10px; border:1px solid #D4AF37'>{c.get('موضوع','')}</td>"
-            html += f"<td style='padding:10px; border:1px solid #D4AF37'>{c.get('تاريخ_جلسة','')}</td>" # التاريخ
-            html += f"<td style='padding:10px; border:1px solid #D4AF37'>{c.get('الاجراء','')}</td>" # الاجراء رجع
-            html += f"<td style='padding:10px; border:1px solid #D4AF37'>{str(c.get('ملاحظات','')).replace(chr(10),' ')}</td>" # الملاحظات الاخر
+            html += f"<td style='padding:10px; border:1px solid #D4AF37'>{c.get('تاريخ_جلسة','')}</td>"
+            html += f"<td style='padding:10px; border:1px solid #D4AF37'>{c.get('الاجراء','')}</td>"
+            html += f"<td style='padding:10px; border:1px solid #D4AF37'>{str(c.get('ملاحظات','')).replace(chr(10),' ')}</td>"
             html += "</tr>"
         html += "</tbody></table>"
         return html
@@ -1946,9 +1958,10 @@ if st.session_state.page == "تقارير":
     
     st.markdown("<hr style='border:1px dashed #D4AF37'>", unsafe_allow_html=True)
     st.markdown("<h4 style='color:#D4AF37; text-align:center'>✍️ بيانات التوقيعات</h4>", unsafe_allow_html=True)
-    col4, col5 = st.columns(2)
+    col4, col5, col6 = st.columns(3) # 3 خانات
     with col4: member_name = st.text_input("اسم العضو القانوني", key="member_gen")
     with col5: manager_name = st.text_input("اسم مدير إدارة القضايا", key="manager_gen")
+    with col6: general_name = st.text_input("اسم مدير عام الادارات القانونية", key="general_gen")
     st.markdown("</div>", unsafe_allow_html=True)
 
     if st.button("🔍 عرض التقرير", use_container_width=True, type="primary"):
@@ -1969,7 +1982,7 @@ if st.session_state.page == "تقارير":
                 df_export = pd.DataFrame(export_data)
                 st.markdown(build_html_table(cases), unsafe_allow_html=True)
                 show_export_buttons(df_export, title, region)
-                report_footer(member_name, manager_name)
+                report_footer(member_name, manager_name, general_name) # 3 توقيعات
 
         elif "بيان بجميع الاحكام" in selected_report:
             cases = [c for c in cases if c.get('حالة') == 'منتهية' and c.get('تاريخ_الحكم')]
@@ -1982,5 +1995,5 @@ if st.session_state.page == "تقارير":
             report_header(region, title)
             if not cases: st.warning("لا توجد بيانات")
             else:
-                st.warning("تقرير الاحكام لسه محتاج تعديل الجدول بتاعه")
-                report_footer(member_name, manager_name)
+                st.warning("تقرير الاحكام محتاج نعمل له جدول منفصل بنفس الشكل")
+                report_footer(member_name, manager_name, general_name)
