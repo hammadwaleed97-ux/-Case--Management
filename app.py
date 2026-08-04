@@ -1870,7 +1870,8 @@ elif st.session_state.page == "مكتبة":
         # ============ الجزء الثامن: التقارير ============
 # ================================================
 if st.session_state.page == "تقارير":
-    import io  # مهم للـ PDF
+    import io 
+    from bidi.algorithm import get_display # مهم للعربي
     
     st.markdown("""
     <style>
@@ -1934,65 +1935,66 @@ if st.session_state.page == "تقارير":
         html += "</tbody></table>"
         return html
 
-    # ================== دالة ال PDF المتعدلة نهائي ==================
+    def ar_pdf(text): # تظبيط العربي للـ PDF
+        return get_display(fix_arabic(str(text)))
+
+    # ================== دالة ال PDF بالخط الصغير ==================
     def to_pdf(df, title, region):
         pdf = FPDF(orientation='L', unit='mm', format='A4')
         pdf.add_page()
         pdf.add_font('Cairo', '', 'Cairo-Regular.ttf', uni=True)
 
-        # 1. الهيدر
-        pdf.set_font('Cairo', '', 16)
-        pdf.cell(0, 10, fix_arabic('الهيئة القومية للتأمين الاجتماعى'), 0, 1, 'C')
-        pdf.set_font('Cairo', '', 12)
-        pdf.cell(0, 8, fix_arabic('الإدارة المركزية للإدارات القانونية'), 0, 1, 'C')
-        pdf.cell(0, 8, fix_arabic('الإدارة العامة للقضايا'), 0, 1, 'C')
-        pdf.cell(0, 8, fix_arabic(f'ديوان عام {region}'), 0, 1, 'C')
-        pdf.cell(0, 8, fix_arabic(title), 0, 1, 'C')
-        pdf.ln(5)
+        # 1. الهيدر - خط اصغر
+        pdf.set_font('Cairo', '', 14)
+        pdf.cell(0, 8, ar_pdf('الهيئة القومية للتأمين الاجتماعى'), 0, 1, 'R')
+        pdf.set_font('Cairo', '', 10)
+        pdf.cell(0, 6, ar_pdf('الإدارة المركزية للإدارات القانونية'), 0, 1, 'R')
+        pdf.cell(0, 6, ar_pdf('الإدارة العامة للقضايا'), 0, 1, 'R')
+        pdf.cell(0, 6, ar_pdf(f'ديوان عام {region}'), 0, 1, 'R')
+        pdf.set_font('Cairo', '', 11)
+        pdf.cell(0, 7, ar_pdf(title), 0, 1, 'R')
+        pdf.ln(3)
 
-        # 2. الجدول - معكوس عشان RTL
-        pdf.set_font('Cairo', '', 8)
+        # 2. الجدول - خط 7 وارتفاع 6
+        pdf.set_font('Cairo', '', 7)
         col_width = 280 / len(df.columns)
-        row_height = 8
-        
-        cols_reversed = list(df.columns)[::-1] # عكس الاعمدة
-        
-        for col in cols_reversed:
-            pdf.cell(col_width, row_height, fix_arabic(str(col)), 1, 0, 'C')
+        row_height = 6
+
+        for col in df.columns:
+            pdf.cell(col_width, row_height, ar_pdf(col), 1, 0, 'C')
         pdf.ln()
 
         for _, row in df.iterrows():
-            row_reversed = list(row)[::-1] # عكس الداتا
-            for item in row_reversed:
-                pdf.cell(col_width, row_height, fix_arabic(str(item)), 1, 0, 'C')
+            for item in row:
+                pdf.cell(col_width, row_height, ar_pdf(item), 1, 0, 'C')
             pdf.ln()
 
-        # 3. الخاتمة - 2 فوق و 1 في النص
-        pdf.ln(12)
-        pdf.set_font('Cairo', '', 11)
-        pdf.cell(0, 8, fix_arabic('تفضلوا بقبول وافر الاحترام'), 0, 1, 'R')
+        # 3. الخاتمة - 2 فوق و 1 في النص وخط اصغر
         pdf.ln(8)
+        pdf.set_font('Cairo', '', 10)
+        pdf.cell(0, 6, ar_pdf('تفضلوا بقبول وافر الاحترام'), 0, 1, 'R')
+        pdf.ln(5)
         
         cell_w = 95
-        pdf.set_font('Cairo', '', 10)
+        pdf.set_font('Cairo', '', 9)
         # سطر 1
-        pdf.cell(cell_w, 8, fix_arabic('العضو القانوني'), 0, 0, 'C')
-        pdf.cell(cell_w, 8, fix_arabic('مدير إدارة القضايا'), 0, 1, 'C')
-        pdf.cell(cell_w, 8, '..................', 0, 0, 'C')
-        pdf.cell(cell_w, 8, '..................', 0, 1, 'C')
+        pdf.cell(cell_w, 6, ar_pdf('العضو القانوني'), 0, 0, 'C')
+        pdf.cell(cell_w, 6, ar_pdf('مدير إدارة القضايا'), 0, 1, 'C')
+        pdf.cell(cell_w, 6, '..................', 0, 0, 'C')
+        pdf.cell(cell_w, 6, '..................', 0, 1, 'C')
         
         # سطر 2 - مدير عام في النص
-        pdf.ln(10)
-        pdf.cell(cell_w, 8, '', 0, 0, 'C')
-        pdf.cell(cell_w, 8, fix_arabic('مدير عام الإدارات القانونية'), 0, 0, 'C')
-        pdf.cell(cell_w, 8, '', 0, 1, 'C')
-        pdf.cell(cell_w, 8, '', 0, 0, 'C')
-        pdf.cell(cell_w, 8, '..................', 0, 0, 'C')
-        pdf.cell(cell_w, 8, '', 0, 1, 'C')
+        pdf.ln(6)
+        pdf.cell(cell_w, 6, '', 0, 0, 'C')
+        pdf.cell(cell_w, 6, ar_pdf('مدير عام الإدارات القانونية'), 0, 0, 'C')
+        pdf.cell(cell_w, 6, '', 0, 1, 'C')
+        pdf.cell(cell_w, 6, '', 0, 0, 'C')
+        pdf.cell(cell_w, 6, '..................', 0, 0, 'C')
+        pdf.cell(cell_w, 6, '', 0, 1, 'C')
 
-        pdf.ln(8)
-        pdf.set_font('Cairo', '', 10)
-        pdf.cell(0, 8, fix_arabic(f'تحر في {datetime.now().strftime("%d-%m-%Y")}'), 0, 1, 'L')
+        pdf.ln(5)
+        pdf.set_font('Cairo', '', 9)
+        pdf.cell(0, 6, ar_pdf(f'تحر في {datetime.now().strftime("%d-%m-%Y")}'), 0, 1, 'L')
 
         buffer = io.BytesIO()
         pdf.output(buffer)
