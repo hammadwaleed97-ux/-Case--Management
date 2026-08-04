@@ -1883,29 +1883,10 @@ if st.session_state.page == "تقارير":
     selected_report = st.selectbox("اختر نوع التقرير", report_options, key="report_type")
 
     def report_header(region, title):
-        st.markdown(f"""
-        <div style='text-align:center; color:#C9A961; border:3px double #C9A961; padding:20px 15px; background: #1E2A47; border-radius:12px; margin-bottom:25px;'>
-            <h2 style='margin:4px 0; font-size:20px; font-weight:bold; color:#C9A961'>الهيئة القومية للتأمين الاجتماعى</h2>
-            <h3 style='margin:4px 0; font-size:17px; font-weight:500; color:#C9A961'>الإدارة المركزية للإدارات القانونية</h3>
-            <h3 style='margin:4px 0; font-size:17px; font-weight:500; color:#C9A961'>ديوان عام {region}</h3>
-            <hr style='border:1px solid #C9A961; margin:12px 20%'>
-            <h3 style='margin:8px 0; font-size:19px; font-weight:bold; color:#C9A961'>{title}</h3>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown(f"<div style='text-align:center; color:#C9A961; border:3px double #C9A961; padding:20px 15px; background: #1E2A47; border-radius:12px; margin-bottom:25px;'><h2 style='margin:4px 0; font-size:20px; font-weight:bold; color:#C9A961'>الهيئة القومية للتأمين الاجتماعى</h2><h3 style='margin:4px 0; font-size:17px; font-weight:500; color:#C9A961'>الإدارة المركزية للإدارات القانونية</h3><h3 style='margin:4px 0; font-size:17px; font-weight:500; color:#C9A961'>ديوان عام {region}</h3><hr style='border:1px solid #C9A961; margin:12px 20%'><h3 style='margin:8px 0; font-size:19px; font-weight:bold; color:#C9A961'>{title}</h3></div>", unsafe_allow_html=True)
 
     def report_footer(member_name, manager_name, general_name):
-        st.markdown(f"""
-        <div style='margin-top:50px; direction:rtl; font-size:16px; color:#C9A961;'>
-            <div style='text-align:left; margin-bottom:20px; font-weight:bold; color:#C9A961'>تحر في: {datetime.now().strftime('%d-%m-%Y')}</div>
-            <table style='width:100%; border-collapse:collapse; text-align:center'>
-                <tr>
-                    <td style='width:33%; padding:15px; border:2px solid #C9A961; background:#fff; color:#000'><div style='font-weight:bold'>العضو القانوني</div><div style='min-height:40px'>{member_name if member_name else "&nbsp;"}</div><div style='border-bottom:2px solid #000'></div></td>
-                    <td style='width:33%; padding:15px; border:2px solid #C9A961; background:#fff; color:#000'><div style='font-weight:bold'>مدير إدارة القضايا</div><div style='min-height:40px'>{manager_name if manager_name else "&nbsp;"}</div><div style='border-bottom:2px solid #000'></div></td>
-                    <td style='width:33%; padding:15px; border:2px solid #C9A961; background:#fff; color:#000'><div style='font-weight:bold'>مدير عام الإدارات القانونية</div><div style='min-height:40px'>{general_name if general_name else "&nbsp;"}</div><div style='border-bottom:2px solid #000'></div></td>
-                </tr>
-            </table>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown(f"<div style='margin-top:50px; direction:rtl; font-size:16px; color:#C9A961;'><div style='text-align:left; margin-bottom:20px; font-weight:bold; color:#C9A961'>تحر في: {datetime.now().strftime('%d-%m-%Y')}</div><table style='width:100%; border-collapse:collapse; text-align:center'><tr><td style='width:33%; padding:15px; border:2px solid #C9A961; background:#fff; color:#000'><div style='font-weight:bold'>العضو القانوني</div><div style='min-height:40px'>{member_name if member_name else '&nbsp;'}</div><div style='border-bottom:2px solid #000'></div></td><td style='width:33%; padding:15px; border:2px solid #C9A961; background:#fff; color:#000'><div style='font-weight:bold'>مدير إدارة القضايا</div><div style='min-height:40px'>{manager_name if manager_name else '&nbsp;'}</div><div style='border-bottom:2px solid #000'></div></td><td style='width:33%; padding:15px; border:2px solid #C9A961; background:#fff; color:#000'><div style='font-weight:bold'>مدير عام الإدارات القانونية</div><div style='min-height:40px'>{general_name if general_name else '&nbsp;'}</div><div style='border-bottom:2px solid #000'></div></td></tr></table></div>", unsafe_allow_html=True)
 
     def build_html_table(df):
         html = "<table dir='rtl' style='width:100%; border-collapse:collapse; text-align:center; font-size:14px; margin-top:15px; border:3px solid #C9A961; border-radius:10px; overflow:hidden'>"
@@ -1953,12 +1934,18 @@ if st.session_state.page == "تقارير":
         return output.getvalue()
 
     def to_pdf(df, title, region):
+        import os # <-- السطر المهم
         pdf = FPDF(orientation='L', unit='mm', format='A4')
         pdf.add_page()
+
+        # الحل: نجيب مسار الخط من نفس مكان app.py
+        font_path = os.path.join(os.path.dirname(__file__), "Cairo-Regular.ttf")
+
         try:
-            pdf.add_font('Cairo', '', 'Cairo-Regular.ttf', uni=True)
+            pdf.add_font('Cairo', '', font_path, uni=True)
             pdf.set_font('Cairo', '', 16)
-        except:
+        except Exception as e:
+            st.error(f"خطأ في تحميل الخط: {e}")
             pdf.set_font('Arial', '', 10)
 
         pdf.cell(0, 10, fix_arabic('الهيئة القومية للتأمين الاجتماعى'), 0, 1, 'C')
