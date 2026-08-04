@@ -1867,11 +1867,10 @@ elif st.session_state.page == "مكتبة":
     else:
         st.info("اختار قسم من الازرار اللي فوق عشان تشوف الملفات")
         # ================================================
-        # ================================================
-# ============ الجزء الثامن: التقارير ============
+        # ============ الجزء الثامن: التقارير ============
 # ================================================
 if st.session_state.page == "تقارير":
-    import io  # <--- ضيف ده هنا عشان ال PDF
+    import io  # مهم للـ PDF
     
     st.markdown("""
     <style>
@@ -1935,7 +1934,7 @@ if st.session_state.page == "تقارير":
         html += "</tbody></table>"
         return html
 
-    # ================== دالة ال PDF المتعدلة ==================
+    # ================== دالة ال PDF المتعدلة نهائي ==================
     def to_pdf(df, title, region):
         pdf = FPDF(orientation='L', unit='mm', format='A4')
         pdf.add_page()
@@ -1951,38 +1950,53 @@ if st.session_state.page == "تقارير":
         pdf.cell(0, 8, fix_arabic(title), 0, 1, 'C')
         pdf.ln(5)
 
-        # 2. الجدول
+        # 2. الجدول - معكوس عشان RTL
         pdf.set_font('Cairo', '', 8)
         col_width = 280 / len(df.columns)
         row_height = 8
-        for col in df.columns:
+        
+        cols_reversed = list(df.columns)[::-1] # عكس الاعمدة
+        
+        for col in cols_reversed:
             pdf.cell(col_width, row_height, fix_arabic(str(col)), 1, 0, 'C')
         pdf.ln()
+
         for _, row in df.iterrows():
-            for item in row:
+            row_reversed = list(row)[::-1] # عكس الداتا
+            for item in row_reversed:
                 pdf.cell(col_width, row_height, fix_arabic(str(item)), 1, 0, 'C')
             pdf.ln()
 
-        # 3. الخاتمة 3 توقيعات
-        pdf.ln(8)
+        # 3. الخاتمة - 2 فوق و 1 في النص
+        pdf.ln(12)
         pdf.set_font('Cairo', '', 11)
         pdf.cell(0, 8, fix_arabic('تفضلوا بقبول وافر الاحترام'), 0, 1, 'R')
-        pdf.ln(5)
-        cell_w = 90
+        pdf.ln(8)
+        
+        cell_w = 95
         pdf.set_font('Cairo', '', 10)
+        # سطر 1
         pdf.cell(cell_w, 8, fix_arabic('العضو القانوني'), 0, 0, 'C')
-        pdf.cell(cell_w, 8, fix_arabic('مدير إدارة القضايا'), 0, 0, 'C')
-        pdf.cell(cell_w, 8, fix_arabic('مدير عام الإدارات القانونية'), 0, 1, 'C')
-        pdf.ln(10)
-        pdf.cell(cell_w, 8, '..................', 0, 0, 'C')
+        pdf.cell(cell_w, 8, fix_arabic('مدير إدارة القضايا'), 0, 1, 'C')
         pdf.cell(cell_w, 8, '..................', 0, 0, 'C')
         pdf.cell(cell_w, 8, '..................', 0, 1, 'C')
-        pdf.ln(5)
+        
+        # سطر 2 - مدير عام في النص
+        pdf.ln(10)
+        pdf.cell(cell_w, 8, '', 0, 0, 'C')
+        pdf.cell(cell_w, 8, fix_arabic('مدير عام الإدارات القانونية'), 0, 0, 'C')
+        pdf.cell(cell_w, 8, '', 0, 1, 'C')
+        pdf.cell(cell_w, 8, '', 0, 0, 'C')
+        pdf.cell(cell_w, 8, '..................', 0, 0, 'C')
+        pdf.cell(cell_w, 8, '', 0, 1, 'C')
+
+        pdf.ln(8)
+        pdf.set_font('Cairo', '', 10)
         pdf.cell(0, 8, fix_arabic(f'تحر في {datetime.now().strftime("%d-%m-%Y")}'), 0, 1, 'L')
 
         buffer = io.BytesIO()
         pdf.output(buffer)
-        return buffer.getvalue()  # <--- ده اللي ظبط الايرور
+        return buffer.getvalue()
 
     st.markdown("<div style='background:#1E2A47; padding:20px; border-radius:15px; border:2px solid #D4AF37; margin-bottom:15px; font-family:Cairo'>", unsafe_allow_html=True)
     region = st.text_input("ديوان عام منطقة", key="region_gen")
@@ -2028,6 +2042,6 @@ if st.session_state.page == "تقارير":
             c1, c2, c3 = st.columns(3)
             with c1: st.download_button("⬇️ Excel", data=to_excel(df_export), file_name=f"{title}.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True)
             with c2: st.download_button("📄 Word", data=to_word(df_export, title, region), file_name=f"{title}.docx", mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document", use_container_width=True)
-            with c3: st.download_button("📕 PDF", data=to_pdf(df_export, title, region), file_name=f"{title}.pdf", mime="application/pdf", use_container_width=True)  # <--- ضفت mime هنا
+            with c3: st.download_button("📕 PDF", data=to_pdf(df_export, title, region), file_name=f"{title}.pdf", mime="application/pdf", use_container_width=True)
             
             report_footer(member_name, manager_name, general_name)
