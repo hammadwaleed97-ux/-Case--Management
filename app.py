@@ -2008,4 +2008,4 @@ if st.session_state.page == "تقارير":
             with c2: st.download_button("📄 Word", data=to_word(df_export, title, region), file_name=f"{title}.docx", mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document", use_container_width=True)
             with c3: st.download_button("📕 PDF", data=to_pdf(df_export, title, region), file_name=f"{title}.pdf", mime="application/pdf", use_container_width=True)
 
-            report_footer(member_name, manager_name, general_name)                    
+            report_footer(member_name, manager_name, general_name)
