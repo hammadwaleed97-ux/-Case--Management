@@ -13,6 +13,12 @@ from docx.shared import Pt
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 import arabic_reshaper
 from bidi.algorithm import get_display
+def fix_arabic(text):
+    """ بتظبط العربي عشان ميطلعش متقطع """
+    if not text: return ""
+    reshaped_text = arabic_reshaper.reshape(str(text))
+    bidi_text = get_display(reshaped_text)
+    return bidi_text
 
 st.markdown("""
 <style>
