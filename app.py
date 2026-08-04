@@ -1884,7 +1884,7 @@ if st.session_state.page == "تقارير":
     from docx.enum.text import WD_ALIGN_PARAGRAPH
     from docx.enum.table import WD_TABLE_ALIGNMENT, WD_TABLE_DIRECTION
 
-    def ar(text): # تظبط العربي
+    def ar(text): # للـ Word بس
         if not text: return ""
         reshaped_text = arabic_reshaper.reshape(str(text))
         return get_display(reshaped_text)
@@ -1926,30 +1926,30 @@ if st.session_state.page == "تقارير":
         html += "</tbody></table>"
         return html
 
-    # ================== PDF نهائي RTL ==================
+    # ================== PDF نهائي بدون bidi ==================
     def to_pdf(df, title, region):
         pdfmetrics.registerFont(TTFont('Cairo', 'Cairo-Regular.ttf'))
         buffer = io.BytesIO()
         doc = SimpleDocTemplate(buffer, pagesize=landscape(A4), rightMargin=10, leftMargin=10, topMargin=15, bottomMargin=15)
 
         styleH = ParagraphStyle('Header', fontName='Cairo', fontSize=12, alignment=2, textColor=colors.HexColor('#D4AF37'), leading=14)
-        styleT = ParagraphStyle('Table', fontName='Cairo', fontSize=6, alignment=2, leading=8)
+        styleT = ParagraphStyle('Table', fontName='Cairo', fontSize=6, alignment=2, leading=8, wordWrap='CJK') # wordWrap مهم
 
         elements = []
-        elements.append(Paragraph(ar('الهيئة القومية للتأمين الاجتماعى'), styleH))
-        elements.append(Paragraph(ar('الإدارة المركزية للإدارات القانونية'), styleH))
-        elements.append(Paragraph(ar('الإدارة العامة للقضايا'), styleH))
-        elements.append(Paragraph(ar(f'ديوان عام {region}'), styleH))
-        elements.append(Paragraph(ar(title), styleH))
+        elements.append(Paragraph(title, styleH)) # شلنا ar() من هنا
+        elements.append(Paragraph(f'ديوان عام {region}', styleH))
+        elements.append(Paragraph('الإدارة العامة للقضايا', styleH))
+        elements.append(Paragraph('الإدارة المركزية للإدارات القانونية', styleH))
+        elements.append(Paragraph('الهيئة القومية للتأمين الاجتماعى', styleH))
         elements.append(Spacer(1, 10))
 
-        # السر: نعكس الاعمدة والصفوف عشان يبدأ من اليمين
+        # نعكس الاعمدة بس من غير bidi
         cols_reversed = list(df.columns)[::-1]
         data_table = [cols_reversed]
         for _, row in df.iterrows():
             data_table.append(list(row)[::-1])
 
-        data_table_para = [[Paragraph(ar(str(cell)), styleT) for cell in row] for row in data_table]
+        data_table_para = [[Paragraph(str(cell), styleT) for cell in row] for row in data_table] # شلنا ar()
 
         col_width = 277 / len(df.columns)
         t = Table(data_table_para, colWidths=[col_width]*len(df.columns), repeatRows=1)
@@ -1957,20 +1957,20 @@ if st.session_state.page == "تقارير":
             ('FONTNAME', (0,0), (-1,-1), 'Cairo'),
             ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#D4AF37')),
             ('TEXTCOLOR', (0,0), (-1,0), colors.black),
-            ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+            ('ALIGN', (0,0), (-1,-1), 'RIGHT'), # RIGHT مهم جدا للـ RTL
             ('GRID', (0,0), (-1,-1), 0.5, colors.black),
             ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
         ]))
         elements.append(t)
         elements.append(Spacer(1, 15))
-        elements.append(Paragraph(ar('تفضلوا بقبول وافر الاحترام'), styleH))
+        elements.append(Paragraph('تفضلوا بقبول وافر الاحترام', styleH))
         elements.append(Spacer(1, 15))
-        elements.append(Paragraph(ar(f'تحر في: {datetime.now().strftime("%d-%m-%Y")}'), ParagraphStyle('Date', fontName='Cairo', fontSize=9, alignment=0)))
+        elements.append(Paragraph(f'تحر في: {datetime.now().strftime("%d-%m-%Y")}', ParagraphStyle('Date', fontName='Cairo', fontSize=9, alignment=0)))
 
         doc.build(elements)
         return buffer.getvalue()
 
-    # ================== Word نهائي RTL ==================
+    # ================== Word نهائي ب bidi ==================
     def to_word(df, title, region):
         doc = Document()
         section = doc.sections[0]
@@ -1996,7 +1996,6 @@ if st.session_state.page == "تقارير":
         table.alignment = WD_TABLE_ALIGNMENT.RIGHT
         table.direction = WD_TABLE_DIRECTION.RTL
 
-        # السر: نعكس الاعمدة
         cols_reversed = list(df.columns)[::-1]
         hdr_cells = table.rows[0].cells
         for i, col in enumerate(cols_reversed):
@@ -2007,7 +2006,7 @@ if st.session_state.page == "تقارير":
 
         for _, row in df.iterrows():
             row_cells = table.add_row().cells
-            row_reversed = list(row)[::-1] # نعكس البيانات
+            row_reversed = list(row)[::-1]
             for i, item in enumerate(row_reversed):
                 row_cells[i].text = ar(item)
                 for p in row_cells[i].paragraphs:
