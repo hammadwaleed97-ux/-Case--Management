@@ -13,6 +13,7 @@ from docx.shared import Pt
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 import arabic_reshaper
 from bidi.algorithm import get_display
+from openpyxl.styles import Font, Alignment
 def fix_arabic(text):
     """ بتظبط العربي عشان ميطلعش متقطع """
     if not text: return ""
@@ -1867,60 +1868,133 @@ elif st.session_state.page == "مكتبة":
     else:
         st.info("اختار قسم من الازرار اللي فوق عشان تشوف الملفات")
         # ================================================
-        # ============ الجزء الثامن: التقارير ============
+        # =====================================================
+# =================== قسم التقارير ===================
+# =====================================================
 if st.session_state.page == "تقارير":
+    import io
     data = load_data()
+    
     st.markdown("<h2 style='color:#D4AF37; text-align:center; font-family:Cairo'>📑 مركز التقارير الحكومية</h2>", unsafe_allow_html=True)
+    
     if st.button("⬅️ العودة للرئيسية", use_container_width=True):
-        st.session_state.page = "الرئيسية"; st.rerun()
+        st.session_state.page = "الرئيسية"
+        st.rerun()
 
-    selected_report = st.selectbox("اختر نوع التقرير", ["بيان بجميع الدعاوي المتداولة"], key="report_type")
-    region = st.text_input("ديوان عام منطقة", key="region_gen")
-    col1, col2 = st.columns(2)
-    with col1: from_date = st.date_input("من الفترة", key="from_gen")
-    with col2: to_date = st.date_input("حتى الفترة", key="to_gen")
-    lawyer = st.text_input("طرف الاستاذ/ المحامي", key="lawyer_gen")
+    st.divider()
+    
+    col_f1, col_f2 = st.columns(2)
+    with col_f1:
+        region = st.text_input("🏛️ ديوان عام منطقة", key="region_gen")
+    with col_f2:
+        lawyer = st.text_input("⚖️ طرف الاستاذ/ المحامي", key="lawyer_gen")
+        
+    col_d1, col_d2 = st.columns(2)
+    with col_d1: 
+        from_date = st.date_input("📅 من الفترة", key="from_gen")
+    with col_d2: 
+        to_date = st.date_input("📅 حتى الفترة", key="to_gen")
+
+    st.divider()
 
     if st.button("🔍 عرض التقرير", use_container_width=True, type="primary"):
         cases = [c for c in data.get("cases", []) if c.get('حالة') == 'متداولة']
-        cases = [c for c in cases if c.get('تاريخ_جلسة') and from_date <= datetime.strptime(c['تاريخ_جلسة'], '%Y-%m-%d').date() <= to_date]
-        cases = sorted(cases, key=lambda x: x.get("تاريخ_جلسة","9999-12-31"))
+        
+        # فلترة بالتاريخ
+        filtered_cases = []
+        for c in cases:
+            if c.get('تاريخ_جلسة'):
+                try:
+                    case_date = datetime.strptime(c['تاريخ_جلسة'], '%Y-%m-%d').date()
+                    if from_date <= case_date <= to_date:
+                        filtered_cases.append(c)
+                except:
+                    pass
+        
+        cases = sorted(filtered_cases, key=lambda x: x.get("تاريخ_جلسة","9999-12-31"))
 
         if not cases:
-            st.warning("لا توجد بيانات")
+            st.warning("⚠️ لا توجد بيانات في الفترة المحددة")
         else:
+            st.success(f"✅ تم العثور على {len(cases)} قضية")
+            
+            # تجهيز البيانات للتصدير
             export_data = []
             for i, c in enumerate(cases, 1):
                 export_data.append([
-                    i, c.get('رقم',''), c.get('سنة',''), c.get('دائرة',''), c.get('نوع',''), 
-                    c.get('محكمة_اسم',''), c.get('مأمورية',''), c.get('مدعي',''), 
-                    c.get('مدعي_عليه',''), c.get('موضوع',''), c.get('تاريخ_جلسة',''), 
-                    c.get('الاجراء',''), c.get('ملاحظات','')
+                    i, 
+                    c.get('رقم',''), 
+                    c.get('سنة',''), 
+                    c.get('دائرة',''), 
+                    c.get('نوع',''), 
+                    c.get('محكمة_اسم',''), 
+                    c.get('مأمورية',''), 
+                    c.get('مدعي',''), 
+                    c.get('مدعي_عليه',''), 
+                    c.get('موضوع',''), 
+                    c.get('تاريخ_جلسة',''), 
+                    c.get('الاجراء',''), 
+                    c.get('ملاحظات','')
                 ])
             
-            columns = ["م", "رقم القضية", "السنة", "الدائرة", "النوع", "المحكمة", "المأمورية", "المدعي", "المدعي عليه", "الموضوع", "تاريخ الجلسة", "الإجراء", "ملاحظات"]
+            columns = [
+                "م", "رقم القضية", "السنة", "الدائرة", "النوع", 
+                "المحكمة", "المأمورية", "المدعي", "المدعي عليه", 
+                "الموضوع", "تاريخ الجلسة", "الإجراء", "ملاحظات"
+            ]
             df_export = pd.DataFrame(export_data, columns=columns)
 
-            st.dataframe(df_export, use_container_width=True, height=400)
+            # عرض الهيدر
+            st.markdown(f"<h3 style='text-align:center; color:#D4AF37; font-family:Cairo'>الهيئة القومية للتأمين الاجتماعى</h3>", unsafe_allow_html=True)
+            st.markdown(f"<h4 style='text-align:center; font-family:Cairo'>الإدارة المركزية للإدارات القانونية</h4>", unsafe_allow_html=True)
+            st.markdown(f"<h4 style='text-align:center; font-family:Cairo'>الإدارة العامة للقضايا</h4>", unsafe_allow_html=True)
+            st.markdown(f"<h4 style='text-align:center; font-family:Cairo'>ديوان عام {region}</h4>", unsafe_allow_html=True)
+            st.markdown(f"<h5 style='text-align:center; font-family:Cairo'>بيان بجميع الدعاوى المتداولة من {from_date} حتى {to_date}</h5>", unsafe_allow_html=True)
+            
+            st.divider()
+            
+            # عرض الجدول
+            st.dataframe(df_export, use_container_width=True, height=500)
 
-            # الحل: نستخدم xlsxwriter عشان نعمل RTL من جوه الاكسيل
+            st.divider()
+
+            # كود الاكسيل الحكومي RTL مع الهيدر
             output = io.BytesIO()
-            with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-                df_export.to_excel(writer, sheet_name='التقرير', index=False, startrow=4)
-                workbook = writer.book
+            with pd.ExcelWriter(output, engine='openpyxl') as writer:
+                df_export.to_excel(writer, sheet_name='التقرير', index=False, startrow=5)
                 worksheet = writer.sheets['التقرير']
                 
-                # نعمل RTL للشيت كله
-                worksheet.right_to_left()
+                # الهيدر
+                worksheet['A1'] = 'الهيئة القومية للتأمين الاجتماعى'
+                worksheet['A2'] = 'الإدارة المركزية للإدارات القانونية'
+                worksheet['A3'] = 'الإدارة العامة للقضايا'
+                worksheet['A4'] = f'ديوان عام {region}'
                 
-                # نكتب الهيدر الحكومي
-                merge_format = workbook.add_format({'bold': 1, 'align': 'center', 'valign': 'vcenter', 'font_name': 'Cairo', 'font_size': 14, 'font_color': '#D4AF37'})
-                worksheet.merge_range('A1:M1', 'الهيئة القومية للتأمين الاجتماعى', merge_format)
-                worksheet.merge_range('A2:M2', 'الإدارة المركزية للإدارات القانونية', merge_format)
-                worksheet.merge_range('A3:M3', f'ديوان عام {region}', merge_format)
+                # دمج الخلايا
+                worksheet.merge_cells('A1:M1')
+                worksheet.merge_cells('A2:M2')
+                worksheet.merge_cells('A3:M3')
+                worksheet.merge_cells('A4:M4')
                 
-                worksheet.set_column(0, 12, 15) # عرض الاعمدة
+                # تنسيق الهيدر
+                for row in range(1,5):
+                    cell = worksheet.cell(row=row, column=1)
+                    cell.alignment = Alignment(horizontal='center', vertical='center')
+                    cell.font = Font(name='Cairo', size=14, bold=True)
+                
+                # RTL وتثبيت الهيدر
+                worksheet.sheet_view.rightToLeft = True
+                worksheet.freeze_panes = 'A6'
 
-            st.download_button("⬇️ تحميل Excel جاهز للطباعة", data=output.getvalue(), file_name="التقرير.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+            st.download_button(
+                "⬇️ تحميل Excel حكومي جاهز للطباعة", 
+                data=output.getvalue(), 
+                file_name=f"بيان دعاوى {region}.xlsx", 
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                use_container_width=True
+            )
             
-            st.info("افتح ملف الاكسيل ده وبعدين File > Save As > PDF او Word. هيطلع مظبوط 100%")
+            st.info("💡 نصيحة: افتح الملف > File > Save As > PDF هيطلع بالهيدر مظبوط 100%")
+# =====================================================
+# =============== نهاية قسم التقارير =================
+# =====================================================
