@@ -1934,29 +1934,24 @@ if st.session_state.page == "تقارير":
         return output.getvalue()
 
     def to_pdf(df, title, region):
-        import os # <-- السطر المهم
+        from fpdf import FPDF # fpdf2 بيدعم العربي
+
         pdf = FPDF(orientation='L', unit='mm', format='A4')
         pdf.add_page()
 
-        # الحل: نجيب مسار الخط من نفس مكان app.py
-        font_path = os.path.join(os.path.dirname(__file__), "Cairo-Regular.ttf")
-
-        try:
-            pdf.add_font('Cairo', '', font_path, uni=True)
-            pdf.set_font('Cairo', '', 16)
-        except Exception as e:
-            st.error(f"خطأ في تحميل الخط: {e}")
-            pdf.set_font('Arial', '', 10)
+        # نضيف الخط مباشر - fpdf2 شغال
+        pdf.add_font("Cairo", "", "Cairo-Regular.ttf")
+        pdf.set_font("Cairo", size=16)
 
         pdf.cell(0, 10, fix_arabic('الهيئة القومية للتأمين الاجتماعى'), 0, 1, 'C')
-        pdf.set_font('Cairo', '', 12) if 'Cairo' in pdf.fonts else pdf.set_font('Arial', '', 10)
+        pdf.set_font("Cairo", size=12)
         pdf.cell(0, 8, fix_arabic('الإدارة المركزية للإدارات القانونية'), 0, 1, 'C')
         pdf.cell(0, 8, fix_arabic('الإدارة العامة للقضايا'), 0, 1, 'C')
         pdf.cell(0, 8, fix_arabic(f'ديوان عام {region}'), 0, 1, 'C')
         pdf.cell(0, 8, fix_arabic(title), 0, 1, 'C')
         pdf.ln(5)
 
-        pdf.set_font('Cairo', '', 7) if 'Cairo' in pdf.fonts else pdf.set_font('Arial', '', 6)
+        pdf.set_font("Cairo", size=7)
         col_width = 270 / len(df.columns)
         row_height = 8
         for col in df.columns: pdf.cell(col_width, row_height, fix_arabic(str(col)), 1, 0, 'C')
@@ -1965,7 +1960,7 @@ if st.session_state.page == "تقارير":
             for item in row: pdf.cell(col_width, row_height, fix_arabic(str(item)), 1, 0, 'C')
             pdf.ln()
         pdf.ln(8)
-        pdf.set_font('Cairo', '', 11) if 'Cairo' in pdf.fonts else pdf.set_font('Arial', '', 10)
+        pdf.set_font("Cairo", size=11)
         pdf.cell(0, 8, fix_arabic('تفضلوا بقبول وافر الاحترام'), 0, 1, 'R')
         pdf.ln(5)
         cell_w = 90
