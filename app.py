@@ -1881,34 +1881,34 @@ elif st.session_state.page == "تقارير":
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap');
     
-    .case-table {width:100%; border-collapse:collapse; font-size:11px; margin-top:15px; direction:rtl; font-family: "Cairo", sans-serif;}
+    .case-table {width:100%; border-collapse:collapse; font-size:10px; margin-top:12px; direction:rtl; font-family: "Cairo", sans-serif;}
     .case-table th {
         background: linear-gradient(135deg, #8B6914 0%, #B8860B 100%);
         color:#000; 
-        padding:6px; 
+        padding:5px; 
         border:1px solid #8B6914; 
         font-weight:900;
         text-align:center;
         white-space: nowrap;
-        font-size:11px;
+        font-size:10px;
     }
-    .case-table td {padding:5px; border:1px solid #B8860B; text-align:center; background:#1E2A47; color:#fff; font-size:11px;}
+    .case-table td {padding:4px; border:1px solid #B8860B; text-align:center; background:#1E2A47; color:#fff; font-size:10px;}
     .table-container {overflow-x:auto}
     
     h1, h2, h3, h4, label {color: #B8860B !important; font-family: "Cairo", sans-serif;}
-    .stButton>button {border: 2px solid #B8860B !important; color: #B8860B !important; font-family: "Cairo", sans-serif;}
+    .stButton>button {border: 2px solid #B8860B !important; color: #B8860B !important; font-family: "Cairo", sans-serif; font-size:13px;}
     .stButton>button:hover {background: #B8860B !important; color: #000 !important;}
-    [data-testid="stTab"] button {color: #B8860B !important; font-family: "Cairo", sans-serif;}
+    [data-testid="stTab"] button {color: #B8860B !important; font-family: "Cairo", sans-serif; font-size:13px;}
     [data-testid="stTab"] button[aria-selected="true"] {border-bottom: 3px solid #B8860B !important;}
-    div[data-testid="stMetricValue"] {color: #B8860B !important;}
-    div[data-testid="stDateInput"] label {color: #B8860B !important;}
-    div[data-testid="stTextInput"] label {color: #B8860B !important;}
-    div[data-testid="stSelectbox"] label {color: #B8860B !important;}
+    div[data-testid="stMetricValue"] {color: #B8860B !important; font-size:18px;}
+    div[data-testid="stDateInput"] label {color: #B8860B !important; font-size:13px;}
+    div[data-testid="stTextInput"] label {color: #B8860B !important; font-size:13px;}
+    div[data-testid="stSelectbox"] label {color: #B8860B !important; font-size:13px;}
     </style>
     """, unsafe_allow_html=True)
     
-    st.markdown("<div style='height:15px'></div>", unsafe_allow_html=True)
-    st.markdown("<h2 style='color:#B8860B; text-align:center; font-family: Cairo;'>📑 مركز التقارير الحكومية</h2>", unsafe_allow_html=True)
+    st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
+    st.markdown("<h2 style='color:#B8860B; text-align:center; font-family: Cairo; font-size:18px;'>📑 مركز التقارير الحكومية</h2>", unsafe_allow_html=True)
     if st.button("⬅️ العودة للرئيسية", use_container_width=True): st.session_state.page = "الرئيسية"; st.rerun()
 
     if 'last_report_html' not in st.session_state:
@@ -1921,23 +1921,23 @@ elif st.session_state.page == "تقارير":
 
     def report_header(region, title, مدير_عام, مدير_ادارة, عضو_قانوني):
         return f"""
-        <div style='text-align:center; color:#B8860B; border:3px double #B8860B; padding:15px 10px; background: linear-gradient(180deg, #0A1428 0%, #1E2A47 100%); border-radius:8px; margin-bottom:15px; font-family: "Times New Roman", serif;'>
+        <div style="text-align:right; color:#B8860B; border:2px double #B8860B; padding:12px 10px; background: #0A1428; border-radius:5px; margin-bottom:12px; font-family: 'Times New Roman', serif;">
         
-        <h2 style='margin:3px 0; font-size:18px; font-weight:900; letter-spacing:1px;'>الهيئة القومية للتأمين الاجتماعي</h2>
-        <h3 style='margin:2px 0; font-size:14px; font-weight:700;'>الإدارة المركزية للإدارات القانونية</h3>
-        <h3 style='margin:2px 0; font-size:14px; font-weight:700;'>الإدارة العامة للقضايا</h3>
-        <h3 style='margin:2px 0; font-size:14px; font-weight:700;'>الإدارة العامة للشئون القانونية</h3>
-        <h3 style='margin:5px 0; font-size:14px; font-weight:700;'>ديوان عام منطقة {region}</h3>
+        <h2 style="margin:2px 0; font-size:15px; font-weight:900;">الهيئة القومية للتأمين الاجتماعي</h2>
+        <h3 style="margin:1px 0; font-size:12px; font-weight:700;">الإدارة المركزية للإدارات القانونية</h3>
+        <h3 style="margin:1px 0; font-size:12px; font-weight:700;">الإدارة العامة للقضايا</h3>
+        <h3 style="margin:1px 0; font-size:12px; font-weight:700;">الإدارة العامة للشئون القانونية</h3>
+        <h3 style="margin:4px 0; font-size:12px; font-weight:700;">ديوان عام منطقة {region}</h3>
         
-        <hr style='border:1px solid #B8860B; margin:10px 0;'>
+        <hr style="border:1px solid #B8860B; margin:8px 0;">
         
-        <h3 style='margin:8px 0; font-size:15px; font-weight:900; text-decoration: underline;'> {title} </h3>
+        <h3 style="margin:6px 0; font-size:13px; font-weight:900; text-align:center; text-decoration: underline;"> {title} </h3>
         </div>
         """
 
     # ========= تبويب 1: الدعاوى المتداولة =========
     with tab1:
-        st.markdown("<div style='background:#1E2A47; padding:15px; border-radius:10px; border:2px solid #B8860B; margin-bottom:15px'>", unsafe_allow_html=True)
+        st.markdown("<div style='background:#1E2A47; padding:12px; border-radius:8px; border:2px solid #B8860B; margin-bottom:12px'>", unsafe_allow_html=True)
         colA, colB, colC = st.columns(3)
         with colA: region = st.text_input("ديوان عام منطقة", key="region1")
         with colB: مدير_عام1 = st.text_input("اسم مدير عام الإدارات القانونية", key="modir1")
@@ -1982,31 +1982,31 @@ elif st.session_state.page == "تقارير":
                     df_data.append({'م': idx, 'رقم': c.get('رقم',''), 'سنة': c.get('سنة',''), 'المحكمة': محكمة, 'الخصوم': f"{مدعي} ضد {مدعي_عليه}", 'الموضوع': c.get('موضوع',''), 'اخر جلسة': c.get('تاريخ_جلسة',''), 'الاجراء': c.get('الاجراء',''), 'ملاحظات': c.get('ملاحظات','')})
                 html += "</table>"
                 footer = f"""
-                <div style='margin-top:30px; color:#B8860B; font-size:13px; font-family: "Times New Roman", serif;'>
-                    <p style='text-align:center; margin-bottom:25px; font-size:14px; font-weight:700;'>تفضلوا بقبول وافر الاحترام والتقدير،،</p>
+                <div style="margin-top:25px; color:#B8860B; font-size:12px; font-family: 'Times New Roman', serif;">
+                    <p style="text-align:center; margin-bottom:20px; font-size:13px; font-weight:700;">تفضلوا بقبول وافر الاحترام والتقدير،</p>
                     
-                    <table style='width:100%; border:none;'>
+                    <table style="width:100%; border:none;">
                         <tr>
-                            <td style='width:50%; text-align:right; vertical-align:top;'>
-                                <div style='font-weight:900; font-size:13px;'>العضو القانوني</div>
-                                <div style='margin-top:3px; font-size:13px;'>{عضو_قانوني1}</div>
-                                <div style='margin-top:15px;'>....................</div>
+                            <td style="width:50%; text-align:right; vertical-align:top;">
+                                <div style="font-weight:900; font-size:12px;">العضو القانوني</div>
+                                <div style="margin-top:2px; font-size:12px;">{عضو_قانوني1}</div>
+                                <div style="margin-top:12px;">....................</div>
                             </td>
-                            <td style='width:50%; text-align:left; vertical-align:top;'>
-                                <div style='font-weight:900; font-size:13px;'>مدير الإدارة</div>
-                                <div style='margin-top:3px; font-size:13px;'>{مدير_ادارة1}</div>
-                                <div style='margin-top:15px;'>....................</div>
+                            <td style="width:50%; text-align:left; vertical-align:top;">
+                                <div style="font-weight:900; font-size:12px;">مدير الإدارة</div>
+                                <div style="margin-top:2px; font-size:12px;">{مدير_ادارة1}</div>
+                                <div style="margin-top:12px;">....................</div>
                             </td>
                         </tr>
                     </table>
 
-                    <div style='text-align:center; margin-top:25px;'>
-                        <div style='font-weight:900; font-size:13px;'>مدير عام الإدارات القانونية</div>
-                        <div style='margin-top:3px; font-size:13px;'>{مدير_عام1}</div>
-                        <div style='margin-top:15px;'>....................</div>
+                    <div style="text-align:center; margin-top:20px;">
+                        <div style="font-weight:900; font-size:12px;">مدير عام الإدارات القانونية</div>
+                        <div style="margin-top:2px; font-size:12px;">{مدير_عام1}</div>
+                        <div style="margin-top:12px;">....................</div>
                     </div>
 
-                    <p style='text-align:center; margin-top:20px; font-size:12px;'>تحرر في: {datetime.now().strftime('%d-%m-%Y')}</p>
+                    <p style="text-align:center; margin-top:15px; font-size:11px;">تحر في: {datetime.now().strftime('%d-%m-%Y')}</p>
                 </div>
                 """
                 full_html = header_html + f"<div class='table-container'>{html}</div>" + footer
@@ -2019,7 +2019,7 @@ elif st.session_state.page == "تقارير":
 
     # ========= تبويب 2: الاحكام =========
     with tab2:
-        st.markdown("<div style='background:#1E2A47; padding:15px; border-radius:10px; border:2px solid #B8860B; margin-bottom:15px'>", unsafe_allow_html=True)
+        st.markdown("<div style='background:#1E2A47; padding:12px; border-radius:8px; border:2px solid #B8860B; margin-bottom:12px'>", unsafe_allow_html=True)
         نوع_التقرير = st.selectbox("نوع البيان", 
             ["بيان بجميع الاحكام الصادرة للصالح والضد", 
              "بيان بالاحكام الصادرة للصالح",
@@ -2083,31 +2083,31 @@ elif st.session_state.page == "تقارير":
                     df_data.append({'م': idx, 'رقم': c.get('رقم',''), 'سنة': c.get('سنة',''), 'المحكمة': محكمة, 'الخصوم': f"{مدعي} ضد {مدعي_عليه}", 'الموضوع': c.get('موضوع',''), 'تاريخ الحكم': c.get('تاريخ_الحكم',''), 'منطوق الحكم': c.get('منطوق_الحكم',''), 'مسندة ل': مسندة, 'ملاحظات': c.get('ملاحظات','')})
                 html += "</table>"
                 footer = f"""
-                <div style='margin-top:30px; color:#B8860B; font-size:13px; font-family: "Times New Roman", serif;'>
-                    <p style='text-align:center; margin-bottom:25px; font-size:14px; font-weight:700;'>تفضلوا بقبول وافر الاحترام والتقدير،،</p>
+                <div style="margin-top:25px; color:#B8860B; font-size:12px; font-family: 'Times New Roman', serif;">
+                    <p style="text-align:center; margin-bottom:20px; font-size:13px; font-weight:700;">تفضلوا بقبول وافر الاحترام والتقدير،</p>
                     
-                    <table style='width:100%; border:none;'>
+                    <table style="width:100%; border:none;">
                         <tr>
-                            <td style='width:50%; text-align:right; vertical-align:top;'>
-                                <div style='font-weight:900; font-size:13px;'>العضو القانوني</div>
-                                <div style='margin-top:3px; font-size:13px;'>{عضو_قانوني2}</div>
-                                <div style='margin-top:15px;'>....................</div>
+                            <td style="width:50%; text-align:right; vertical-align:top;">
+                                <div style="font-weight:900; font-size:12px;">العضو القانوني</div>
+                                <div style="margin-top:2px; font-size:12px;">{عضو_قانوني2}</div>
+                                <div style="margin-top:12px;">....................</div>
                             </td>
-                            <td style='width:50%; text-align:left; vertical-align:top;'>
-                                <div style='font-weight:900; font-size:13px;'>مدير الإدارة</div>
-                                <div style='margin-top:3px; font-size:13px;'>{مدير_ادارة2}</div>
-                                <div style='margin-top:15px;'>....................</div>
+                            <td style="width:50%; text-align:left; vertical-align:top;">
+                                <div style="font-weight:900; font-size:12px;">مدير الإدارة</div>
+                                <div style="margin-top:2px; font-size:12px;">{مدير_ادارة2}</div>
+                                <div style="margin-top:12px;">....................</div>
                             </td>
                         </tr>
                     </table>
 
-                    <div style='text-align:center; margin-top:25px;'>
-                        <div style='font-weight:900; font-size:13px;'>مدير عام الإدارات القانونية</div>
-                        <div style='margin-top:3px; font-size:13px;'>{مدير_عام2}</div>
-                        <div style='margin-top:15px;'>....................</div>
+                    <div style="text-align:center; margin-top:20px;">
+                        <div style="font-weight:900; font-size:12px;">مدير عام الإدارات القانونية</div>
+                        <div style="margin-top:2px; font-size:12px;">{مدير_عام2}</div>
+                        <div style="margin-top:12px;">....................</div>
                     </div>
 
-                    <p style='text-align:center; margin-top:20px; font-size:12px;'>تحرر في: {datetime.now().strftime('%d-%m-%Y')}</p>
+                    <p style="text-align:center; margin-top:15px; font-size:11px;">تحرر في: {datetime.now().strftime('%d-%m-%Y')}</p>
                 </div>
                 """
                 full_html = header_html + f"<div class='table-container'>{html}</div>" + footer
@@ -2120,8 +2120,8 @@ elif st.session_state.page == "تقارير":
 
     # ========= تبويب 3: الاحصائيات =========
     with tab3:
-        st.markdown("<h3 style='color:#B8860B; text-align:center'>📈 الإحصائيات العددية</h3>", unsafe_allow_html=True)
-        st.markdown("<div style='background:#1E2A47; padding:15px; border-radius:10px; border:2px solid #B8860B; margin-bottom:15px'>", unsafe_allow_html=True)
+        st.markdown("<h3 style='color:#B8860B; text-align:center; font-size:16px;'>📈 الإحصائيات العددية</h3>", unsafe_allow_html=True)
+        st.markdown("<div style='background:#1E2A47; padding:12px; border-radius:8px; border:2px solid #B8860B; margin-bottom:12px'>", unsafe_allow_html=True)
         col1, col2 = st.columns(2)
         with col1: stat_from = st.date_input("من تاريخ", key="s1")
         with col2: stat_to = st.date_input("حتى تاريخ", key="s2")
@@ -2140,7 +2140,7 @@ elif st.session_state.page == "تقارير":
 
     # ========= تبويب 4: التصدير =========
     with tab4:
-        st.markdown("<h3 style='color:#B8860B; text-align:center'>📄 تصدير التقارير</h3>", unsafe_allow_html=True)
+        st.markdown("<h3 style='color:#B8860B; text-align:center; font-size:16px;'>📄 تصدير التقارير</h3>", unsafe_allow_html=True)
         st.info("اعرض التقرير من تبويب 1 او 2 الاول")
         if st.session_state.last_report_html == "":
             st.warning("لسه معرضتش اي تقرير")
