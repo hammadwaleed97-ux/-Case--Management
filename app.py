@@ -1876,12 +1876,12 @@ elif st.session_state.page == "تقارير":
     import pandas as pd
     data = load_data()
     
-    # ضفت ستايل للجدول عشان الهيدر يبقى مدهب غامق
+    # ستايل الجدول مدهب غامق
     st.markdown("""
     <style>
     .case-table {width:100%; border-collapse:collapse; font-size:14px; margin-top:20px}
     .case-table th {
-        background: linear-gradient(135deg, #B8860B 0%, #D4AF37 100%); /* مدهب غامق */
+        background: linear-gradient(135deg, #B8860B 0%, #D4AF37 100%);
         color:#000; 
         padding:12px; 
         border:1px solid #B8860B; 
@@ -1943,7 +1943,7 @@ elif st.session_state.page == "تقارير":
             
             فلترة_تاريخ = []
             for c in cases:
-                if c.get('اخر جلسة'):  # بالمسافة
+                if c.get('اخر جلسة'):  # بالمسافة زي الداتا بتاعتك
                     try:
                         ت_جلسة = datetime.strptime(c['اخر جلسة'], '%Y-%m-%d').date()
                         if from_date <= ت_جلسة <= to_date:
@@ -1966,18 +1966,18 @@ elif st.session_state.page == "تقارير":
                 html = "<table class='case-table'><tr><th>م</th><th>رقم القضية</th><th>السنة القضائية</th><th>الدائرة والنوع</th><th>اسم المحكمة والمأمورية</th><th>الخصوم</th><th>موضوع الدعوى</th><th>اخر اجراء</th><th>ملاحظات</th></tr>"
                 df_data = []
                 for i, c in enumerate(cases, 1):
-                    محكمة = f"{c.get('محكمة_اسم','')}"
+                    محكمة = f"{c.get('المحكمة والدائرة','')}"
                     if c.get('مأمورية'): محكمة += f" - مأمورية {c.get('مأمورية')}"
                     دائرة = f"{c.get('دائرة','')} {c.get('نوع','')}"
                     
                     مدعي = c.get('مدعي','')
                     مدعي_عليه = c.get('مدعي_عليه','')
                     خصوم = f"{مدعي} ضد {مدعي_عليه}"
-                    خصوم_html = f"<b>{مدعي}</b> <span style='color:#003366'>ضد</span> <b>{مدعي_عليه}</b>" # ازرق غامق
+                    خصوم_html = f"<b>{مدعي}</b> <span style='color:#003366'>ضد</span> <b>{مدعي_عليه}</b>"
                     
-                    # اخر جلسة + اخر اجراء
+                    # التعديل هنا: بنسحب اخر جلسة + الاجراء من الحصر
                     تاريخ_الجلسة = c.get('اخر جلسة','')
-                    الاجراء = c.get('اخر اجراء','')
+                    الاجراء = c.get('الاجراء','')
                     اخر_اجراء_كامل = f"{تاريخ_الجلسة} - {الاجراء}" if تاريخ_الجلسة and الاجراء else تاريخ_الجلسة
                     اخر_اجراء_html = f"<b style='color:#003366'>{تاريخ_الجلسة}</b><br>{الاجراء}" if تاريخ_الجلسة and الاجراء else f"<b style='color:#003366'>{تاريخ_الجلسة}</b>"
 
@@ -1985,7 +1985,18 @@ elif st.session_state.page == "تقارير":
                     df_data.append({'م': i, 'رقم القضية': c.get('رقم',''), 'السنة': c.get('سنة',''), 'الدائرة': دائرة, 'المحكمة': محكمة, 'الخصوم': خصوم, 'الموضوع': c.get('موضوع',''), 'اخر اجراء': اخر_اجراء_كامل, 'ملاحظات': c.get('ملاحظات','')})
                 
                 html += "</table>"
-                footer = f"<p style='text-align:right; color:#D4AF37; margin-top:30px; font-size:16px;'>تفضلوا بقبول وافر الاحترام<br><br>العضو القانوني: {عضو_قانوني1}.................. مدير الإدارة: {مدير_ادارة1}..................<br>تحر في {datetime.now().strftime('%Y-%m-%d')}</p>"
+                # التوقيع الجديد زي ما طلبت
+                footer = f"""
+                <div style='margin-top:40px; color:#D4AF37; font-size:16px;'>
+                    <p style='text-align:center;'>تفضلوا بقبول وافر الاحترام</p>
+                    <div style='display:flex; justify-content:space-between; margin-top:20px;'>
+                        <span>العضو القانوني: {عضو_قانوني1} ................</span>
+                        <span>مدير الإدارة: {مدير_ادارة1} ................</span>
+                    </div>
+                    <p style='text-align:center; margin-top:20px;'>مدير عام الإدارات القانونية: {مدير_عام1} ................</p>
+                    <p style='text-align:center; margin-top:20px;'>تحر في {datetime.now().strftime('%d-%m-%Y')}</p>
+                </div>
+                """
                 full_html = header_html + f"<div class='table-container'>{html}</div>" + footer
                 st.markdown(full_html, unsafe_allow_html=True)
                 
@@ -2035,7 +2046,7 @@ elif st.session_state.page == "تقارير":
                 html = "<table class='case-table'><tr><th>م</th><th>رقم القضية</th><th>السنة القضائية</th><th>الدائرة والنوع</th><th>اسم المحكمة والمأمورية</th><th>الخصوم</th><th>موضوع الدعوى</th><th>تاريخ الحكم</th><th>منطوق الحكم</th><th>النتيجة</th><th>اخر اجراء</th><th>ملاحظات</th></tr>"
                 df_data = []
                 for i, c in enumerate(cases, 1):
-                    محكمة = f"{c.get('محكمة_اسم','')}"
+                    محكمة = f"{c.get('المحكمة والدائرة','')}"
                     if c.get('مأمورية'): محكمة += f" - مأمورية {c.get('مأمورية')}"
                     دائرة = f"{c.get('دائرة','')} {c.get('نوع','')}"
                     مدعي = c.get('مدعي','')
@@ -2050,7 +2061,17 @@ elif st.session_state.page == "تقارير":
                     html += f"<tr class='row-judgment'><td>{i}</td><td>{c.get('رقم','')}</td><td>{c.get('سنة','')}</td><td>{دائرة}</td><td>{محكمة}</td><td>{خصوم_html}</td><td>{c.get('موضوع','')}</td><td><b style='color:#003366'>{تاريخ_الحكم}</b></td><td>{منطوق}</td><td style='color:{لون}; font-weight:900'>{c.get('مسندة_ل_الحكم','')}</td><td>{اخر_اجراء_html}</td><td>{c.get('ملاحظات','')}</td></tr>"
                     df_data.append({'م': i, 'رقم القضية': c.get('رقم',''), 'السنة': c.get('سنة',''), 'الدائرة': دائرة, 'المحكمة': محكمة, 'الخصوم': خصوم, 'الموضوع': c.get('موضوع',''), 'تاريخ الحكم': تاريخ_الحكم, 'المنطوق': منطوق, 'النتيجة': c.get('مسندة_ل_الحكم',''), 'اخر اجراء': اخر_اجراء_كامل, 'ملاحظات': c.get('ملاحظات','')})
                 html += "</table>"
-                footer = f"<p style='text-align:right; color:#FF5252; margin-top:30px; font-size:16px;'>تفضلوا بقبول وافر الاحترام<br><br>العضو القانوني: {عضو_قانوني2}.................. مدير الإدارة: {مدير_ادارة2}..................<br>تحر في {datetime.now().strftime('%Y-%m-%d')}</p>"
+                footer = f"""
+                <div style='margin-top:40px; color:#FF5252; font-size:16px;'>
+                    <p style='text-align:center;'>تفضلوا بقبول وافر الاحترام</p>
+                    <div style='display:flex; justify-content:space-between; margin-top:20px;'>
+                        <span>العضو القانوني: {عضو_قانوني2} ................</span>
+                        <span>مدير الإدارة: {مدير_ادارة2} ................</span>
+                    </div>
+                    <p style='text-align:center; margin-top:20px;'>مدير عام الإدارات القانونية: {مدير_عام2} ................</p>
+                    <p style='text-align:center; margin-top:20px;'>تحر في {datetime.now().strftime('%d-%m-%Y')}</p>
+                </div>
+                """
                 full_html = header_html + f"<div class='table-container'>{html}</div>" + footer
                 st.markdown(full_html, unsafe_allow_html=True)
                 st.session_state.last_report_html = full_html
