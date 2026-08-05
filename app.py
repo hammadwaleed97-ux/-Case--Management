@@ -65,6 +65,7 @@ def banner_sidebar():
         with col2: 
             if st.button("🗑️", key=f"del_admin_{i}"):
                 st.session_state.banners.pop(i)
+                save_banners()
                 st.rerun()
 # ===== نهاية الكود =====
 BANNER_FILE = "banners.json"
