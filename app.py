@@ -856,7 +856,10 @@ if st.session_state.page == "الرئيسية":
         unsafe_allow_html=True
     )
     show_banners()
-    banner_sidebar()
+    
+    if st.button("⚙️ إدارة اليافطات", use_container_width=True):
+        st.session_state.page = "إدارة اليافطات"
+        st.rerun()
     
     st.write("عدد اليافطات:", len(st.session_state.banners))
 
