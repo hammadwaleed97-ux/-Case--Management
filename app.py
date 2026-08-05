@@ -2260,24 +2260,41 @@ if st.session_state.page == "تقارير":
 # ========================= نهاية الجزء 
 import json
 import os
-from datetime import datetime
+from datetime import datetime, date
 
 BANNERS_FILE = "banners.json"
 
 def load_banners():
     if os.path.exists(BANNERS_FILE):
         with open(BANNERS_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
+            data = json.load(f)
+            # نضف الداتا القديمة وحول اي تاريخ لنص
+            for b in data:
+                if isinstance(b.get('expire'), date):
+                    b['expire'] = str(b['expire'])
+                if isinstance(b.get('created_at'), date):
+                    b['created_at'] = str(b['created_at'])
+            return data
     return []
 
 def save_banners(banners):
+    # نتأكد ان كل حاجة نص قبل الحفظ
+    clean_banners = []
+    for b in banners:
+        clean_banners.append({
+            "text": str(b.get("text", "")),
+            "color": str(b.get("color", "#FFC107")),
+            "expire": str(b.get("expire", "")),
+            "created_at": str(b.get("created_at", ""))
+        })
     with open(BANNERS_FILE, "w", encoding="utf-8") as f:
-        json.dump(banners, f, ensure_ascii=False, indent=2)
+        json.dump(clean_banners, f, ensure_ascii=False, indent=2)
+
 
 # =========================================
 # ============ صفحة إدارة اليافطات ============
 # =========================================
-if st.session_state.page == "إدارة اليافطات": # غيرت elif ل if
+if st.session_state.page == "إدارة اليافطات":
     
     if 'banners' not in st.session_state:
         st.session_state.banners = load_banners()
@@ -2302,11 +2319,11 @@ if st.session_state.page == "إدارة اليافطات": # غيرت elif ل if
                 new_banner = {
                     "text": banner_text,
                     "color": banner_color,
-                    "expire": str(banner_expire),
+                    "expire": str(banner_expire), # بنحوله نص هنا
                     "created_at": datetime.now().strftime("%Y-%m-%d %H:%M")
                 }
                 st.session_state.banners.append(new_banner)
-                save_banners(st.session_state.banners) # حفظ
+                save_banners(st.session_state.banners)
                 st.success("✅ تم نشر اليافطة بنجاح!")
                 st.rerun()
             else:
@@ -2322,7 +2339,6 @@ if st.session_state.page == "إدارة اليافطات": # غيرت elif ل if
     else:
         for i, banner in enumerate(st.session_state.banners):
             
-            # الفاصل الكبير
             st.markdown("========================================")
             st.markdown(f"# ============ يافطة رقم {i+1} ============")
             st.markdown("========================================")
@@ -2339,7 +2355,7 @@ if st.session_state.page == "إدارة اليافطات": # غيرت elif ل if
                 with col2:
                     if st.button("🗑️ حذف", key=f"del_{i}", type="primary", use_container_width=True):
                         st.session_state.banners.pop(i)
-                        save_banners(st.session_state.banners) # حفظ بعد الحذف
+                        save_banners(st.session_state.banners)
                         st.rerun()
 
     st.markdown("---")
