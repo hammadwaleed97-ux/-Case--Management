@@ -2265,22 +2265,30 @@ from datetime import datetime, date
 BANNERS_FILE = "banners.json"
 
 def load_banners():
-    if os.path.exists(BANNERS_FILE):
-        try:
-            with open(BANNERS_FILE, "r", encoding="utf-8") as f:
-                data = json.load(f)
-                # نضف الداتا القديمة وحول اي تاريخ لنص
-                for b in data:
-                    if isinstance(b.get('expire'), date):
-                        b['expire'] = str(b['expire'])
-                    if isinstance(b.get('created_at'), date):
-                        b['created_at'] = str(b['created_at'])
-                return data
-        except json.JSONDecodeError:
-            # لو الملف بايظ امسحه وارجع فاضي
-            os.remove(BANNERS_FILE)
-            return []
-    return []
+    if not os.path.exists(BANNERS_FILE):
+        return []
+    
+    try:
+        with open(BANNERS_FILE, "r", encoding="utf-8") as f:
+            content = f.read().strip()
+            if not content: # لو فاضي
+                return []
+            data = json.loads(content)
+            
+            # نضف الداتا القديمة وحول اي تاريخ لنص
+            clean_data = []
+            for b in data:
+                clean_data.append({
+                    "text": str(b.get("text", "")),
+                    "color": str(b.get("color", "#FFC107")),
+                    "expire": str(b.get("expire", "")),
+                    "created_at": str(b.get("created_at", ""))
+                })
+            return clean_data
+            
+    except (json.JSONDecodeError, Exception):
+        # لو اي غلط ارجع فاضي واكمل شغل
+        return []
 
 def save_banners(banners):
     clean_banners = []
