@@ -843,11 +843,8 @@ if st.session_state.page == "الرئيسية":
         "<h2>الأقسام</h2>",
         unsafe_allow_html=True
     )
-        
-    for b in st.session_state.banners:
-        if b["expire"] > datetime.now():
-            st.markdown(f'<div style="background:{b["color"]};padding:12px;border-radius:10px;margin:10px 0;text-align:center;font-weight:bold;color:#000;">📢 {b["text"]}</div>', unsafe_allow_html=True)
-
+    show_banners()
+    banner_sidebar()
     col1, col2 = st.columns(2)
     with col1:
 
