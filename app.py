@@ -1897,31 +1897,52 @@ elif st.session_state.page == "مكتبة":
 import io
 import pandas as pd
 from datetime import datetime
-from fpdf import FPDF
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.pagesizes import A4, landscape
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.units import mm
 
-def create_pdf_simple(df, title):
-    pdf = FPDF(orientation='L', format='A4')
-    pdf.add_page()
-    pdf.set_font('Arial', 'B', 12)
-    # ملحوظة: العربي هيطلع ??? هنا. ده عشان الخط. هنظبطه بعدين
-    pdf.cell(0, 10, title.encode('latin-1', 'replace').decode('latin-1'), 0, 1, 'C')
-    pdf.ln(5)
+def create_pdf_reportlab(df, title):
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=landscape(A4), rightMargin=10*mm, leftMargin=10*mm, topMargin=10*mm, bottomMargin=10*mm)
+    elements = []
     
-    # راس الجدول
-    pdf.set_font('Arial', 'B', 8)
-    col_width = 280 / len(df.columns)
-    for col in df.columns:
-        pdf.cell(col_width, 8, str(col).encode('latin-1', 'replace').decode('latin-1'), 1, 0, 'C')
-    pdf.ln()
+    styles = getSampleStyleSheet()
+    elements.append(Paragraph(title, styles['h2']))
+    elements.append(Spacer(1, 12))
 
-    # بيانات الجدول
-    pdf.set_font('Arial', '', 7)
-    for i, row in df.iterrows():
-        for item in row:
-            pdf.cell(col_width, 6, str(item).encode('latin-1', 'replace').decode('latin-1'), 1, 0, 'C')
-        pdf.ln()
+    # نحول الداتا فريم ل ليست
+    data = [df.columns.to_list()] + df.astype(str).values.tolist()
     
-    return pdf.output(dest='S').encode('latin-1')
+    # عرض الاعمدة يتقسم تلقائي
+    col_width = (277*mm) / len(df.columns)
+    col_widths = [col_width] * len(df.columns)
+    
+    # نعمل الجدول
+    t = Table(data, colWidths=col_widths, repeatRows=1)
+    t.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#B8860B')),
+        ('TEXTCOLOR',(0,0),(-1,0), colors.black),
+        ('ALIGN',(0,0),(-1,-1),'CENTER'),
+        ('VALIGN',(0,0),(-1,-1),'MIDDLE'),
+        ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0,0), (-1,-1), 7),
+        ('GRID', (0,0), (-1,-1), 0.5, colors.black),
+        ('WORDWRAP', (0,0), (-1,-1), True),
+    ]))
+    elements.append(t)
+    doc.build(elements)
+    buffer.seek(0)
+    return buffer.getvalue()
+
+
+def auto_adjust_excel_columns(df, writer, sheet_name):
+    for column in df:
+        column_width = max(df[column].astype(str).map(len).max(), len(column))
+        col_idx = df.columns.get_loc(column)
+        writer.sheets[sheet_name].set_column(col_idx, col_idx, column_width + 2)
+
 
 if st.session_state.page == "تقارير":
     data = load_data()
@@ -1929,13 +1950,13 @@ if st.session_state.page == "تقارير":
     st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap');
-   .case-table {width:100%; border-collapse:collapse; font-size:10px; margin-top:12px; direction:rtl; font-family: "Cairo", sans-serif;}
-   .case-table th {background: linear-gradient(135deg, #8B6914 0%, #B8860B 100%); color:#000; padding:5px; border:1px solid #8B6914; font-weight:900; text-align:center; white-space: nowrap; font-size:10px;}
-   .case-table td {padding:4px; border:1px solid #B8860B; text-align:center; background:#1E2A47; color:#fff; font-size:10px;}
-   .table-container {overflow-x:auto}
+  .case-table {width:100%; border-collapse:collapse; font-size:10px; margin-top:12px; direction:rtl; font-family: "Cairo", sans-serif;}
+  .case-table th {background: linear-gradient(135deg, #8B6914 0%, #B8860B 100%); color:#000; padding:5px; border:1px solid #8B6914; font-weight:900; text-align:center; white-space: nowrap; font-size:10px;}
+  .case-table td {padding:4px; border:1px solid #B8860B; text-align:center; background:#1E2A47; color:#fff; font-size:10px;}
+  .table-container {overflow-x:auto}
     h1, h2, h3, h4, label {color: #B8860B!important; font-family: "Cairo", sans-serif;}
-   .stButton>button {border: 2px solid #B8860B!important; color: #B8860B!important; font-family: "Cairo", sans-serif; font-size:13px;}
-   .stButton>button:hover {background: #B8860B!important; color: #000!important;}
+  .stButton>button {border: 2px solid #B8860B!important; color: #B8860B!important; font-family: "Cairo", sans-serif; font-size:13px;}
+  .stButton>button:hover {background: #B8860B!important; color: #000!important;}
     </style>
     """, unsafe_allow_html=True)
 
@@ -1997,11 +2018,17 @@ if st.session_state.page == "تقارير":
                 st.markdown(report_header(region, title, مدير_عام1, مدير_ادارة1, عضو_قانوني1) + df_display.to_html(index=False, classes='case-table'), unsafe_allow_html=True)
 
                 # === ازرار التصدير ===
-                pdf_bytes = create_pdf_simple(df_display, title)
+                pdf_bytes = create_pdf_reportlab(df_display, title)
                 c1,c2,c3 = st.columns(3)
                 with c1: st.download_button("⬇️ PDF", data=pdf_bytes, file_name=f"بيان_الدعاوى_{region}.pdf", mime="application/pdf", use_container_width=True, key="dl1_pdf")
                 with c2: st.download_button("⬇️ Word", data=df_display.to_html().encode('utf-8'), file_name=f"بيان_الدعاوى_{region}.doc", use_container_width=True, key="dl2_doc")
-                with c3: excel_buffer = io.BytesIO(); df_display.to_excel(excel_buffer, index=False); st.download_button("⬇️ Excel", data=excel_buffer.getvalue(), file_name=f"بيان_الدعاوى_{region}.xlsx", use_container_width=True, key="dlx1")
+                with c3: 
+                    excel_buffer = io.BytesIO()
+                    with pd.ExcelWriter(excel_buffer, engine='xlsxwriter') as writer:
+                        df_display.to_excel(writer, index=False, sheet_name='Sheet1')
+                        auto_adjust_excel_columns(df_display, writer, 'Sheet1')
+                    st.download_button("⬇️ Excel", data=excel_buffer.getvalue(), file_name=f"بيان_الدعاوى_{region}.xlsx", use_container_width=True, key="dlx1")
+                    # ================= القسم 2 من 2 =================
 
     # ========= تبويب 2: الاحكام =========
     with tab2:
@@ -2048,12 +2075,16 @@ if st.session_state.page == "تقارير":
                 df_display = pd.DataFrame(df_data)
                 st.markdown(report_header(region2, title, مدير_عام2, مدير_ادارة2, عضو_قانوني2) + df_display.to_html(index=False, classes='case-table'), unsafe_allow_html=True)
 
-                pdf_bytes = create_pdf_simple(df_display, title)
+                pdf_bytes = create_pdf_reportlab(df_display, title)
                 c1,c2,c3 = st.columns(3)
                 with c1: st.download_button("⬇️ PDF", data=pdf_bytes, file_name=f"بيان_الاحكام_{region2}.pdf", mime="application/pdf", use_container_width=True, key="dl21_pdf")
                 with c2: st.download_button("⬇️ Word", data=df_display.to_html().encode('utf-8'), file_name=f"بيان_الاحكام_{region2}.doc", use_container_width=True, key="dl22_doc")
-                with c3: excel_buffer = io.BytesIO(); df_display.to_excel(excel_buffer, index=False); st.download_button("⬇️ Excel", data=excel_buffer.getvalue(), file_name=f"بيان_الاحكام_{region2}.xlsx", use_container_width=True, key="dlx2")
-                    # ================= القسم 2 من 2 =================
+                with c3: 
+                    excel_buffer = io.BytesIO()
+                    with pd.ExcelWriter(excel_buffer, engine='xlsxwriter') as writer:
+                        df_display.to_excel(writer, index=False, sheet_name='Sheet1')
+                        auto_adjust_excel_columns(df_display, writer, 'Sheet1')
+                    st.download_button("⬇️ Excel", data=excel_buffer.getvalue(), file_name=f"بيان_الاحكام_{region2}.xlsx", use_container_width=True, key="dlx2")
 
     # ========= تبويب 3: الاحصائيات =========
     with tab3:
@@ -2126,9 +2157,14 @@ if st.session_state.page == "تقارير":
             title = f"بيان عددي ب{اسم_البيان} خلال الفترة من {stat_from2.strftime('%d-%m-%Y')} إلى {stat_to2.strftime('%d-%m-%Y')}"
             st.markdown(report_header(region_stat, title, مدير_عام_stat, مدير_ادارة_stat, عضو_قانوني_stat) + df_display.to_html(index=False, classes='case-table'), unsafe_allow_html=True)
 
-            pdf_bytes = create_pdf_simple(df_display, title)
+            pdf_bytes = create_pdf_reportlab(df_display, title)
             c1,c2,c3 = st.columns(3)
             with c1: st.download_button("⬇️ PDF", data=pdf_bytes, file_name=f"بيان_عددي_{region_stat}.pdf", mime="application/pdf", use_container_width=True, key="dl_stat1_pdf")
             with c2: st.download_button("⬇️ Word", data=df_display.to_html().encode('utf-8'), file_name=f"بيان_عددي_{region_stat}.doc", use_container_width=True, key="dl_stat2_doc")
-            with c3: excel_buffer = io.BytesIO(); df_display.to_excel(excel_buffer, index=False); st.download_button("⬇️ Excel", data=excel_buffer.getvalue(), file_name=f"بيان_عددي_{region_stat}.xlsx", use_container_width=True, key="dl_stat3")
+            with c3: 
+                excel_buffer = io.BytesIO()
+                with pd.ExcelWriter(excel_buffer, engine='xlsxwriter') as writer:
+                    df_display.to_excel(writer, index=False, sheet_name='Sheet1')
+                    auto_adjust_excel_columns(df_display, writer, 'Sheet1')
+                st.download_button("⬇️ Excel", data=excel_buffer.getvalue(), file_name=f"بيان_عددي_{region_stat}.xlsx", use_container_width=True, key="dl_stat3")
 # ========================= نهاية الجزء الثامن ==============================
