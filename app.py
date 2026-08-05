@@ -55,6 +55,7 @@ def banner_sidebar():
             if banner_text:
                 expire_time = datetime.now() + timedelta(minutes=duration_minutes)
                 st.session_state.banners.append({"text": banner_text, "color": banner_color, "expire": expire_time})
+                save_banners()
                 st.rerun()
 
     st.sidebar.markdown("### حذف اليافطات")
