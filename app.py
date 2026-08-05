@@ -2305,7 +2305,12 @@ elif st.session_state.page == "إدارة اليافطات":
                 col1, col2 = st.columns([5,1])
                 with col1:
                     st.markdown(f'<div style="background:{banner["color"]};padding:15px;border-radius:10px;color:black;font-weight:bold;">{banner["text"]}</div>', unsafe_allow_html=True)
-                    st.caption(f"تنتهي: {banner['expire']} | تم النشر: {banner['created_at']}")
+                    
+                    # متعدلة عشان اليافطات القديمة
+                    تاريخ_الانتهاء = banner.get('expire', 'غير محدد')
+                    تاريخ_النشر = banner.get('created_at', 'غير محدد')
+                    st.caption(f"تنتهي: {تاريخ_الانتهاء} | تم النشر: {تاريخ_النشر}")
+                    
                 with col2:
                     if st.button("حذف", key=f"del_{i}", type="primary"):
                         st.session_state.banners.pop(i)
