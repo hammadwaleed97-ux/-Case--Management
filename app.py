@@ -22,6 +22,50 @@ def fix_arabic(text):
     reshaped_text = arabic_reshaper.reshape(str(text))
     bidi_text = get_display(reshaped_text)
     return bidi_text
+    # ===== نظام اليافطة =====
+from datetime import timedelta
+
+if 'banners' not in st.session_state:
+    st.session_state.banners = []
+
+def show_banners():
+    st.session_state.banners = [b for b in st.session_state.banners if b["expire"] > datetime.now()]
+    for banner in st.session_state.banners:
+        st.markdown(f"""
+        <div style="background:linear-gradient(90deg, {banner['color']}, #ffffff22); 
+                    padding:14px; border-radius:12px; text-align:center; 
+                    font-size:24px; font-weight:bold; color:white; margin:15px 0;
+                    border: 2px solid {banner['color']}; animation: pulse 2s infinite;">
+            📢 {banner['text']}
+        </div>
+        <style>@keyframes pulse {{ 0% {{transform: scale(1);}} 50% {{transform: scale(1.02);}} 100% {{transform: scale(1);}} }}</style>
+        """, unsafe_allow_html=True)
+
+def banner_sidebar():
+    if 'role' not in st.session_state or st.session_state.role != 'admin':
+        return 
+    
+    st.sidebar.markdown("---")
+    st.sidebar.title("📢 تحكم الادمن")
+    with st.sidebar.form("add_banner_form"):
+        banner_text = st.text_input("اكتب التهنئة")
+        banner_color = st.color_picker("اللون", "#FFD700")
+        duration_minutes = st.number_input("المدة بالدقايق", 1, 10080, 60)
+        if st.form_submit_button("اضافة يافطة"):
+            if banner_text:
+                expire_time = datetime.now() + timedelta(minutes=duration_minutes)
+                st.session_state.banners.append({"text": banner_text, "color": banner_color, "expire": expire_time})
+                st.rerun()
+
+    st.sidebar.markdown("### حذف اليافطات")
+    for i, banner in enumerate(st.session_state.banners):
+        col1, col2 = st.sidebar.columns([4,1])
+        with col1: st.write(f"• {banner['text'][:20]}...")
+        with col2: 
+            if st.button("🗑️", key=f"del_admin_{i}"):
+                st.session_state.banners.pop(i)
+                st.rerun()
+# ===== نهاية الكود =====
 
 
 # دالة التصدير
