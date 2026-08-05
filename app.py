@@ -2006,7 +2006,7 @@ elif st.session_state.page == "تقارير":
                         <div style="margin-top:12px;">....................</div>
                     </div>
 
-                    <p style="text-align:center; margin-top:15px; font-size:11px;">تحر في: {datetime.now().strftime('%d-%m-%Y')}</p>
+                    <p style="text-align:center; margin-top:15px; font-size:11px;">تحرر في: {datetime.now().strftime('%d-%m-%Y')}</p>
                 </div>
                 """
                 full_html = header_html + f"<div class='table-container'>{html}</div>" + footer
