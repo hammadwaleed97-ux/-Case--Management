@@ -3,9 +3,5 @@ pandas
 openpyxl
 python-docx
 plotly
-reportlab
-arabic-reshaper
-python-bidi
-bcrypt
-xlsxwriter
 pillow==10.2.0
+xlsxwriter
