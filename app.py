@@ -22,6 +22,28 @@ def fix_arabic(text):
     reshaped_text = arabic_reshaper.reshape(str(text))
     bidi_text = get_display(reshaped_text)
     return bidi_text
+
+
+# دالة التصدير
+def get_export_html(full_html, title):
+    return f"""<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+<meta charset="UTF-8">
+<title>{title}</title>
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap');
+    body {{font-family: 'Cairo', 'Times New Roman', serif; direction: rtl; text-align: right; background: #fff; color: #000; padding: 20px;}}
+    .case-table {{width:100%; border-collapse:collapse; font-size:11px; margin-top:12px;}}
+    .case-table th {{background: #B8860B; color:#000; padding:6px; border:1px solid #000; font-weight:900; text-align:center;}}
+    .case-table td {{padding:5px; border:1px solid #000; text-align:center;}}
+    .table-container {{overflow-x:auto}}
+</style>
+</head>
+<body>
+{full_html}
+</body>
+</html>"""
 st.markdown("""
 <style>
 .stApp { background-color: #0E1117; }
