@@ -2258,11 +2258,30 @@ if st.session_state.page == "تقارير":
                     for cell in worksheet[1]: cell.alignment = cell.alignment.copy(wrap_text=True, horizontal='right')
                 st.download_button("⬇️ Excel", data=excel_buffer.getvalue(), file_name=f"بيان_عددي_{region_stat}.xlsx", use_container_width=True, key="dl_stat3")
 # ========================= نهاية الجزء 
+# =import json
+import os
+from datetime import datetime
+
+BANNERS_FILE = "banners.json"
+
+def load_banners():
+    if os.path.exists(BANNERS_FILE):
+        with open(BANNERS_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return []
+
+def save_banners(banners):
+    with open(BANNERS_FILE, "w", encoding="utf-8") as f:
+        json.dump(banners, f, ensure_ascii=False, indent=2)
+
 # =========================================
 # ============ صفحة إدارة اليافطات ============
 # =========================================
 elif st.session_state.page == "إدارة اليافطات":
     
+    if 'banners' not in st.session_state:
+        st.session_state.banners = load_banners()
+
     st.title("⚙️ إدارة اليافطات")
     st.markdown("---")
 
@@ -2287,6 +2306,7 @@ elif st.session_state.page == "إدارة اليافطات":
                     "created_at": datetime.now().strftime("%Y-%m-%d %H:%M")
                 }
                 st.session_state.banners.append(new_banner)
+                save_banners(st.session_state.banners) # حفظ
                 st.success("✅ تم نشر اليافطة بنجاح!")
                 st.rerun()
             else:
@@ -2295,25 +2315,31 @@ elif st.session_state.page == "إدارة اليافطات":
     st.markdown("---")
 
     # ========== 2. عرض وحذف اليافطات الحالية ==========
-    st.subheader("🗑️ اليافطات الحالية")
+    st.subheader(f"🗑️ اليافطات الحالية - العدد: {len(st.session_state.banners)}")
     
     if len(st.session_state.banners) == 0:
         st.info("مفيش يافطات حاليا. ضيف اول يافطة من فوق")
     else:
         for i, banner in enumerate(st.session_state.banners):
+            
+            # الفاصل الكبير
+            st.markdown("========================================")
+            st.markdown(f"# ============ يافطة رقم {i+1} ============")
+            st.markdown("========================================")
+            
             with st.container(border=True):
                 col1, col2 = st.columns([5,1])
                 with col1:
-                    st.markdown(f'<div style="background:{banner["color"]};padding:15px;border-radius:10px;color:black;font-weight:bold;">{banner["text"]}</div>', unsafe_allow_html=True)
+                    st.markdown(f'<div style="background:{banner["color"]};padding:15px;border-radius:10px;color:black;font-weight:bold;font-size:16px;">📢 {banner["text"]}</div>', unsafe_allow_html=True)
                     
-                    # متعدلة عشان اليافطات القديمة
                     تاريخ_الانتهاء = banner.get('expire', 'غير محدد')
                     تاريخ_النشر = banner.get('created_at', 'غير محدد')
-                    st.caption(f"تنتهي: {تاريخ_الانتهاء} | تم النشر: {تاريخ_النشر}")
+                    st.caption(f"📅 تنتهي: {تاريخ_الانتهاء} | 📝 تم النشر: {تاريخ_النشر}")
                     
                 with col2:
-                    if st.button("حذف", key=f"del_{i}", type="primary"):
+                    if st.button("🗑️ حذف", key=f"del_{i}", type="primary", use_container_width=True):
                         st.session_state.banners.pop(i)
+                        save_banners(st.session_state.banners) # حفظ بعد الحذف
                         st.rerun()
 
     st.markdown("---")
