@@ -1943,7 +1943,7 @@ elif st.session_state.page == "تقارير":
             # فلترة التاريخ
             فلترة_تاريخ = []
             for c in cases:
-                if c.get('اخر جلسة'):  # بالظبط كدة
+                if c.get('اخر جلسة'):
                     try:
                         ت_جلسة = datetime.strptime(c['اخر جلسة'], '%Y-%m-%d').date()
                         if from_date <= ت_جلسة <= to_date:
@@ -1975,7 +1975,6 @@ elif st.session_state.page == "تقارير":
                     خصوم = f"{مدعي} ضد {مدعي_عليه}"
                     خصوم_html = f"<b>{مدعي}</b> <span style='color:#003366'>ضد</span> <b>{مدعي_عليه}</b>"
                     
-                    # هنا السر: بنجيبهم بالاسم بالظبط
                     تاريخ_الجلسة = c.get('اخر جلسة','')
                     الاجراء = c.get('الاجراء','')
 
