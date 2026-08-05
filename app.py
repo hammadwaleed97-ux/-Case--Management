@@ -1879,17 +1879,17 @@ elif st.session_state.page == "تقارير":
     
     st.markdown("""
     <style>
-    .case-table {width:100%; border-collapse:collapse; font-size:14px; margin-top:20px; direction:rtl}
+    .case-table {width:100%; border-collapse:collapse; font-size:12px; margin-top:20px; direction:rtl} /* <-- صغرنا الخط ل 12px */
     .case-table th {
         background: linear-gradient(135deg, #8B6914 0%, #B8860B 100%); /* مدهب غامق */
         color:#000; 
-        padding:12px; 
+        padding:8px; /* <-- قللنا البادنج */
         border:1px solid #8B6914; 
         font-weight:900;
         text-align:center;
         white-space: nowrap;
     }
-    .case-table td {padding:10px; border:1px solid #B8860B; text-align:center; background:#1E2A47; color:#fff}
+    .case-table td {padding:6px; border:1px solid #B8860B; text-align:center; background:#1E2A47; color:#fff} /* <-- قللنا البادنج */
     .table-container {overflow-x:auto}
     
     /* خليت كل الايقونات والعناوين والليبلز مدهب غامق */
@@ -1936,7 +1936,7 @@ elif st.session_state.page == "تقارير":
         with colA: region = st.text_input("ديوان عام منطقة", key="region1")
         with colB: مدير_عام1 = st.text_input("اسم مدير عام الإدارات القانونية", key="modir1")
         with colC: مدير_ادارة1 = st.text_input("اسم مدير إدارة القضايا", key="modir_idara1")
-        عضو_قانوني1 = st.text_input("اسم العضو القانوني", key="odo1") # <-- اتعدل
+        عضو_قانوني1 = st.text_input("اسم العضو القانوني", key="odo1")
         
         col1, col2, col3 = st.columns(3)
         with col1: from_date = st.date_input("من الفترة", key="from1")
@@ -1993,7 +1993,7 @@ elif st.session_state.page == "تقارير":
                 
                 html += "</table>"
                 footer = f"""
-                <div style='margin-top:40px; color:#B8860B; font-size:16px;'>
+                <div style='margin-top:40px; color:#B8860B; font-size:15px;'> /* <-- صغرنا خط الفوتر شوية برضو */
                     <p style='text-align:center;'>تفضلوا بقبول وافر الاحترام</p>
                     <div style='display:flex; justify-content:space-between; margin-top:20px;'>
                         <div style='text-align:center'>
