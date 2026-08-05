@@ -2127,4 +2127,49 @@ elif st.session_state.page == "تقارير":
                             ت_جلسة = datetime.strptime(c['تاريخ_جلسة'], '%Y-%m-%d').date()
                             if stat_from2 <= ت_جلسة <= stat_to2:
                                 if "حسب موضوع" in نوع_البيان_العددي and topic_stat:
-                        
+                                    if topic_stat.lower() in str(c.get('موضوع','')).lower():
+                                        العدد += 1
+                                        التفاصيل.append(c)
+                                elif "جميع" in نوع_البيان_العددي:
+                                    العدد += 1
+                                    التفاصيل.append(c)
+                        except:
+                            pass
+            
+            # 2. الاحكام - من الارشيف
+            if "الاحكام" in نوع_البيان_العددي:
+                archive = [c for c in all_cases if c.get("حالة") == "منتهية" and not c.get("تم_الحفظ_النهائي")]
+                for c in archive:
+                    if c.get('تاريخ_الحكم'):
+                        try:
+                            ت_حكم = datetime.strptime(c['تاريخ_الحكم'], '%Y-%m-%d').date()
+                            if stat_from2 <= ت_حكم <= stat_to2:
+                                مسندة = c.get('مسندة_ل_الحكم')
+                                if "حسب موضوع" in نوع_البيان_العددي and topic_stat:
+                                    if topic_stat.lower() in str(c.get('موضوع','')).lower():
+                                        العدد += 1
+                                        التفاصيل.append(c)
+                                elif "للصالح" in نوع_البيان_العددي and مسندة == 'الصالح':
+                                    العدد += 1
+                                    التفاصيل.append(c)
+                                elif "للضد" in نوع_البيان_العددي and مسندة == 'الضد':
+                                    العدد += 1
+                                    التفاصيل.append(c)
+                                elif "للصالح والضد" in نوع_البيان_العددي:
+                                    العدد += 1
+                                    التفاصيل.append(c)
+                        except:
+                            pass
+
+            st.success(f"✅ العدد الإجمالي: {العدد}")
+            
+            if التفاصيل:
+                st.markdown(f"<h4 style='color:#B8860B'>تفاصيل {نوع_البيان_العددي}</h4>", unsafe_allow_html=True)
+                html = "<table class='case-table'><tr><th>م</th><th>رقم</th><th>سنة</th><th>الموضوع</th><th>الحالة</th></tr>"
+                for idx, c in enumerate(التفاصيل, 1):
+                    حالة_عرض = "متداولة" if c.get('حالة') == 'متداولة' else f"منتهية - {c.get('مسندة_ل_الحكم','')}"
+                    html += f"<tr><td>{idx}</td><td>{c.get('رقم','')}</td><td>{c.get('سنة','')}</td><td>{c.get('موضوع','')}</td><td>{حالة_عرض}</td></tr>"
+                html += "</table>"
+                st.markdown(f"<div class='table-container'>{html}</div>", unsafe_allow_html=True)
+            else:
+                st.warning("لا توجد بيانات في الفترة المحددة")
