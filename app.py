@@ -1894,116 +1894,113 @@ elif st.session_state.page == "مكتبة":
         # =========== الجزء الثامن: التقارير ============
 # ================= القسم 1 من 2 =================
 
-from fpdf import FPDF
 import io
+import pandas as pd
+from datetime import datetime
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import landscape, A4
+from reportlab.lib import colors
+from reportlab.platypus import Table, TableStyle
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+import arabic_reshaper
+from bidi.algorithm import get_display
 
-class PDF(FPDF):
-    def header(self):
-        self.set_font('Cairo', '', 12)
-        self.cell(0, 10, 'الهيئة القومية للتأمين الاجتماعي', 0, 1, 'C')
-        self.cell(0, 8, 'الإدارة المركزية للإدارات القانونية', 0, 1, 'C')
-        self.ln(5)
-
-    def footer(self):
-        self.set_y(-15)
-        self.set_font('Cairo', '', 8)
-        self.cell(0, 10, f'تحرر في: {datetime.now().strftime("%d-%m-%Y")}', 0, 0, 'L')
+def arabic(text):
+    try:
+        reshaped_text = arabic_reshaper.reshape(str(text))
+        return get_display(reshaped_text)
+    except: return str(text)
 
 def create_pdf(df, title, region, مدير_عام, مدير_ادارة, عضو_قانوني):
-    pdf = PDF(orientation='L', unit='mm', format='A4')
-    pdf.add_font('Cairo', '', '/usr/share/fonts/truetype/cairo/Cairo-Regular.ttf', uni=True) # لو مش موجود ارفعه
-    pdf.add_page()
-    pdf.set_font('Cairo', '', 10)
+    buffer = io.BytesIO()
+    pdf = canvas.Canvas(buffer, pagesize=landscape(A4))
+    width, height = landscape(A4)
     
-    pdf.cell(0, 10, title, 0, 1, 'C')
-    pdf.ln(5)
+    # تسجيل الخط العربي
+    pdfmetrics.registerFont(TTFont('Cairo', 'Cairo-Regular.ttf'))
+    pdf.setFont("Cairo", 10)
+
+    # الهيدر
+    pdf.drawCentredString(width/2, height-30, arabic("الهيئة القومية للتأمين الاجتماعي"))
+    pdf.drawCentredString(width/2, height-50, arabic("الإدارة المركزية للإدارات القانونية"))
+    pdf.drawCentredString(width/2, height-70, arabic(f"ديوان عام منطقة {region}"))
+    pdf.drawCentredString(width/2, height-90, arabic(title))
     
     # الجدول
-    col_width = pdf.w / 9.5
-    pdf.set_fill_color(184, 134, 11)
-    pdf.set_text_color(0)
-    pdf.set_font('Cairo', 'B', 9)
-    for col in df.columns:
-        pdf.cell(col_width, 8, str(col), 1, 0, 'C', 1)
-    pdf.ln()
+    data = [list(df.columns)] + df.astype(str).values.tolist()
+    data_arabic = [[arabic(cell) for cell in row] for row in data]
     
-    pdf.set_font('Cairo', '', 8)
-    pdf.set_text_color(0)
-    for _, row in df.iterrows():
-        for item in row:
-            pdf.cell(col_width, 6, str(item), 1, 0, 'C')
-        pdf.ln()
+    col_width = width / len(df.columns)
+    t = Table(data_arabic, colWidths=col_width)
+    t.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), colors.HexColor("#B8860B")),
+        ('TEXTCOLOR',(0,0),(-1,0),colors.black),
+        ('ALIGN',(0,0),(-1,-1),'CENTER'),
+        ('VALIGN',(0,0),(-1,-1),'MIDDLE'),
+        ('FONTNAME', (0,0), (-1,-1), 'Cairo'),
+        ('FONTSIZE', (0,0), (-1,-1), 7),
+        ('GRID', (0,0), (-1,-1), 0.5, colors.black),
+        ('WORDWRAP', (0,0), (-1,-1), True),
+    ]))
+    t.wrapOn(pdf, width, height)
+    t.drawOn(pdf, 10, height-350)
     
-    pdf.ln(10)
-    # الفوتر
-    pdf.cell(95, 6, f'العضو القانوني: {عضو_قانوني}', 0, 0, 'R')
-    pdf.cell(95, 6, f'مدير إدارة القضايا: {مدير_ادارة}', 0, 1, 'L')
-    pdf.cell(95, 6, '....................', 0, 0, 'R')
-    pdf.cell(95, 6, '....................', 0, 1, 'L')
-    pdf.ln(5)
-    pdf.cell(0, 6, f'مدير عام الإدارات القانونية: {مدير_عام}', 0, 1, 'C')
-    pdf.cell(0, 6, '....................', 0, 1, 'C')
+    # الفوتر - تحر في بعد سطرين
+    y = 120
+    pdf.drawRightString(width-50, y, arabic(f"العضو القانوني: {عضو_قانوني}"))
+    pdf.drawString(50, y, arabic(f"مدير إدارة القضايا: {مدير_ادارة}"))
+    pdf.line(width-150, y-5, width-50, y-5)
+    pdf.line(50, y-5, 200, y-5)
     
-    return pdf.output(dest='S').encode('latin-1')
+    y -= 25
+    pdf.drawRightString(width-50, y, arabic(f"تحرر في: {datetime.now().strftime('%d-%m-%Y')}"))
+    
+    y -= 25
+    pdf.drawCentredString(width/2, y, arabic(f"مدير عام الإدارات القانونية: {مدير_عام}"))
+    pdf.line(width/2-80, y-5, width/2+80, y-5)
+    
+    pdf.save()
+    buffer.seek(0)
+    return buffer
 
 if st.session_state.page == "تقارير":
-    import io
-    import pandas as pd
-    from datetime import datetime
     data = load_data()
-
-    st.markdown("""... نفس الستايل بتاعك ...""", unsafe_allow_html=True)
-
-    st.markdown("<h2 style='color:#B8860B; text-align:center; font-family: Cairo; font-size:18px;'>📑 مركز التقارير الحكومية</h2>", unsafe_allow_html=True)
+    st.markdown(""" نفس الستايل بتاعك """, unsafe_allow_html=True)
+    st.markdown("<h2 style='color:#B8860B; text-align:center;'>📑 مركز التقارير الحكومية</h2>", unsafe_allow_html=True)
     if st.button("⬅️ العودة للرئيسية", use_container_width=True): st.session_state.page = "الرئيسية"; st.rerun()
-
-    if 'last_report_df' not in st.session_state: st.session_state.last_report_df = pd.DataFrame()
 
     tab1, tab2, tab3, tab4 = st.tabs(["📊 بيان بجميع الدعاوى المتداولة", "⚖️ بيان الاحكام", "📈 الإحصائيات", "📊 بيان عددي"])
 
-    def report_header(region, title, مدير_عام, مدير_ادارة, عضو_قانوني):
-        return f"""<div style="text-align:right; color:#B8860B; border:2px double #B8860B; padding:12px 10px; background: #0A1428; border-radius:5px; margin-bottom:12px;">
-        <h2 style="margin:2px 0; font-size:15px; font-weight:900;">الهيئة القومية للتأمين الاجتماعي</h2>
-        <h3 style="margin:4px 0; font-size:12px; font-weight:700;">ديوان عام منطقة {region}</h3>
-        <hr style="border:1px solid #B8860B; margin:8px 0;">
-        <h3 style="margin:6px 0; font-size:13px; font-weight:900; text-align:center; text-decoration: underline;"> {title} </h3>
-        </div>"""
-
     # ========= تبويب 1: الدعاوى المتداولة =========
     with tab1:
-        # ... نفس كود الفلترة بتاعك ...
+        # ... حطي هنا كل مدخلاتك بتاعت المنطقة والمدير والتواريخ ...
         if st.button("🔍 عرض بيان الدعاوى المتداولة", use_container_width=True, type="primary", key="show1"):
-            # ... كود الفلترة زي ما هو ...
+            # ... كود الفلترة بتاعك اللي بيطلع cases ...
             if cases:
-                # ... بناء df_data زي ما هو ...
                 df_display = pd.DataFrame(df_data)
-                st.session_state.last_report_df = df_display
                 title = f"{نوع_تقرير_متداولة} خلال الفترة من {from_date.strftime('%d-%m-%Y')} إلى {to_date.strftime('%d-%m-%Y')}"
-                st.markdown(report_header(region, title, مدير_عام1, مدير_ادارة1, عضو_قانوني1) + df_display.to_html(index=False, classes='case-table'), unsafe_allow_html=True)
                 
-                # ===== ازرار التصدير الجديدة PDF حقيقي =====
-                pdf_bytes = create_pdf(df_display, title, region, مدير_عام1, مدير_ادارة1, عضو_قانوني1)
+                pdf_buffer = create_pdf(df_display, title, region, مدير_عام1, مدير_ادارة1, عضو_قانوني1)
                 c1,c2,c3 = st.columns(3)
-                with c1: st.download_button("⬇️ PDF", data=pdf_bytes, file_name=f"بيان_الدعاوى_{region}.pdf", mime="application/pdf", use_container_width=True, key="dl1_pdf")
-                with c2: st.download_button("⬇️ Word", data=df_display.to_html().encode('utf-8'), file_name=f"بيان_الدعاوى_{region}.doc", use_container_width=True, key="dl2_doc")
-                with c3: excel_buffer = io.BytesIO(); df_display.to_excel(excel_buffer, index=False); st.download_button("⬇️ Excel", data=excel_buffer.getvalue(), file_name=f"بيان_الدعاوى_{region}.xlsx", use_container_width=True, key="dlx1")
+                with c1: st.download_button("⬇️ PDF", data=pdf_buffer, file_name=f"بيان_الدعاوى_{region}.pdf", mime="application/pdf", use_container_width=True, key="dl1_pdf")
+                with c2: st.download_button("⬇️ Excel", data=df_display.to_excel(index=False), file_name=f"بيان_الدعاوى_{region}.xlsx", use_container_width=True, key="dlx1")
                     # ================= القسم 2 من 2 =================
-    # ... تبويب 2 و 3 و 4 بنفس الفكرة بس استخدم create_pdf
 
+    # ========= تبويب 2: الاحكام =========
     with tab2:
         if st.button("🔍 عرض بيان الاحكام", use_container_width=True, type="primary", key="show2"):
             # ... كود الفلترة بتاع الاحكام ...
             if cases:
                 df_display = pd.DataFrame(df_data)
-                st.session_state.last_report_df = df_display
                 title = f"{نوع_التقرير} خلال الفترة من {from_date2.strftime('%d-%m-%Y')} إلى {to_date2.strftime('%d-%m-%Y')}"
-                st.markdown(report_header(region2, title, مدير_عام2, مدير_ادارة2, عضو_قانوني2) + df_display.to_html(index=False, classes='case-table'), unsafe_allow_html=True)
                 
-                pdf_bytes = create_pdf(df_display, title, region2, مدير_عام2, مدير_ادارة2, عضو_قانوني2)
+                pdf_buffer = create_pdf(df_display, title, region2, مدير_عام2, مدير_ادارة2, عضو_قانوني2)
                 c1,c2,c3 = st.columns(3)
-                with c1: st.download_button("⬇️ PDF", data=pdf_bytes, file_name=f"بيان_الاحكام_{region2}.pdf", mime="application/pdf", use_container_width=True, key="dl21_pdf")
-                with c2: st.download_button("⬇️ Word", data=df_display.to_html().encode('utf-8'), file_name=f"بيان_الاحكام_{region2}.doc", use_container_width=True, key="dl22_doc")
-                with c3: excel_buffer = io.BytesIO(); df_display.to_excel(excel_buffer, index=False); st.download_button("⬇️ Excel", data=excel_buffer.getvalue(), file_name=f"بيان_الاحكام_{region2}.xlsx", use_container_width=True, key="dlx2")
+                with c1: st.download_button("⬇️ PDF", data=pdf_buffer, file_name=f"بيان_الاحكام_{region2}.pdf", mime="application/pdf", use_container_width=True, key="dl21_pdf")
+                with c2: st.download_button("⬇️ Excel", data=df_display.to_excel(index=False), file_name=f"بيان_الاحكام_{region2}.xlsx", use_container_width=True, key="dlx2")
 
-# ... نفس الكلام ل tab3 و tab4
+    # ========= تبويب 3 و 4 نفس الفكرة =========
+    # انسخي نفس زرار ال PDF فيهم
+    
 # ========================= نهاية الجزء الثامن ==============================
