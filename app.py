@@ -81,7 +81,15 @@ def save_banners():
         b['expire'] = b['expire'].isoformat()
     with open(BANNER_FILE, 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
-        def init_session_state():
+        def save_banners():
+    data = st.session_state.banners.copy()
+    for b in data:
+        b['expire'] = b['expire'].isoformat()
+    with open(BANNER_FILE, 'w', encoding='utf-8') as f:
+        json.dump(data, f, ensure_ascii=False)
+
+
+def init_session_state():  # <-- طلعناها برا ومفيش مسافات قبلها
     if 'banners' not in st.session_state:
         st.session_state.banners = []
     
@@ -115,6 +123,7 @@ def get_export_html(full_html, title):
 </html>"""
     # ===== تشغيل اليافطة =====
 load_banners()
+init_session_state()
 st.markdown("""
 <style>
 .stApp { background-color: #0E1117; }
