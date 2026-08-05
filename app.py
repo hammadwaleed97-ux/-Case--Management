@@ -843,7 +843,8 @@ if st.session_state.page == "الرئيسية":
         "<h2>الأقسام</h2>",
         unsafe_allow_html=True
     )
-        show_banners()
+        
+    show_banners()
 
     col1, col2 = st.columns(2)
 
