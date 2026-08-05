@@ -25,9 +25,6 @@ def fix_arabic(text):
     # ===== نظام اليافطة =====
 from datetime import timedelta
 
-if 'banners' not in st.session_state:
-    st.session_state.banners = []
-
 def show_banners():
     st.session_state.banners = [b for b in st.session_state.banners if b["expire"] > datetime.now()]
     for banner in st.session_state.banners:
@@ -84,6 +81,18 @@ def save_banners():
         b['expire'] = b['expire'].isoformat()
     with open(BANNER_FILE, 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
+        def init_session_state():
+    if 'banners' not in st.session_state:
+        st.session_state.banners = []
+    
+    # سطر التجربة - امسحه بعد ما نختبر
+    if len(st.session_state.banners) == 0:
+        st.session_state.banners.append({
+            'text': 'دي يافطة تجربة من الكود',
+            'color': '#FFC107',
+            'expire': datetime.now() + timedelta(days=7)
+        })
+        save_banners()
 # دالة التصدير
 def get_export_html(full_html, title):
     return f"""<!DOCTYPE html>
