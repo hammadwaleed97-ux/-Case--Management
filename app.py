@@ -402,6 +402,8 @@ elif st.session_state.page == "set_password": set_password_page()
 elif st.session_state.page == "change_password": change_password_page()
 elif st.session_state.page == "الرئيسية":
     st.write(f"اهلا {st.session_state.user['username']}")
+    show_banners()
+banner_sidebar()
     if st.session_state.user["role"] == "admin":
         if st.button("استخراج عضوية جديدة", use_container_width=True, type="primary"): st.session_state.page = "extract_member"; st.rerun()
         if st.button("ادارة الاعضاء", use_container_width=True): st.session_state.page = "ادارة_الاعضاء"; st.rerun()
