@@ -2073,7 +2073,7 @@ elif st.session_state.page == "تقارير":
         else:
             c1,c2,c3 = st.columns(3)
             with c1: st.download_button("⬇️ PDF", data=f"<html dir='rtl' charset='UTF-8'><body>{st.session_state.last_report_html}</body></html>".encode('utf-8'), file_name=f"{st.session_state.last_report_title}.html", use_container_width=True)
-            with c2: st.download_button("⬇️ Word", data=st.session_state.last_report_html.encode('utf-8'), file_name=f"{st.session_state.last_report_title}.doc", use_container-width=True)
+            with c2: st.download_button("⬇️ Word", data=st.session_state.last_report_html.encode('utf-8'), file_name=f"{st.session_state.last_report_title}.doc", use_container_width=True) # <-- صلحتها هنا
             with c3:
                 excel_buffer = io.BytesIO()
                 st.session_state.last_report_df.to_excel(excel_buffer, index=False, engine='openpyxl')
