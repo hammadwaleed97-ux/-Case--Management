@@ -47,8 +47,8 @@ tbody tr td { color: black !important; background-color: white !important; }
 """, unsafe_allow_html=True)
 
 USERS_FILE = "users.json"
-SENDER_EMAIL = "hammadwaleed97@gmail.com"
-SENDER_PASSWORD = "t w on he mw ox c nl hl v"
+SENDER_EMAIL = ""
+SENDER_PASSWORD = ""
 ADMIN_USERNAME = "admin"
 ADMIN_DEFAULT_PASS = "admin123"
 
