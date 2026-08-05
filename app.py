@@ -1917,7 +1917,7 @@ elif st.session_state.page == "تقارير":
     if 'last_report_df' not in st.session_state:
         st.session_state.last_report_df = pd.DataFrame()
 
-    tab1, tab2, tab3, tab4 = st.tabs(["📊 بيان بجميع الدعاوى المتداولة", "⚖️ بيان الاحكام", "📈 الإحصائيات", "📄 التصدير"])
+    tab1, tab2, tab3, tab4 = st.tabs(["📊 بيان بجميع الدعاوى المتداولة", "⚖️ بيان الاحكام", "📈 الإحصائيات", "📊 بيان عددي"])
 
     def report_header(region, title, مدير_عام, مدير_ادارة, عضو_قانوني):
         return f"""<div style="text-align:right; color:#B8860B; border:2px double #B8860B; padding:12px 10px; background: #0A1428; border-radius:5px; margin-bottom:12px; font-family: 'Times New Roman', serif;">
@@ -2091,14 +2091,40 @@ elif st.session_state.page == "تقارير":
             c3.metric("عدد الاحكام للصالح", len(للصالح))
             c4.metric("عدد الاحكام للضد", len(للضد))
 
-    # ========= تبويب 4: التصدير =========
+    # ========= تبويب 4: البيان العددي =========
     with tab4:
-        st.markdown("<h3 style='color:#B8860B; text-align:center; font-size:16px;'>📄 تصدير التقارير</h3>", unsafe_allow_html=True)
-        st.info("اعرض التقرير من تبويب 1 او 2 الاول")
-        if st.session_state.last_report_html == "":
-            st.warning("لسه معرضتش اي تقرير")
-        else:
-            c1,c2,c3 = st.columns(3)
-            with c1: st.download_button("⬇️ PDF", data=f"<html dir='rtl' charset='UTF-8'><body>{st.session_state.last_report_html}</body></html>".encode('utf-8'), file_name=f"{st.session_state.last_report_title}.html", use_container_width=True)
-            with c2: st.download_button("⬇️ Word", data=st.session_state.last_report_html.encode('utf-8'), file_name=f"{st.session_state.last_report_title}.doc", use_container_width=True)
-            with c3: excel_buffer = io.BytesIO(); st.session_state.last_report_df.to_excel(excel_buffer, index=False, engine='openpyxl'); st.download_button("⬇️ Excel", data=excel_buffer.getvalue(), file_name=f"{st.session_state.last_report_title}.xlsx", use_container_width=True)
+        st.markdown("<h3 style='color:#B8860B; text-align:center; font-size:16px;'>📊 البيان العددي</h3>", unsafe_allow_html=True)
+        st.markdown("<div style='background:#1E2A47; padding:12px; border-radius:8px; border:2px solid #B8860B; margin-bottom:12px'>", unsafe_allow_html=True)
+        
+        نوع_البيان_العددي = st.selectbox("نوع البيان العددي", 
+            ["جميع الدعاوى المتداولة", 
+             "الدعاوى المتداولة حسب موضوع الدعوى",
+             "جميع الاحكام للصالح والضد",
+             "الاحكام الصادرة للصالح",
+             "الاحكام الصادرة للضد",
+             "الاحكام حسب موضوع الدعوى"], key="no4_عددي")
+        
+        col1, col2 = st.columns(2)
+        with col1: stat_from2 = st.date_input("من الفترة", key="s_from2")
+        with col2: stat_to2 = st.date_input("حتى الفترة", key="s_to2")
+        
+        topic_stat = ""
+        if "حسب موضوع" in نوع_البيان_العددي:
+            topic_stat = st.text_input("موضوع الدعوى للفلترة", placeholder="اكتب جزء من الموضوع", key="topic_stat")
+        st.markdown("</div>", unsafe_allow_html=True)
+
+        if st.button("🔍 عرض البيان العددي", use_container_width=True, type="primary", key="show_stat"):
+            all_cases = data["cases"]
+            العدد = 0
+            التفاصيل = []
+
+            # 1. الدعاوى المتداولة - من الحصر العام
+            if "الدعاوى المتداولة" in نوع_البيان_العددي:
+                cases = [c for c in all_cases if str(c.get('حالة','')).strip() == 'متداولة']
+                for c in cases:
+                    if c.get('تاريخ_جلسة'):
+                        try:
+                            ت_جلسة = datetime.strptime(c['تاريخ_جلسة'], '%Y-%m-%d').date()
+                            if stat_from2 <= ت_جلسة <= stat_to2:
+                                if "حسب موضوع" in نوع_البيان_العددي and topic_stat:
+                        
