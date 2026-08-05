@@ -2266,19 +2266,23 @@ BANNERS_FILE = "banners.json"
 
 def load_banners():
     if os.path.exists(BANNERS_FILE):
-        with open(BANNERS_FILE, "r", encoding="utf-8") as f:
-            data = json.load(f)
-            # نضف الداتا القديمة وحول اي تاريخ لنص
-            for b in data:
-                if isinstance(b.get('expire'), date):
-                    b['expire'] = str(b['expire'])
-                if isinstance(b.get('created_at'), date):
-                    b['created_at'] = str(b['created_at'])
-            return data
+        try:
+            with open(BANNERS_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                # نضف الداتا القديمة وحول اي تاريخ لنص
+                for b in data:
+                    if isinstance(b.get('expire'), date):
+                        b['expire'] = str(b['expire'])
+                    if isinstance(b.get('created_at'), date):
+                        b['created_at'] = str(b['created_at'])
+                return data
+        except json.JSONDecodeError:
+            # لو الملف بايظ امسحه وارجع فاضي
+            os.remove(BANNERS_FILE)
+            return []
     return []
 
 def save_banners(banners):
-    # نتأكد ان كل حاجة نص قبل الحفظ
     clean_banners = []
     for b in banners:
         clean_banners.append({
@@ -2319,7 +2323,7 @@ if st.session_state.page == "إدارة اليافطات":
                 new_banner = {
                     "text": banner_text,
                     "color": banner_color,
-                    "expire": str(banner_expire), # بنحوله نص هنا
+                    "expire": str(banner_expire),
                     "created_at": datetime.now().strftime("%Y-%m-%d %H:%M")
                 }
                 st.session_state.banners.append(new_banner)
