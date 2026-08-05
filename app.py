@@ -1940,9 +1940,10 @@ elif st.session_state.page == "تقارير":
         if st.button("🔍 عرض بيان الدعاوى المتداولة", use_container_width=True, type="primary", key="show1"):
             cases = [c for c in data["cases"] if c.get('حالة') == 'متداولة']
             
+            # فلترة التاريخ
             فلترة_تاريخ = []
             for c in cases:
-                if c.get('اخر جلسة'):
+                if c.get('اخر جلسة'):  # بالظبط كدة
                     try:
                         ت_جلسة = datetime.strptime(c['اخر جلسة'], '%Y-%m-%d').date()
                         if from_date <= ت_جلسة <= to_date:
@@ -1960,9 +1961,8 @@ elif st.session_state.page == "تقارير":
             header_html = report_header(region, title, مدير_عام1, مدير_ادارة1, عضو_قانوني1)
             
             if not cases: 
-                st.warning("⚠️ لا توجد دعاوى متداولة في الفترة المحددة في الحصر العام")
+                st.warning("⚠️ لا توجد دعاوى متداولة في الفترة المحددة")
             else:
-                # خليتهم خانتين منفصلين زي الصورة
                 html = "<table class='case-table'><tr><th>م</th><th>رقم القضية</th><th>السنة القضائية</th><th>الدائرة والنوع</th><th>اسم المحكمة والمأمورية</th><th>الخصوم</th><th>موضوع الدعوى</th><th>اخر جلسة</th><th>الاجراء</th><th>ملاحظات</th></tr>"
                 df_data = []
                 for i, c in enumerate(cases, 1):
@@ -1975,6 +1975,7 @@ elif st.session_state.page == "تقارير":
                     خصوم = f"{مدعي} ضد {مدعي_عليه}"
                     خصوم_html = f"<b>{مدعي}</b> <span style='color:#003366'>ضد</span> <b>{مدعي_عليه}</b>"
                     
+                    # هنا السر: بنجيبهم بالاسم بالظبط
                     تاريخ_الجلسة = c.get('اخر جلسة','')
                     الاجراء = c.get('الاجراء','')
 
@@ -2037,7 +2038,7 @@ elif st.session_state.page == "تقارير":
             title = f"بيان ب{الحكم_نوع} خلال الفترة من {from_date2} حتى {to_date2} طرف الاستاذ/ {lawyer2} المحامي"
             header_html = report_header(region2, title, مدير_عام2, مدير_ادارة2, عضو_قانوني2)
 
-            if not cases: st.warning("⚠️ لا توجد احكام في الفترة المحددة في الارشيف")
+            if not cases: st.warning("⚠️ لا توجد احكام في الفترة المحددة")
             else:
                 html = "<table class='case-table'><tr><th>م</th><th>رقم القضية</th><th>السنة القضائية</th><th>الدائرة والنوع</th><th>اسم المحكمة والمأمورية</th><th>الخصوم</th><th>موضوع الدعوى</th><th>تاريخ الحكم</th><th>منطوق الحكم</th><th>النتيجة</th><th>ملاحظات</th></tr>"
                 df_data = []
