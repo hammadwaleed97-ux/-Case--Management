@@ -3,7 +3,7 @@ pandas
 openpyxl
 python-docx
 plotly
-reportlab
+fpdf2
 arabic-reshaper
 python-bidi
 bcrypt
