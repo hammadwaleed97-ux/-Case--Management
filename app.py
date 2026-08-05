@@ -1892,13 +1892,15 @@ elif st.session_state.page == "تقارير":
     .case-table td {padding:10px; border:1px solid #B8860B; text-align:center; background:#1E2A47; color:#fff}
     .table-container {overflow-x:auto}
     
-    /* خليت كل الايقونات والعناوين مدهب غامق */
-    h1, h2, h3, h4 {color: #B8860B !important;}
+    /* خليت كل الايقونات والعناوين والليبلز مدهب غامق */
+    h1, h2, h3, h4, label {color: #B8860B !important;}
     .stButton>button {border: 2px solid #B8860B !important; color: #B8860B !important;}
     .stButton>button:hover {background: #B8860B !important; color: #000 !important;}
     [data-testid="stTab"] button {color: #B8860B !important;}
     [data-testid="stTab"] button[aria-selected="true"] {border-bottom: 3px solid #B8860B !important;}
     div[data-testid="stMetricValue"] {color: #B8860B !important;}
+    div[data-testid="stDateInput"] label {color: #B8860B !important;}
+    div[data-testid="stTextInput"] label {color: #B8860B !important;}
     </style>
     """, unsafe_allow_html=True)
     
@@ -1934,7 +1936,7 @@ elif st.session_state.page == "تقارير":
         with colA: region = st.text_input("ديوان عام منطقة", key="region1")
         with colB: مدير_عام1 = st.text_input("اسم مدير عام الإدارات القانونية", key="modir1")
         with colC: مدير_ادارة1 = st.text_input("اسم مدير إدارة القضايا", key="modir_idara1")
-        عضو_قانوني1 = st.text_input("اسم العضو القانوني مقدم التقرير", key="odo1")
+        عضو_قانوني1 = st.text_input("اسم العضو القانوني", key="odo1") # <-- اتعدل
         
         col1, col2, col3 = st.columns(3)
         with col1: from_date = st.date_input("من الفترة", key="from1")
@@ -1970,7 +1972,7 @@ elif st.session_state.page == "تقارير":
             else:
                 st.success(f"✅ تم العثور على {len(cases)} دعوى متداولة")
                 
-                html = "<table class='case-table'><tr><th>م</th><th>رقم</th><th>سنة</th><th>المحكمة والدائرة</th><th>الخصوم</th><th>الموضوع</th><th>اخر جلسة</th><th>الاجراء</th><th>ملاحظات</th></tr>" # <-- رقم قبل سنة
+                html = "<table class='case-table'><tr><th>م</th><th>رقم</th><th>سنة</th><th>المحكمة والدائرة</th><th>الخصوم</th><th>الموضوع</th><th>اخر جلسة</th><th>الاجراء</th><th>ملاحظات</th></tr>"
                 df_data = []
                 for idx, c in enumerate(cases, 1):
                     محكمة = f"{c.get('نوع','')} {c.get('محكمة_اسم','')}"
@@ -1986,8 +1988,8 @@ elif st.session_state.page == "تقارير":
                     else:
                         خصوم_html = f"{مدعي} ضد {مدعي_عليه}"
 
-                    html += f"<tr><td>{idx}</td><td>{c.get('رقم','')}</td><td>{c.get('سنة','')}</td><td>{محكمة}</td><td>{خصوم_html}</td><td>{c.get('موضوع','')}</td><td><b style='color:#B8860B'>{c.get('تاريخ_جلسة','')}</b></td><td>{c.get('الاجراء','')}</td><td>{c.get('ملاحظات','')}</td></tr>" # <-- رقم قبل سنة
-                    df_data.append({'م': idx, 'رقم': c.get('رقم',''), 'سنة': c.get('سنة',''), 'المحكمة': محكمة, 'الخصوم': f"{مدعي} ضد {مدعي_عليه}", 'الموضوع': c.get('موضوع',''), 'اخر جلسة': c.get('تاريخ_جلسة',''), 'الاجراء': c.get('الاجراء',''), 'ملاحظات': c.get('ملاحظات','')}) # <-- رقم قبل سنة للاكسل
+                    html += f"<tr><td>{idx}</td><td>{c.get('رقم','')}</td><td>{c.get('سنة','')}</td><td>{محكمة}</td><td>{خصوم_html}</td><td>{c.get('موضوع','')}</td><td><b style='color:#B8860B'>{c.get('تاريخ_جلسة','')}</b></td><td>{c.get('الاجراء','')}</td><td>{c.get('ملاحظات','')}</td></tr>"
+                    df_data.append({'م': idx, 'رقم': c.get('رقم',''), 'سنة': c.get('سنة',''), 'المحكمة': محكمة, 'الخصوم': f"{مدعي} ضد {مدعي_عليه}", 'الموضوع': c.get('موضوع',''), 'اخر جلسة': c.get('تاريخ_جلسة',''), 'الاجراء': c.get('الاجراء',''), 'ملاحظات': c.get('ملاحظات','')})
                 
                 html += "</table>"
                 footer = f"""
