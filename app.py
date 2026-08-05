@@ -1898,11 +1898,6 @@ elif st.session_state.page == "تقارير":
         </div>
         """
 
-    # دالة التصدير
-    def export_pdf(html_content):
-        full_html = f"<html dir='rtl'><head><meta charset='UTF-8'><style>body{{font-family: Arial, sans-serif}} table{{width:100%;border-collapse:collapse}} th,td{{border:1px solid #000;padding:5px;font-size:10px}} th{{background:#D4AF37;color:#000}}</style></head><body>{html_content}</body></html>"
-        return full_html.encode('utf-8')
-
     # ========= تبويب 1: الدعاوى المتداولة =========
     with tab1:
         st.markdown("<div style='background:#1E2A47; padding:20px; border-radius:15px; border:2px solid #D4AF37; margin-bottom:15px'>", unsafe_allow_html=True)
@@ -1927,18 +1922,20 @@ elif st.session_state.page == "تقارير":
             
             if not cases: st.warning("لا توجد دعاوى متداولة في الفترة المحددة")
             else:
-                html = "<table><tr><th>م</th><th>رقم القضية</th><th>السنة</th><th>الدائرة</th><th>المحكمة</th><th>الخصوم</th><th>الموضوع</th><th>اخر جلسة</th><th>ملاحظات</th></tr>"
+                html = "<table class='case-table'><tr><th>م</th><th>رقم القضية</th><th>السنة القضائية</th><th>الدائرة والنوع</th><th>اسم المحكمة والمأمورية</th><th>الخصوم</th><th>موضوع الدعوى</th><th>اخر جلسة وسببها</th><th>ملاحظات</th></tr>"
                 for i, c in enumerate(cases, 1):
-                    محكمة = f"{c.get('محكمة_اسم','')}<br>مأمورية {c.get('مأمورية','')}" if c.get('مأمورية') else c.get('محكمة_اسم','')
-                    خصوم = f"المدعى: {c.get('مدعي','')}<br>المدعى عليه: {c.get('مدعي_عليه','')}"
-                    جلسة = f"{c.get('تاريخ_جلسة','')}<br>{c.get('سبب','')}"
-                    html += f"<tr><td>{i}</td><td>{c.get('رقم','')}</td><td>{c.get('سنة','')}</td><td>{c.get('دائرة','')} {c.get('نوع','')}</td><td>{محكمة}</td><td>{خصوم}</td><td>{c.get('موضوع','')}</td><td>{جلسة}</td><td>{c.get('ملاحظات','')}</td></tr>"
+                    محكمة = f"{c.get('محكمة_اسم','')}"
+                    if c.get('مأمورية'): محكمة += f"<br>مأمورية {c.get('مأمورية')}"
+                    دائرة = f"{c.get('دائرة','')} {c.get('نوع','')}"
+                    خصوم = f"<div style='background:#FFF3CD; padding:5px; border-radius:5px; color:#000'><b>المدعى:</b> {c.get('مدعي','')}</div><div style='background:#CFF4FC; padding:5px; border-radius:5px; color:#000'><b>المدعى عليه:</b> {c.get('مدعي_عليه','')}</div>"
+                    جلسة = f"<b style='color:#FFD700'>{c.get('تاريخ_جلسة','')}</b><br>{c.get('سبب','')}"
+                    html += f"<tr class='row1'><td>{i}</td><td>{c.get('رقم','')}</td><td>{c.get('سنة','')}</td><td>{دائرة}</td><td>{محكمة}</td><td>{خصوم}</td><td>{c.get('موضوع','')}</td><td>{جلسة}</td><td>{c.get('ملاحظات','')}</td></tr>"
                 html += "</table>"
-                footer = f"<p style='text-align:right; margin-top:30px;'>تفضلوا بقبول وافر الاحترام<br><br>عضو الادارة.................. مدير الإدارة..................<br>تحر في {datetime.now().strftime('%Y-%m-%d')}</p>"
-                full_html = header_html + html + footer
-                st.markdown(f"<div>{full_html}</div>", unsafe_allow_html=True)
+                footer = f"<p style='text-align:right; color:#D4AF37; margin-top:30px; font-size:16px;'>تفضلوا بقبول وافر الاحترام<br><br>عضو الادارة.................. مدير الإدارة..................<br>تحر في {datetime.now().strftime('%Y-%m-%d')}</p>"
+                full_html = header_html + f"<div class='table-container'>{html}</div>" + footer
+                st.markdown(full_html, unsafe_allow_html=True)
                 
-                # نحفظه للتصدير
+                # حفظ للتصدير
                 st.session_state.last_report_html = full_html
                 st.session_state.last_report_title = f"بيان_الدعاوى_المتداولة_{region}"
 
@@ -1969,17 +1966,20 @@ elif st.session_state.page == "تقارير":
 
             if not cases: st.warning("لا توجد احكام في الفترة المحددة")
             else:
-                html = "<table><tr><th>م</th><th>رقم</th><th>السنة</th><th>الدائرة</th><th>المحكمة</th><th>الخصوم</th><th>الموضوع</th><th>تاريخ الحكم</th><th>المنطوق</th><th>النتيجة</th></tr>"
+                html = "<table class='case-table'><tr><th>م</th><th>رقم القضية</th><th>السنة القضائية</th><th>الدائرة والنوع</th><th>اسم المحكمة والمأمورية</th><th>الخصوم</th><th>موضوع الدعوى</th><th>تاريخ جلسة الحكم</th><th>منطوق الحكم</th><th>النتيجة</th><th>ملاحظات</th></tr>"
                 for i, c in enumerate(cases, 1):
-                    محكمة = f"{c.get('محكمة_اسم','')}<br>مأمورية {c.get('مأمورية','')}" if c.get('مأمورية') else c.get('محكمة_اسم','')
-                    خصوم = f"المدعى: {c.get('مدعي','')}<br>المدعى عليه: {c.get('مدعي_عليه','')}"
-                    html += f"<tr><td>{i}</td><td>{c.get('رقم','')}</td><td>{c.get('سنة','')}</td><td>{c.get('دائرة','')} {c.get('نوع','')}</td><td>{محكمة}</td><td>{خصوم}</td><td>{c.get('موضوع','')}</td><td>{c.get('تاريخ_الحكم','')}</td><td>{c.get('منطوق_الحكم','')}</td><td>{c.get('مسندة_ل_الحكم','')}</td></tr>"
+                    محكمة = f"{c.get('محكمة_اسم','')}"
+                    if c.get('مأمورية'): محكمة += f"<br>مأمورية {c.get('مأمورية')}"
+                    دائرة = f"{c.get('دائرة','')} {c.get('نوع','')}"
+                    خصوم = f"<div style='background:#FFF3CD; padding:5px; border-radius:5px; color:#000'><b>المدعى:</b> {c.get('مدعي','')}</div><div style='background:#CFF4FC; padding:5px; border-radius:5px; color:#000'><b>المدعى عليه:</b> {c.get('مدعي_عليه','')}</div>"
+                    لون = "#4CAF50" if c.get('مسندة_ل_الحكم') == 'الصالح' else "#FF5252"
+                    html += f"<tr class='row-judgment'><td>{i}</td><td>{c.get('رقم','')}</td><td>{c.get('سنة','')}</td><td>{دائرة}</td><td>{محكمة}</td><td>{خصوم}</td><td>{c.get('موضوع','')}</td><td><b style='color:#FFD700'>{c.get('تاريخ_الحكم','')}</b></td><td>{c.get('منطوق_الحكم','')}</td><td style='color:{لون}; font-weight:900; font-size:16px'>{c.get('مسندة_ل_الحكم','')}</td><td>{c.get('ملاحظات','')}</td></tr>"
                 html += "</table>"
-                footer = f"<p style='text-align:right; margin-top:30px;'>تفضلوا بقبول وافر الاحترام<br><br>عضو الادارة.................. مدير الإدارة..................<br>تحر في {datetime.now().strftime('%Y-%m-%d')}</p>"
-                full_html = header_html + html + footer
-                st.markdown(f"<div>{full_html}</div>", unsafe_allow_html=True)
+                footer = f"<p style='text-align:right; color:#FF5252; margin-top:30px; font-size:16px;'>تفضلوا بقبول وافر الاحترام<br><br>عضو الادارة.................. مدير الإدارة..................<br>تحر في {datetime.now().strftime('%Y-%m-%d')}</p>"
+                full_html = header_html + f"<div class='table-container'>{html}</div>" + footer
+                st.markdown(full_html, unsafe_allow_html=True)
 
-                # نحفظه للتصدير
+                # حفظ للتصدير
                 st.session_state.last_report_html = full_html
                 st.session_state.last_report_title = f"بيان_الاحكام_{region2}"
 
@@ -2007,15 +2007,14 @@ elif st.session_state.page == "تقارير":
     # ========= تبويب 4: التصدير =========
     with tab4:
         st.markdown("<h3 style='color:#D4AF37; text-align:center'>📄 تصدير التقارير</h3>", unsafe_allow_html=True)
-        st.info("1. اعرض التقرير الاول من تبويب 1 او 2  \n2. ارجع هنا ونزله")
+        st.info("1. اعرض التقرير من تبويب 1 او 2 الاول  \n2. ارجع هنا ودوس تحميل")
         
         c1,c2 = st.columns(2)
         with c1: 
             st.download_button(
                 "⬇️ تحميل PDF", 
-                data=export_pdf(st.session_state.last_report_html), 
+                data=f"<html dir='rtl' charset='UTF-8'><body>{st.session_state.last_report_html}</body></html>".encode('utf-8'), 
                 file_name=f"{st.session_state.last_report_title}.html", 
-                mime="text/html", 
                 use_container_width=True,
                 disabled=(st.session_state.last_report_html == "")
             )
@@ -2024,8 +2023,7 @@ elif st.session_state.page == "تقارير":
                 "⬇️ تحميل Word", 
                 data=st.session_state.last_report_html.encode('utf-8'), 
                 file_name=f"{st.session_state.last_report_title}.doc", 
-                mime="application/msword", 
                 use_container_width=True,
                 disabled=(st.session_state.last_report_html == "")
             )
-        st.warning("ملحوظة: ملف PDF هينزل بصيغة HTML. افتحه في المتصفح ودوس Ctrl+P واختار Save as PDF")
+        st.caption("افتح ملف HTML > Ctrl+P > Save as PDF")
