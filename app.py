@@ -1894,7 +1894,6 @@ elif st.session_state.page == "مكتبة":
         # =========== الجزء الثامن: التقارير ============
 # ================= القسم 1 من 2 =================
 
-# دالة مساعدة للتصدير - لازم تكون قبل الجزء ده
 def get_export_html(content_html, title):
     return f"""<!DOCTYPE html>
 <html dir="rtl" lang="ar">
@@ -1916,7 +1915,7 @@ def get_export_html(content_html, title):
 </body>
 </html>"""
 
-elif st.session_state.page == "تقارير":
+if st.session_state.page == "تقارير":
     import io
     import pandas as pd
     from datetime import datetime
@@ -1934,31 +1933,21 @@ elif st.session_state.page == "تقارير":
     .stButton>button:hover {background: #B8860B !important; color: #000 !important;}
     [data-testid="stTab"] button {color: #B8860B !important; font-family: "Cairo", sans-serif; font-size:13px;}
     [data-testid="stTab"] button[aria-selected="true"] {border-bottom: 3px solid #B8860B !important;}
-    div[data-testid="stMetricValue"] {color: #B8860B !important; font-size:18px;}
-    div[data-testid="stDateInput"] label {color: #B8860B !important; font-size:13px;}
-    div[data-testid="stTextInput"] label {color: #B8860B !important; font-size:13px;}
-    div[data-testid="stSelectbox"] label {color: #B8860B !important; font-size:13px;}
     </style>
     """, unsafe_allow_html=True)
     
-    st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
     st.markdown("<h2 style='color:#B8860B; text-align:center; font-family: Cairo; font-size:18px;'>📑 مركز التقارير الحكومية</h2>", unsafe_allow_html=True)
     if st.button("⬅️ العودة للرئيسية", use_container_width=True): st.session_state.page = "الرئيسية"; st.rerun()
 
-    if 'last_report_html' not in st.session_state:
-        st.session_state.last_report_html = ""
-        st.session_state.last_report_title = "تقرير"
-    if 'last_report_df' not in st.session_state:
-        st.session_state.last_report_df = pd.DataFrame()
+    if 'last_report_html' not in st.session_state: st.session_state.last_report_html = ""; st.session_state.last_report_title = "تقرير"
+    if 'last_report_df' not in st.session_state: st.session_state.last_report_df = pd.DataFrame()
 
     tab1, tab2, tab3, tab4 = st.tabs(["📊 بيان بجميع الدعاوى المتداولة", "⚖️ بيان الاحكام", "📈 الإحصائيات", "📊 بيان عددي"])
 
     def report_header(region, title, مدير_عام, مدير_ادارة, عضو_قانوني):
-        return f"""<div style="text-align:right; color:#B8860B; border:2px double #B8860B; padding:12px 10px; background: #0A1428; border-radius:5px; margin-bottom:12px; font-family: 'Times New Roman', serif;">
+        return f"""<div style="text-align:right; color:#B8860B; border:2px double #B8860B; padding:12px 10px; background: #0A1428; border-radius:5px; margin-bottom:12px;">
         <h2 style="margin:2px 0; font-size:15px; font-weight:900;">الهيئة القومية للتأمين الاجتماعي</h2>
         <h3 style="margin:1px 0; font-size:12px; font-weight:700;">الإدارة المركزية للإدارات القانونية</h3>
-        <h3 style="margin:1px 0; font-size:12px; font-weight:700;">الإدارة العامة للقضايا</h3>
-        <h3 style="margin:1px 0; font-size:12px; font-weight:700;">الإدارة العامة للشئون القانونية</h3>
         <h3 style="margin:4px 0; font-size:12px; font-weight:700;">ديوان عام منطقة {region}</h3>
         <hr style="border:1px solid #B8860B; margin:8px 0;">
         <h3 style="margin:6px 0; font-size:13px; font-weight:900; text-align:center; text-decoration: underline;"> {title} </h3>
@@ -1978,7 +1967,7 @@ elif st.session_state.page == "تقارير":
         with col2: to_date = st.date_input("حتى الفترة", key="to1")
         with col3: lawyer = st.text_input("طرف الاستاذ/ المحامي", key="lawyer1")
         topic = ""
-        if "حسب موضوع" in نوع_تقرير_متداولة: topic = st.text_input("موضوع الدعوى للفلترة", placeholder="اكتب جزء من الموضوع", key="topic1")
+        if "حسب موضوع" in نوع_تقرير_متداولة: topic = st.text_input("موضوع الدعوى للفلترة", key="topic1")
         st.markdown("</div>", unsafe_allow_html=True)
 
         if st.button("🔍 عرض بيان الدعاوى المتداولة", use_container_width=True, type="primary", key="show1"):
@@ -2009,7 +1998,7 @@ elif st.session_state.page == "تقارير":
                     html += f"<tr><td>{idx}</td><td>{c.get('رقم','')}</td><td>{c.get('سنة','')}</td><td>{محكمة}</td><td>{خصوم_html}</td><td>{c.get('موضوع','')}</td><td><b style='color:#B8860B'>{c.get('تاريخ_جلسة','')}</b></td><td>{c.get('الاجراء','')}</td><td>{c.get('ملاحظات','')}</td></tr>"
                     df_data.append({'م': idx, 'رقم': c.get('رقم',''), 'سنة': c.get('سنة',''), 'المحكمة': محكمة, 'الخصوم': f"{مدعي} ضد {مدعي_عليه}", 'الموضوع': c.get('موضوع',''), 'اخر جلسة': c.get('تاريخ_جلسة',''), 'الاجراء': c.get('الاجراء',''), 'ملاحظات': c.get('ملاحظات','')})
                 html += "</table>"
-                footer = f"""<div style="margin-top:25px; color:#B8860B; font-size:12px; font-family: 'Times New Roman', serif;"><p style="text-align:center; margin-bottom:20px; font-size:13px; font-weight:700;">تفضلوا بقبول وافر الاحترام والتقدير،</p><table style="width:100%; border:none;"><tr><td style="width:50%; text-align:right; vertical-align:top;"><div style="font-weight:900; font-size:12px; color:#B8860B;">العضو القانوني</div><div style="margin-top:2px; font-size:12px;">{عضو_قانوني1}</div><div style="margin-top:12px;">....................</div></td><td style="width:50%; text-align:left; vertical-align:top;"><div style="font-weight:900; font-size:12px; color:#B8860B;">مدير إدارة القضايا</div><div style="margin-top:2px; font-size:12px;">{مدير_ادارة1}</div><div style="margin-top:12px;">....................</div></td></tr></table><div style="text-align:center; margin-top:20px;"><div style="font-weight:900; font-size:13px; color:#dc3545;">مدير عام الإدارات القانونية</div><div style="margin-top:2px; font-size:12px;">{مدير_عام1}</div><div style="margin-top:12px;">....................</div></div><p style="text-align:center; margin-top:15px; font-size:11px;">تحر في: {datetime.now().strftime('%d-%m-%Y')}</p></div>"""
+                footer = f"""<div style="margin-top:25px; color:#B8860B; font-size:12px;"><p style="text-align:center; margin-bottom:20px; font-size:13px; font-weight:700;">تفضلوا بقبول وافر الاحترام والتقدير،</p><table style="width:100%;"><tr><td style="width:50%; text-align:right;"><div style="font-weight:900;">العضو القانوني</div><div>{عضو_قانوني1}</div><div>....................</div></td><td style="width:50%; text-align:left;"><div style="font-weight:900;">مدير إدارة القضايا</div><div>{مدير_ادارة1}</div><div>....................</div></td></tr></table><div style="text-align:center; margin-top:20px;"><div style="font-weight:900; color:#dc3545;">مدير عام الإدارات القانونية</div><div>{مدير_عام1}</div><div>....................</div></div><p style="text-align:center; margin-top:15px;">تحر في: {datetime.now().strftime('%d-%m-%Y')}</p></div>"""
                 full_html = header_html + f"<div class='table-container'>{html}</div>" + footer
                 st.markdown(full_html, unsafe_allow_html=True)
                 st.session_state.last_report_html = full_html; st.session_state.last_report_title = f"بيان_الدعاوى_المتداولة_{region}"; st.session_state.last_report_df = pd.DataFrame(df_data)
@@ -2033,7 +2022,7 @@ elif st.session_state.page == "تقارير":
         with col2: to_date2 = st.date_input("حتى الفترة", key="to2")
         with col3: lawyer2 = st.text_input("طرف الاستاذ/ المحامي", key="lawyer2")
         topic2 = ""
-        if "حسب موضوع" in نوع_التقرير: topic2 = st.text_input("موضوع الدعوى للفلترة", placeholder="اكتب جزء من الموضوع", key="topic2")
+        if "حسب موضوع" in نوع_التقرير: topic2 = st.text_input("موضوع الدعوى للفلترة", key="topic2")
         st.markdown("</div>", unsafe_allow_html=True)
 
         if st.button("🔍 عرض بيان الاحكام", use_container_width=True, type="primary", key="show2"):
@@ -2066,7 +2055,7 @@ elif st.session_state.page == "تقارير":
                     html += f"<tr><td>{idx}</td><td>{c.get('رقم','')}</td><td>{c.get('سنة','')}</td><td>{محكمة}</td><td>{خصوم_html}</td><td>{c.get('موضوع','')}</td><td><b style='color:#B8860B'>{c.get('تاريخ_الحكم','')}</b></td><td>{c.get('منطوق_الحكم','')}</td><td><b style='color:{لون_مسندة}'>{c.get('مسندة_ل_الحكم')}</b></td><td>{c.get('ملاحظات','')}</td></tr>"
                     df_data.append({'م': idx, 'رقم': c.get('رقم',''), 'سنة': c.get('سنة',''), 'المحكمة': محكمة, 'الخصوم': f"{مدعي} ضد {مدعي_عليه}", 'الموضوع': c.get('موضوع',''), 'تاريخ الحكم': c.get('تاريخ_الحكم',''), 'منطوق الحكم': c.get('منطوق_الحكم',''), 'مسندة ل': c.get('مسندة_ل_الحكم'), 'ملاحظات': c.get('ملاحظات','')})
                 html += "</table>"
-                footer = f"""<div style="margin-top:25px; color:#B8860B; font-size:12px; font-family: 'Times New Roman', serif;"><p style="text-align:center; margin-bottom:20px; font-size:13px; font-weight:700;">تفضلوا بقبول وافر الاحترام والتقدير،</p><table style="width:100%; border:none;"><tr><td style="width:50%; text-align:right; vertical-align:top;"><div style="font-weight:900; font-size:12px; color:#B8860B;">العضو القانوني</div><div style="margin-top:2px; font-size:12px;">{عضو_قانوني2}</div><div style="margin-top:12px;">....................</div></td><td style="width:50%; text-align:left; vertical-align:top;"><div style="font-weight:900; font-size:12px; color:#B8860B;">مدير إدارة القضايا</div><div style="margin-top:2px; font-size:12px;">{مدير_ادارة2}</div><div style="margin-top:12px;">....................</div></td></tr></table><div style="text-align:center; margin-top:20px;"><div style="font-weight:900; font-size:13px; color:#dc3545;">مدير عام الإدارات القانونية</div><div style="margin-top:2px; font-size:12px;">{مدير_عام2}</div><div style="margin-top:12px;">....................</div></div><p style="text-align:center; margin-top:15px; font-size:11px;">تحر في: {datetime.now().strftime('%d-%m-%Y')}</p></div>"""
+                footer = f"""<div style="margin-top:25px; color:#B8860B; font-size:12px;"><p style="text-align:center; margin-bottom:20px; font-size:13px; font-weight:700;">تفضلوا بقبول وافر الاحترام والتقدير،</p><table style="width:100%;"><tr><td style="width:50%; text-align:right;"><div style="font-weight:900;">العضو القانوني</div><div>{عضو_قانوني2}</div><div>....................</div></td><td style="width:50%; text-align:left;"><div style="font-weight:900;">مدير إدارة القضايا</div><div>{مدير_ادارة2}</div><div>....................</div></td></tr></table><div style="text-align:center; margin-top:20px;"><div style="font-weight:900; color:#dc3545;">مدير عام الإدارات القانونية</div><div>{مدير_عام2}</div><div>....................</div></div><p style="text-align:center; margin-top:15px;">تحر في: {datetime.now().strftime('%d-%m-%Y')}</p></div>"""
                 full_html = header_html + f"<div class='table-container'>{html}</div>" + footer
                 st.markdown(full_html, unsafe_allow_html=True)
                 st.session_state.last_report_html = full_html; st.session_state.last_report_title = f"بيان_الاحكام_{region2}"; st.session_state.last_report_df = pd.DataFrame(df_data)
@@ -2112,7 +2101,7 @@ elif st.session_state.page == "تقارير":
         with col1: stat_from2 = st.date_input("من الفترة", key="s_from2")
         with col2: stat_to2 = st.date_input("حتى الفترة", key="s_to2")
         topic_stat = ""
-        if "حسب موضوع" in نوع_البيان_العددي: topic_stat = st.text_input("موضوع الدعوى للفلترة", placeholder="اكتب جزء من الموضوع", key="topic_stat")
+        if "حسب موضوع" in نوع_البيان_العددي: topic_stat = st.text_input("موضوع الدعوى للفلترة", key="topic_stat")
         st.markdown("</div>", unsafe_allow_html=True)
 
         if st.button("🔍 عرض البيان العددي", use_container_width=True, type="primary", key="show_stat"):
@@ -2150,7 +2139,7 @@ elif st.session_state.page == "تقارير":
             html = f"<table class='case-table'><tr><th>م</th><th>البيان</th><th>العدد</th><th>ملاحظات</th></tr>"
             html += f"<tr><td>1</td><td>{اسم_البيان}</td><td><b style='color:#dc3545; font-size:14px'>{العدد}</b></td><td>{ملاحظات}</td></tr>"
             html += "</table>"
-            footer = f"""<div style="margin-top:25px; color:#B8860B; font-size:12px; font-family: 'Times New Roman', serif;"><p style="text-align:center; margin-bottom:20px; font-size:13px; font-weight:700;">تفضلوا بقبول وافر الاحترام والتقدير،</p><table style="width:100%; border:none;"><tr><td style="width:50%; text-align:right; vertical-align:top;"><div style="font-weight:900; font-size:12px; color:#B8860B;">العضو القانوني</div><div style="margin-top:2px; font-size:12px;">{عضو_قانوني_stat}</div><div style="margin-top:12px;">....................</div></td><td style="width:50%; text-align:left; vertical-align:top;"><div style="font-weight:900; font-size:12px; color:#B8860B;">مدير إدارة القضايا</div><div style="margin-top:2px; font-size:12px;">{مدير_ادارة_stat}</div><div style="margin-top:12px;">....................</div></td></tr></table><div style="text-align:center; margin-top:20px;"><div style="font-weight:900; font-size:13px; color:#dc3545;">مدير عام الإدارات القانونية</div><div style="margin-top:2px; font-size:12px;">{مدير_عام_stat}</div><div style="margin-top:12px;">....................</div></div><p style="text-align:center; margin-top:15px; font-size:11px;">تحر في: {datetime.now().strftime('%d-%m-%Y')}</p></div>"""
+            footer = f"""<div style="margin-top:25px; color:#B8860B; font-size:12px;"><p style="text-align:center; margin-bottom:20px; font-size:13px; font-weight:700;">تفضلوا بقبول وافر الاحترام والتقدير،</p><table style="width:100%;"><tr><td style="width:50%; text-align:right;"><div style="font-weight:900;">العضو القانوني</div><div>{عضو_قانوني_stat}</div><div>....................</div></td><td style="width:50%; text-align:left;"><div style="font-weight:900;">مدير إدارة القضايا</div><div>{مدير_ادارة_stat}</div><div>....................</div></td></tr></table><div style="text-align:center; margin-top:20px;"><div style="font-weight:900; color:#dc3545;">مدير عام الإدارات القانونية</div><div>{مدير_عام_stat}</div><div>....................</div></div><p style="text-align:center; margin-top:15px;">تحر في: {datetime.now().strftime('%d-%m-%Y')}</p></div>"""
             full_html = header_html + f"<div class='table-container'>{html}</div>" + footer
             st.markdown(full_html, unsafe_allow_html=True)
             df_data = pd.DataFrame([{'م': 1, 'البيان': اسم_البيان, 'العدد': العدد, 'ملاحظات': ملاحظات}])
