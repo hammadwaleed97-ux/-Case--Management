@@ -1869,7 +1869,7 @@ elif st.session_state.page == "مكتبة":
     else:
         st.info("اختار قسم من الازرار اللي فوق عشان تشوف الملفات")
         # ================================================
-        # ============ الجزء الثامن: التقارير ============
+        ## ============ الجزء الثامن: التقارير ============
 # ================================================
 elif st.session_state.page == "تقارير":
     import io
@@ -1881,23 +1881,31 @@ elif st.session_state.page == "تقارير":
     <style>
     .case-table {width:100%; border-collapse:collapse; font-size:14px; margin-top:20px; direction:rtl}
     .case-table th {
-        background: linear-gradient(135deg, #B8860B 0%, #D4AF37 100%);
+        background: linear-gradient(135deg, #8B6914 0%, #B8860B 100%); /* مدهب غامق */
         color:#000; 
         padding:12px; 
-        border:1px solid #B8860B; 
+        border:1px solid #8B6914; 
         font-weight:900;
         text-align:center;
         white-space: nowrap;
     }
-    .case-table td {padding:10px; border:1px solid #D4AF37; text-align:center; background:#1E2A47; color:#fff}
+    .case-table td {padding:10px; border:1px solid #B8860B; text-align:center; background:#1E2A47; color:#fff}
     .tag-red {background:#dc3545; color:#fff; padding:5px 10px; border-radius:8px; font-weight:bold; display:inline-block; margin:2px; font-size:12px}
     .tag-blue {background:#0d6efd; color:#fff; padding:5px 10px; border-radius:8px; font-weight:bold; display:inline-block; margin:2px; font-size:12px}
     .table-container {overflow-x:auto}
+    
+    /* خليت كل الايقونات والعناوين مدهب غامق */
+    h1, h2, h3, h4 {color: #B8860B !important;}
+    .stButton>button {border: 2px solid #B8860B !important; color: #B8860B !important;}
+    .stButton>button:hover {background: #B8860B !important; color: #000 !important;}
+    [data-testid="stTab"] button {color: #B8860B !important;}
+    [data-testid="stTab"] button[aria-selected="true"] {border-bottom: 3px solid #B8860B !important;}
+    div[data-testid="stMetricValue"] {color: #B8860B !important;}
     </style>
     """, unsafe_allow_html=True)
     
     st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
-    st.markdown("<h2 style='color:#D4AF37; text-align:center'>📑 مركز التقارير الحكومية</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='color:#B8860B; text-align:center'>📑 مركز التقارير الحكومية</h2>", unsafe_allow_html=True)
     if st.button("⬅️ العودة للرئيسية", use_container_width=True): st.session_state.page = "الرئيسية"; st.rerun()
 
     if 'last_report_html' not in st.session_state:
@@ -1910,23 +1918,20 @@ elif st.session_state.page == "تقارير":
 
     def report_header(region, title, مدير_عام, مدير_ادارة, عضو_قانوني):
         return f"""
-        <div style='text-align:center; color:#D4AF37; border:4px double #D4AF37; padding:20px; background: linear-gradient(135deg, #0A1428 0%, #1E2A47 100%); border-radius:15px; margin-bottom:20px;'>
+        <div style='text-align:center; color:#B8860B; border:4px double #B8860B; padding:20px; background: linear-gradient(135deg, #0A1428 0%, #1E2A47 100%); border-radius:15px; margin-bottom:20px;'>
         <h2 style='margin:5px'>الهيئة القومية للتأمين الاجتماعى</h2>
         <h3 style='margin:5px'>الإدارة المركزية للإدارات القانونية</h3>
         <h3 style='margin:5px'>الإدارة العامة للقضايا</h3>
         <h3 style='margin:5px'>الإدارة العامة للشئون القانونية</h3>
-        <h3 style='margin:5px'>مدير عام الإدارات القانونية: {مدير_عام}</h3>
-        <h3 style='margin:5px'>مدير إدارة القضايا: {مدير_ادارة}</h3>
         <h3 style='margin:5px'>ديوان عام {region}</h3>
-        <hr style='border-color:#D4AF37'>
+        <hr style='border-color:#B8860B'>
         <h3 style='margin:10px'>{title}</h3>
-        <h4 style='margin:5px; color:#FFD700'>مقدم من: {عضو_قانوني}</h4>
         </div>
         """
 
     # ========= تبويب 1: الدعاوى المتداولة =========
     with tab1:
-        st.markdown("<div style='background:#1E2A47; padding:20px; border-radius:15px; border:2px solid #D4AF37; margin-bottom:15px'>", unsafe_allow_html=True)
+        st.markdown("<div style='background:#1E2A47; padding:20px; border-radius:15px; border:2px solid #B8860B; margin-bottom:15px'>", unsafe_allow_html=True)
         colA, colB, colC = st.columns(3)
         with colA: region = st.text_input("ديوان عام منطقة", key="region1")
         with colB: مدير_عام1 = st.text_input("اسم مدير عام الإدارات القانونية", key="modir1")
@@ -1967,7 +1972,6 @@ elif st.session_state.page == "تقارير":
             else:
                 st.success(f"✅ تم العثور على {len(cases)} دعوى متداولة")
                 
-                # الترتيب زي الصورة بالظبط: م | سنة | رقم | المحكمة | الخصوم | الموضوع | اخر جلسة | الاجراء | ملاحظات
                 html = "<table class='case-table'><tr><th>م</th><th>سنة</th><th>رقم</th><th>المحكمة والدائرة</th><th>الخصوم</th><th>الموضوع</th><th>اخر جلسة</th><th>الاجراء</th><th>ملاحظات</th></tr>"
                 df_data = []
                 for idx, c in enumerate(cases, 1):
@@ -1979,18 +1983,30 @@ elif st.session_state.page == "تقارير":
                     مدعي_عليه = c.get('مدعي_عليه','')
                     خصوم_html = f"<div class='tag-red'>المستأنف: {مدعي}</div><div class='tag-blue'>ضده: {مدعي_عليه}</div>"
 
-                    html += f"<tr><td>{idx}</td><td>{c.get('سنة','')}</td><td>{c.get('رقم','')}</td><td>{محكمة}</td><td>{خصوم_html}</td><td>{c.get('موضوع','')}</td><td><b style='color:#FFD700'>{c.get('تاريخ_جلسة','')}</b></td><td>{c.get('الاجراء','')}</td><td>{c.get('ملاحظات','')}</td></tr>"
+                    html += f"<tr><td>{idx}</td><td>{c.get('سنة','')}</td><td>{c.get('رقم','')}</td><td>{محكمة}</td><td>{خصوم_html}</td><td>{c.get('موضوع','')}</td><td><b style='color:#B8860B'>{c.get('تاريخ_جلسة','')}</b></td><td>{c.get('الاجراء','')}</td><td>{c.get('ملاحظات','')}</td></tr>"
                     df_data.append({'م': idx, 'سنة': c.get('سنة',''), 'رقم': c.get('رقم',''), 'المحكمة': محكمة, 'الخصوم': f"{مدعي} ضد {مدعي_عليه}", 'الموضوع': c.get('موضوع',''), 'اخر جلسة': c.get('تاريخ_جلسة',''), 'الاجراء': c.get('الاجراء',''), 'ملاحظات': c.get('ملاحظات','')})
                 
                 html += "</table>"
                 footer = f"""
-                <div style='margin-top:40px; color:#D4AF37; font-size:16px;'>
+                <div style='margin-top:40px; color:#B8860B; font-size:16px;'>
                     <p style='text-align:center;'>تفضلوا بقبول وافر الاحترام</p>
                     <div style='display:flex; justify-content:space-between; margin-top:20px;'>
-                        <span>العضو القانوني: {عضو_قانوني1} ................</span>
-                        <span>مدير الإدارة: {مدير_ادارة1} ................</span>
+                        <div style='text-align:center'>
+                            <div>العضو القانوني</div>
+                            <div style='margin-top:5px'>{عضو_قانوني1}</div>
+                            <div>................</div>
+                        </div>
+                        <div style='text-align:center'>
+                            <div>مدير الإدارة</div>
+                            <div style='margin-top:5px'>{مدير_ادارة1}</div>
+                            <div>................</div>
+                        </div>
                     </div>
-                    <p style='text-align:center; margin-top:20px;'>مدير عام الإدارات القانونية: {مدير_عام1} ................</p>
+                    <div style='text-align:center; margin-top:20px;'>
+                        <div>مدير عام الإدارات القانونية</div>
+                        <div style='margin-top:5px'>{مدير_عام1}</div>
+                        <div>................</div>
+                    </div>
                     <p style='text-align:center; margin-top:20px;'>تحر في {datetime.now().strftime('%d-%m-%Y')}</p>
                 </div>
                 """
@@ -2011,7 +2027,8 @@ elif st.session_state.page == "تقارير":
 
     # ========= تبويب 2: الاحكام =========
     with tab2:
-        st.markdown("<div style='background:#1E2A47; padding:20px; border-radius:15px; border:2px solid #FF5252; margin-bottom:15px'>", unsafe_allow_html=True)
+        st.markdown("<h3 style='color:#B8860B; text-align:center'>⚖️ بيان الاحكام</h3>", unsafe_allow_html=True)
+        st.markdown("<div style='background:#1E2A47; padding:20px; border-radius:15px; border:2px solid #B8860B; margin-bottom:15px'>", unsafe_allow_html=True)
         colA, colB, colC = st.columns(3)
         with colA: region2 = st.text_input("ديوان عام منطقة", key="region2")
         with colB: مدير_عام2 = st.text_input("اسم مدير عام الإدارات القانونية", key="modir2")
@@ -2023,20 +2040,13 @@ elif st.session_state.page == "تقارير":
         with col2: to_date2 = st.date_input("حتى الفترة", key="to2")
         with col3: lawyer2 = st.text_input("طرف الاستاذ/ المحامي", key="lawyer2")
         st.markdown("</div>", unsafe_allow_html=True)
-
         if st.button("🔍 عرض بيان الاحكام", use_container_width=True, type="primary", key="show2"):
-            cases = data.get("archive", [])
-            cases = [c for c in cases if c.get('مسندة_ل_الحكم') in ['الصالح','الضد']]
-            if الحكم_نوع == "الاحكام للصالح": cases = [c for c in cases if c.get('مسندة_ل_الحكم') == 'الصالح']
-            if الحكم_نوع == "الاحكام للضد": cases = [c for c in cases if c.get('مسندة_ل_الحكم') == 'الضد']
-            if cases:
-                cases = [c for c in cases if c.get('تاريخ الحكم') and from_date2 <= datetime.strptime(c['تاريخ الحكم'], '%Y-%m-%d').date() <= to_date2]
-            cases = sorted(cases, key=lambda x: x.get("تاريخ الحكم","9999-12-31"), reverse=True)
-            st.success(f"تم العثور على {len(cases)} حكم")
+            st.info("قيد التطوير")
 
+    # ========= تبويب 3: الاحصائيات =========
     with tab3:
-        st.markdown("<h3 style='color:#D4AF37; text-align:center'>📊 الإحصائيات العددية</h3>", unsafe_allow_html=True)
-        st.markdown("<div style='background:#1E2A47; padding:20px; border-radius:15px; border:2px solid #D4AF37; margin-bottom:15px'>", unsafe_allow_html=True)
+        st.markdown("<h3 style='color:#B8860B; text-align:center'>📈 الإحصائيات العددية</h3>", unsafe_allow_html=True)
+        st.markdown("<div style='background:#1E2A47; padding:20px; border-radius:15px; border:2px solid #B8860B; margin-bottom:15px'>", unsafe_allow_html=True)
         col1, col2 = st.columns(2)
         with col1: stat_from = st.date_input("من تاريخ", key="s1")
         with col2: stat_to = st.date_input("حتى تاريخ", key="s2")
@@ -2054,15 +2064,16 @@ elif st.session_state.page == "تقارير":
             c3.metric("عدد الاحكام للصالح", len(للصالح))
             c4.metric("عدد الاحكام للضد", len(للضد))
 
+    # ========= تبويب 4: التصدير =========
     with tab4:
-        st.markdown("<h3 style='color:#D4AF37; text-align:center'>📄 تصدير التقارير</h3>", unsafe_allow_html=True)
+        st.markdown("<h3 style='color:#B8860B; text-align:center'>📄 تصدير التقارير</h3>", unsafe_allow_html=True)
         st.info("اعرض التقرير من تبويب 1 الاول")
         if st.session_state.last_report_html == "":
             st.warning("لسه معرضتش اي تقرير")
         else:
             c1,c2,c3 = st.columns(3)
             with c1: st.download_button("⬇️ PDF", data=f"<html dir='rtl' charset='UTF-8'><body>{st.session_state.last_report_html}</body></html>".encode('utf-8'), file_name=f"{st.session_state.last_report_title}.html", use_container_width=True)
-            with c2: st.download_button("⬇️ Word", data=st.session_state.last_report_html.encode('utf-8'), file_name=f"{st.session_state.last_report_title}.doc", use_container_width=True)
+            with c2: st.download_button("⬇️ Word", data=st.session_state.last_report_html.encode('utf-8'), file_name=f"{st.session_state.last_report_title}.doc", use_container-width=True)
             with c3:
                 excel_buffer = io.BytesIO()
                 st.session_state.last_report_df.to_excel(excel_buffer, index=False, engine='openpyxl')
