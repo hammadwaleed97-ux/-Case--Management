@@ -82,8 +82,7 @@ def save_banners():
         b['expire'] = b['expire'].isoformat()
     with open(BANNER_FILE, 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
-
-
+        load_banners()
 # دالة التصدير
 def get_export_html(full_html, title):
     return f"""<!DOCTYPE html>
