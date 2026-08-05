@@ -2104,6 +2104,12 @@ elif st.session_state.page == "تقارير":
              "الاحكام الصادرة للضد",
              "الاحكام حسب موضوع الدعوى"], key="no4_عددي")
         
+        colA, colB, colC = st.columns(3)
+        with colA: region_stat = st.text_input("ديوان عام منطقة", key="region_stat")
+        with colB: مدير_عام_stat = st.text_input("اسم مدير عام الإدارات القانونية", key="modir_stat")
+        with colC: مدير_ادارة_stat = st.text_input("اسم مدير إدارة القضايا", key="modir_idara_stat")
+        عضو_قانوني_stat = st.text_input("اسم العضو القانوني", key="odo_stat")
+        
         col1, col2 = st.columns(2)
         with col1: stat_from2 = st.date_input("من الفترة", key="s_from2")
         with col2: stat_to2 = st.date_input("حتى الفترة", key="s_to2")
@@ -2164,12 +2170,54 @@ elif st.session_state.page == "تقارير":
             st.success(f"✅ العدد الإجمالي: {العدد}")
             
             if التفاصيل:
-                st.markdown(f"<h4 style='color:#B8860B'>تفاصيل {نوع_البيان_العددي}</h4>", unsafe_allow_html=True)
-                html = "<table class='case-table'><tr><th>م</th><th>رقم</th><th>سنة</th><th>الموضوع</th><th>الحالة</th></tr>"
-                for idx, c in enumerate(التفاصيل, 1):
-                    حالة_عرض = "متداولة" if c.get('حالة') == 'متداولة' else f"منتهية - {c.get('مسندة_ل_الحكم','')}"
-                    html += f"<tr><td>{idx}</td><td>{c.get('رقم','')}</td><td>{c.get('سنة','')}</td><td>{c.get('موضوع','')}</td><td>{حالة_عرض}</td></tr>"
+                # بناء الهيدر الرسمي
+                title_stat = f"{نوع_البيان_العددي} خلال الفترة من {stat_from2} حتى {stat_to2}"
+                header_html = report_header(region_stat, title_stat, مدير_عام_stat, مدير_ادارة_stat, عضو_قانوني_stat)
+                
+                # بناء الجدول الكامل
+                if "الدعاوى" in نوع_البيان_العددي:
+                    html = "<table class='case-table'><tr><th>م</th><th>رقم</th><th>سنة</th><th>المحكمة والدائرة</th><th>الخصوم</th><th>الموضوع</th><th>اخر جلسة</th><th>الاجراء</th><th>ملاحظات</th></tr>"
+                    df_cols = ['م', 'رقم', 'سنة', 'المحكمة', 'الخصوم', 'الموضوع', 'اخر جلسة', 'الاجراء', 'ملاحظات']
+                    for idx, c in enumerate(التفاصيل, 1):
+                        محكمة = f"{c.get('نوع','')} {c.get('محكمة_اسم','')}"
+                        if c.get('مأمورية'): محكمة += f" - مأمورية {c.get('مأمورية')}"
+                        if c.get('دائرة'): محكمة += f" - دائرة {c.get('دائرة')}"
+                        مدعي = c.get('مدعي',''); مدعي_عليه = c.get('مدعي_عليه','')
+                        خصوم_html = f"<span style='color:#dc3545; font-weight:900'>{مدعي} ضد {مدعي_عليه}</span>" if "الهيئة" in str(مدعي) else f"{مدعي} ضد {مدعي_عليه}"
+                        html += f"<tr><td>{idx}</td><td>{c.get('رقم','')}</td><td>{c.get('سنة','')}</td><td>{محكمة}</td><td>{خصوم_html}</td><td>{c.get('موضوع','')}</td><td><b style='color:#B8860B'>{c.get('تاريخ_جلسة','')}</b></td><td>{c.get('الاجراء','')}</td><td>{c.get('ملاحظات','')}</td></tr>"
+                    df_data = [{'م': i+1, 'رقم': c.get('رقم',''), 'سنة': c.get('سنة',''), 'المحكمة': f"{c.get('نوع','')} {c.get('محكمة_اسم','')}", 'الخصوم': f"{c.get('مدعي','')} ضد {c.get('مدعي_عليه','')}", 'الموضوع': c.get('موضوع',''), 'اخر جلسة': c.get('تاريخ_جلسة',''), 'الاجراء': c.get('الاجراء',''), 'ملاحظات': c.get('ملاحظات','')} for i,c in enumerate(التفاصيل)]
+                
+                else: # الاحكام
+                    html = "<table class='case-table'><tr><th>م</th><th>رقم</th><th>سنة</th><th>المحكمة والدائرة</th><th>الخصوم</th><th>الموضوع</th><th>تاريخ الحكم</th><th>منطوق الحكم</th><th>مسندة ل</th><th>ملاحظات</th></tr>"
+                    df_cols = ['م', 'رقم', 'سنة', 'المحكمة', 'الخصوم', 'الموضوع', 'تاريخ الحكم', 'منطوق الحكم', 'مسندة ل', 'ملاحظات']
+                    for idx, c in enumerate(التفاصيل, 1):
+                        محكمة = f"{c.get('نوع','')} {c.get('محكمة_اسم','')}"
+                        if c.get('مأمورية'): محكمة += f" - مأمورية {c.get('مأمورية')}"
+                        if c.get('دائرة'): محكمة += f" - دائرة {c.get('دائرة')}"
+                        مدعي = c.get('مدعي',''); مدعي_عليه = c.get('مدعي_عليه','')
+                        خصوم_html = f"<span style='color:#dc3545; font-weight:900'>{مدعي} ضد {مدعي_عليه}</span>" if "الهيئة" in str(مدعي) else f"{مدعي} ضد {مدعي_عليه}"
+                        لون_مسندة = "#28a745" if c.get('مسندة_ل_الحكم') == 'الصالح' else "#dc3545"
+                        html += f"<tr><td>{idx}</td><td>{c.get('رقم','')}</td><td>{c.get('سنة','')}</td><td>{محكمة}</td><td>{خصوم_html}</td><td>{c.get('موضوع','')}</td><td><b style='color:#B8860B'>{c.get('تاريخ_الحكم','')}</b></td><td>{c.get('منطوق_الحكم','')}</td><td><b style='color:{لون_مسندة}'>{c.get('مسندة_ل_الحكم')}</b></td><td>{c.get('ملاحظات','')}</td></tr>"
+                    df_data = [{'م': i+1, 'رقم': c.get('رقم',''), 'سنة': c.get('سنة',''), 'المحكمة': f"{c.get('نوع','')} {c.get('محكمة_اسم','')}", 'الخصوم': f"{c.get('مدعي','')} ضد {c.get('مدعي_عليه','')}", 'الموضوع': c.get('موضوع',''), 'تاريخ الحكم': c.get('تاريخ_الحكم',''), 'منطوق الحكم': c.get('منطوق_الحكم',''), 'مسندة ل': c.get('مسندة_ل_الحكم'), 'ملاحظات': c.get('ملاحظات','')} for i,c in enumerate(التفاصيل)]
+
                 html += "</table>"
-                st.markdown(f"<div class='table-container'>{html}</div>", unsafe_allow_html=True)
+                
+                # الفوتر بالتوقيعات
+                footer = f"""<div style="margin-top:25px; color:#B8860B; font-size:12px; font-family: 'Times New Roman', serif;"><p style="text-align:center; margin-bottom:20px; font-size:13px; font-weight:700;">تفضلوا بقبول وافر الاحترام والتقدير،</p><table style="width:100%; border:none;"><tr><td style="width:50%; text-align:right; vertical-align:top;"><div style="font-weight:900; font-size:12px; color:#B8860B;">العضو القانوني</div><div style="margin-top:2px; font-size:12px;">{عضو_قانوني_stat}</div><div style="margin-top:12px;">....................</div></td><td style="width:50%; text-align:left; vertical-align:top;"><div style="font-weight:900; font-size:12px; color:#B8860B;">مدير إدارة القضايا</div><div style="margin-top:2px; font-size:12px;">{مدير_ادارة_stat}</div><div style="margin-top:12px;">....................</div></td></tr></table><div style="text-align:center; margin-top:20px;"><div style="font-weight:900; font-size:13px; color:#dc3545;">مدير عام الإدارات القانونية</div><div style="margin-top:2px; font-size:12px;">{مدير_عام_stat}</div><div style="margin-top:12px;">....................</div></div><p style="text-align:center; margin-top:15px; font-size:11px;">تحر في: {datetime.now().strftime('%d-%m-%Y')}</p></div>"""
+                
+                full_html = header_html + f"<div class='table-container'>{html}</div>" + footer
+                st.markdown(full_html, unsafe_allow_html=True)
+                
+                # حفظ للتصدير
+                st.session_state.last_report_html = full_html
+                st.session_state.last_report_title = f"بيان_عددي_{region_stat}"
+                st.session_state.last_report_df = pd.DataFrame(df_data, columns=df_cols)
+                
+                # ازرار التصدير
+                c1,c2,c3 = st.columns(3)
+                with c1: st.download_button("⬇️ PDF", data=f"<html dir='rtl' charset='UTF-8'><body>{full_html}</body></html>".encode('utf-8'), file_name=f"بيان_عددي_{region_stat}.html", use_container_width=True, key="dl_stat1")
+                with c2: st.download_button("⬇️ Word", data=full_html.encode('utf-8'), file_name=f"بيان_عددي_{region_stat}.doc", use_container_width=True, key="dl_stat2")
+                with c3: excel_buffer = io.BytesIO(); st.session_state.last_report_df.to_excel(excel_buffer, index=False, engine='openpyxl'); st.download_button("⬇️ Excel", data=excel_buffer.getvalue(), file_name=f"بيان_عددي_{region_stat}.xlsx", use_container_width=True, key="dl_stat3")
+                
             else:
                 st.warning("لا توجد بيانات في الفترة المحددة")
