@@ -1903,11 +1903,11 @@ def get_export_html(content_html, title):
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap');
     body {{ font-family: "Cairo", "Times New Roman", serif; direction: rtl; background: white; color: black; padding: 20px; }}
-    .case-table {{width:100%; border-collapse:collapse; font-size:12px; margin-top:12px;}}
-    .case-table th {{ background: #B8860B; color:#000; padding:8px; border:1px solid #8B6914; font-weight:900; text-align:center; }}
-    .case-table td {{padding:6px; border:1px solid #B8860B; text-align:center; background:#fff; color:#000;}}
-    .table-container {{overflow-x:auto}}
-    h1, h2, h3 {{ color: #8B6914 !important; text-align: center; }}
+   .case-table {{width:100%; border-collapse:collapse; font-size:12px; margin-top:12px;}}
+   .case-table th {{ background: #B8860B; color:#000; padding:8px; border:1px solid #8B6914; font-weight:900; text-align:center; }}
+   .case-table td {{padding:6px; border:1px solid #B8860B; text-align:center; background:#fff; color:#000;}}
+   .table-container {{overflow-x:auto}}
+    h1, h2, h3 {{ color: #8B6914!important; text-align: center; }}
 </style>
 </head>
 <body>
@@ -1920,22 +1920,22 @@ if st.session_state.page == "تقارير":
     import pandas as pd
     from datetime import datetime
     data = load_data()
-    
+
     st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap');
-    .case-table {width:100%; border-collapse:collapse; font-size:10px; margin-top:12px; direction:rtl; font-family: "Cairo", sans-serif;}
-    .case-table th {background: linear-gradient(135deg, #8B6914 0%, #B8860B 100%); color:#000; padding:5px; border:1px solid #8B6914; font-weight:900; text-align:center; white-space: nowrap; font-size:10px;}
-    .case-table td {padding:4px; border:1px solid #B8860B; text-align:center; background:#1E2A47; color:#fff; font-size:10px;}
-    .table-container {overflow-x:auto}
-    h1, h2, h3, h4, label {color: #B8860B !important; font-family: "Cairo", sans-serif;}
-    .stButton>button {border: 2px solid #B8860B !important; color: #B8860B !important; font-family: "Cairo", sans-serif; font-size:13px;}
-    .stButton>button:hover {background: #B8860B !important; color: #000 !important;}
-    [data-testid="stTab"] button {color: #B8860B !important; font-family: "Cairo", sans-serif; font-size:13px;}
-    [data-testid="stTab"] button[aria-selected="true"] {border-bottom: 3px solid #B8860B !important;}
+   .case-table {width:100%; border-collapse:collapse; font-size:10px; margin-top:12px; direction:rtl; font-family: "Cairo", sans-serif;}
+   .case-table th {background: linear-gradient(135deg, #8B6914 0%, #B8860B 100%); color:#000; padding:5px; border:1px solid #8B6914; font-weight:900; text-align:center; white-space: nowrap; font-size:10px;}
+   .case-table td {padding:4px; border:1px solid #B8860B; text-align:center; background:#1E2A47; color:#fff; font-size:10px;}
+   .table-container {overflow-x:auto}
+    h1, h2, h3, h4, label {color: #B8860B!important; font-family: "Cairo", sans-serif;}
+   .stButton>button {border: 2px solid #B8860B!important; color: #B8860B!important; font-family: "Cairo", sans-serif; font-size:13px;}
+   .stButton>button:hover {background: #B8860B!important; color: #000!important;}
+    [data-testid="stTab"] button {color: #B8860B!important; font-family: "Cairo", sans-serif; font-size:13px;}
+    [data-testid="stTab"] button[aria-selected="true"] {border-bottom: 3px solid #B8860B!important;}
     </style>
     """, unsafe_allow_html=True)
-    
+
     st.markdown("<h2 style='color:#B8860B; text-align:center; font-family: Cairo; font-size:18px;'>📑 مركز التقارير الحكومية</h2>", unsafe_allow_html=True)
     if st.button("⬅️ العودة للرئيسية", use_container_width=True): st.session_state.page = "الرئيسية"; st.rerun()
 
@@ -1982,7 +1982,7 @@ if st.session_state.page == "تقارير":
             cases = فلترة_بالمدة
             if "حسب موضوع" in نوع_تقرير_متداولة and topic: cases = [c for c in cases if topic.lower() in str(c.get('موضوع','')).lower()]
             cases = sorted(cases, key=lambda x: x.get("تاريخ_جلسة","0000-00-00"), reverse=True)
-            title = f"{نوع_تقرير_متداولة} خلال الفترة من {from_date} حتى {to_date} طرف الاستاذ/ {lawyer} المحامي"
+            title = f"{نوع_تقرير_متداولة} خلال الفترة من {from_date.strftime('%d-%m-%Y')} إلى {to_date.strftime('%d-%m-%Y')} طرف الاستاذ/ {lawyer} المحامي"
             header_html = report_header(region, title, مدير_عام1, مدير_ادارة1, عضو_قانوني1)
             if not cases: st.warning(f"⚠️ لا توجد دعاوى متداولة في الفترة")
             else:
@@ -1998,7 +1998,8 @@ if st.session_state.page == "تقارير":
                     html += f"<tr><td>{idx}</td><td>{c.get('رقم','')}</td><td>{c.get('سنة','')}</td><td>{محكمة}</td><td>{خصوم_html}</td><td>{c.get('موضوع','')}</td><td><b style='color:#B8860B'>{c.get('تاريخ_جلسة','')}</b></td><td>{c.get('الاجراء','')}</td><td>{c.get('ملاحظات','')}</td></tr>"
                     df_data.append({'م': idx, 'رقم': c.get('رقم',''), 'سنة': c.get('سنة',''), 'المحكمة': محكمة, 'الخصوم': f"{مدعي} ضد {مدعي_عليه}", 'الموضوع': c.get('موضوع',''), 'اخر جلسة': c.get('تاريخ_جلسة',''), 'الاجراء': c.get('الاجراء',''), 'ملاحظات': c.get('ملاحظات','')})
                 html += "</table>"
-                footer = f"""<div style="margin-top:25px; color:#B8860B; font-size:12px;"><p style="text-align:center; margin-bottom:20px; font-size:13px; font-weight:700;">تفضلوا بقبول وافر الاحترام والتقدير،</p><table style="width:100%;"><tr><td style="width:50%; text-align:right;"><div style="font-weight:900;">العضو القانوني</div><div>{عضو_قانوني1}</div><div>....................</div></td><td style="width:50%; text-align:left;"><div style="font-weight:900;">مدير إدارة القضايا</div><div>{مدير_ادارة1}</div><div>....................</div></td></tr></table><div style="text-align:center; margin-top:20px;"><div style="font-weight:900; color:#dc3545;">مدير عام الإدارات القانونية</div><div>{مدير_عام1}</div><div>....................</div></div><p style="text-align:center; margin-top:15px;">تحر في: {datetime.now().strftime('%d-%m-%Y')}</p></div>"""
+                # ===== الفوتر المعدل: تحرر في شمال =====
+                footer = f"""<div style="margin-top:25px; color:#B8860B; font-size:12px;"><p style="text-align:center; margin-bottom:20px; font-size:13px; font-weight:700;">تفضلوا بقبول وافر الاحترام والتقدير،</p><table style="width:100%;"><tr><td style="width:50%; text-align:right; vertical-align:top;"><div style="font-weight:900;">العضو القانوني</div><div>{عضو_قانوني1}</div><div style="margin-top:5px;">تحر في: {datetime.now().strftime('%d-%m-%Y')}</div><div style="margin-top:12px;">....................</div></td><td style="width:50%; text-align:left; vertical-align:top;"><div style="font-weight:900;">مدير إدارة القضايا</div><div>{مدير_ادارة1}</div><div style="margin-top:12px;">....................</div></td></tr></table><div style="text-align:center; margin-top:20px;"><div style="font-weight:900; color:#dc3545;">مدير عام الإدارات القانونية</div><div>{مدير_عام1}</div><div style="margin-top:12px;">....................</div></div></div>"""
                 full_html = header_html + f"<div class='table-container'>{html}</div>" + footer
                 st.markdown(full_html, unsafe_allow_html=True)
                 st.session_state.last_report_html = full_html; st.session_state.last_report_title = f"بيان_الدعاوى_المتداولة_{region}"; st.session_state.last_report_df = pd.DataFrame(df_data)
@@ -2006,7 +2007,15 @@ if st.session_state.page == "تقارير":
                 c1,c2,c3 = st.columns(3)
                 with c1: st.download_button("⬇️ PDF", data=html_export.encode('utf-8'), file_name=f"بيان_الدعاوى_{region}.html", mime="text/html", use_container_width=True, key="dl1")
                 with c2: st.download_button("⬇️ Word", data=html_export.encode('utf-8'), file_name=f"بيان_الدعاوى_{region}.doc", mime="application/msword", use_container_width=True, key="dl2")
-                with c3: excel_buffer = io.BytesIO(); st.session_state.last_report_df.to_excel(excel_buffer, index=False, engine='openpyxl'); st.download_button("⬇️ Excel", data=excel_buffer.getvalue(), file_name=f"بيان_الدعاوى_{region}.xlsx", use_container_width=True, key="dlx1")
+                with c3:
+                    excel_buffer = io.BytesIO()
+                    with pd.ExcelWriter(excel_buffer, engine='openpyxl') as writer:
+                        df = pd.DataFrame(df_data)
+                        df.to_excel(writer, index=False, sheet_name='Sheet1')
+                        worksheet = writer.sheets['Sheet1']
+                        for col in worksheet.columns: worksheet.column_dimensions[col[0].column_letter].width = 25
+                        for cell in worksheet[1]: cell.alignment = cell.alignment.copy(wrap_text=True, horizontal='right')
+                    st.download_button("⬇️ Excel", data=excel_buffer.getvalue(), file_name=f"بيان_الدعاوى_{region}.xlsx", use_container_width=True, key="dlx1")
 
     # ========= تبويب 2: الاحكام =========
     with tab2:
@@ -2038,7 +2047,7 @@ if st.session_state.page == "تقارير":
             elif نوع_التقرير == "بيان بالاحكام الصادرة للضد": cases = [c for c in cases if c.get('مسندة_ل_الحكم') == 'الضد']
             elif "حسب موضوع" in نوع_التقرير and topic2: cases = [c for c in cases if topic2.lower() in str(c.get('موضوع','')).lower()]
             cases = sorted(cases, key=lambda x: x.get("تاريخ_الحكم","0000-00-00"), reverse=True)
-            title = f"{نوع_التقرير} خلال الفترة من {from_date2} حتى {to_date2} طرف الاستاذ/ {lawyer2} المحامي"
+            title = f"{نوع_التقرير} خلال الفترة من {from_date2.strftime('%d-%m-%Y')} إلى {to_date2.strftime('%d-%m-%Y')} طرف الاستاذ/ {lawyer2} المحامي"
             header_html = report_header(region2, title, مدير_عام2, مدير_ادارة2, عضو_قانوني2)
             if not cases: st.warning(f"⚠️ لا توجد احكام في الفترة")
             else:
@@ -2055,7 +2064,8 @@ if st.session_state.page == "تقارير":
                     html += f"<tr><td>{idx}</td><td>{c.get('رقم','')}</td><td>{c.get('سنة','')}</td><td>{محكمة}</td><td>{خصوم_html}</td><td>{c.get('موضوع','')}</td><td><b style='color:#B8860B'>{c.get('تاريخ_الحكم','')}</b></td><td>{c.get('منطوق_الحكم','')}</td><td><b style='color:{لون_مسندة}'>{c.get('مسندة_ل_الحكم')}</b></td><td>{c.get('ملاحظات','')}</td></tr>"
                     df_data.append({'م': idx, 'رقم': c.get('رقم',''), 'سنة': c.get('سنة',''), 'المحكمة': محكمة, 'الخصوم': f"{مدعي} ضد {مدعي_عليه}", 'الموضوع': c.get('موضوع',''), 'تاريخ الحكم': c.get('تاريخ_الحكم',''), 'منطوق الحكم': c.get('منطوق_الحكم',''), 'مسندة ل': c.get('مسندة_ل_الحكم'), 'ملاحظات': c.get('ملاحظات','')})
                 html += "</table>"
-                footer = f"""<div style="margin-top:25px; color:#B8860B; font-size:12px;"><p style="text-align:center; margin-bottom:20px; font-size:13px; font-weight:700;">تفضلوا بقبول وافر الاحترام والتقدير،</p><table style="width:100%;"><tr><td style="width:50%; text-align:right;"><div style="font-weight:900;">العضو القانوني</div><div>{عضو_قانوني2}</div><div>....................</div></td><td style="width:50%; text-align:left;"><div style="font-weight:900;">مدير إدارة القضايا</div><div>{مدير_ادارة2}</div><div>....................</div></td></tr></table><div style="text-align:center; margin-top:20px;"><div style="font-weight:900; color:#dc3545;">مدير عام الإدارات القانونية</div><div>{مدير_عام2}</div><div>....................</div></div><p style="text-align:center; margin-top:15px;">تحر في: {datetime.now().strftime('%d-%m-%Y')}</p></div>"""
+                # ===== الفوتر المعدل: تحر في شمال =====
+                footer = f"""<div style="margin-top:25px; color:#B8860B; font-size:12px;"><p style="text-align:center; margin-bottom:20px; font-size:13px; font-weight:700;">تفضلوا بقبول وافر الاحترام والتقدير،</p><table style="width:100%;"><tr><td style="width:50%; text-align:right; vertical-align:top;"><div style="font-weight:900;">العضو القانوني</div><div>{عضو_قانوني2}</div><div style="margin-top:5px;">تحرر في: {datetime.now().strftime('%d-%m-%Y')}</div><div style="margin-top:12px;">....................</div></td><td style="width:50%; text-align:left; vertical-align:top;"><div style="font-weight:900;">مدير إدارة القضايا</div><div>{مدير_ادارة2}</div><div style="margin-top:12px;">....................</div></td></tr></table><div style="text-align:center; margin-top:20px;"><div style="font-weight:900; color:#dc3545;">مدير عام الإدارات القانونية</div><div>{مدير_عام2}</div><div style="margin-top:12px;">....................</div></div></div>"""
                 full_html = header_html + f"<div class='table-container'>{html}</div>" + footer
                 st.markdown(full_html, unsafe_allow_html=True)
                 st.session_state.last_report_html = full_html; st.session_state.last_report_title = f"بيان_الاحكام_{region2}"; st.session_state.last_report_df = pd.DataFrame(df_data)
@@ -2063,7 +2073,15 @@ if st.session_state.page == "تقارير":
                 c1,c2,c3 = st.columns(3)
                 with c1: st.download_button("⬇️ PDF", data=html_export.encode('utf-8'), file_name=f"بيان_الاحكام_{region2}.html", mime="text/html", use_container_width=True, key="dl21")
                 with c2: st.download_button("⬇️ Word", data=html_export.encode('utf-8'), file_name=f"بيان_الاحكام_{region2}.doc", mime="application/msword", use_container_width=True, key="dl22")
-                with c3: excel_buffer = io.BytesIO(); st.session_state.last_report_df.to_excel(excel_buffer, index=False, engine='openpyxl'); st.download_button("⬇️ Excel", data=excel_buffer.getvalue(), file_name=f"بيان_الاحكام_{region2}.xlsx", use_container_width=True, key="dlx2")
+                with c3:
+                    excel_buffer = io.BytesIO()
+                    with pd.ExcelWriter(excel_buffer, engine='openpyxl') as writer:
+                        df = pd.DataFrame(df_data)
+                        df.to_excel(writer, index=False, sheet_name='Sheet1')
+                        worksheet = writer.sheets['Sheet1']
+                        for col in worksheet.columns: worksheet.column_dimensions[col[0].column_letter].width = 25
+                        for cell in worksheet[1]: cell.alignment = cell.alignment.copy(wrap_text=True, horizontal='right')
+                    st.download_button("⬇️ Excel", data=excel_buffer.getvalue(), file_name=f"بيان_الاحكام_{region2}.xlsx", use_container_width=True, key="dlx2")
                     # ================= القسم 2 من 2 =================
 
     # ========= تبويب 3: الاحصائيات =========
@@ -2133,13 +2151,14 @@ if st.session_state.page == "تقارير":
                                 elif "للصالح والضد" in نوع_البيان_العددي: العدد += 1
                         except: pass
             st.success(f"✅ العدد الإجمالي: {العدد}")
-            title_stat = f"بيان عددي ب{اسم_البيان} خلال الفترة من {stat_from2} حتى {stat_to2} طرف الاستاذ/ {lawyer_stat} المحامي"
+            title_stat = f"بيان عددي ب{اسم_البيان} خلال الفترة من {stat_from2.strftime('%d-%m-%Y')} إلى {stat_to2.strftime('%d-%m-%Y')} طرف الاستاذ/ {lawyer_stat} المحامي"
             header_html = report_header(region_stat, title_stat, مدير_عام_stat, مدير_ادارة_stat, عضو_قانوني_stat)
             ملاحظات = f"عن موضوع: {topic_stat}" if topic_stat else ""
             html = f"<table class='case-table'><tr><th>م</th><th>البيان</th><th>العدد</th><th>ملاحظات</th></tr>"
             html += f"<tr><td>1</td><td>{اسم_البيان}</td><td><b style='color:#dc3545; font-size:14px'>{العدد}</b></td><td>{ملاحظات}</td></tr>"
             html += "</table>"
-            footer = f"""<div style="margin-top:25px; color:#B8860B; font-size:12px;"><p style="text-align:center; margin-bottom:20px; font-size:13px; font-weight:700;">تفضلوا بقبول وافر الاحترام والتقدير،</p><table style="width:100%;"><tr><td style="width:50%; text-align:right;"><div style="font-weight:900;">العضو القانوني</div><div>{عضو_قانوني_stat}</div><div>....................</div></td><td style="width:50%; text-align:left;"><div style="font-weight:900;">مدير إدارة القضايا</div><div>{مدير_ادارة_stat}</div><div>....................</div></td></tr></table><div style="text-align:center; margin-top:20px;"><div style="font-weight:900; color:#dc3545;">مدير عام الإدارات القانونية</div><div>{مدير_عام_stat}</div><div>....................</div></div><p style="text-align:center; margin-top:15px;">تحر في: {datetime.now().strftime('%d-%m-%Y')}</p></div>"""
+            # ===== الفوتر المعدل: تحر في شمال =====
+            footer = f"""<div style="margin-top:25px; color:#B8860B; font-size:12px;"><p style="text-align:center; margin-bottom:20px; font-size:13px; font-weight:700;">تفضلوا بقبول وافر الاحترام والتقدير،</p><table style="width:100%;"><tr><td style="width:50%; text-align:right; vertical-align:top;"><div style="font-weight:900;">العضو القانوني</div><div>{عضو_قانوني_stat}</div><div style="margin-top:5px;">تحرر في: {datetime.now().strftime('%d-%m-%Y')}</div><div style="margin-top:12px;">....................</div></td><td style="width:50%; text-align:left; vertical-align:top;"><div style="font-weight:900;">مدير إدارة القضايا</div><div>{مدير_ادارة_stat}</div><div style="margin-top:12px;">....................</div></td></tr></table><div style="text-align:center; margin-top:20px;"><div style="font-weight:900; color:#dc3545;">مدير عام الإدارات القانونية</div><div>{مدير_عام_stat}</div><div style="margin-top:12px;">....................</div></div></div>"""
             full_html = header_html + f"<div class='table-container'>{html}</div>" + footer
             st.markdown(full_html, unsafe_allow_html=True)
             df_data = pd.DataFrame([{'م': 1, 'البيان': اسم_البيان, 'العدد': العدد, 'ملاحظات': ملاحظات}])
@@ -2148,5 +2167,13 @@ if st.session_state.page == "تقارير":
             c1,c2,c3 = st.columns(3)
             with c1: st.download_button("⬇️ PDF", data=html_export.encode('utf-8'), file_name=f"بيان_عددي_{region_stat}.html", mime="text/html", use_container_width=True, key="dl_stat1")
             with c2: st.download_button("⬇️ Word", data=html_export.encode('utf-8'), file_name=f"بيان_عددي_{region_stat}.doc", mime="application/msword", use_container_width=True, key="dl_stat2")
-            with c3: excel_buffer = io.BytesIO(); df_data.to_excel(excel_buffer, index=False, engine='openpyxl'); st.download_button("⬇️ Excel", data=excel_buffer.getvalue(), file_name=f"بيان_عددي_{region_stat}.xlsx", use_container_width=True, key="dl_stat3")
+            with c3:
+                excel_buffer = io.BytesIO()
+                with pd.ExcelWriter(excel_buffer, engine='openpyxl') as writer:
+                    df = df_data
+                    df.to_excel(writer, index=False, sheet_name='Sheet1')
+                    worksheet = writer.sheets['Sheet1']
+                    for col in worksheet.columns: worksheet.column_dimensions[col[0].column_letter].width = 25
+                    for cell in worksheet[1]: cell.alignment = cell.alignment.copy(wrap_text=True, horizontal='right')
+                st.download_button("⬇️ Excel", data=excel_buffer.getvalue(), file_name=f"بيان_عددي_{region_stat}.xlsx", use_container_width=True, key="dl_stat3")
 # ========================= نهاية الجزء الثامن ==============================
