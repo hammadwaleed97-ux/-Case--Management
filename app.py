@@ -1917,7 +1917,7 @@ elif st.session_state.page == "تقارير":
     if 'last_report_df' not in st.session_state:
         st.session_state.last_report_df = pd.DataFrame()
 
-    tab1, tab2, tab3, tab4 = st.tabs(["📊 بيان الدعاوى المتداولة", "⚖️ بيان الاحكام", "📈 الإحصائيات", "📄 التصدير"])
+    tab1, tab2, tab3, tab4 = st.tabs(["📊 بيان بجميع الدعاوى المتداولة", "⚖️ بيان الاحكام", "📈 الإحصائيات", "📄 التصدير"])
 
     def report_header(region, title, مدير_عام, مدير_ادارة, عضو_قانوني):
         return f"""<div style="text-align:right; color:#B8860B; border:2px double #B8860B; padding:12px 10px; background: #0A1428; border-radius:5px; margin-bottom:12px; font-family: 'Times New Roman', serif;">
@@ -1933,6 +1933,11 @@ elif st.session_state.page == "تقارير":
     # ========= تبويب 1: الدعاوى المتداولة =========
     with tab1:
         st.markdown("<div style='background:#1E2A47; padding:12px; border-radius:8px; border:2px solid #B8860B; margin-bottom:12px'>", unsafe_allow_html=True)
+        
+        نوع_تقرير_متداولة = st.selectbox("نوع البيان", 
+            ["بيان بجميع الدعاوى المتداولة", 
+             "بيان بالدعاوى المتداولة حسب موضوع الدعوى"], key="no1_tقرير")
+        
         colA, colB, colC = st.columns(3)
         with colA: region = st.text_input("ديوان عام منطقة", key="region1")
         with colB: مدير_عام1 = st.text_input("اسم مدير عام الإدارات القانونية", key="modir1")
@@ -1943,7 +1948,10 @@ elif st.session_state.page == "تقارير":
         with col1: from_date = st.date_input("من الفترة", key="from1")
         with col2: to_date = st.date_input("حتى الفترة", key="to1")
         with col3: lawyer = st.text_input("طرف الاستاذ/ المحامي", key="lawyer1")
-        topic = st.text_input("موضوع الدعوى للفلترة - اتركها فاضية لعرض الكل", key="topic1")
+        
+        topic = ""
+        if "حسب موضوع" in نوع_تقرير_متداولة:
+            topic = st.text_input("موضوع الدعوى للفلترة", placeholder="اكتب جزء من الموضوع", key="topic1")
         st.markdown("</div>", unsafe_allow_html=True)
 
         if st.button("🔍 عرض بيان الدعاوى المتداولة", use_container_width=True, type="primary", key="show1"):
@@ -1956,10 +1964,13 @@ elif st.session_state.page == "تقارير":
                         if from_date <= ت_جلسة <= to_date: فلترة_بالمدة.append(c)
                     except: pass
             cases = فلترة_بالمدة
-            if topic: cases = [c for c in cases if topic.lower() in str(c.get('موضوع','')).lower()]
+            
+            if "حسب موضوع" in نوع_تقرير_متداولة and topic:
+                cases = [c for c in cases if topic.lower() in str(c.get('موضوع','')).lower()]
+            
             cases = sorted(cases, key=lambda x: x.get("تاريخ_جلسة","0000-00-00"), reverse=True)
 
-            title = f"بيان بالدعاوى المتداولة خلال الفترة من {from_date} حتى {to_date} طرف الاستاذ/ {lawyer} المحامي"
+            title = f"{نوع_تقرير_متداولة} خلال الفترة من {from_date} حتى {to_date} طرف الاستاذ/ {lawyer} المحامي"
             header_html = report_header(region, title, مدير_عام1, مدير_ادارة1, عضو_قانوني1)
             
             if not cases: st.warning(f"⚠️ لا توجد دعاوى متداولة في الفترة")
@@ -2011,10 +2022,8 @@ elif st.session_state.page == "تقارير":
         st.markdown("</div>", unsafe_allow_html=True)
 
         if st.button("🔍 عرض بيان الاحكام", use_container_width=True, type="primary", key="show2"):
-            # نفس الارشيف بالظبط
             archive = [c for c in data["cases"] if c.get("حالة") == "منتهية" and not c.get("تم_الحفظ_النهائي")]
             
-            # فلتر بالتاريخ
             cases = []
             for c in archive:
                 if c.get('تاريخ_الحكم'):
@@ -2023,7 +2032,6 @@ elif st.session_state.page == "تقارير":
                         if from_date2 <= ت_حكم <= to_date2: cases.append(c)
                     except: pass
             
-            # فلتر حسب الاختيار
             if نوع_التقرير == "بيان بالاحكام الصادرة للصالح":
                 cases = [c for c in cases if c.get('مسندة_ل_الحكم') == 'الصالح']
             elif نوع_التقرير == "بيان بالاحكام الصادرة للضد":
