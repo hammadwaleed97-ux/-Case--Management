@@ -81,12 +81,6 @@ def save_banners():
         b['expire'] = b['expire'].isoformat()
     with open(BANNER_FILE, 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
-        def save_banners():
-    data = st.session_state.banners.copy()
-    for b in data:
-        b['expire'] = b['expire'].isoformat()
-    with open(BANNER_FILE, 'w', encoding='utf-8') as f:
-        json.dump(data, f, ensure_ascii=False)
 
 
 def init_session_state():  # <-- طلعناها برا ومفيش مسافات قبلها
