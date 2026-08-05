@@ -2258,7 +2258,7 @@ if st.session_state.page == "تقارير":
                     for cell in worksheet[1]: cell.alignment = cell.alignment.copy(wrap_text=True, horizontal='right')
                 st.download_button("⬇️ Excel", data=excel_buffer.getvalue(), file_name=f"بيان_عددي_{region_stat}.xlsx", use_container_width=True, key="dl_stat3")
 # ========================= نهاية الجزء 
-    import json
+import json
 import os
 from datetime import datetime
 
@@ -2277,7 +2277,7 @@ def save_banners(banners):
 # =========================================
 # ============ صفحة إدارة اليافطات ============
 # =========================================
-elif st.session_state.page == "إدارة اليافطات":
+if st.session_state.page == "إدارة اليافطات": # غيرت elif ل if
     
     if 'banners' not in st.session_state:
         st.session_state.banners = load_banners()
