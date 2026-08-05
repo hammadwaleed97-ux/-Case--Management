@@ -1944,12 +1944,12 @@ elif st.session_state.page == "تقارير":
             # 1. بنسحب كل المتداولة من الحصر العام
             cases = [c for c in data["cases"] if str(c.get('حالة','')).strip() == 'متداولة']
             
-            # 2. بنفلترهم حسب "اخر جلسة" اللي في المدة اللي انت اختارتها
+            # 2. بنفلترهم حسب "تاريخ_جلسة" اللي انت بتعملها ابديت من الجلسات
             فلترة_بالمدة = []
             for c in cases:
-                if c.get('اخر جلسة'):
+                if c.get('تاريخ_جلسة'): # <--- المهم هنا تاريخ_جلسة مش اخر جلسة
                     try:
-                        ت_جلسة = datetime.strptime(c['اخر جلسة'], '%Y-%m-%d').date()
+                        ت_جلسة = datetime.strptime(c['تاريخ_جلسة'], '%Y-%m-%d').date()
                         if from_date <= ت_جلسة <= to_date:
                             فلترة_بالمدة.append(c)
                     except:
@@ -1959,8 +1959,7 @@ elif st.session_state.page == "تقارير":
             if topic: 
                 cases = [c for c in cases if topic in str(c.get('موضوع',''))]
             
-            # 3. ترتيب من الاحدث للاقدم حسب اخر جلسة
-            cases = sorted(cases, key=lambda x: x.get("اخر جلسة","0000-00-00"), reverse=True)
+            cases = sorted(cases, key=lambda x: x.get("تاريخ_جلسة","0000-00-00"), reverse=True) # ترتيب
 
             title = f"بيان بالدعاوى المتداولة خلال الفترة من {from_date} حتى {to_date} طرف الاستاذ/ {lawyer} المحامي"
             header_html = report_header(region, title, مدير_عام1, مدير_ادارة1, عضو_قانوني1)
@@ -1969,31 +1968,23 @@ elif st.session_state.page == "تقارير":
                 st.warning(f"⚠️ لا توجد دعاوى متداولة في الفترة من {from_date} الى {to_date}")
             else:
                 st.success(f"✅ تم العثور على {len(cases)} دعوى متداولة")
-                html = "<table class='case-table'><tr><th>الحالة</th><th>الاجراء</th><th>اخر جلسة</th><th>الموضوع</th><th>الخصوم</th><th>المحكمة والدائرة</th><th>رقم</th><th>سنة</th></tr>"
+                html = "<table class='case-table'><tr><th>الحالة</th><th>الاجراء</th><th>اخر جلسة</th><th>الموضوع</th><th>الخصوم</th><th>المحكمة والدائرة</th><th>رقم</th><th>سنة</th></tr>" # نفس ترتيب الصورة
                 df_data = []
                 for c in cases:
-                    محكمة = f"{c.get('المحكمة والدائرة','')}"
+                    محكمة = f"{c.get('نوع','')} {c.get('محكمة_اسم','')}"
                     if c.get('مأمورية'): محكمة += f" - مأمورية {c.get('مأمورية')}"
+                    if c.get('دائرة'): محكمة += f" - دائرة {c.get('دائرة')}"
                     
                     مدعي = c.get('مدعي','')
                     مدعي_عليه = c.get('مدعي_عليه','')
                     خصوم_html = f"<div class='tag-red'>المستأنف: {مدعي}</div><div class='tag-blue'>ضده: {مدعي_عليه}</div>"
 
-                    html += f"<tr><td>{c.get('حالة','')}</td><td>{c.get('الاجراء','')}</td><td><b style='color:#FFD700'>{c.get('اخر جلسة','')}</b></td><td>{c.get('موضوع','')}</td><td>{خصوم_html}</td><td>{محكمة}</td><td>{c.get('رقم','')}</td><td>{c.get('سنة','')}</td></tr>"
-                    df_data.append({'الحالة': c.get('حالة',''), 'الاجراء': c.get('الاجراء',''), 'اخر جلسة': c.get('اخر جلسة',''), 'الموضوع': c.get('موضوع',''), 'الخصوم': f"{مدعي} ضد {مدعي_عليه}", 'المحكمة': محكمة, 'رقم': c.get('رقم',''), 'سنة': c.get('سنة','')})
+                    # هنا بنسحب الاجراء وتاريخ_جلسة من الحصر العام
+                    html += f"<tr><td>{c.get('حالة','')}</td><td>{c.get('الاجراء','')}</td><td><b style='color:#FFD700'>{c.get('تاريخ_جلسة','')}</b></td><td>{c.get('موضوع','')}</td><td>{خصوم_html}</td><td>{محكمة}</td><td>{c.get('رقم','')}</td><td>{c.get('سنة','')}</td></tr>"
+                    df_data.append({'الحالة': c.get('حالة',''), 'الاجراء': c.get('الاجراء',''), 'اخر جلسة': c.get('تاريخ_جلسة',''), 'الموضوع': c.get('موضوع',''), 'الخصوم': f"{مدعي} ضد {مدعي_عليه}", 'المحكمة': محكمة, 'رقم': c.get('رقم',''), 'سنة': c.get('سنة','')})
                 
                 html += "</table>"
-                footer = f"""
-                <div style='margin-top:40px; color:#D4AF37; font-size:16px;'>
-                    <p style='text-align:center;'>تفضلوا بقبول وافر الاحترام</p>
-                    <div style='display:flex; justify-content:space-between; margin-top:20px;'>
-                        <span>العضو القانوني: {عضو_قانوني1} ................</span>
-                        <span>مدير الإدارة: {مدير_ادارة1} ................</span>
-                    </div>
-                    <p style='text-align:center; margin-top:20px;'>مدير عام الإدارات القانونية: {مدير_عام1} ................</p>
-                    <p style='text-align:center; margin-top:20px;'>تحر في {datetime.now().strftime('%d-%m-%Y')}</p>
-                </div>
-                """
+                footer = f"""<div style='margin-top:40px; color:#D4AF37; font-size:16px;'><p style='text-align:center;'>تفضلوا بقبول وافر الاحترام</p></div>"""
                 full_html = header_html + f"<div class='table-container'>{html}</div>" + footer
                 st.markdown(full_html, unsafe_allow_html=True)
                 
