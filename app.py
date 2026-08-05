@@ -104,6 +104,8 @@ def get_export_html(full_html, title):
 {full_html}
 </body>
 </html>"""
+    # ===== تشغيل اليافطة =====
+load_banners()
 st.markdown("""
 <style>
 .stApp { background-color: #0E1117; }
