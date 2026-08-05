@@ -845,6 +845,9 @@ if st.session_state.page == "الرئيسية":
     )
     show_banners()
     banner_sidebar()
+    
+    st.write("عدد اليافطات:", len(st.session_state.banners))
+
     col1, col2 = st.columns(2)
     with col1:
 
