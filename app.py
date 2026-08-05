@@ -1869,7 +1869,7 @@ elif st.session_state.page == "مكتبة":
     else:
         st.info("اختار قسم من الازرار اللي فوق عشان تشوف الملفات")
         # ================================================
-        ## ============ الجزء الثامن: التقارير ============
+        # ============ الجزء الثامن: التقارير ============
 # ================================================
 elif st.session_state.page == "تقارير":
     import io
@@ -1890,8 +1890,6 @@ elif st.session_state.page == "تقارير":
         white-space: nowrap;
     }
     .case-table td {padding:10px; border:1px solid #B8860B; text-align:center; background:#1E2A47; color:#fff}
-    .tag-red {background:#dc3545; color:#fff; padding:5px 10px; border-radius:8px; font-weight:bold; display:inline-block; margin:2px; font-size:12px}
-    .tag-blue {background:#0d6efd; color:#fff; padding:5px 10px; border-radius:8px; font-weight:bold; display:inline-block; margin:2px; font-size:12px}
     .table-container {overflow-x:auto}
     
     /* خليت كل الايقونات والعناوين مدهب غامق */
@@ -1981,7 +1979,12 @@ elif st.session_state.page == "تقارير":
                     
                     مدعي = c.get('مدعي','')
                     مدعي_عليه = c.get('مدعي_عليه','')
-                    خصوم_html = f"<div class='tag-red'>المستأنف: {مدعي}</div><div class='tag-blue'>ضده: {مدعي_عليه}</div>"
+                    
+                    # لو الهيئة مدعية يبقى احمر
+                    if "الهيئة" in str(مدعي):
+                        خصوم_html = f"<span style='color:#dc3545; font-weight:900'>{مدعي} ضد {مدعي_عليه}</span>"
+                    else:
+                        خصوم_html = f"{مدعي} ضد {مدعي_عليه}"
 
                     html += f"<tr><td>{idx}</td><td>{c.get('سنة','')}</td><td>{c.get('رقم','')}</td><td>{محكمة}</td><td>{خصوم_html}</td><td>{c.get('موضوع','')}</td><td><b style='color:#B8860B'>{c.get('تاريخ_جلسة','')}</b></td><td>{c.get('الاجراء','')}</td><td>{c.get('ملاحظات','')}</td></tr>"
                     df_data.append({'م': idx, 'سنة': c.get('سنة',''), 'رقم': c.get('رقم',''), 'المحكمة': محكمة, 'الخصوم': f"{مدعي} ضد {مدعي_عليه}", 'الموضوع': c.get('موضوع',''), 'اخر جلسة': c.get('تاريخ_جلسة',''), 'الاجراء': c.get('الاجراء',''), 'ملاحظات': c.get('ملاحظات','')})
@@ -2028,20 +2031,7 @@ elif st.session_state.page == "تقارير":
     # ========= تبويب 2: الاحكام =========
     with tab2:
         st.markdown("<h3 style='color:#B8860B; text-align:center'>⚖️ بيان الاحكام</h3>", unsafe_allow_html=True)
-        st.markdown("<div style='background:#1E2A47; padding:20px; border-radius:15px; border:2px solid #B8860B; margin-bottom:15px'>", unsafe_allow_html=True)
-        colA, colB, colC = st.columns(3)
-        with colA: region2 = st.text_input("ديوان عام منطقة", key="region2")
-        with colB: مدير_عام2 = st.text_input("اسم مدير عام الإدارات القانونية", key="modir2")
-        with colC: مدير_ادارة2 = st.text_input("اسم مدير إدارة القضايا", key="modir_idara2")
-        عضو_قانوني2 = st.text_input("اسم العضو القانوني مقدم التقرير", key="odo2")
-        الحكم_نوع = st.selectbox("نوع الاحكام", ["جميع الاحكام", "الاحكام للصالح", "الاحكام للضد"], key="hokm_type")
-        col1, col2, col3 = st.columns(3)
-        with col1: from_date2 = st.date_input("من الفترة", key="from2")
-        with col2: to_date2 = st.date_input("حتى الفترة", key="to2")
-        with col3: lawyer2 = st.text_input("طرف الاستاذ/ المحامي", key="lawyer2")
-        st.markdown("</div>", unsafe_allow_html=True)
-        if st.button("🔍 عرض بيان الاحكام", use_container_width=True, type="primary", key="show2"):
-            st.info("قيد التطوير")
+        st.info("قيد التطوير")
 
     # ========= تبويب 3: الاحصائيات =========
     with tab3:
@@ -2073,7 +2063,7 @@ elif st.session_state.page == "تقارير":
         else:
             c1,c2,c3 = st.columns(3)
             with c1: st.download_button("⬇️ PDF", data=f"<html dir='rtl' charset='UTF-8'><body>{st.session_state.last_report_html}</body></html>".encode('utf-8'), file_name=f"{st.session_state.last_report_title}.html", use_container_width=True)
-            with c2: st.download_button("⬇️ Word", data=st.session_state.last_report_html.encode('utf-8'), file_name=f"{st.session_state.last_report_title}.doc", use_container_width=True) # <-- صلحتها هنا
+            with c2: st.download_button("⬇️ Word", data=st.session_state.last_report_html.encode('utf-8'), file_name=f"{st.session_state.last_report_title}.doc", use_container_width=True)
             with c3:
                 excel_buffer = io.BytesIO()
                 st.session_state.last_report_df.to_excel(excel_buffer, index=False, engine='openpyxl')
