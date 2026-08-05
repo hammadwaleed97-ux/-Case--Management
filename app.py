@@ -66,6 +66,22 @@ def banner_sidebar():
                 st.session_state.banners.pop(i)
                 st.rerun()
 # ===== نهاية الكود =====
+BANNER_FILE = "banners.json"
+
+def load_banners():
+    if os.path.exists(BANNER_FILE):
+        with open(BANNER_FILE, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+            for b in data:
+                b['expire'] = datetime.fromisoformat(b['expire'])
+            st.session_state.banners = data
+
+def save_banners():
+    data = st.session_state.banners.copy()
+    for b in data:
+        b['expire'] = b['expire'].isoformat()
+    with open(BANNER_FILE, 'w', encoding='utf-8') as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
 
 
 # دالة التصدير
