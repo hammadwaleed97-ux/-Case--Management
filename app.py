@@ -1874,7 +1874,6 @@ elif st.session_state.page == "مكتبة":
 elif st.session_state.page == "تقارير":
     import io
     import pandas as pd
-    import base64
     from datetime import datetime
     data = load_data()
     
@@ -1986,7 +1985,7 @@ elif st.session_state.page == "تقارير":
                 with c2: st.download_button("⬇️ Word", data=full_html.encode('utf-8'), file_name=f"بيان_الدعاوى_{region}.doc", use_container_width=True, key="dl2")
                 with c3: excel_buffer = io.BytesIO(); st.session_state.last_report_df.to_excel(excel_buffer, index=False, engine='openpyxl'); st.download_button("⬇️ Excel", data=excel_buffer.getvalue(), file_name=f"بيان_الدعاوى_{region}.xlsx", use_container_width=True, key="dlx1")
 
-    # ========= تبويب 2: الاحكام - بيسحب من الارشيف فقط =========
+    # ========= تبويب 2: الاحكام =========
     with tab2:
         st.markdown("<div style='background:#1E2A47; padding:12px; border-radius:8px; border:2px solid #B8860B; margin-bottom:12px'>", unsafe_allow_html=True)
         نوع_التقرير = st.selectbox("نوع البيان", 
@@ -2012,7 +2011,7 @@ elif st.session_state.page == "تقارير":
         st.markdown("</div>", unsafe_allow_html=True)
 
         if st.button("🔍 عرض بيان الاحكام", use_container_width=True, type="primary", key="show2"):
-            # نفس شرط الارشيف بالظبط: منتهية ومش محفوظة نهائي
+            # نفس الارشيف بالظبط
             archive = [c for c in data["cases"] if c.get("حالة") == "منتهية" and not c.get("تم_الحفظ_النهائي")]
             
             # فلتر بالتاريخ
@@ -2024,12 +2023,11 @@ elif st.session_state.page == "تقارير":
                         if from_date2 <= ت_حكم <= to_date2: cases.append(c)
                     except: pass
             
-            # فلتر حسب النوع
-            مسندة_clean = lambda x: str(x.get('مسندة_ل_الحكم','')).strip()
-            if "للصالح" in نوع_التقرير and "للضد" not in نوع_التقرير:
-                cases = [c for c in cases if مسندة_clean(c) == 'الصالح']
-            elif "للضد" in نوع_التقرير:
-                cases = [c for c in cases if مسندة_clean(c) == 'الضد']
+            # فلتر حسب الاختيار
+            if نوع_التقرير == "بيان بالاحكام الصادرة للصالح":
+                cases = [c for c in cases if c.get('مسندة_ل_الحكم') == 'الصالح']
+            elif نوع_التقرير == "بيان بالاحكام الصادرة للضد":
+                cases = [c for c in cases if c.get('مسندة_ل_الحكم') == 'الضد']
             elif "حسب موضوع" in نوع_التقرير and topic2:
                 cases = [c for c in cases if topic2.lower() in str(c.get('موضوع','')).lower()]
             
@@ -2051,13 +2049,10 @@ elif st.session_state.page == "تقارير":
                     مدعي = c.get('مدعي',''); مدعي_عليه = c.get('مدعي_عليه','')
                     خصوم_html = f"<span style='color:#dc3545; font-weight:900'>{مدعي} ضد {مدعي_عليه}</span>" if "الهيئة" in str(مدعي) else f"{مدعي} ضد {مدعي_عليه}"
                     
-                    مسندة = مسندة_clean(c) if مسندة_clean(c) else "لم تحدد"
-                    if مسندة == 'الصالح': لون_مسندة = "#28a745"
-                    elif مسندة == 'الضد': لون_مسندة = "#dc3545"
-                    else: لون_مسندة = "#B8860B"
+                    لون_مسندة = "#28a745" if c.get('مسندة_ل_الحكم') == 'الصالح' else "#dc3545"
                     
-                    html += f"<tr><td>{idx}</td><td>{c.get('رقم','')}</td><td>{c.get('سنة','')}</td><td>{محكمة}</td><td>{خصوم_html}</td><td>{c.get('موضوع','')}</td><td><b style='color:#B8860B'>{c.get('تاريخ_الحكم','')}</b></td><td>{c.get('منطوق_الحكم','')}</td><td><b style='color:{لون_مسندة}'>{مسندة}</b></td><td>{c.get('ملاحظات','')}</td></tr>"
-                    df_data.append({'م': idx, 'رقم': c.get('رقم',''), 'سنة': c.get('سنة',''), 'المحكمة': محكمة, 'الخصوم': f"{مدعي} ضد {مدعي_عليه}", 'الموضوع': c.get('موضوع',''), 'تاريخ الحكم': c.get('تاريخ_الحكم',''), 'منطوق الحكم': c.get('منطوق_الحكم',''), 'مسندة ل': مسندة, 'ملاحظات': c.get('ملاحظات','')})
+                    html += f"<tr><td>{idx}</td><td>{c.get('رقم','')}</td><td>{c.get('سنة','')}</td><td>{محكمة}</td><td>{خصوم_html}</td><td>{c.get('موضوع','')}</td><td><b style='color:#B8860B'>{c.get('تاريخ_الحكم','')}</b></td><td>{c.get('منطوق_الحكم','')}</td><td><b style='color:{لون_مسندة}'>{c.get('مسندة_ل_الحكم')}</b></td><td>{c.get('ملاحظات','')}</td></tr>"
+                    df_data.append({'م': idx, 'رقم': c.get('رقم',''), 'سنة': c.get('سنة',''), 'المحكمة': محكمة, 'الخصوم': f"{مدعي} ضد {مدعي_عليه}", 'الموضوع': c.get('موضوع',''), 'تاريخ الحكم': c.get('تاريخ_الحكم',''), 'منطوق الحكم': c.get('منطوق_الحكم',''), 'مسندة ل': c.get('مسندة_ل_الحكم'), 'ملاحظات': c.get('ملاحظات','')})
                 html += "</table>"
                 footer = f"""<div style="margin-top:25px; color:#B8860B; font-size:12px; font-family: 'Times New Roman', serif;"><p style="text-align:center; margin-bottom:20px; font-size:13px; font-weight:700;">تفضلوا بقبول وافر الاحترام والتقدير،</p><table style="width:100%; border:none;"><tr><td style="width:50%; text-align:right; vertical-align:top;"><div style="font-weight:900; font-size:12px; color:#B8860B;">العضو القانوني</div><div style="margin-top:2px; font-size:12px;">{عضو_قانوني2}</div><div style="margin-top:12px;">....................</div></td><td style="width:50%; text-align:left; vertical-align:top;"><div style="font-weight:900; font-size:12px; color:#B8860B;">مدير إدارة القضايا</div><div style="margin-top:2px; font-size:12px;">{مدير_ادارة2}</div><div style="margin-top:12px;">....................</div></td></tr></table><div style="text-align:center; margin-top:20px;"><div style="font-weight:900; font-size:13px; color:#dc3545;">مدير عام الإدارات القانونية</div><div style="margin-top:2px; font-size:12px;">{مدير_عام2}</div><div style="margin-top:12px;">....................</div></div><p style="text-align:center; margin-top:15px; font-size:11px;">تحر في: {datetime.now().strftime('%d-%m-%Y')}</p></div>"""
                 full_html = header_html + f"<div class='table-container'>{html}</div>" + footer
@@ -2080,8 +2075,8 @@ elif st.session_state.page == "تقارير":
             all_cases = data["cases"]
             متداولة = [c for c in all_cases if c.get('حالة') == 'متداولة' and c.get('تاريخ_جلسة') and stat_from <= datetime.strptime(c['تاريخ_جلسة'], '%Y-%m-%d').date() <= stat_to]
             احكام = [c for c in all_cases if c.get('حالة') == 'منتهية' and not c.get('تم_الحفظ_النهائي') and c.get('تاريخ_الحكم') and stat_from <= datetime.strptime(c['تاريخ_الحكم'], '%Y-%m-%d').date() <= stat_to]
-            للصالح = [c for c in احكام if str(c.get('مسندة_ل_الحكم','')).strip() == 'الصالح']
-            للضد = [c for c in احكام if str(c.get('مسندة_ل_الحكم','')).strip() == 'الضد']
+            للصالح = [c for c in احكام if c.get('مسندة_ل_الحكم') == 'الصالح']
+            للضد = [c for c in احكام if c.get('مسندة_ل_الحكم') == 'الضد']
             c1,c2,c3,c4 = st.columns(4)
             c1.metric("عدد القضايا المتداولة", len(متداولة))
             c2.metric("عدد الاحكام الصادرة", len(احكام))
