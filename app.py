@@ -2258,3 +2258,62 @@ if st.session_state.page == "تقارير":
                     for cell in worksheet[1]: cell.alignment = cell.alignment.copy(wrap_text=True, horizontal='right')
                 st.download_button("⬇️ Excel", data=excel_buffer.getvalue(), file_name=f"بيان_عددي_{region_stat}.xlsx", use_container_width=True, key="dl_stat3")
 # ========================= نهاية الجزء 
+# =========================================
+# ============ صفحة إدارة اليافطات ============
+# =========================================
+elif st.session_state.page == "إدارة اليافطات":
+    
+    st.title("⚙️ إدارة اليافطات")
+    st.markdown("---")
+
+    # ========== 1. اضافة يافطة جديدة ==========
+    with st.form("add_banner_form"):
+        st.subheader("➕ اضافة يافطة جديدة")
+        
+        banner_text = st.text_area("نص اليافطة", placeholder="اكتب هنا نص الاعلان...", height=100)
+        col1, col2 = st.columns(2)
+        with col1:
+            banner_color = st.color_picker("لون اليافطة", "#FFC107")
+        with col2:
+            banner_expire = st.date_input("تاريخ الانتهاء")
+        
+        submitted = st.form_submit_button("🚀 نشر اليافطة", use_container_width=True)
+        if submitted:
+            if banner_text.strip():
+                new_banner = {
+                    "text": banner_text,
+                    "color": banner_color,
+                    "expire": str(banner_expire),
+                    "created_at": datetime.now().strftime("%Y-%m-%d %H:%M")
+                }
+                st.session_state.banners.append(new_banner)
+                st.success("✅ تم نشر اليافطة بنجاح!")
+                st.rerun()
+            else:
+                st.error("❌ لازم تكتب نص اليافطة")
+
+    st.markdown("---")
+
+    # ========== 2. عرض وحذف اليافطات الحالية ==========
+    st.subheader("🗑️ اليافطات الحالية")
+    
+    if len(st.session_state.banners) == 0:
+        st.info("مفيش يافطات حاليا. ضيف اول يافطة من فوق")
+    else:
+        for i, banner in enumerate(st.session_state.banners):
+            with st.container(border=True):
+                col1, col2 = st.columns([5,1])
+                with col1:
+                    st.markdown(f'<div style="background:{banner["color"]};padding:15px;border-radius:10px;color:black;font-weight:bold;">{banner["text"]}</div>', unsafe_allow_html=True)
+                    st.caption(f"تنتهي: {banner['expire']} | تم النشر: {banner['created_at']}")
+                with col2:
+                    if st.button("حذف", key=f"del_{i}", type="primary"):
+                        st.session_state.banners.pop(i)
+                        st.rerun()
+
+    st.markdown("---")
+    
+    # ========== 3. زرار الرجوع ==========
+    if st.button("⬅️ الرجوع للرئيسية", use_container_width=True):
+        st.session_state.page = "الرئيسية"
+        st.rerun()
