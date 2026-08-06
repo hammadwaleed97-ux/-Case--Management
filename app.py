@@ -91,38 +91,6 @@ def banner_sidebar():
                 save_banners(st.session_state.banners) # <-- بنمرر البراميتر
                 st.rerun()
 # ===== نهاية الكود =====
-
-# ====== كود اليافطات الجديد ======
-BANNERS_FILE = "banners_v2.json" # غيرنا الاسم عشان نهرب من البايظ
-
-def load_banners():
-    """ تقرا اليافطات. لو الملف بايظ ترجع فاضي وتعمل واحد جديد """
-    if not os.path.exists(BANNERS_FILE):
-        return []
-    
-    try:
-        with open(BANNERS_FILE, "r", encoding="utf-8") as f:
-            content = f.read().strip()
-            if not content: 
-                return []
-            data = json.loads(content)
-            # نتأكد انها list of dict
-            return [b for b in data if isinstance(b, dict)]
-            
-    except:
-        # لو بايظ نعمل ملف جديد فاضي
-        save_banners([])
-        return []
-
-def save_banners(banners):
-    """ تحفظ اليافطات كلها """
-    with open(BANNERS_FILE, "w", encoding="utf-8") as f:
-        json.dump(banners, f, ensure_ascii=False, indent=2)
-
-def init_session_state():
-    if 'banners' not in st.session_state:
-        st.session_state.banners = load_banners()
-# ====== نهاية كود اليافطات ======
 # دالة التصدير
 def get_export_html(full_html, title):
     return f"""<!DOCTYPE html>
