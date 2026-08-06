@@ -26,8 +26,29 @@ def fix_arabic(text):
 from datetime import timedelta
 
 def show_banners():
-    st.session_state.banners = [b for b in st.session_state.banners if b["expire"] > datetime.now()]
-    for banner in st.session_state.banners:
+    """ يعرض اليافطات اللي لسه منتهتش وينضف القديم """
+    if 'banners' not in st.session_state:
+        return
+    
+    now = datetime.now()
+    active_banners = []
+    
+    for b in st.session_state.banners:
+        if not isinstance(b, dict) or "expire" not in b:
+            continue
+        try:
+            # بنحول النص لتاريخ
+            expire_date = datetime.fromisoformat(b["expire"])
+        except:
+            continue # لو التاريخ بايظ نتجاهله
+        
+        if expire_date > now:
+            active_banners.append(b)
+            
+    # نحفظ بس النشط عشان الملف ميكبرش
+    st.session_state.banners = active_banners
+
+    for banner in active_banners:
         st.markdown(f"""
         <div style="background:linear-gradient(90deg, {banner['color']}, #ffffff22); 
                     padding:14px; border-radius:12px; text-align:center; 
@@ -51,8 +72,13 @@ def banner_sidebar():
         if st.form_submit_button("اضافة يافطة"):
             if banner_text:
                 expire_time = datetime.now() + timedelta(minutes=duration_minutes)
-                st.session_state.banners.append({"text": banner_text, "color": banner_color, "expire": expire_time})
-                save_banners()
+                st.session_state.banners.append({
+                    "text": banner_text, 
+                    "color": banner_color, 
+                    "expire": expire_time.isoformat(), # <-- بنحفظه كنص ISO
+                    "created_at": datetime.now().isoformat()
+                })
+                save_banners(st.session_state.banners) # <-- بنمرر البراميتر
                 st.rerun()
 
     st.sidebar.markdown("### حذف اليافطات")
@@ -62,9 +88,10 @@ def banner_sidebar():
         with col2: 
             if st.button("🗑️", key=f"del_admin_{i}"):
                 st.session_state.banners.pop(i)
-                save_banners()
+                save_banners(st.session_state.banners) # <-- بنمرر البراميتر
                 st.rerun()
 # ===== نهاية الكود =====
+
 # ====== كود اليافطات الجديد ======
 BANNERS_FILE = "banners_v2.json" # غيرنا الاسم عشان نهرب من البايظ
 
@@ -79,28 +106,18 @@ def load_banners():
             if not content: 
                 return []
             data = json.loads(content)
-            # نحول كل حاجة لنص عشان ميضربش
-            return [{k: str(v) for k, v in b.items()} for b in data]
+            # نتأكد انها list of dict
+            return [b for b in data if isinstance(b, dict)]
             
-    except json.JSONDecodeError:
+    except:
         # لو بايظ نعمل ملف جديد فاضي
         save_banners([])
         return []
-    except Exception:
-        return []
 
 def save_banners(banners):
-    """ تحفظ اليافطات كلها كنص """
-    clean_banners = []
-    for b in banners:
-        clean_banners.append({
-            "text": str(b.get("text", "")),
-            "color": str(b.get("color", "#FFC107")),
-            "expire": str(b.get("expire", "")),
-            "created_at": str(b.get("created_at", ""))
-        })
+    """ تحفظ اليافطات كلها """
     with open(BANNERS_FILE, "w", encoding="utf-8") as f:
-        json.dump(clean_banners, f, ensure_ascii=False, indent=2)
+        json.dump(banners, f, ensure_ascii=False, indent=2)
 
 def init_session_state():
     if 'banners' not in st.session_state:
