@@ -23,6 +23,25 @@ def fix_arabic(text):
     bidi_text = get_display(reshaped_text)
     return bidi_text
     # ===== نظام اليافطة ====
+# ====== اليافطة نظام ====
+from datetime import timedelta
+
+BANNERS_FILE = "banners_v2.json"
+
+def load_banners():
+    if os.path.exists(BANNERS_FILE):
+        with open(BANNERS_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return []
+
+def save_banners(banners):
+    with open(BANNERS_FILE, "w", encoding="utf-8") as f:
+        json.dump(banners, f, ensure_ascii=False, indent=2)
+
+def init_session_state():
+    if "banners" not in st.session_state:
+        st.session_state.banners = load_banners()
+
 from datetime import timedelta
 
 def show_banners():
@@ -396,7 +415,7 @@ def set_password_page():
                     st.success("تم التفعيل وتسجيل الدخول")
                     st.rerun()
         else: st.error("الباسوردين مش زي بعض")
-            # ===== تشغيل الصفحات =====
+            # ============================== تشغيل الصفحات ==============================
 if "user" not in st.session_state:
     st.session_state.user = None
     st.session_state.page = "login"
@@ -419,25 +438,48 @@ elif st.session_state.page == "ادارة_الاعضاء":
 elif st.session_state.page == "اليافطات":
     st.markdown("<h2>⚙️ إدارة اليافطات</h2>", unsafe_allow_html=True)
     
-    if st.button("العودة لإدارة الاعضاء", use_container_width=True):
+    if st.button("⬅️ العودة لإدارة الاعضاء", use_container_width=True):
         st.session_state.page = "ادارة_الاعضاء"
         st.rerun()
     
     st.write("---")
-    st.write("هنا هتحط اضافة وتعديل وحذف اليافطات")
     
+    # عرض اليافطات الموجودة مع زر الحذف
+    st.subheader("📋 اليافطات الحالية")
+    if st.session_state.banners:
+        for i, banner in enumerate(st.session_state.banners):
+            col1, col2 = st.columns([4,1])
+            with col1:
+                st.markdown(f"<div style='background:{banner['color']}; color:black; padding:10px; border-radius:8px;'>{banner['text']}</div>", unsafe_allow_html=True)
+            with col2:
+                if st.button("🗑️", key=f"del_{i}"):
+                    st.session_state.banners.pop(i)
+                    save_banners(st.session_state.banners)
+                    st.rerun()
+    else:
+        st.info("مفيش يافطات حاليا")
+    
+    st.write("---")
+    
+    # اضافة يافطة جديدة
     with st.expander("➕ اضافة يافطة جديدة"):
         title = st.text_input("🏷️ اسم اليافطة")
         content = st.text_area("📝 محتوى اليافطة")
-        uploaded_file = st.file_uploader("📁 رفع صورة", type=['png','jpg','jpeg'])
+        color = st.color_picker("🎨 لون الخلفية", "#FFFF00")
+        expire_days = st.number_input("⏰ تنتهي بعد كام يوم", 1, 365, 7)
 
         if st.button("💾 حفظ اليافطة", use_container_width=True):
-            if uploaded_file:
-                file_path = f"uploads/{uploaded_file.name}"
-                with open(file_path, "wb") as f:
-                    f.write(uploaded_file.getbuffer())
-            st.success("✅ تم اضافة اليافطة")
-            st.rerun()
+            if title and content:
+                new_banner = {
+                    "text": f"<b>{title}</b><br>{content}",
+                    "color": color,
+                    "created_at": datetime.now().isoformat(),
+                    "expire_at": (datetime.now() + timedelta(days=expire_days)).isoformat()
+                }
+                st.session_state.banners.append(new_banner)
+                save_banners(st.session_state.banners)
+                st.success("✅ تم اضافة اليافطة")
+                st.rerun()
 
 elif st.session_state.page == "recovery_settings": 
     recovery_settings_page()
@@ -449,9 +491,20 @@ elif st.session_state.page == "change_password":
     change_password_page()
 
 elif st.session_state.page == "الرئيسية":
+    init_session_state()  # مهم عشان تحمل اليافطات
     st.write(f"اهلا {st.session_state.user['username']}")
-    show_banners()
+    show_banners() # عرض اليافطات الصفرا فوق
     banner_sidebar()
+    
+    # تعديل لون الايقونات - عشان تبقى واضحة
+    st.markdown("""
+    <style>
+    .stButton>button {
+        color: white !important;
+        background-color: #0d6efd !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
     
     if st.session_state.user["role"] == "admin":
         if st.button("استخراج عضوية جديدة", use_container_width=True, type="primary"):
@@ -474,7 +527,7 @@ elif st.session_state.page == "الرئيسية":
         st.session_state.page = "login"
         st.rerun()
 
-# ============================================
+# ==============================
 # ======= الجزء الاول: الاساسيات ==
 # ============================================
 # ======= الجزء الاول: الاساسيات ============
