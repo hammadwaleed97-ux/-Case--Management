@@ -882,7 +882,6 @@ if st.session_state.page == "الرئيسية":
         "<h2>الأقسام</h2>",
         unsafe_allow_html=True
     )
-    show_banners()
     
     if st.button("⚙️ إدارة اليافطات", use_container_width=True):
         st.session_state.page = "إدارة اليافطات"
