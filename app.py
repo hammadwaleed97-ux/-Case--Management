@@ -415,7 +415,39 @@ def set_password_page():
                     st.success("تم التفعيل وتسجيل الدخول")
                     st.rerun()
         else: st.error("الباسوردين مش زي بعض")
-            # ===== تشغيل الصفحات =====
+            # ============================================
+# ======= كود التشغيل ==
+# ============================================
+
+import json
+import os
+from datetime import datetime, timedelta
+
+BANNERS_FILE = "banners_v2.json"
+
+def load_banners():
+    if os.path.exists(BANNERS_FILE):
+        with open(BANNERS_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return []
+
+def save_banners(banners):
+    with open(BANNERS_FILE, "w", encoding="utf-8") as f:
+        json.dump(banners, f, ensure_ascii=False, indent=4)
+
+def show_banners():
+    banners = load_banners()
+    now = datetime.now()
+    
+    for banner in banners:
+        if datetime.fromisoformat(banner['expire_at']) > now:
+            font_size = banner.get('font_size', 18)
+            st.markdown(
+                f"<div style='background:{banner['color']}; color:black; padding:15px; border-radius:10px; margin-bottom:10px; font-weight:bold; font-size:{font_size}px; text-align:center;'>{banner['text']}</div>", 
+                unsafe_allow_html=True
+            )
+
+# ===== تشغيل الصفحات =====
 if "user" not in st.session_state:
     st.session_state.user = None
     st.session_state.page = "login"
@@ -443,26 +475,40 @@ elif st.session_state.page == "اليافطات":
         st.rerun()
     
     st.write("---")
-    st.write("هنا هتحط اضافة وتعديل وحذف اليافطات")
     
     with st.expander("➕ اضافة يافطة جديدة"):
-        # الليبل ابيض مكتوب بايدينا
         st.markdown("<p style='color:white; font-weight:bold; font-size:16px;'>🏷️ اسم اليافطة</p>", unsafe_allow_html=True)
         title = st.text_input("", label_visibility="collapsed")
         
         st.markdown("<p style='color:white; font-weight:bold; font-size:16px;'>📝 محتوى اليافطة</p>", unsafe_allow_html=True)
         content = st.text_area("", label_visibility="collapsed")
         
+        st.markdown("<p style='color:white; font-weight:bold; font-size:16px;'>🎨 لون اليافطة</p>", unsafe_allow_html=True)
+        color_option = st.selectbox("", ["اصفر", "احمر", "اخضر", "ازرق", "برتقاني"], label_visibility="collapsed")
+        colors = {"اصفر": "#FFFF00","احمر": "#FF0000","اخضر": "#00FF00","ازرق": "#00BFFF","برتقاني": "#FF8C00"}
+        selected_color = colors[color_option]
+        
+        st.markdown("<p style='color:white; font-weight:bold; font-size:16px;'>🔤 حجم الخط</p>", unsafe_allow_html=True)
+        font_size = st.slider("", 14, 32, 18, label_visibility="collapsed")
+        
         st.markdown("<p style='color:white; font-weight:bold; font-size:16px;'>📁 رفع صورة</p>", unsafe_allow_html=True)
         uploaded_file = st.file_uploader("", type=['png','jpg','jpeg'], label_visibility="collapsed")
 
         if st.button("💾 حفظ اليافطة", use_container_width=True):
-            if uploaded_file:
-                file_path = f"uploads/{uploaded_file.name}"
-                with open(file_path, "wb") as f:
-                    f.write(uploaded_file.getbuffer())
-            st.success("✅ تم اضافة اليافطة")
-            st.rerun()
+            if title and content:
+                banners = load_banners()
+                new_banner = {
+                    "text": f"<b>{title}</b><br>{content}",
+                    "color": selected_color,
+                    "font_size": font_size,
+                    "expire_at": (datetime.now() + timedelta(days=7)).isoformat()
+                }
+                banners.append(new_banner)
+                save_banners(banners)
+                st.success("✅ تم اضافة اليافطة")
+                st.rerun()
+            else:
+                st.error("لازم تكتب اسم ومحتوى اليافطة")
 
 elif st.session_state.page == "recovery_settings": 
     recovery_settings_page()
@@ -478,10 +524,8 @@ elif st.session_state.page == "الرئيسية":
     show_banners()
     banner_sidebar()
     
-    # CSS للازرار وباقي الصفحات
     st.markdown("""
     <style>
-    /* الازرار */
     .stButton>button {
         color: white !important;
         background-color: #0d6efd !important;
@@ -489,9 +533,8 @@ elif st.session_state.page == "الرئيسية":
         padding: 10px !important;
         margin-bottom: 8px !important;
     }
-    /* العناوين والنصوص */
     h1, h2, h3, p, div, label, span {
-        color: white !important; /* ابيض */
+        color: white !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -500,7 +543,7 @@ elif st.session_state.page == "الرئيسية":
         if st.button("استخراج عضوية جديدة", use_container_width=True, type="primary"):
             st.session_state.page = "extract_member"
             st.rerun()
-        if st.button("ادارة الاعضاء", use_container_width=True):
+        if st.button("ادارة الاعضاء", use_container-width=True):
             st.session_state.page = "ادارة_الاعضاء"
             st.rerun()
     
@@ -516,12 +559,7 @@ elif st.session_state.page == "الرئيسية":
         st.session_state.user = None
         st.session_state.page = "login"
         st.rerun()
-
-# ============================================
-# ======= الجزء الاول: الاساسيات ==
-# ============================================
-# ============================================
-# ======= الجزء الاول: الاساسيات ==
+# ==
 # ============================================
 # ============================================
 # ======= الجزء الاول: الاساسيات ============
