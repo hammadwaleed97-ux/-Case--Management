@@ -2419,4 +2419,4 @@ if st.session_state.page == "إدارة اليافطات":
     # ========== 3. زرار الرجوع ==========
     if st.button("⬅️ الرجوع للرئيسية", use_container_width=True):
         st.session_state.page = "الرئيسية"
-        st.rerun() the 
+        st.rerun() # صح
