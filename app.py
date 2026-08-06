@@ -323,7 +323,6 @@ def login_page():
 def extract_member_page():
     st.markdown("<h2 style='text-align:center; color:#C9A961'>استخراج عضوية جديدة</h2>", unsafe_allow_html=True)
     
-    # الخط الابيض
     st.markdown("""
     <style>
     div[data-testid="stTextInput"] label {color: white!important; font-weight: bold;}
@@ -339,37 +338,38 @@ def extract_member_page():
 
         if st.button("استخراج العضو", use_container_width=True, type="primary"):
             if new_username.strip():
-                users = load_users()
-                existing_user = next((u for u in users if u['username'] == new_username), None)
+                try:
+                    users = load_users()
+                    existing_user = next((u for u in users if u['username'] == new_username), None)
 
-                if existing_user:
-                    if existing_user["status"] == "banned" or not existing_user.get("password_set"):
-                        existing_user["status"] = "active"
-                        existing_user["password"] = ""
-                        existing_user["password_set"] = False
-                        # شيلنا الايميل من هنا
-                        save_users(users)
-                        st.success(f"تم اعادة استخراج {new_username}. كل بياناته القديمة محفوظة")
-                        st.rerun()
+                    if existing_user:
+                        if existing_user["status"] == "banned" or not existing_user.get("password_set"):
+                            existing_user["status"] = "active"
+                            existing_user["password"] = ""
+                            existing_user["password_set"] = False
+                            save_users(users)
+                            st.success(f"تم اعادة استخراج {new_username}")
+                            st.rerun()
+                        else:
+                            st.error("الاسم موجود والعضو مفعل بالفعل")
                     else:
-                        st.error("الاسم موجود والعضو مفعل بالفعل")
-                else:
-                    new_id = max([u['id'] for u in users]) + 1 if users else 1
-                    users.append({
-                        "id": new_id, 
-                        "username": new_username, 
-                        "password": "", 
-                        "email": "",  # خليته فاضي عشان العضو يضيفه بعدين
-                        "role": "member", 
-                        "status": "active", 
-                        "password_set": False
-                    })
-                    save_users(users)
-                    st.success(f"تم استخراج: {new_username}")
-                    st.rerun()
+                        new_id = max([u['id'] for u in users]) + 1 if users else 1
+                        users.append({
+                            "id": new_id, 
+                            "username": new_username, 
+                            "password": "", 
+                            "email": "",
+                            "role": "member", 
+                            "status": "active", 
+                            "password_set": False
+                        })
+                        save_users(users)
+                        st.success(f"تم استخراج: {new_username}")
+                        st.rerun()
+                except Exception as e:
+                    st.error(f"حصل خطأ: {e}") # ده هيورينا الخطأ فين بالظبط
             else: 
                 st.error("لازم تكتب اسم المستخدم")
-
 def manage_users_page():
     st.markdown("<h2 style='text-align:center; color:#C9A961'>ادارة الاعضاء</h2>", unsafe_allow_html=True)
     if st.button("العودة للرئيسية"): st.session_state.page = "الرئيسية"; st.rerun()
