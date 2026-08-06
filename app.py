@@ -249,7 +249,7 @@ def is_admin_email(email):
         admin_recover_email = st.text_input("", key="admin_recover", label_visibility="collapsed")
         if st.button("ارسال كود للادمن", key="admin_send", use_container_width=True):
             if is_admin_email(admin_recover_email):
-                code = str(random.randint(100000, 999999)) # صلحت الرقم هنا كان 999 بس
+                code = str(random.randint(100000, 999999))
                 st.session_state.RESET_CODES[admin_recover_email] = {"code": code, "role": "admin"}
                 body = f"كود اعادة تعيين كلمة سر الادمن: {code}"
                 if send_email(admin_recover_email, "كود استرجاع الادمن", body):
@@ -264,7 +264,7 @@ def is_admin_email(email):
             found = [u for u in users if u.get("email") == member_recover_email]
             if found:
                 user = found[0]
-                code = str(random.randint(100000, 999999))
+                code = str(random.randint(100000, 999))
                 st.session_state.RESET_CODES[member_recover_email] = {"code": code, "user_id": user["id"]}
                 body = f"مرحبا {user['username']}\nاسم المستخدم: {user['username']}\nكود اعادة التعيين: {code}"
                 if send_email(member_recover_email, "استرجاع بيانات الدخول", body):
