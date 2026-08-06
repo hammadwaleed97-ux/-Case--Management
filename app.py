@@ -436,7 +436,27 @@ elif st.session_state.page == "extract_member":
     if st.session_state.user and st.session_state.user["role"] == "admin": extract_member_page()
 elif st.session_state.page == "ادارة_الاعضاء":
     if st.session_state.user and st.session_state.user["role"] == "admin": manage_users_page()
-    if st.button("⚙️ إدارة اليافطات", use_container_width=True): st.session_state.page = "اليافطات"; st.rerun()
+    if st.button("⚙️ إدارة اليافطات", use_container_width=True): st.session_state.page = "اليافطات"; st.rerun() elif st.session_state.page == "اليافطات":
+    st.markdown("<h2>⚙️ إدارة اليافطات</h2>", unsafe_allow_html=True)
+    
+    if st.button("العودة لإدارة الاعضاء", use_container_width=True):
+        st.session_state.page = "الاعضاء"
+        st.rerun()
+    
+    st.write("---")
+    st.write("هنا هتحط اضافة وتعديل وحذف اليافطات")
+        with st.expander("➕ اضافة يافطة جديدة"):
+        title = st.text_input("📌 عنوان اليافطة")
+        content = st.text_area("📝 محتوى اليافطة")
+        uploaded_file = st.file_uploader("📎 رفع مستند/ورقة", type=["pdf", "docx", "jpg", "png"])
+        
+        if st.button("💾 حفظ اليافطة", use_container_width=True):
+            if uploaded_file:
+                file_path = f"uploads/{uploaded_file.name}"
+                with open(file_path, "wb") as f:
+                    f.write(uploaded_file.getbuffer())
+            st.success("✅ تم اضافة اليافطة")
+            st.rerun()
 elif st.session_state.page == "recovery_settings": recovery_settings_page()
 elif st.session_state.page == "set_password": set_password_page()
 elif st.session_state.page == "change_password": change_password_page()
