@@ -483,9 +483,10 @@ elif st.session_state.page == "الرئيسية":
         padding: 10px !important;
         margin-bottom: 8px !important;
     }
-    /* العناوين والنصوص */
-    h1, h2, h3, p, div, label, span {
-        color: #FFD700 !important; /* لون دهبي */
+    /* العناوين والنصوص والليبل بتاع Streamlit */
+    h1, h2, h3, p, div, label, span, .stTextInput label, .stTextArea label, .stFileUploader label {
+        color: #FFD700 !important; /* اصفر دهبي */
+        font-weight: bold !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -510,6 +511,10 @@ elif st.session_state.page == "الرئيسية":
         st.session_state.user = None
         st.session_state.page = "login"
         st.rerun()
+
+# ============================================
+# ======= الجزء الاول: الاساسيات ==
+# ============================================
 
 # ============================================
 # ======= الجزء الاول: الاساسيات ==
