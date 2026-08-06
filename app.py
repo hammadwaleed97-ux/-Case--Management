@@ -415,7 +415,7 @@ def set_password_page():
                     st.success("تم التفعيل وتسجيل الدخول")
                     st.rerun()
         else: st.error("الباسوردين مش زي بعض")
-            # ================================
+            # ==========================
 # ============================================
 # ======= كود التشغيل ==
 # ============================================
@@ -425,6 +425,8 @@ import os
 from datetime import datetime, timedelta
 
 BANNERS_FILE = "banners_v2.json"
+UPLOAD_FOLDER = "uploads"
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)  # اعمل فولدر الصور لو مش موجود
 
 def load_banners():
     if os.path.exists(BANNERS_FILE):
@@ -443,10 +445,12 @@ def show_banners():
     for banner in banners:
         if datetime.fromisoformat(banner['expire_at']) > now:
             font_size = banner.get('font_size', 18)
-            st.markdown(
-                f"<div style='background:{banner['color']}; color:black; padding:15px; border-radius:10px; margin-bottom:10px; font-weight:bold; font-size:{font_size}px; text-align:center;'>{banner['text']}</div>", 
-                unsafe_allow_html=True
-            )
+            text_html = f"<div style='background:{banner['color']}; color:black; padding:15px; border-radius:10px; margin-bottom:10px; font-weight:bold; font-size:{font_size}px; text-align:center;'>{banner['text']}</div>"
+            st.markdown(text_html, unsafe_allow_html=True)
+            
+            # عرض الصورة لو موجودة
+            if banner.get('image_path'):
+                st.image(banner['image_path'], use_container_width=True)
 
 # ===== تشغيل الصفحات =====
 if "user" not in st.session_state:
@@ -498,10 +502,19 @@ elif st.session_state.page == "اليافطات":
         if st.button("💾 حفظ اليافطة", use_container_width=True):
             if title and content:
                 banners = load_banners()
+                
+                image_path = ""
+                if uploaded_file:
+                    image_path = f"{UPLOAD_FOLDER}/{uploaded_file.name}"
+                    with open(image_path, "wb") as f:
+                        f.write(uploaded_file.getbuffer())
+
                 new_banner = {
+                    "id": str(datetime.now().timestamp()),  # id عشان الحذف
                     "text": f"<b>{title}</b><br>{content}",
                     "color": selected_color,
                     "font_size": font_size,
+                    "image_path": image_path,  # حفظنا مسار الصورة
                     "expire_at": (datetime.now() + timedelta(days=7)).isoformat()
                 }
                 banners.append(new_banner)
@@ -510,6 +523,24 @@ elif st.session_state.page == "اليافطات":
                 st.rerun()
             else:
                 st.error("لازم تكتب اسم ومحتوى اليافطة")
+
+    st.write("---")
+    st.markdown("<h3>🗑️ اليافطات الموجودة</h3>", unsafe_allow_html=True)
+    
+    banners = load_banners()
+    if not banners:
+        st.info("مفيش يافطات لسه")
+    
+    for banner in banners:
+        col1, col2 = st.columns([4,1])
+        with col1:
+            st.markdown(f"<div style='background:{banner['color']}; padding:10px; border-radius:8px;'>{banner['text']}</div>", unsafe_allow_html=True)
+        with col2:
+            if st.button("🗑️ حذف", key=banner['id']):
+                banners = [b for b in banners if b['id'] != banner['id']]
+                save_banners(banners)
+                st.success("تم الحذف")
+                st.rerun()
 
 elif st.session_state.page == "recovery_settings": 
     recovery_settings_page()
@@ -522,7 +553,7 @@ elif st.session_state.page == "change_password":
 
 elif st.session_state.page == "الرئيسية":
     st.write(f"اهلا {st.session_state.user['username']}")
-    show_banners()
+    show_banners()  # هنا هتظهر الصورة + النص
     banner_sidebar()
     
     st.markdown("""
@@ -544,7 +575,7 @@ elif st.session_state.page == "الرئيسية":
         if st.button("استخراج عضوية جديدة", use_container_width=True, type="primary"):
             st.session_state.page = "extract_member"
             st.rerun()
-        if st.button("ادارة الاعضاء", use_container_width=True):  # <--- صلحتها هنا
+        if st.button("ادارة الاعضاء", use_container_width=True):
             st.session_state.page = "ادارة_الاعضاء"
             st.rerun()
     
@@ -560,7 +591,6 @@ elif st.session_state.page == "الرئيسية":
         st.session_state.user = None
         st.session_state.page = "login"
         st.rerun()
-# ============================================
 # ======= الجزء الاول: الاساسيات ============
 # ============================================
 import streamlit as st
