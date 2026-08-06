@@ -127,7 +127,6 @@ def get_export_html(full_html, title):
 </body>
 </html>"""
     # ===== تشغيل اليافطة =====
-load_banners()
 init_session_state()
 st.markdown("""
 <style>
