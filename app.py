@@ -186,19 +186,25 @@ import json
 
 USERS_FILE = "/tmp/users.json"  # <<< ده اهم سطر . ده اللي بيخلي الحفظ يشتغل
 
+import os
+import json
+
+USERS_FILE = "/tmp/users.json"  # <<< السطر ده هو السر كله
+
 def load_users():
-    # لو الملف مش موجود في /tmp ننشئه من الصفر بالادمن
-    if not os.path.exists(USERS_FILE):
-        admin_pass = bcrypt.hashpw(ADMIN_DEFAULT_PASS.encode(), bcrypt.gensalt())
-        users = [{"id": 1, "username": ADMIN_USERNAME, "password": admin_pass.decode(), "email": SENDER_EMAIL, "recovery_email": "", "role": "admin", "status": "active", "password_set": True}]
-        save_users(users)
-        return users
+    # لو الملف موجود في /tmp نقراه
+    if os.path.exists(USERS_FILE):
+        with open(USERS_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
     
-    # لو موجود نقراه
-    with open(USERS_FILE, "r", encoding="utf-8") as f:
-        return json.load(f)
+    # لو مش موجود يبقى اول مره ننشئ الادمن ونحفظه في /tmp
+    admin_pass = bcrypt.hashpw(ADMIN_DEFAULT_PASS.encode(), bcrypt.gensalt())
+    users = [{"id": 1, "username": ADMIN_USERNAME, "password": admin_pass.decode(), "email": SENDER_EMAIL, "recovery_email": "", "role": "admin", "status": "active", "password_set": True}]
+    save_users(users)
+    return users
 
 def save_users(users):
+    # بنحفظ في /tmp مش في ملف المشروع
     with open(USERS_FILE, "w", encoding="utf-8") as f:
         json.dump(users, f, ensure_ascii=False, indent=4)
 def check_login(username, password):
