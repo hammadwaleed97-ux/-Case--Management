@@ -458,7 +458,7 @@ elif st.session_state.page == "اليافطات":
     
     st.write("---")
     st.write("هنا هتحط اضافة وتعديل وحذف اليافطات")
-        with st.expander("➕ اضافة يافطة جديدة"):
+  with st.expander("➕ اضافة يافطة جديدة"):
         title = st.text_input("📌 عنوان اليافطة")
         content = st.text_area("📝 محتوى اليافطة")
         uploaded_file = st.file_uploader("📎 رفع مستند/ورقة", type=["pdf", "docx", "jpg", "png"])
