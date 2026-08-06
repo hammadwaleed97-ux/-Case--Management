@@ -428,8 +428,7 @@ def set_password_page():
                     st.success("تم التفعيل وتسجيل الدخول")
                     st.rerun()
         else: st.error("الباسوردين مش زي بعض")
-
-# ===== تشغيل الصفحات =====
+            # ===== تشغيل الصفحات =====
 if "user" not in st.session_state:
     st.session_state.user = None
     st.session_state.page = "login"
@@ -458,7 +457,8 @@ elif st.session_state.page == "اليافطات":
     
     st.write("---")
     st.write("هنا هتحط اضافة وتعديل وحذف اليافطات")
-        with st.expander("➕ اضافة يافطة جديدة"):
+    
+    with st.expander("➕ اضافة يافطة جديدة"):
         title = st.text_input("🏷️ اسم اليافطة")
         content = st.text_area("📝 محتوى اليافطة")
         uploaded_file = st.file_uploader("📁 رفع صورة", type=['png','jpg','jpeg'])
@@ -470,25 +470,44 @@ elif st.session_state.page == "اليافطات":
                     f.write(uploaded_file.getbuffer())
             st.success("✅ تم اضافة اليافطة")
             st.rerun()
-elif st.session_state.page == "recovery_settings": recovery_settings_page()
-elif st.session_state.page == "set_password": set_password_page()
-elif st.session_state.page == "change_password": change_password_page()
+
+elif st.session_state.page == "recovery_settings": 
+    recovery_settings_page()
+
+elif st.session_state.page == "set_password": 
+    set_password_page()
+
+elif st.session_state.page == "change_password": 
+    change_password_page()
+
 elif st.session_state.page == "الرئيسية":
     st.write(f"اهلا {st.session_state.user['username']}")
     show_banners()
     banner_sidebar()
-    if st.session_state.user["role"] == "admin":
-        if st.button("استخراج عضوية جديدة", use_container_width=True, type="primary"): st.session_state.page = "extract_member"; st.rerun()
-        if st.button("ادارة الاعضاء", use_container_width=True): st.session_state.page = "ادارة_الاعضاء"; st.rerun()
     
+    if st.session_state.user["role"] == "admin":
+        if st.button("استخراج عضوية جديدة", use_container_width=True, type="primary"):
+            st.session_state.page = "extract_member"
+            st.rerun()
+        if st.button("ادارة الاعضاء", use_container_width=True):
+            st.session_state.page = "ادارة_الاعضاء"
+            st.rerun()
+    
+    if st.button("تغيير كلمة السر"): 
+        st.session_state.page = "change_password"
+        st.rerun()
+        
+    if st.button("تأكيد البريد الالكتروني"): 
+        st.session_state.page = "recovery_settings"
+        st.rerun()
+        
+    if st.button("تسجيل الخروج"): 
+        st.session_state.user = None
+        st.session_state.page = "login"
+        st.rerun()
 
-    if st.button("تغيير كلمة السر"): st.session_state.page = "change_password"; st.rerun()
-    if st.button("تأكيد البريد الالكتروني"): st.session_state.page = "recovery_settings"; st.rerun()
-    if st.button("تسجيل الخروج"): st.session_state.user = None; st.session_state.page = "login"; st.rerun()
 # ============================================
-# ======= الجزء الاول: الاساسيات ==========
-# ============================================
-# ======= الجزء الاول: الاساسيات ==========
+# ======= الجزء الاول: الاساسيات ==
 # ============================================
 # ======= الجزء الاول: الاساسيات ============
 # ============================================
