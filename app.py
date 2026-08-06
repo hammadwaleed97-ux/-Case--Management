@@ -22,7 +22,7 @@ def fix_arabic(text):
     reshaped_text = arabic_reshaper.reshape(str(text))
     bidi_text = get_display(reshaped_text)
     return bidi_text
-    # ===== نظام اليافطة =====
+    # ===== نظام اليافطة ====
 from datetime import timedelta
 
 def show_banners():
