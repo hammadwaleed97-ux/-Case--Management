@@ -322,14 +322,23 @@ def login_page():
 
 def extract_member_page():
     st.markdown("<h2 style='text-align:center; color:#C9A961'>استخراج عضوية جديدة</h2>", unsafe_allow_html=True)
-    if st.button("العودة للرئيسية"): st.session_state.page = "الرئيسية"; st.rerun()
+    
+    # الخط الابيض
+    st.markdown("""
+    <style>
+    div[data-testid="stTextInput"] label {color: white!important; font-weight: bold;}
+    </style>
+    """, unsafe_allow_html=True)
+    
+    if st.button("العودة للرئيسية"): 
+        st.session_state.page = "الرئيسية"; st.rerun()
 
     with st.container(border=True):
-        new_username = st.text_input("اسم المستخدم الجديد")
-        new_email = st.text_input("البريد الالكتروني للعضو - اختياري")
+        st.markdown("<p style='color:white; font-weight:bold;'>اسم المستخدم الجديد</p>", unsafe_allow_html=True)
+        new_username = st.text_input("", key="new_username", label_visibility="collapsed")
 
         if st.button("استخراج العضو", use_container_width=True, type="primary"):
-            if new_username:
+            if new_username.strip():
                 users = load_users()
                 existing_user = next((u for u in users if u['username'] == new_username), None)
 
@@ -338,17 +347,28 @@ def extract_member_page():
                         existing_user["status"] = "active"
                         existing_user["password"] = ""
                         existing_user["password_set"] = False
-                        existing_user["email"] = new_email if new_email else existing_user["email"]
+                        # شيلنا الايميل من هنا
                         save_users(users)
                         st.success(f"تم اعادة استخراج {new_username}. كل بياناته القديمة محفوظة")
                         st.rerun()
                     else:
                         st.error("الاسم موجود والعضو مفعل بالفعل")
                 else:
-                    new_id = max([u['id'] for u in users]) + 1
-                    users.append({"id": new_id, "username": new_username, "password": "", "email": new_email, "role": "member", "status": "active", "password_set": False})
-                    save_users(users); st.success(f"تم استخراج: {new_username}"); st.rerun()
-            else: st.error("لازم تكتب اسم المستخدم")
+                    new_id = max([u['id'] for u in users]) + 1 if users else 1
+                    users.append({
+                        "id": new_id, 
+                        "username": new_username, 
+                        "password": "", 
+                        "email": "",  # خليته فاضي عشان العضو يضيفه بعدين
+                        "role": "member", 
+                        "status": "active", 
+                        "password_set": False
+                    })
+                    save_users(users)
+                    st.success(f"تم استخراج: {new_username}")
+                    st.rerun()
+            else: 
+                st.error("لازم تكتب اسم المستخدم")
 
 def manage_users_page():
     st.markdown("<h2 style='text-align:center; color:#C9A961'>ادارة الاعضاء</h2>", unsafe_allow_html=True)
