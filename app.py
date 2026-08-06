@@ -446,9 +446,15 @@ elif st.session_state.page == "اليافطات":
     st.write("هنا هتحط اضافة وتعديل وحذف اليافطات")
     
     with st.expander("➕ اضافة يافطة جديدة"):
-        title = st.text_input("🏷️ اسم اليافطة")
-        content = st.text_area("📝 محتوى اليافطة")
-        uploaded_file = st.file_uploader("📁 رفع صورة", type=['png','jpg','jpeg'])
+        # الليبل ابيض مكتوب بايدينا
+        st.markdown("<p style='color:white; font-weight:bold; font-size:16px;'>🏷️ اسم اليافطة</p>", unsafe_allow_html=True)
+        title = st.text_input("", label_visibility="collapsed")
+        
+        st.markdown("<p style='color:white; font-weight:bold; font-size:16px;'>📝 محتوى اليافطة</p>", unsafe_allow_html=True)
+        content = st.text_area("", label_visibility="collapsed")
+        
+        st.markdown("<p style='color:white; font-weight:bold; font-size:16px;'>📁 رفع صورة</p>", unsafe_allow_html=True)
+        uploaded_file = st.file_uploader("", type=['png','jpg','jpeg'], label_visibility="collapsed")
 
         if st.button("💾 حفظ اليافطة", use_container_width=True):
             if uploaded_file:
@@ -472,7 +478,7 @@ elif st.session_state.page == "الرئيسية":
     show_banners()
     banner_sidebar()
     
-    # CSS جديد - اللون ابيض عشان يبان
+    # CSS للازرار وباقي الصفحات
     st.markdown("""
     <style>
     /* الازرار */
@@ -483,10 +489,9 @@ elif st.session_state.page == "الرئيسية":
         padding: 10px !important;
         margin-bottom: 8px !important;
     }
-    /* العناوين والنصوص والليبل بتاع Streamlit */
-    h1, h2, h3, p, div, label, span, .stTextInput label, .stTextArea label, .stFileUploader label {
+    /* العناوين والنصوص */
+    h1, h2, h3, p, div, label, span {
         color: white !important; /* ابيض */
-        font-weight: bold !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -512,6 +517,9 @@ elif st.session_state.page == "الرئيسية":
         st.session_state.page = "login"
         st.rerun()
 
+# ============================================
+# ======= الجزء الاول: الاساسيات ==
+# ============================================
 # ============================================
 # ======= الجزء الاول: الاساسيات ==
 # ============================================
