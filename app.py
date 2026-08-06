@@ -209,9 +209,8 @@ def is_admin_email(email):
     return email == admin["email"] or email == admin.get("recovery_email","")
 
 def login_page():
-    st.markdown("<h3 style='text-align:center; color:#C9A961'>ادارة الاعضاء</h3>", unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align:center; color:white'>دخول السادة الاعضاء</h3>", unsafe_allow_html=True)
     tab1, tab2 = st.tabs(["تسجيل الدخول", "تفعيل حساب جديد"])
-
     with tab1:
         username = st.text_input("اسم المستخدم")
         password = st.text_input("كلمة السر", type="password")
