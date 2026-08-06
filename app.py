@@ -208,12 +208,26 @@ def is_admin_email(email):
     if not admin: return False
     return email == admin["email"] or email == admin.get("recovery_email","")
 
-def login_page():
+    def login_page():
     st.markdown("<h3 style='text-align:center; color:white'>دخول السادة الاعضاء</h3>", unsafe_allow_html=True)
+
+    # CSS عشان التابس تبقى بيضا
+    st.markdown("""
+    <style>
+    div[data-testid="stTabs"] button {color: white!important; font-weight: bold;}
+    div[data-testid="stTabs"] button[aria-selected="true"] {color: #C9A961!important;}
+    </style>
+    """, unsafe_allow_html=True)
+
     tab1, tab2 = st.tabs(["تسجيل الدخول", "تفعيل حساب جديد"])
+
     with tab1:
-        username = st.text_input("اسم المستخدم")
-        password = st.text_input("كلمة السر", type="password")
+        st.markdown("<p style='color:white; font-weight:bold;'>اسم المستخدم</p>", unsafe_allow_html=True)
+        username = st.text_input("", key="login_user", label_visibility="collapsed")
+
+        st.markdown("<p style='color:white; font-weight:bold;'>كلمة السر</p>", unsafe_allow_html=True)
+        password = st.text_input("", type="password", key="login_pass", label_visibility="collapsed")
+
         if st.button("دخول", type="primary", use_container_width=True):
             user = check_login(username, password)
             if user:
@@ -229,9 +243,10 @@ def login_page():
                 st.error("اسم المستخدم او كلمة السر غلط او العضوية موقوفة")
 
         st.markdown("---")
-        st.markdown("**نسيت بياناتك؟ استرجعها بالايميل**")
+        st.markdown("<p style='color:white; font-weight:bold;'>نسيت بياناتك؟ استرجعها بالايميل</p>", unsafe_allow_html=True)
 
-        admin_recover_email = st.text_input("الادمن: ادخل ايميل من ايميلاتك", key="admin_recover")
+        st.markdown("<p style='color:white; font-weight:bold;'>الادمن: ادخل ايميل من ايميلاتك</p>", unsafe_allow_html=True)
+        admin_recover_email = st.text_input("", key="admin_recover", label_visibility="collapsed")
         if st.button("ارسال كود للادمن", key="admin_send", use_container_width=True):
             if is_admin_email(admin_recover_email):
                 code = str(random.randint(100000, 999999))
@@ -242,7 +257,8 @@ def login_page():
                     st.session_state.show_reset_admin = True
             else: st.error("هذا الايميل غير مسجل كادمن")
 
-        member_recover_email = st.text_input("العضو: ادخل ايميلك", key="member_recover")
+        st.markdown("<p style='color:white; font-weight:bold;'>العضو: ادخل ايميلك</p>", unsafe_allow_html=True)
+        member_recover_email = st.text_input("", key="member_recover", label_visibility="collapsed")
         if st.button("ارسال كود للعضو", key="member_send", use_container_width=True):
             users = load_users()
             found = [u for u in users if u.get("email") == member_recover_email]
@@ -257,9 +273,13 @@ def login_page():
             else: st.error("الايميل ده مش متسجل")
 
         if st.session_state.get("show_reset_admin") or st.session_state.get("show_reset_member"):
+            st.markdown("<p style='color:white; font-weight:bold;'>ادخل الكود اللي وصل على الايميل</p>", unsafe_allow_html=True)
             email_to_reset = admin_recover_email if st.session_state.get("show_reset_admin") else member_recover_email
-            code_input = st.text_input("ادخل الكود اللي وصل على الايميل")
-            new_pass = st.text_input("كلمة السر الجديدة", type="password")
+            code_input = st.text_input("", key="code_input", label_visibility="collapsed")
+
+            st.markdown("<p style='color:white; font-weight:bold;'>كلمة السر الجديدة</p>", unsafe_allow_html=True)
+            new_pass = st.text_input("", type="password", key="new_pass", label_visibility="collapsed")
+
             if st.button("تأكيد وتغيير كلمة السر"):
                 if st.session_state.RESET_CODES.get(email_to_reset, {}).get("code") == code_input:
                     users = load_users()
@@ -285,7 +305,6 @@ def login_page():
                     st.success("تم تسجيل الدخول بنجاح")
                     st.rerun()
                 else: st.error("الكود غلط")
-
     with tab2:
         st.markdown("**تفعيل حساب عضو**")
         member_name = st.text_input("اكتب اسم العضو للتفعيل", key="new_user")
