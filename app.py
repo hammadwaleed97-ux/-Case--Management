@@ -249,7 +249,7 @@ def is_admin_email(email):
         admin_recover_email = st.text_input("", key="admin_recover", label_visibility="collapsed")
         if st.button("ارسال كود للادمن", key="admin_send", use_container_width=True):
             if is_admin_email(admin_recover_email):
-                code = str(random.randint(100000, 999999))
+                code = str(random.randint(100000, 999))
                 st.session_state.RESET_CODES[admin_recover_email] = {"code": code, "role": "admin"}
                 body = f"كود اعادة تعيين كلمة سر الادمن: {code}"
                 if send_email(admin_recover_email, "كود استرجاع الادمن", body):
