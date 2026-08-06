@@ -415,7 +415,8 @@ def set_password_page():
                     st.success("تم التفعيل وتسجيل الدخول")
                     st.rerun()
         else: st.error("الباسوردين مش زي بعض")
-            # ============================================
+            # ================================
+# ============================================
 # ======= كود التشغيل ==
 # ============================================
 
@@ -543,7 +544,7 @@ elif st.session_state.page == "الرئيسية":
         if st.button("استخراج عضوية جديدة", use_container_width=True, type="primary"):
             st.session_state.page = "extract_member"
             st.rerun()
-        if st.button("ادارة الاعضاء", use_container-width=True):
+        if st.button("ادارة الاعضاء", use_container_width=True):  # <--- صلحتها هنا
             st.session_state.page = "ادارة_الاعضاء"
             st.rerun()
     
@@ -559,8 +560,6 @@ elif st.session_state.page == "الرئيسية":
         st.session_state.user = None
         st.session_state.page = "login"
         st.rerun()
-# ==
-# ============================================
 # ============================================
 # ======= الجزء الاول: الاساسيات ============
 # ============================================
