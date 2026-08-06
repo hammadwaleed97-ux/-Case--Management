@@ -472,7 +472,7 @@ elif st.session_state.page == "الرئيسية":
     show_banners()
     banner_sidebar()
     
-    # CSS جديد عشان لون الكلام والازرار
+    # CSS جديد - اللون ابيض عشان يبان
     st.markdown("""
     <style>
     /* الازرار */
@@ -485,7 +485,7 @@ elif st.session_state.page == "الرئيسية":
     }
     /* العناوين والنصوص والليبل بتاع Streamlit */
     h1, h2, h3, p, div, label, span, .stTextInput label, .stTextArea label, .stFileUploader label {
-        color: #FFD700 !important; /* اصفر دهبي */
+        color: white !important; /* ابيض */
         font-weight: bold !important;
     }
     </style>
@@ -511,10 +511,6 @@ elif st.session_state.page == "الرئيسية":
         st.session_state.user = None
         st.session_state.page = "login"
         st.rerun()
-
-# ============================================
-# ======= الجزء الاول: الاساسيات ==
-# ============================================
 
 # ============================================
 # ======= الجزء الاول: الاساسيات ==
