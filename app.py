@@ -415,7 +415,7 @@ def set_password_page():
                     st.success("تم التفعيل وتسجيل الدخول")
                     st.rerun()
         else: st.error("الباسوردين مش زي بعض")
-            # ============================== تشغيل الصفحات ==============================
+            # ===== تشغيل الصفحات =====
 if "user" not in st.session_state:
     st.session_state.user = None
     st.session_state.page = "login"
@@ -438,48 +438,25 @@ elif st.session_state.page == "ادارة_الاعضاء":
 elif st.session_state.page == "اليافطات":
     st.markdown("<h2>⚙️ إدارة اليافطات</h2>", unsafe_allow_html=True)
     
-    if st.button("⬅️ العودة لإدارة الاعضاء", use_container_width=True):
+    if st.button("العودة لإدارة الاعضاء", use_container_width=True):
         st.session_state.page = "ادارة_الاعضاء"
         st.rerun()
     
     st.write("---")
+    st.write("هنا هتحط اضافة وتعديل وحذف اليافطات")
     
-    # عرض اليافطات الموجودة مع زر الحذف
-    st.subheader("📋 اليافطات الحالية")
-    if st.session_state.banners:
-        for i, banner in enumerate(st.session_state.banners):
-            col1, col2 = st.columns([4,1])
-            with col1:
-                st.markdown(f"<div style='background:{banner['color']}; color:black; padding:10px; border-radius:8px;'>{banner['text']}</div>", unsafe_allow_html=True)
-            with col2:
-                if st.button("🗑️", key=f"del_{i}"):
-                    st.session_state.banners.pop(i)
-                    save_banners(st.session_state.banners)
-                    st.rerun()
-    else:
-        st.info("مفيش يافطات حاليا")
-    
-    st.write("---")
-    
-    # اضافة يافطة جديدة
     with st.expander("➕ اضافة يافطة جديدة"):
         title = st.text_input("🏷️ اسم اليافطة")
         content = st.text_area("📝 محتوى اليافطة")
-        color = st.color_picker("🎨 لون الخلفية", "#FFFF00")
-        expire_days = st.number_input("⏰ تنتهي بعد كام يوم", 1, 365, 7)
+        uploaded_file = st.file_uploader("📁 رفع صورة", type=['png','jpg','jpeg'])
 
         if st.button("💾 حفظ اليافطة", use_container_width=True):
-            if title and content:
-                new_banner = {
-                    "text": f"<b>{title}</b><br>{content}",
-                    "color": color,
-                    "created_at": datetime.now().isoformat(),
-                    "expire_at": (datetime.now() + timedelta(days=expire_days)).isoformat()
-                }
-                st.session_state.banners.append(new_banner)
-                save_banners(st.session_state.banners)
-                st.success("✅ تم اضافة اليافطة")
-                st.rerun()
+            if uploaded_file:
+                file_path = f"uploads/{uploaded_file.name}"
+                with open(file_path, "wb") as f:
+                    f.write(uploaded_file.getbuffer())
+            st.success("✅ تم اضافة اليافطة")
+            st.rerun()
 
 elif st.session_state.page == "recovery_settings": 
     recovery_settings_page()
@@ -491,17 +468,24 @@ elif st.session_state.page == "change_password":
     change_password_page()
 
 elif st.session_state.page == "الرئيسية":
-    init_session_state()  # مهم عشان تحمل اليافطات
     st.write(f"اهلا {st.session_state.user['username']}")
-    show_banners() # عرض اليافطات الصفرا فوق
+    show_banners()
     banner_sidebar()
     
-    # تعديل لون الايقونات - عشان تبقى واضحة
+    # CSS جديد عشان لون الكلام والازرار
     st.markdown("""
     <style>
+    /* الازرار */
     .stButton>button {
         color: white !important;
         background-color: #0d6efd !important;
+        border-radius: 12px !important;
+        padding: 10px !important;
+        margin-bottom: 8px !important;
+    }
+    /* العناوين والنصوص */
+    h1, h2, h3, p, div, label, span {
+        color: #FFD700 !important; /* لون دهبي */
     }
     </style>
     """, unsafe_allow_html=True)
@@ -527,6 +511,9 @@ elif st.session_state.page == "الرئيسية":
         st.session_state.page = "login"
         st.rerun()
 
+# ============================================
+# ======= الجزء الاول: الاساسيات ==
+# ============================================
 # ==============================
 # ======= الجزء الاول: الاساسيات ==
 # ============================================
