@@ -430,20 +430,30 @@ def set_password_page():
         else: st.error("الباسوردين مش زي بعض")
 
 # ===== تشغيل الصفحات =====
-if "user" not in st.session_state: st.session_state.user = None; st.session_state.page = "login"
-if st.session_state.page == "login": login_page()
+if "user" not in st.session_state:
+    st.session_state.user = None
+    st.session_state.page = "login"
+
+if st.session_state.page == "login":
+    login_page()
+
 elif st.session_state.page == "extract_member":
-    if st.session_state.user and st.session_state.user["role"] == "admin": extract_member_page()
+    if st.session_state.user and st.session_state.user["role"] == "admin":
+        extract_member_page()
+
 elif st.session_state.page == "ادارة_الاعضاء":
-    if st.session_state.user and st.session_state.user["role"] == "admin": manage_users_page()
-                    if st.button("⚙️ إدارة اليافطات", use_container_width=True):
-                st.session_state.page = "اليافطات"
-                st.rerun()
-        elif st.session_state.page == "اليافطات":
+    if st.session_state.user and st.session_state.user["role"] == "admin":
+        manage_users_page()
+        
+        if st.button("⚙️ إدارة اليافطات", use_container_width=True):
+            st.session_state.page = "اليافطات"
+            st.rerun()
+
+elif st.session_state.page == "اليافطات":
     st.markdown("<h2>⚙️ إدارة اليافطات</h2>", unsafe_allow_html=True)
     
     if st.button("العودة لإدارة الاعضاء", use_container_width=True):
-        st.session_state.page = "الاعضاء"
+        st.session_state.page = "ادارة_الاعضاء"
         st.rerun()
     
     st.write("---")
