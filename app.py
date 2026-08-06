@@ -436,7 +436,10 @@ elif st.session_state.page == "extract_member":
     if st.session_state.user and st.session_state.user["role"] == "admin": extract_member_page()
 elif st.session_state.page == "ادارة_الاعضاء":
     if st.session_state.user and st.session_state.user["role"] == "admin": manage_users_page()
-    if st.button("⚙️ إدارة اليافطات", use_container_width=True): st.session_state.page = "اليافطات"; st.rerun() elif st.session_state.page == "اليافطات":
+    if st.button("⚙️ إدارة اليافطات", use_container_width=True):
+    st.session_state.page = "اليافطات"
+    st.rerun()
+elif st.session_state.page == "اليافطات":
     st.markdown("<h2>⚙️ إدارة اليافطات</h2>", unsafe_allow_html=True)
     
     if st.button("العودة لإدارة الاعضاء", use_container_width=True):
