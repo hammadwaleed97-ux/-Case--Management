@@ -436,6 +436,7 @@ elif st.session_state.page == "extract_member":
     if st.session_state.user and st.session_state.user["role"] == "admin": extract_member_page()
 elif st.session_state.page == "ادارة_الاعضاء":
     if st.session_state.user and st.session_state.user["role"] == "admin": manage_users_page()
+        if st.button("⚙️ إدارة اليافطات", use_container_width=True): st.session_state.page = "اليافطات"; st.rerun()
 elif st.session_state.page == "recovery_settings": recovery_settings_page()
 elif st.session_state.page == "set_password": set_password_page()
 elif st.session_state.page == "change_password": change_password_page()
@@ -883,11 +884,6 @@ if st.session_state.page == "الرئيسية":
         unsafe_allow_html=True
     )
     
-    if st.button("⚙️ إدارة اليافطات", use_container_width=True):
-        st.session_state.page = "إدارة اليافطات"
-        st.rerun()
-    
-    st.write("عدد اليافطات:", len(st.session_state.banners))
 
     col1, col2 = st.columns(2)
     with col1:
