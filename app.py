@@ -65,36 +65,47 @@ def banner_sidebar():
                 save_banners()
                 st.rerun()
 # ===== نهاية الكود =====
-BANNER_FILE = "banners.json"
+# ====== كود اليافطات الجديد ======
+BANNERS_FILE = "banners_v2.json" # غيرنا الاسم عشان نهرب من البايظ
 
 def load_banners():
-    if os.path.exists(BANNER_FILE):
-        with open(BANNER_FILE, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-            for b in data:
-                b['expire'] = datetime.fromisoformat(b['expire'])
-            st.session_state.banners = data
-
-def save_banners():
-    data = st.session_state.banners.copy()
-    for b in data:
-        b['expire'] = b['expire'].isoformat()
-    with open(BANNER_FILE, 'w', encoding='utf-8') as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
-
-
-def init_session_state():  # <-- طلعناها برا ومفيش مسافات قبلها
-    if 'banners' not in st.session_state:
-        st.session_state.banners = []
+    """ تقرا اليافطات. لو الملف بايظ ترجع فاضي وتعمل واحد جديد """
+    if not os.path.exists(BANNERS_FILE):
+        return []
     
-    # سطر التجربة - امسحه بعد ما نختبر
-    if len(st.session_state.banners) == 0:
-        st.session_state.banners.append({
-            'text': 'دي يافطة تجربة من الكود',
-            'color': '#FFC107',
-            'expire': datetime.now() + timedelta(days=7)
+    try:
+        with open(BANNERS_FILE, "r", encoding="utf-8") as f:
+            content = f.read().strip()
+            if not content: 
+                return []
+            data = json.loads(content)
+            # نحول كل حاجة لنص عشان ميضربش
+            return [{k: str(v) for k, v in b.items()} for b in data]
+            
+    except json.JSONDecodeError:
+        # لو بايظ نعمل ملف جديد فاضي
+        save_banners([])
+        return []
+    except Exception:
+        return []
+
+def save_banners(banners):
+    """ تحفظ اليافطات كلها كنص """
+    clean_banners = []
+    for b in banners:
+        clean_banners.append({
+            "text": str(b.get("text", "")),
+            "color": str(b.get("color", "#FFC107")),
+            "expire": str(b.get("expire", "")),
+            "created_at": str(b.get("created_at", ""))
         })
-        save_banners()
+    with open(BANNERS_FILE, "w", encoding="utf-8") as f:
+        json.dump(clean_banners, f, ensure_ascii=False, indent=2)
+
+def init_session_state():
+    if 'banners' not in st.session_state:
+        st.session_state.banners = load_banners()
+# ====== نهاية كود اليافطات ======
 # دالة التصدير
 def get_export_html(full_html, title):
     return f"""<!DOCTYPE html>
