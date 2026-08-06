@@ -2304,6 +2304,50 @@ def save_banners(banners):
 
 
 # =========================================
+import json
+import os
+from datetime import datetime, date
+
+BANNERS_FILE = "banners_v2.json" # غيرت الاسم عشان نهرب من الملف البايظ
+
+def load_banners():
+    if not os.path.exists(BANNERS_FILE):
+        return []
+    
+    try:
+        with open(BANNERS_FILE, "r", encoding="utf-8") as f:
+            content = f.read().strip()
+            if not content: 
+                return []
+            data = json.loads(content)
+            
+            clean_data = []
+            for b in data:
+                clean_data.append({
+                    "text": str(b.get("text", "")),
+                    "color": str(b.get("color", "#FFC107")),
+                    "expire": str(b.get("expire", "")),
+                    "created_at": str(b.get("created_at", ""))
+                })
+            return clean_data
+            
+    except Exception:
+        return []
+
+def save_banners(banners):
+    clean_banners = []
+    for b in banners:
+        clean_banners.append({
+            "text": str(b.get("text", "")),
+            "color": str(b.get("color", "#FFC107")),
+            "expire": str(b.get("expire", "")),
+            "created_at": str(b.get("created_at", ""))
+        })
+    with open(BANNERS_FILE, "w", encoding="utf-8") as f:
+        json.dump(clean_banners, f, ensure_ascii=False, indent=2)
+
+
+# =========================================
 # ============ صفحة إدارة اليافطات ============
 # =========================================
 if st.session_state.page == "إدارة اليافطات":
@@ -2375,4 +2419,4 @@ if st.session_state.page == "إدارة اليافطات":
     # ========== 3. زرار الرجوع ==========
     if st.button("⬅️ الرجوع للرئيسية", use_container_width=True):
         st.session_state.page = "الرئيسية"
-        st.rerun()
+        st.rerun() the 
