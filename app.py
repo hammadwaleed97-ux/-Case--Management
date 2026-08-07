@@ -15,7 +15,11 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 import arabic_reshaper
 from bidi.algorithm import get_display
 from openpyxl.styles import Font, Alignment, PatternFill # <-- زودت PatternFill هنا
+from supabase import create_client, Client
 
+SUPABASE_URL = "https://uhcgejkkwqesdjbvtzcx.supabase.co"
+SUPABASE_KEY = "sb_publishable_urw9KKp2gxCnn4OTO0uf1A__SbAQan_"
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 def fix_arabic(text):
     """ بتظبط العربي عشان ميطلعش متقطع """
     if not text: return ""
