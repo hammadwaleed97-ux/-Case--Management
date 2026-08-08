@@ -228,31 +228,21 @@ def delete_user(username):
 def update_user(username, new_data):
     supabase.table("users").update(new_data).eq("username", username).execute()
 # ====== اليوزرز في السحابة ======
-# ====== اليوزرز في ملف محلي ======
-USERS_FILE = "users.json"
 
 def load_users():
-    # لو الملف مش موجود اعمل الادمن
-    if not os.path.exists(USERS_FILE):
-        admin_pass = bcrypt.hashpw(ADMIN_DEFAULT_PASS.encode(), bcrypt.gensalt()).decode()
-        users = [{"username": ADMIN_USERNAME, "password": admin_pass, "role": "admin", "status": "active", "password_set": True}]
-        save_users(users)
-        return users
-    
-    # لو موجود اقراه
-    with open(USERS_FILE, "r", encoding="utf-8") as f:
-        users = json.load(f)
+    res = supabase.table("users").select("*").execute()
+    users = res.data
     
     # لو مفيش ادمن نعمله
     if not any(u["username"] == ADMIN_USERNAME for u in users):
         admin_pass = bcrypt.hashpw(ADMIN_DEFAULT_PASS.encode(), bcrypt.gensalt()).decode()
-        users.append({"username": ADMIN_USERNAME, "password": admin_pass, "role": "admin", "status": "active", "password_set": True})
-        save_users(users)
+        supabase.table("users").insert({
+            "username": ADMIN_USERNAME, "password": admin_pass, "role": "admin", 
+            "status": "active", "password_set": True, "email": ""
+        }).execute()
+        return load_users()
     return users
 
-def save_users(users):
-    with open(USERS_FILE, "w", encoding="utf-8") as f:
-        json.dump(users, f, ensure_ascii=False, indent=4)
 def check_login(username, password):
     users = load_users()
     for user in users:
@@ -271,7 +261,20 @@ def is_admin_email(email):
     users = load_users()
     admin = next((u for u in users if u["role"] == "admin"), None)
     if not admin: return False
-    return email == admin["email"] or email == admin.get("recovery_email","")
+    return email == admin.get("email") or email == admin.get("recovery_email","")
+
+def add_user_db(username):
+    supabase.table("users").insert({
+        "username": username, "password": "", "email": "", "role": "member",
+        "status": "active", "password_set": False
+    }).execute()
+
+def update_user_db(user_id, new_data):
+    supabase.table("users").update(new_data).eq("id", user_id).execute()
+
+def delete_user_db(user_id):
+    supabase.table("users").delete().eq("id", user_id).execute()
+
 
 # ====== الصفحات ======
 def login_page():
@@ -303,7 +306,7 @@ def login_page():
         admin_recover_email = st.text_input("ايميل الادمن", key="admin_recover")
         if st.button("ارسال كود للادمن", key="admin_send", use_container_width=True):
             if is_admin_email(admin_recover_email):
-                code = str(random.randint(100000, 999999)) # صلحتها كانت 999
+                code = str(random.randint(100000, 999999))
                 st.session_state.RESET_CODES[admin_recover_email] = {"code": code, "role": "admin"}
                 body = f"كود اعادة تعيين كلمة سر الادمن: {code}"
                 if send_email(admin_recover_email, "كود استرجاع الادمن", body):
@@ -335,17 +338,15 @@ def login_page():
                     logged_user = None
                     if st.session_state.RESET_CODES[email_to_reset].get("role") == "admin":
                         admin = next((u for u in users if u["role"] == "admin"), None)
-                        admin["password"] = bcrypt.hashpw(new_pass.encode(), bcrypt.gensalt()).decode()
-                        logged_user = admin
+                        hashed = bcrypt.hashpw(new_pass.encode(), bcrypt.gensalt()).decode()
+                        update_user_db(admin["id"], {"password": hashed})
+                        logged_user = check_login(admin["username"], new_pass)
                     else:
                         user_id = st.session_state.RESET_CODES[email_to_reset]["user_id"]
-                        for user in users:
-                            if user["id"] == user_id:
-                                user["password"] = bcrypt.hashpw(new_pass.encode(), bcrypt.gensalt()).decode()
-                                user["status"] = "active"
-                                user["password_set"] = True
-                                logged_user = user
-                    save_users(users)
+                        hashed = bcrypt.hashpw(new_pass.encode(), bcrypt.gensalt()).decode()
+                        update_user_db(user_id, {"password": hashed, "status": "active", "password_set": True})
+                        logged_user = check_login(next(u["username"] for u in users if u["id"]==user_id), new_pass)
+                    
                     st.session_state.RESET_CODES.clear()
                     st.session_state.show_reset_admin = False
                     st.session_state.show_reset_member = False
@@ -381,24 +382,13 @@ def extract_member_page():
             existing_user = next((u for u in users if u['username'] == new_username), None)
             if existing_user:
                 if existing_user["status"] == "banned" or not existing_user.get("password_set"):
-                    existing_user["status"] = "active"
-                    existing_user["password"] = ""
-                    existing_user["password_set"] = False
-                    save_users(users)
+                    update_user_db(existing_user["id"], {"status": "active", "password": "", "password_set": False})
                     st.success(f"تم اعادة استخراج {new_username}")
                     st.rerun()
                 else:
                     st.error("الاسم موجود والعضو مفعل بالفعل")
             else:
-                users.append({
-                    "username": new_username,
-                    "password": "",
-                    "email": "",
-                    "role": "member",
-                    "status": "active",
-                    "password_set": False
-                })
-                save_users(users)
+                add_user_db(new_username)
                 st.success(f"تم استخراج العضو: {new_username}")
                 st.rerun()
 
@@ -418,22 +408,21 @@ def manage_users_page():
                 with col2:
                     if user["status"] == "active":
                         if st.button("ايقاف لمخالفة قواعد", key=f"ban_{user['id']}"):
-                            user["status"] = "banned"; user["password"] = ""; user["password_set"] = False
-                            save_users(users); st.rerun()
+                            update_user_db(user["id"], {"status": "banned", "password": "", "password_set": False})
+                            st.rerun()
                         if st.button("ايقاف لفقد البيانات", key=f"lose_{user['id']}"):
-                            user["password"] = ""; user["password_set"] = False
-                            save_users(users); st.rerun()
+                            update_user_db(user["id"], {"password": "", "password_set": False})
+                            st.rerun()
                     elif user["status"] == "banned":
                         if st.button("تنشيط", key=f"unban_{user['id']}", type="primary"):
-                            user["status"] = "active"
-                            save_users(users); st.success(f"تم تنشيط {user['username']}"); st.rerun()
+                            update_user_db(user["id"], {"status": "active"})
+                            st.success(f"تم تنشيط {user['username']}"); st.rerun()
                     else:
                         if st.button("اعادة استخراج", key=f"re_extract_{user['id']}", type="primary"):
-                            user["status"] = "active"
-                            user["password"] = ""; user["password_set"] = False
-                            save_users(users); st.success(f"تم اعادة استخراج {user['username']}"); st.rerun()
+                            update_user_db(user["id"], {"status": "active", "password": "", "password_set": False})
+                            st.success(f"تم اعادة استخراج {user['username']}"); st.rerun()
                     if st.button("حذف", key=f"del_{user['id']}"):
-                        supabase.table("users").delete().eq("id", user['id']).execute(); st.rerun()
+                        delete_user_db(user['id']); st.rerun()
 
 def recovery_settings_page():
     st.markdown("<h2 style='text-align:center; color:#C9A961'>تأكيد البريد الالكتروني</h2>", unsafe_allow_html=True)
@@ -443,9 +432,11 @@ def recovery_settings_page():
     email = st.text_input("البريد الالكتروني", value=user.get("email",""))
     recovery_email = st.text_input("ايميل استرجاع اضافي للادمن", value=user.get("recovery_email","")) if user["role"] == "admin" else user.get("recovery_email","")
     if st.button("حفظ البريد", use_container_width=True):
-        user["email"] = email
-        if user["role"] == "admin": user["recovery_email"] = recovery_email
-        save_users(users); st.session_state.user = user; st.success("تم حفظ البريد بنجاح")
+        new_data = {"email": email}
+        if user["role"] == "admin": new_data["recovery_email"] = recovery_email
+        update_user_db(user["id"], new_data)
+        st.session_state.user = {**user, **new_data}
+        st.success("تم حفظ البريد بنجاح")
 
 def change_password_page():
     st.markdown("<h1 style='text-align:center; color:#C9A961'>تغيير كلمة السر</h1>", unsafe_allow_html=True)
@@ -454,11 +445,10 @@ def change_password_page():
     new_pass = st.text_input("كلمة السر الجديدة", type="password")
     if st.button("تغيير", use_container_width=True):
         if bcrypt.checkpw(old_pass.encode(), st.session_state.user["password"].encode()):
-            users = load_users()
-            for user in users:
-                if user["id"] == st.session_state.user["id"]:
-                    user["password"] = bcrypt.hashpw(new_pass.encode(), bcrypt.gensalt()).decode()
-                    save_users(users); st.session_state.user = user; st.success("تم تغيير الباسورد"); st.rerun()
+            hashed = bcrypt.hashpw(new_pass.encode(), bcrypt.gensalt()).decode()
+            update_user_db(st.session_state.user["id"], {"password": hashed})
+            st.session_state.user["password"] = hashed
+            st.success("تم تغيير الباسورد"); st.rerun()
         else: st.error("كلمة السر القديمة غلط")
 
 def set_password_page():
@@ -467,26 +457,14 @@ def set_password_page():
     confirm_pass = st.text_input("تأكيد كلمة السر", type="password")
     if st.button("حفظ"):
         if new_pass == confirm_pass:
-            users = load_users()
-            for user in users:
-                if user["username"] == st.session_state.temp_user:
-                    user["password"] = bcrypt.hashpw(new_pass.encode(), bcrypt.gensalt()).decode()
-                    user["password_set"] = True
-                    save_users(users)
-                    st.session_state.user = user
-                    st.session_state.page = "الرئيسية"
-                    st.success("تم التفعيل وتسجيل الدخول")
-                    st.rerun()
+            hashed = bcrypt.hashpw(new_pass.encode(), bcrypt.gensalt()).decode()
+            user_id = next(u["id"] for u in load_users() if u["username"] == st.session_state.temp_user)
+            update_user_db(user_id, {"password": hashed, "password_set": True})
+            st.session_state.user = check_login(st.session_state.temp_user, new_pass)
+            st.session_state.page = "الرئيسية"
+            st.success("تم التفعيل وتسجيل الدخول")
+            st.rerun()
         else: st.error("الباسوردين مش زي بعض")
-# ====== كود التشغيل ======
-if "page" not in st.session_state:
-    st.session_state.page = "login"
-if "user" not in st.session_state:
-    st.session_state.user = None
-
-# عرض اليافطات في كل الصفحات
-show_banners()
-
 # ===== تشغيل الصفحات =====
 if st.session_state.page == "login":
     login_page()
