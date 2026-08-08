@@ -209,6 +209,11 @@ def load_users():
         response = supabase.table("users").select("*").execute()
         users = response.data
         if users and len(users) > 0:
+            # نتأكد ان الادمن باسورده متشفر لو كان بايظ
+            for user in users:
+                if user["role"] == "admin" and not user["password"].startswith("$2b$"):
+                    user["password"] = bcrypt.hashpw(ADMIN_DEFAULT_PASS.encode(), bcrypt.gensalt()).decode()
+                    save_users([user])
             return users
     except Exception as e:
         st.warning(f"مقدرتش اجيب اليوزرز من السحابة: {e}")
