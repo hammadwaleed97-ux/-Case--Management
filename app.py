@@ -574,7 +574,8 @@ elif st.session_state.page == "الرئيسية":
         st.session_state.page = "login"
         st.rerun()
 # ========================
-# ============================================
+# =========================== 
+
 import streamlit as st
 import pandas as pd
 import json
@@ -592,8 +593,10 @@ from docx import Document
 from docx.shared import Pt
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from fpdf import FPDF
+from io import BytesIO # <--- ضفناها هنا عشان نستخدمها كلها
 
 st.set_page_config(page_title="إدارة القضايا", layout="wide", page_icon="⚖️")
+
 # دالة عشان تظبط العربي وتوصله
 def fix_arabic(text):
     if not text:
@@ -602,18 +605,18 @@ def fix_arabic(text):
     reshaped_text = arabic_reshaper.reshape(text)
     bidi_text = get_display(reshaped_text)
     return bidi_text
+
 # ====== دالة التصدير للاكسل RTL صح 100% ======
 def to_excel(df):
-    df = df.fillna('-') # عشان ميضربش لو في خلايا فاضية
-    df = df.astype(str) # نحول كله لنص
+    df = df.fillna('-')
+    df = df.astype(str)
 
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
         df.to_excel(writer, index=False, sheet_name='التقرير')
         worksheet = writer.sheets['التقرير']
-        worksheet.sheet_view.rightToLeft = True # RTL
+        worksheet.sheet_view.rightToLeft = True
 
-        # نظبط عرض الاعمدة تلقائي
         for col in worksheet.columns:
             max_length = 0
             column = col[0].column_letter
@@ -625,7 +628,6 @@ def to_excel(df):
                     pass
             worksheet.column_dimensions[column].width = max_length + 2
 
-        # نوسط الكلام
         from openpyxl.styles import Alignment
         for row in worksheet.iter_rows():
             for cell in row:
@@ -668,11 +670,16 @@ def to_word(df, title, region):
 
 # ====== دالة التصدير للـ PDF ======
 def to_pdf(df, title, region):
-    pdf = FPDF(orientation='L', unit='mm', format='A4') # عرض
-    pdf.add_page()
-    pdf.add_font('Cairo', '', 'Cairo-Regular.ttf', uni=True)
+    pdf = FPDF(orientation='L', unit='mm', format='A4')
 
-    # 1. العنوان في النص زي الصورة
+    # <--- التعديل المهم: هنحمل الفونت من الميموري عشان السحابة
+    font_path = "Cairo-Regular.ttf" # لازم ترفع الملف ده مع الكود على github
+    if not os.path.exists(font_path):
+        st.error("ارفع ملف Cairo-Regular.ttf مع الكود")
+        return b""
+    pdf.add_font('Cairo', '', font_path, uni=True)
+
+    pdf.add_page()
     pdf.set_font('Cairo', '', 16)
     pdf.cell(0, 10, fix_arabic('الهيئة القومية للتأمين الاجتماعى'), 0, 1, 'C')
     pdf.set_font('Cairo', '', 12)
@@ -682,41 +689,30 @@ def to_pdf(df, title, region):
     pdf.cell(0, 8, fix_arabic(title), 0, 1, 'C')
     pdf.ln(5)
 
-    # 2. الجدول
     pdf.set_font('Cairo', '', 8)
     col_width = 280 / len(df.columns)
     row_height = 8
 
-    # الهيدر
     for col in df.columns:
         pdf.cell(col_width, row_height, fix_arabic(str(col)), 1, 0, 'C')
     pdf.ln()
 
-    # الداتا
     for _, row in df.iterrows():
         for item in row:
             pdf.cell(col_width, row_height, fix_arabic(str(item)), 1, 0, 'C')
         pdf.ln()
 
-        # 3. الخاتمة يمين مع 3 توقيعات
     pdf.ln(8)
     pdf.set_font('Cairo', '', 11)
     pdf.cell(0, 8, fix_arabic('تفضلوا بقبول وافر الاحترام'), 0, 1, 'R')
     pdf.ln(5)
-    
-        # 3. الخاتمة يمين مع 3 توقيعات
-    pdf.ln(8)
-    pdf.set_font('Cairo', '', 11)
-    pdf.cell(0, 8, fix_arabic('تفضلوا بقبول وافر الاحترام'), 0, 1, 'R')
-    pdf.ln(5)
-    
-    # جدول التوقيعات 3 خانات
+
     pdf.set_font('Cairo', '', 10)
     cell_w = 90
     pdf.cell(cell_w, 8, fix_arabic('العضو القانوني'), 0, 0, 'C')
     pdf.cell(cell_w, 8, fix_arabic('مدير إدارة القضايا'), 0, 0, 'C')
     pdf.cell(cell_w, 8, fix_arabic('مدير عام الإدارات القانونية'), 0, 1, 'C')
-    
+
     pdf.ln(10)
     pdf.cell(cell_w, 8, '..................', 0, 0, 'C')
     pdf.cell(cell_w, 8, '..................', 0, 0, 'C')
@@ -726,14 +722,17 @@ def to_pdf(df, title, region):
     pdf.set_font('Cairo', '', 10)
     pdf.cell(0, 8, fix_arabic(f'تحر في {datetime.now().strftime("%d-%m-%Y")}'), 0, 1, 'L')
 
-    return pdf.output()  # في fpdf2 الجديدة ده بيرجع bytes اصلا
-# ====== دالة حفظ صحيفة الدعوى === 
+    return pdf.output(dest='S').encode('latin-1') # <--- التعديل عشان يرجع bytes
+
 # ====== دالة حفظ صحيفة الدعوى ======
 def create_paper_pdf(case_data):
-    if not os.path.exists("papers"): os.makedirs("papers")
     pdf = FPDF(orientation='P', unit='mm', format='A4')
+    font_path = "Cairo-Regular.ttf" # لازم ترفع الملف ده مع الكود
+    if not os.path.exists(font_path):
+        st.error("ارفع ملف Cairo-Regular.ttf مع الكود")
+        return None
+    pdf.add_font('Cairo', '', font_path, uni=True)
     pdf.add_page()
-    pdf.add_font('Cairo', '', 'Cairo-Regular.ttf', uni=True)
     pdf.set_font('Cairo', '', 14); pdf.set_right_margin(15)
     pdf.cell(0,10,fix_arabic(f"صحيفة {case_data.get('مسندة_ل','')}"),ln=1,align='R')
     pdf.ln(5)
@@ -742,13 +741,11 @@ def create_paper_pdf(case_data):
     pdf.cell(0,10,fix_arabic(f"المدعي: {case_data.get('مدعي','')}"),ln=1,align='R')
     pdf.cell(0,10,fix_arabic(f"ضد: {case_data.get('مدعي_عليه','')}"),ln=1,align='R')
     pdf.multi_cell(0,10,fix_arabic(f"الموضوع: {case_data.get('موضوع','')}"),align='R')
-    name = f"papers/صحيفة_{case_data.get('رقم')}_{case_data.get('سنة')}.pdf"; pdf.output(name); return name
 
-import base64
-from io import BytesIO
+    # <--- التعديل: بدل ما نحفظ في فولدر هنرجع bytes
+    return pdf.output(dest='S').encode('latin-1')
 
 def print_case_report(case):
-    # 1- تحديد الخصوم حسب النوع
     نوع = case.get('نوع', '').lower()
     if 'استئناف' in نوع:
         طرف1_عنوان = "المستأنف"
@@ -756,7 +753,7 @@ def print_case_report(case):
     elif 'طعن' in نوع:
         طرف1_عنوان = "الطاعن"
         طرف2_عنوان = "المطعون ضده"
-    else:  # دعوى عادية
+    else:
         طرف1_عنوان = "المدعي"
         طرف2_عنوان = "المدعى عليه"
 
@@ -767,19 +764,19 @@ def print_case_report(case):
     <style>
         @page {{ size: A4; margin: 1.5cm; }}
         body {{ font-family: 'Arial'; direction: rtl; text-align: right; color: #000; background: #f8f9fa; }}
-        .header {{ text-align: center; padding: 25px; margin-bottom: 25px; background: linear-gradient(135deg, #1E2A47 0%, #D4AF37 100%); color: #FFF; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }}
-        .logo {{ font-size: 22px; font-weight: 900; color: #FFF; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }}
-        .sub {{ font-size: 16px; color: #FFF9E6; margin: 8px 0; }}
-        .title {{ text-align: center; font-size: 26px; font-weight: 900; color: #1E2A47; margin: 25px 0; border: 3px solid #D4AF37; padding: 15px; border-radius: 15px; background: linear-gradient(90deg, #FFF9E6, #FFF); box-shadow: 0 3px 10px rgba(212,175,55,0.3); }}
-        .section {{ padding: 20px; border-radius: 15px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 2px solid transparent; }}
-        .section-title {{ font-weight: 900; font-size: 20px; color: #FFF; margin-bottom: 20px; text-align: center; padding: 12px; border-radius: 10px; }}
-        .sec1 {{ background: linear-gradient(135deg, #1E2A47, #3498db); border-color: #1E2A47; }}
-        .sec2 {{ background: linear-gradient(135deg, #27ae60, #2ecc71); border-color: #27ae60; }}
-        .sec3 {{ background: linear-gradient(135deg, #8e44ad, #9b59b6); border-color: #8e44ad; }}
-        .sec4 {{ background: linear-gradient(135deg, #c0392b, #e74c3c); border-color: #c0392b; }}
-        .row {{ display: flex; justify-content: space-between; margin-bottom: 12px; background: linear-gradient(90deg, #fff, #f8f9fa); padding: 12px; border-radius: 8px; border-right: 4px solid #D4AF37; }}
-        .label {{ font-weight: 900; color: #1E2A47; width: 35%; font-size: 15px; }}
-        .value {{ width: 65%; color: #000; font-weight: 700; font-size: 15px; }}
+       .header {{ text-align: center; padding: 25px; margin-bottom: 25px; background: linear-gradient(135deg, #1E2A47 0%, #D4AF37 100%); color: #FFF; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }}
+       .logo {{ font-size: 22px; font-weight: 900; color: #FFF; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }}
+       .sub {{ font-size: 16px; color: #FFF9E6; margin: 8px 0; }}
+       .title {{ text-align: center; font-size: 26px; font-weight: 900; color: #1E2A47; margin: 25px 0; border: 3px solid #D4AF37; padding: 15px; border-radius: 15px; background: linear-gradient(90deg, #FFF9E6, #FFF); box-shadow: 0 3px 10px rgba(212,175,55,0.3); }}
+       .section {{ padding: 20px; border-radius: 15px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 2px solid transparent; }}
+       .section-title {{ font-weight: 900; font-size: 20px; color: #FFF; margin-bottom: 20px; text-align: center; padding: 12px; border-radius: 10px; }}
+       .sec1 {{ background: linear-gradient(135deg, #1E2A47, #3498db); border-color: #1E2A47; }}
+       .sec2 {{ background: linear-gradient(135deg, #27ae60, #2ecc71); border-color: #27ae60; }}
+       .sec3 {{ background: linear-gradient(135deg, #8e44ad, #9b59b6); border-color: #8e44ad; }}
+       .sec4 {{ background: linear-gradient(135deg, #c0392b, #e74c3c); border-color: #c0392b; }}
+       .row {{ display: flex; justify-content: space-between; margin-bottom: 12px; background: linear-gradient(90deg, #fff, #f8f9fa); padding: 12px; border-radius: 8px; border-right: 4px solid #D4AF37; }}
+       .label {{ font-weight: 900; color: #1E2A47; width: 35%; font-size: 15px; }}
+       .value {{ width: 65%; color: #000; font-weight: 700; font-size: 15px; }}
         table {{ width: 100%; border-collapse: collapse; margin-top: 15px; border-radius: 10px; overflow: hidden; box-shadow: 0 3px 10px rgba(0,0,0,0.1); }}
         th {{ background: linear-gradient(135deg, #1E2A47, #34495e); color: #D4AF37; padding: 12px; border: none; text-align: center; font-size: 16px; font-weight: 900; }}
         td {{ padding: 12px; border-bottom: 1px solid #ddd; text-align: center; background: #fff; }}
@@ -788,7 +785,7 @@ def print_case_report(case):
     </style>
     </head>
     <body>
-    
+
     <div class="header">
         <div class="logo">الهيئة القومية للتأمين الاجتماعي</div>
         <div class="sub">الإدارة المركزية للإدارات القانونية</div>
@@ -815,7 +812,6 @@ def print_case_report(case):
     </div>
     """
 
-    # 3- الجلسات والإجراءات
     if case.get("جلسات"):
         html += """
         <div class="section sec3">
@@ -827,7 +823,6 @@ def print_case_report(case):
             html += f"<tr><td>{i}</td><td>{ج.get('الرول')}</td><td>{ج.get('تاريخ')}</td><td>{ج.get('الاجراء')}</td><td>{ج.get('ملاحظات')}</td></tr>"
         html += "</table></div>"
 
-    # 4- الحكم
     if case.get('حالة') == 'منتهية':
         html += f"""
         <div class="section sec4">
@@ -837,9 +832,10 @@ def print_case_report(case):
             <div class="row"><div class="label">المنطوق:</div><div class="value">{case.get('منطوق_الحكم')}</div></div>
         </div>
         """
-    
+
     html += "</body></html>"
     return html
+# ====== دالة التحميل والحفظ الوحيدة ==
 # ====== دالة التحميل والحفظ الوحيدة ======
 DATA_FILE = "cases_data.json"
 TOKENS_FILE = "tokens.json"
