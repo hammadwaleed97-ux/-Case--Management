@@ -925,18 +925,48 @@ def load_data():
         response = supabase.table("cases").select("*").execute()
         cases_from_cloud = []
         for row in response.data:
-            case = row.get("data", {}) 
-            case["id"] = row.get("id") 
+            case = row.get("data", {})
+            case["id"] = row.get("id") # نحط ال id بتاع السحابة
             cases_from_cloud.append(case)
-        
+
         if cases_from_cloud:
             return {"cases": cases_from_cloud, "library": []}
     except Exception as e:
-        st.warning(f"مش قادر اوصل للسحابة: {e}")
+        st.warning(f"السحابة مش شغالة: {e}")
 
-    # 2. لو السحابة فاضية نرجع للملف المحلي cases_data.json
+    # 2. لو السحابة فاضية نرجع للملف المحلي
     if not os.path.exists(DATA_FILE):
-        return {"cases":[], "library":[]}
+        return {"cases":[],"library":[]}
+    try:
+        with open(DATA_FILE,"r",encoding="utf-8") as f:
+            data=json.load(f)
+        if not isinstance(data,dict): data={"cases":[],"library":[]}
+        data.setdefault("cases",[])
+        data.setdefault("library",[])
+        return data
+    except Exception:
+        return {"cases":[],"library":[]}
+
+def save_data(data):
+    data.setdefault("cases",[])
+    data.setdefault("library",[])
+
+    # 1. نحفظ محلي الاول
+    with open(DATA_FILE,"w",encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=4)
+
+    # 2. نحفظ في السحابة
+    try:
+        for case in data.get("cases", []):
+            case_id = case.get("id")
+            if case_id: # لو موجودة نعمل تحديث
+                supabase.table("cases").update({"data": case}).eq("id", case_id).execute()
+            else: # لو جديدة نضيفها
+                result = supabase.table("cases").insert({"data": case}).execute()
+                if result.data:
+                    case["id"] = result.data[0]["id"] # نحفظ ال id الجديد
+    except Exception as e:
+        st.error(f"مقدرتش احفظ في السحابة: {e}")
     try:
         with open(DATA_FILE, "r", encoding="utf-8") as f:
             data = json.load(f)
