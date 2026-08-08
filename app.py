@@ -18,16 +18,15 @@ from openpyxl.styles import Font, Alignment, PatternFill
 
 st.set_page_config(page_title="إدارة القضايا", layout="wide")
 
-# ====== تهيئة السيشن ستيت ====== # <--- ضفت ده عشان الايرور
+# ====== تهيئة السيشن ستيت ======
 if "page" not in st.session_state: st.session_state.page = "login"
 if "user" not in st.session_state: st.session_state.user = None
 if "role" not in st.session_state: st.session_state.role = None
 if "RESET_CODES" not in st.session_state: st.session_state.RESET_CODES = {}
 
-# ====== الاتصال بالسحابة ====== # 2. ضيفنا دي
+# ====== الاتصال بالسحابة ======
 supabase: Client = create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"])
 
-# ====== اعدادات الادمن ======
 # ====== اعدادات الادمن ======
 ADMIN_USERNAME = "admin"
 ADMIN_DEFAULT_PASS = "admin123"
@@ -41,23 +40,24 @@ def fix_arabic(text):
 # ===== نظام اليافطة - متعدل للسحابة =====
 
 def load_banners():
-    res = supabase.table("banners").select("*").order("created_at", desc=True).execute() # 3. بنجيب من السحابة
+    res = supabase.table("banners").select("*").order("created_at", desc=True).execute()
     return res.data
 
-def save_banner_to_db(banner_data): # 4. غيرنا الاسم عشان نحفظ واحد
+def save_banner_to_db(banner_data):
     supabase.table("banners").insert(banner_data).execute()
 
-def delete_banner_from_db(banner_id): # 5. حذف من السحابة
+def delete_banner_from_db(banner_id):
     supabase.table("banners").delete().eq("id", banner_id).execute()
 
 def init_session_state():
     if "banners" not in st.session_state:
         st.session_state.banners = load_banners()
+    if "banners" in st.session_state and st.session_state.banners is None:
+        st.session_state.banners = []
 
 def show_banners():
     """ يعرض اليافطات اللي لسه منتهتش وينضف القديم """
-    if 'banners' not in st.session_state:
-        return
+    init_session_state() # <--- ضفت دي
     
     now = datetime.now()
     active_banners = []
@@ -74,9 +74,8 @@ def show_banners():
         if expire_date > now:
             active_banners.append(b)
         else:
-            banners_to_delete.append(b["id"]) # 6. نجمع القديم عشان نمسحه من السحابة
+            banners_to_delete.append(b["id"])
             
-    # نمسح المنتهي من السحابة
     for banner_id in banners_to_delete:
         delete_banner_from_db(banner_id)
 
@@ -97,6 +96,8 @@ def banner_sidebar():
     if 'role' not in st.session_state or st.session_state.role != 'admin':
         return 
     
+    init_session_state() # <--- ضفت دي
+    
     st.sidebar.markdown("---")
     st.sidebar.title("📢 تحكم الادمن")
     with st.sidebar.form("add_banner_form"):
@@ -112,8 +113,8 @@ def banner_sidebar():
                     "expire": expire_time.isoformat(),
                     "created_at": datetime.now().isoformat()
                 }
-                save_banner_to_db(new_banner) # 7. حفظ في السحابة
-                st.session_state.banners = load_banners() # 8. نعمل ريفريش
+                save_banner_to_db(new_banner)
+                st.session_state.banners = load_banners()
                 st.rerun()
 
     st.sidebar.markdown("### حذف اليافطات")
@@ -121,11 +122,12 @@ def banner_sidebar():
         col1, col2 = st.sidebar.columns([4,1])
         with col1: st.write(f"• {banner['text'][:20]}...")
         with col2: 
-            if st.button("🗑️", key=f"del_admin_{banner['id']}"): # 9. استخدمنا id بتاع السحابة
-                delete_banner_from_db(banner['id']) # 10. حذف من السحابة
-                st.session_state.banners = load_banners() # 11. نعمل ريفريش
+            if st.button("🗑️", key=f"del_admin_{banner['id']}"):
+                delete_banner_from_db(banner['id'])
+                st.session_state.banners = load_banners()
                 st.rerun()
 # ===== نهاية اليافطة =====
+
 # ====== دالة التصدير HTML للطباعة ======
 def get_export_html(full_html, title):
     return f"""<!DOCTYPE html>
@@ -176,10 +178,8 @@ div[data-testid="stTextInput"] label {color: white!important; font-weight: bold;
 """, unsafe_allow_html=True)
 
 # ====== الاعدادات ======
-SENDER_EMAIL = st.secrets.get("SENDER_EMAIL", "") # حط ايميلك في secrets
-SENDER_PASSWORD = st.secrets.get("SENDER_PASSWORD", "") # حط باسورد التطبيق في secrets
-ADMIN_USERNAME = "admin"
-ADMIN_DEFAULT_PASS = "admin123"
+SENDER_EMAIL = st.secrets.get("SENDER_EMAIL", "")
+SENDER_PASSWORD = st.secrets.get("SENDER_PASSWORD", "")
 
 if "RESET_CODES" not in st.session_state:
     st.session_state.RESET_CODES = {}
@@ -210,7 +210,6 @@ def load_users():
     res = supabase.table("users").select("*").execute()
     users = res.data
 
-    # لو مفيش ادمن نعمله
     if not any(u["username"] == ADMIN_USERNAME for u in users):
         admin_pass = bcrypt.hashpw(ADMIN_DEFAULT_PASS.encode(), bcrypt.gensalt()).decode()
         supabase.table("users").insert({
@@ -224,7 +223,6 @@ def check_login(username, password):
     users = load_users()
     for user in users:
         if user["username"] == username and user["status"] == "active":
-            # مهم جدا: لو الباسورد فاضي او العضو مش مفعل نطلع
             if not user.get("password") or not user.get("password_set", False):
                 return None
             try:
@@ -252,6 +250,7 @@ def update_user_db(user_id, new_data):
 def delete_user_db(user_id):
     supabase.table("users").delete().eq("id", user_id).execute()
 
+# ====== الصفحات ======
 # ====== الصفحات ======
 def login_page():
     st.markdown("<h3 style='text-align:center; color:white'>دخول السادة الاعضاء</h3>", unsafe_allow_html=True)
