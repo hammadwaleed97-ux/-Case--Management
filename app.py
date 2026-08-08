@@ -24,7 +24,7 @@ def fix_arabic(text):
     reshaped_text = arabic_reshaper.reshape(str(text))
     bidi_text = get_display(reshaped_text)
     return bidi_text
-    # ===== نظام اليافطة ====
+    # ===== نظام اليافطة ===
 # ====== اليافطة نظام ====
 from datetime import timedelta
 
