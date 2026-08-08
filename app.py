@@ -204,48 +204,31 @@ def send_email(to_email, subject, body):
         return False
 
 # ====== اليوزرز في السحابة ======
-def load_users():
-    try:
-        response = supabase.table("users").select("*").execute()
-        users = response.data
-        if users and len(users) > 0:
-            # نتأكد ان الادمن باسورده متشفر لو كان بايظ
-            for user in users:
-                if user["role"] == "admin" and not user["password"].startswith("$2b$"):
-                    user["password"] = bcrypt.hashpw(ADMIN_DEFAULT_PASS.encode(), bcrypt.gensalt()).decode()
-                    save_users([user])
-            return users
-    except Exception as e:
-        st.warning(f"مقدرتش اجيب اليوزرز من السحابة: {e}")
+# ====== اليوزرز في ملف محلي ======
+USERS_FILE = "users.json"
 
-    # لو الجدول فاضي نعمل الادمن
-    st.info("اول تشغيل: جاري انشاء حساب الادمن...")
-    admin_pass = bcrypt.hashpw(ADMIN_DEFAULT_PASS.encode(), bcrypt.gensalt()).decode()
-    admin_user = {
-        "username": ADMIN_USERNAME,
-        "password": admin_pass,
-        "email": SENDER_EMAIL,
-        "recovery_email": "",
-        "role": "admin",
-        "status": "active",
-        "password_set": True
-    }
-    supabase.table("users").insert(admin_user).execute()
-    return [admin_user]
+def load_users():
+    # لو الملف مش موجود اعمل الادمن
+    if not os.path.exists(USERS_FILE):
+        admin_pass = bcrypt.hashpw(ADMIN_DEFAULT_PASS.encode(), bcrypt.gensalt()).decode()
+        users = [{"username": ADMIN_USERNAME, "password": admin_pass, "role": "admin", "status": "active", "password_set": True}]
+        save_users(users)
+        return users
+    
+    # لو موجود اقراه
+    with open(USERS_FILE, "r", encoding="utf-8") as f:
+        users = json.load(f)
+    
+    # لو مفيش ادمن نعمله
+    if not any(u["username"] == ADMIN_USERNAME for u in users):
+        admin_pass = bcrypt.hashpw(ADMIN_DEFAULT_PASS.encode(), bcrypt.gensalt()).decode()
+        users.append({"username": ADMIN_USERNAME, "password": admin_pass, "role": "admin", "status": "active", "password_set": True})
+        save_users(users)
+    return users
 
 def save_users(users):
-    try:
-        for user in users:
-            user_id = user.get("id")
-            if user_id:
-                supabase.table("users").update(user).eq("id", user_id).execute()
-            else:
-                result = supabase.table("users").insert(user).execute()
-                if result.data:
-                    user["id"] = result.data[0]["id"]
-    except Exception as e:
-        st.error(f"مقدرتش احفظ اليوزرز في السحابة: {e}")
-
+    with open(USERS_FILE, "w", encoding="utf-8") as f:
+        json.dump(users, f, ensure_ascii=False, indent=4)
 def check_login(username, password):
     users = load_users()
     for user in users:
