@@ -836,45 +836,48 @@ def print_case_report(case):
     html += "</body></html>"
     return html
 # ====== دالة التحميل والحفظ الوحيدة ==
-# ====== دالة التحميل والحفظ الوحيدة ======
-DATA_FILE = "cases_data.json"
+# ==== دالة التحميل والحفظ الوحيدة ======
+DATA_FILE = "cases_data.json" # هنسيبه كـ باك اب بس
 TOKENS_FILE = "tokens.json"
-UPLOAD_FOLDER = "uploads"
-os.makedirs(UPLOAD_FOLDER,exist_ok=True)
 
 def load_data():
     # 1. نجيب من السحابة الاول
     try:
-        response = supabase.table("cases").select("*").execute()
+        response = supabase.table("cases").select("*").order("created_at", desc=True).execute()
         cases_from_cloud = []
         for row in response.data:
             case = row.get("data", {})
             case["id"] = row.get("id") # نحط ال id بتاع السحابة
             cases_from_cloud.append(case)
 
-        if cases_from_cloud:
-            return {"cases": cases_from_cloud, "library": []}
-    except Exception as e:
-        st.warning(f"السحابة مش شغالة: {e}")
+        library_res = supabase.table("library").select("*").order("created_at", desc=True).execute()
+        library_from_cloud = []
+        for row in library_res.data:
+            item = row.get("data", {})
+            item["id"] = row.get("id")
+            library_from_cloud.append(item)
 
-    # 2. لو السحابة فاضية نرجع للملف المحلي
-    if not os.path.exists(DATA_FILE):
-        return {"cases":[],"library":[]}
-    try:
-        with open(DATA_FILE,"r",encoding="utf-8") as f:
-            data=json.load(f)
-        if not isinstance(data,dict): data={"cases":[],"library":[]}
-        data.setdefault("cases",[])
-        data.setdefault("library",[])
-        return data
-    except Exception:
-        return {"cases":[],"library":[]}
+        return {"cases": cases_from_cloud, "library": library_from_cloud}
+    except Exception as e:
+        st.error(f"السحابة مش شغالة: {e}")
+        # 2. لو السحابة فاضية نرجع للملف المحلي كـ باك اب
+        if not os.path.exists(DATA_FILE):
+            return {"cases":[],"library":[]}
+        try:
+            with open(DATA_FILE,"r",encoding="utf-8") as f:
+                data=json.load(f)
+            if not isinstance(data,dict): data={"cases":[],"library":[]}
+            data.setdefault("cases",[])
+            data.setdefault("library",[])
+            return data
+        except Exception:
+            return {"cases":[],"library":[]}
 
 def save_data(data):
     data.setdefault("cases",[])
     data.setdefault("library",[])
 
-    # 1. نحفظ محلي الاول
+    # 1. نحفظ محلي كـ باك اب
     with open(DATA_FILE,"w",encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=4)
 
@@ -882,29 +885,34 @@ def save_data(data):
     try:
         for case in data.get("cases", []):
             case_id = case.get("id")
+            payload = {"data": case, "updated_at": datetime.now().isoformat()}
             if case_id: # لو موجودة نعمل تحديث
-                supabase.table("cases").update({"data": case}).eq("id", case_id).execute()
+                supabase.table("cases").update(payload).eq("id", case_id).execute()
             else: # لو جديدة نضيفها
-                result = supabase.table("cases").insert({"data": case}).execute()
+                payload["created_at"] = datetime.now().isoformat()
+                result = supabase.table("cases").insert(payload).execute()
                 if result.data:
                     case["id"] = result.data[0]["id"] # نحفظ ال id الجديد
     except Exception as e:
-        st.error(f"مقدرتش احفظ في السحابة: {e}")
-    try:
-        with open(DATA_FILE, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        if not isinstance(data, dict): data = {"cases": [], "library": []}
-        data.setdefault("cases", [])
-        data.setdefault("library", [])
-        return data
-    except Exception:
-        return {"cases":[], "library":[]}
+        st.error(f"مقدرتش احفظ القضايا في السحابة: {e}")
 
-def save_data(data):
-    data.setdefault("cases",[])
-    data.setdefault("library",[])
-    with open(DATA_FILE,"w",encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=4)
+def save_library_item(item_data):
+    item_id = item_data.get("id")
+    payload = {"data": item_data, "updated_at": datetime.now().isoformat()}
+    try:
+        if item_id:
+            supabase.table("library").update(payload).eq("id", item_id).execute()
+        else:
+            payload["created_at"] = datetime.now().isoformat()
+            supabase.table("library").insert(payload).execute()
+    except Exception as e:
+        st.error(f"مقدرتش احفظ في مكتبة السحابة: {e}")
+
+def delete_library_item(item_id):
+    try:
+        supabase.table("library").delete().eq("id", item_id).execute()
+    except Exception as e:
+        st.error(f"مقدرتش امسح من مكتبة السحابة: {e}")
 
 def load_tokens():
     if os.path.exists(TOKENS_FILE):
@@ -925,7 +933,7 @@ def get_alert_cases():
     today = datetime.now().date()
     all_cases = data.get("cases", [])
     alerts = {"sessions": [], "appeals": []}
-    
+
     for case in all_cases:
         if case.get("حالة") == "متداولة" and case.get("تاريخ_جلسة"):
             try:
@@ -935,9 +943,9 @@ def get_alert_cases():
                     case_copy = case.copy()
                     case_copy["days_left"] = days_left
                     alerts["sessions"].append(case_copy)
-            except Exception: 
+            except Exception:
                 pass
-                
+
         if case.get("حالة") == "منتهية" and case.get("مسندة_ل_الحكم") == "الضد" and case.get("تاريخ_الحكم"):
             try:
                 judgment_date = datetime.strptime(case["تاريخ_الحكم"], "%Y-%m-%d").date()
@@ -950,16 +958,16 @@ def get_alert_cases():
                     case_copy["days_left_appeal"] = days_left_appeal
                     case_copy["deadline"] = last_appeal_day.strftime("%Y-%m-%d")
                     alerts["appeals"].append(case_copy)
-            except Exception: 
+            except Exception:
                 pass
-                
+
     return alerts
 
 def send_alert_email(to_email, alerts):
     subject = f"🔔 تنبيهات ادارة القضايا - {datetime.now().strftime('%Y-%m-%d')}"
     body = "<div style='direction:rtl; text-align:right; font-family:Arial;'>"
     body += "<h2 style='color:#C9A961; text-align:center;'>مركز التنبيهات</h2>"
-    
+
     if alerts["sessions"]:
         body += "<h3 style='color:#FFD700;'>⚖️ جلسات خلال 7 ايام</h3>"
         for case in alerts["sessions"]:
@@ -969,7 +977,7 @@ def send_alert_email(to_email, alerts):
             body += f"<b>الجلسة:</b> {case.get('تاريخ_جلسة')} - <b style='color:red;'>فاضل {case['days_left']} يوم</b></p>"
     else:
         body += "<p>✅ مفيش جلسات خلال 7 ايام</p>"
-    
+
     if alerts["appeals"]:
         body += "<h3 style='color:#FF4500;'>📄 طعون خلال 15 يوم</h3>"
         for case in alerts["appeals"]:
@@ -979,16 +987,16 @@ def send_alert_email(to_email, alerts):
             body += f"<b style='color:red;'>اخر ميعاد للطعن: {case['deadline']} - فاضل {case['days_left_appeal']} يوم</b></p>"
     else:
         body += "<p>✅ مفيش طعون قريبة</p>"
-    
+
     body += "</div>"
-    
+
     try:
         send_email(to_email, subject, body)
         return True
     except Exception as e:
         st.error(f"فشل الارسال: {e}")
         return False
-        
+
 LIBRARY_SECTIONS = {
     "القوانين": "#FF4500", "القرارات الوزارية": "#FF8C00", "قرارات الهيئة": "#FFD700",
     "المنشورات الوزارية": "#ADFF2F", "منشورات الهيئة": "#32CD32", "الكتب الدورية": "#20B2AA",
@@ -1001,7 +1009,7 @@ LIBRARY_SECTIONS = {
     "صحف دعاوى": "#E6E6FA", "مذكرات دفاع": "#FFF0F5", "أخرى": "#808080"
 }
 
-SENDER_EMAIL=""; SENDER_PASSWORD=""; APP_URL="https://qpyqpsmkqcvdou4imbfunp.streamlit.app/"
+SENDER_EMAIL=st.secrets.get("SENDER_EMAIL", ""); SENDER_PASSWORD=st.secrets.get("SENDER_PASSWORD", ""); APP_URL="https://qpyqpsmkqcvdou4imbfunp.streamlit.app/"
 ANWA3_MOSTANDAT = ["صحيفة دعوى","صحيفة استئناف","صحيفة طعن","مذكرة دفاع","حافظة مستندات","تقرير خبير","تقرير طب شرعى","تقرير لجنة طبية","صحيفة تجديد من الشطب","صحيفة تعجيل من الوقف","صورة حكم تمهيدى","أخرى"]
 
 if "page" not in st.session_state: st.session_state.page="الرئيسية"
@@ -1036,153 +1044,63 @@ st.markdown('<div class="main-title">⚖️ إدارة القضايا ⚖️</di
 
 if st.session_state.page == "الرئيسية":
 
-    st.markdown(
-        "<h2>الأقسام</h2>",
-        unsafe_allow_html=True
-    )
-    
+    st.markdown("<h2>الأقسام</h2>", unsafe_allow_html=True)
 
     col1, col2 = st.columns(2)
     with col1:
-
-        st.markdown(
-            '<div class="btn-add">',
-            unsafe_allow_html=True
-        )
-
-        if st.button(
-            " تسجيل القضايا",
-            use_container_width=True
-        ):
+        st.markdown('<div class="btn-add">', unsafe_allow_html=True)
+        if st.button(" تسجيل القضايا", use_container_width=True):
             st.session_state.page = "تسجيل"
             st.rerun()
-
-        st.markdown(
-            "</div>",
-            unsafe_allow_html=True
-        )
+        st.markdown("</div>", unsafe_allow_html=True)
 
     with col2:
-
-        st.markdown(
-            '<div class="btn-list">',
-            unsafe_allow_html=True
-        )
-
-        if st.button(
-            "📋 الحصر العام",
-            use_container_width=True
-        ):
+        st.markdown('<div class="btn-list">', unsafe_allow_html=True)
+        if st.button("📋 الحصر العام", use_container_width=True):
             st.session_state.page = "الحصر"
             st.rerun()
-
-        st.markdown(
-            "</div>",
-            unsafe_allow_html=True
-        )
+        st.markdown("</div>", unsafe_allow_html=True)
 
     col1, col2, col3 = st.columns([1, 2, 1])
-
     with col2:
-
-        st.markdown(
-            '<div class="btn-alert">',
-            unsafe_allow_html=True
-        )
-
-        if st.button(
-            "🔴 مركز التنبيهات",
-            use_container_width=True
-        ):
-            st.session_state.page = "التنبيهات" # <-- ضفنا ال
+        st.markdown('<div class="btn-alert">', unsafe_allow_html=True)
+        if st.button("🔴 مركز التنبيهات", use_container_width=True):
+            st.session_state.page = "التنبيهات"
             st.rerun()
-
-        st.markdown(
-            "</div>",
-            unsafe_allow_html=True
-        )
+        st.markdown("</div>", unsafe_allow_html=True)
 
     col1, col2 = st.columns(2)
-
     with col1:
-
-        st.markdown(
-            '<div class="btn-report">',
-            unsafe_allow_html=True
-        )
-
-        if st.button(
-            "📊 التقارير",
-            use_container_width=True
-        ):
+        st.markdown('<div class="btn-report">', unsafe_allow_html=True)
+        if st.button("📊 التقارير", use_container_width=True):
             st.session_state.page = "تقارير"
             st.rerun()
-
-        st.markdown(
-            "</div>",
-            unsafe_allow_html=True
-        )
+        st.markdown("</div>", unsafe_allow_html=True)
 
     with col2:
-
-        st.markdown(
-            '<div class="btn-lib">',
-            unsafe_allow_html=True
-        )
-
-        if st.button(
-            "📚 المكتبة القانونية",
-            use_container_width=True
-        ):
+        st.markdown('<div class="btn-lib">', unsafe_allow_html=True)
+        if st.button("📚 المكتبة القانونية", use_container_width=True):
             st.session_state.page = "مكتبة"
             st.rerun()
-
-        st.markdown(
-            "</div>",
-            unsafe_allow_html=True
-        )
+        st.markdown("</div>", unsafe_allow_html=True)
 
     col1, col2, col3 = st.columns([1, 2, 1])
-
     with col2:
-
-        st.markdown(
-            '<div class="btn-arch">',
-            unsafe_allow_html=True
-        )
-
-        if st.button(
-            "🗄️ الأرشيف",
-            use_container_width=True
-        ):
+        st.markdown('<div class="btn-arch">', unsafe_allow_html=True)
+        if st.button("🗄️ الأرشيف", use_container_width=True):
             st.session_state.page = "الأرشيف"
             st.rerun()
-
-        st.markdown(
-            "</div>",
-            unsafe_allow_html=True
-        )
+        st.markdown("</div>", unsafe_allow_html=True)
 
     col1, col2, col3 = st.columns([1, 2, 1])
-
     with col2:
-
-        st.markdown(
-            '<div class="btn-search">',
-            unsafe_allow_html=True
-        )
-
-        if st.button(
-            "🔍 البحث عن دعوى",
-            use_container_width=True
-        ):
+        st.markdown('<div class="btn-search">', unsafe_allow_html=True)
+        if st.button("🔍 البحث عن دعوى", use_container_width=True):
             st.session_state.page = "بحث"
             st.rerun()
-
-        st.markdown(
-            "</div>",
-            unsafe_allow_html=True
-                )
+        st.markdown("</div>", unsafe_allow_html=True)
+        # =============================
+# ====== الجزء الثاني: تسجيل القضية
         # =============================
 # ====== الجزء الثاني: تسجيل القضية ============
 elif st.session_state.page == "تسجيل":
