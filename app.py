@@ -377,16 +377,14 @@ def extract_member_page():
                         else:
                             st.error("الاسم موجود والعضو مفعل بالفعل")
                     else:
-                        new_id = max([u['id'] for u in users]) + 1 if users else 1
-                        users.append({
-                            "id": new_id, 
-                            "username": new_username, 
-                            "password": "", 
-                            "email": "",
-                            "role": "member", 
-                            "status": "active", 
-                            "password_set": False
-                        })
+    users.append({
+        "username": new_username, 
+        "password": "", 
+        "email": "",
+        "role": "member", 
+        "status": "active", 
+        "password_set": False
+    })
                         save_users(users)
                         st.success(f"تم استخراج: {new_username}")
                         st.rerun()
