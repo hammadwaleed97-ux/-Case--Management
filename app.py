@@ -17,7 +17,7 @@ from bidi.algorithm import get_display
 from openpyxl.styles import Font, Alignment, PatternFill # <-- زودت PatternFill هنا
 from supabase import create_client, Client
 
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+supabase: Client = create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"])
 def fix_arabic(text):
     """ بتظبط العربي عشان ميطلعش متقطع """
     if not text: return ""
