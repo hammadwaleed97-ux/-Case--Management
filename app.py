@@ -1,6 +1,5 @@
-
 import json, os, bcrypt, smtplib, random, io
-from datetime import datetime
+from datetime import datetime, timedelta
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
@@ -14,20 +13,19 @@ from docx.shared import Pt
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 import arabic_reshaper
 from bidi.algorithm import get_display
-from openpyxl.styles import Font, Alignment, PatternFill # <-- زودت PatternFill هنا
+from openpyxl.styles import Font, Alignment, PatternFill
 from supabase import create_client, Client
 
 supabase: Client = create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"])
+
 def fix_arabic(text):
     """ بتظبط العربي عشان ميطلعش متقطع """
     if not text: return ""
     reshaped_text = arabic_reshaper.reshape(str(text))
     bidi_text = get_display(reshaped_text)
     return bidi_text
-    # ===== نظام اليافطة ===
-# ====== اليافطة نظام ====
-from datetime import timedelta
 
+# ===== نظام اليافطة =====
 BANNERS_FILE = "banners_v2.json"
 
 def load_banners():
@@ -44,8 +42,6 @@ def init_session_state():
     if "banners" not in st.session_state:
         st.session_state.banners = load_banners()
 
-from datetime import timedelta
-
 def show_banners():
     """ يعرض اليافطات اللي لسه منتهتش وينضف القديم """
     if 'banners' not in st.session_state:
@@ -58,15 +54,13 @@ def show_banners():
         if not isinstance(b, dict) or "expire" not in b:
             continue
         try:
-            # بنحول النص لتاريخ
             expire_date = datetime.fromisoformat(b["expire"])
         except:
-            continue # لو التاريخ بايظ نتجاهله
+            continue
         
         if expire_date > now:
             active_banners.append(b)
             
-    # نحفظ بس النشط عشان الملف ميكبرش
     st.session_state.banners = active_banners
 
     for banner in active_banners:
@@ -96,10 +90,10 @@ def banner_sidebar():
                 st.session_state.banners.append({
                     "text": banner_text, 
                     "color": banner_color, 
-                    "expire": expire_time.isoformat(), # <-- بنحفظه كنص ISO
+                    "expire": expire_time.isoformat(),
                     "created_at": datetime.now().isoformat()
                 })
-                save_banners(st.session_state.banners) # <-- بنمرر البراميتر
+                save_banners(st.session_state.banners)
                 st.rerun()
 
     st.sidebar.markdown("### حذف اليافطات")
@@ -109,9 +103,10 @@ def banner_sidebar():
         with col2: 
             if st.button("🗑️", key=f"del_admin_{i}"):
                 st.session_state.banners.pop(i)
-                save_banners(st.session_state.banners) # <-- بنمرر البراميتر
+                save_banners(st.session_state.banners)
                 st.rerun()
-# ===== نهاية الكود =====
+# ===== نهاية اليافطة =====
+
 # دالة التصدير
 def get_export_html(full_html, title):
     return f"""<!DOCTYPE html>
@@ -132,7 +127,8 @@ def get_export_html(full_html, title):
 {full_html}
 </body>
 </html>"""
-    # ===== تشغيل اليافطة =====
+
+# ====== CSS الاساسي ======
 init_session_state()
 st.markdown("""
 <style>
@@ -151,14 +147,16 @@ div[data-testid="stWidgetLabel"] p {
     font-size: 16px !important;
     font-weight: 700 !important;
 }
+</style>
+""", unsafe_allow_html=True)
 
-import streamlit as st
-import smtplib
-import random
-from email.mime.text import MIMEText
-from supabase import create_client
-import bcrypt
-
+# ====== CSS الجدول ======
+st.markdown("""
+<style>
+thead tr th { color: black!important; background-color: #C9A961!important; font-weight: bold; }
+tbody tr td { color: black!important; background-color: white!important; }
+</style>
+""", unsafe_allow_html=True)
 # ====== CSS الجدول ======
 st.markdown("""
 <style>
