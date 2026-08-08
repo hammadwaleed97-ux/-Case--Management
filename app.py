@@ -376,7 +376,7 @@ def extract_member_page():
                             st.rerun()
                         else:
                             st.error("الاسم موجود والعضو مفعل بالفعل")
-                    else:
+                        else:
     users.append({
         "username": new_username, 
         "password": "", 
@@ -385,6 +385,9 @@ def extract_member_page():
         "status": "active", 
         "password_set": False
     })
+    save_users(users)
+    st.success(f"تم استخراج العضو: {new_username}")
+    st.rerun()
     save_users(users)
     st.success(f"تم استخراج العضو: {new_username}")
     st.rerun()
