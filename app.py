@@ -14,10 +14,9 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 import arabic_reshaper
 from bidi.algorithm import get_display
 from openpyxl.styles import Font, Alignment, PatternFill
-from supabase import create_client, Client
-
-supabase: Client = create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"])
-
+# ====== اعدادات الادمن ======
+ADMIN_USERNAME = "admin"
+ADMIN_DEFAULT_PASS = "admin123"
 def fix_arabic(text):
     """ بتظبط العربي عشان ميطلعش متقطع """
     if not text: return ""
