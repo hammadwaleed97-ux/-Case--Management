@@ -463,69 +463,37 @@ def set_password_page():
 # ====== كود التشغيل ======
 if "page" not in st.session_state:
     st.session_state.page = "login"
-
-set_password": set_password_page()
-# ============================================
-# ======= كود التشغيل ==
-# ============================================
-
-import json
-import os
-from datetime import datetime, timedelta
-
-BANNERS_FILE = "banners_v2.json"
-UPLOAD_FOLDER = "uploads"
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)  # اعمل فولدر الصور لو مش موجود
-
-def load_banners():
-    if os.path.exists(BANNERS_FILE):
-        with open(BANNERS_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    return []
-
-def save_banners(banners):
-    with open(BANNERS_FILE, "w", encoding="utf-8") as f:
-        json.dump(banners, f, ensure_ascii=False, indent=4)
-
-def show_banners():
-    banners = load_banners()
-    now = datetime.now()
-    
-    for banner in banners:
-        if datetime.fromisoformat(banner['expire_at']) > now:
-            font_size = banner.get('font_size', 18)
-            text_html = f"<div style='background:{banner['color']}; color:black; padding:15px; border-radius:10px; margin-bottom:10px; font-weight:bold; font-size:{font_size}px; text-align:center;'>{banner['text']}</div>"
-            st.markdown(text_html, unsafe_allow_html=True)
-            
-            # عرض الصورة لو موجودة
-            if banner.get('image_path'):
-                st.image(banner['image_path'], use_container_width=True)
-
-# ===== تشغيل الصفحات =====
 if "user" not in st.session_state:
     st.session_state.user = None
-    st.session_state.page = "login"
 
+# عرض اليافطات في كل الصفحات
+show_banners()
+
+# ===== تشغيل الصفحات =====
 if st.session_state.page == "login":
     login_page()
 
-elif st.session_state.page == "extract_member":
+elif st.session_state.page == "extract":
     if st.session_state.user and st.session_state.user["role"] == "admin":
         extract_member_page()
+    else:
+        st.session_state.page = "login"; st.rerun()
 
-elif st.session_state.page == "ادارة_الاعضاء":
+elif st.session_state.page == "manage":
     if st.session_state.user and st.session_state.user["role"] == "admin":
         manage_users_page()
         
         if st.button("⚙️ إدارة اليافطات", use_container_width=True):
-            st.session_state.page = "اليافطات"
+            st.session_state.page = "banners"
             st.rerun()
+    else:
+        st.session_state.page = "login"; st.rerun()
 
-elif st.session_state.page == "اليافطات":
+elif st.session_state.page == "banners":
     st.markdown("<h2>⚙️ إدارة اليافطات</h2>", unsafe_allow_html=True)
     
     if st.button("العودة لإدارة الاعضاء", use_container_width=True):
-        st.session_state.page = "ادارة_الاعضاء"
+        st.session_state.page = "manage"
         st.rerun()
     
     st.write("---")
@@ -559,12 +527,12 @@ elif st.session_state.page == "اليافطات":
                         f.write(uploaded_file.getbuffer())
 
                 new_banner = {
-                    "id": str(datetime.now().timestamp()),  # id عشان الحذف
+                    "id": str(datetime.now().timestamp()),
                     "text": f"<b>{title}</b><br>{content}",
                     "color": selected_color,
                     "font_size": font_size,
-                    "image_path": image_path,  # حفظنا مسار الصورة
-                    "expire_at": (datetime.now() + timedelta(days=7)).isoformat()
+                    "image_path": image_path,
+                    "expire": (datetime.now() + timedelta(days=7)).isoformat() # استخدمت expire زي فوق
                 }
                 banners.append(new_banner)
                 save_banners(banners)
@@ -591,57 +559,55 @@ elif st.session_state.page == "اليافطات":
                 st.success("تم الحذف")
                 st.rerun()
 
-elif st.session_state.page == "recovery_settings": 
+elif st.session_state.page == "recovery": 
     recovery_settings_page()
 
 elif st.session_state.page == "set_password": 
     set_password_page()
 
-elif st.session_state.page == "change_password": 
+elif st.session_state.page == "change_pass": 
     change_password_page()
 
 elif st.session_state.page == "الرئيسية":
+    st.title("الرئيسية")
     st.write(f"اهلا {st.session_state.user['username']}")
-    show_banners()  # هنا هتظهر الصورة + النص
-    banner_sidebar()
+    banner_sidebar() # دي بتاعت الادمن في السايدبار
     
     st.markdown("""
-    st.markdown("""
-<style>
-.stButton>button {
-    color: white !important;
-    background-color: #0d6efd !important;
-    border-radius: 12px !important;
-    padding: 10px !important;
-    margin-bottom: 8px !important;
-}
-h1, h2, h3, p, div, label, span {
-    color: white !important;
-}
-</style>
-""", unsafe_allow_html=True)
+    <style>
+    .stButton>button {
+        color: white !important;
+        background-color: #0d6efd !important;
+        border-radius: 12px !important;
+        padding: 10px !important;
+        margin-bottom: 8px !important;
+    }
+    h1, h2, h3, p, div, label, span {
+        color: white !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
     
     if st.session_state.user["role"] == "admin":
         if st.button("استخراج عضوية جديدة", use_container_width=True, type="primary"):
-            st.session_state.page = "extract_member"
+            st.session_state.page = "extract" # وحدت الاسم
             st.rerun()
         if st.button("ادارة الاعضاء", use_container_width=True):
-            st.session_state.page = "ادارة_الاعضاء"
+            st.session_state.page = "manage" # وحدت الاسم
             st.rerun()
     
     if st.button("تغيير كلمة السر"): 
-        st.session_state.page = "change_password"
+        st.session_state.page = "change_pass" # وحدت الاسم
         st.rerun()
         
     if st.button("تأكيد البريد الالكتروني"): 
-        st.session_state.page = "recovery_settings"
+        st.session_state.page = "recovery" # وحدت الاسم
         st.rerun()
         
     if st.button("تسجيل الخروج"): 
         st.session_state.user = None
         st.session_state.page = "login"
         st.rerun()
-# ======= الجزء الاول: الاساسيات ============
 # ============================================
 import streamlit as st
 import pandas as pd
