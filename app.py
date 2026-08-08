@@ -5,6 +5,7 @@ from email.mime.multipart import MIMEMultipart
 
 import streamlit as st
 import pandas as pd
+from supabase import create_client, Client # 1. ضيفنا دي
 
 # بتوع التقارير
 from fpdf import FPDF
@@ -14,6 +15,10 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 import arabic_reshaper
 from bidi.algorithm import get_display
 from openpyxl.styles import Font, Alignment, PatternFill
+
+# ====== الاتصال بالسحابة ====== # 2. ضيفنا دي
+supabase: Client = create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"])
+
 # ====== اعدادات الادمن ======
 ADMIN_USERNAME = "admin"
 ADMIN_DEFAULT_PASS = "admin123"
@@ -24,18 +29,17 @@ def fix_arabic(text):
     bidi_text = get_display(reshaped_text)
     return bidi_text
 
-# ===== نظام اليافطة =====
-BANNERS_FILE = "banners_v2.json"
+# ===== نظام اليافطة - متعدل للسحابة =====
 
 def load_banners():
-    if os.path.exists(BANNERS_FILE):
-        with open(BANNERS_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    return []
+    res = supabase.table("banners").select("*").order("created_at", desc=True).execute() # 3. بنجيب من السحابة
+    return res.data
 
-def save_banners(banners):
-    with open(BANNERS_FILE, "w", encoding="utf-8") as f:
-        json.dump(banners, f, ensure_ascii=False, indent=2)
+def save_banner_to_db(banner_data): # 4. غيرنا الاسم عشان نحفظ واحد
+    supabase.table("banners").insert(banner_data).execute()
+
+def delete_banner_from_db(banner_id): # 5. حذف من السحابة
+    supabase.table("banners").delete().eq("id", banner_id).execute()
 
 def init_session_state():
     if "banners" not in st.session_state:
@@ -48,6 +52,7 @@ def show_banners():
     
     now = datetime.now()
     active_banners = []
+    banners_to_delete = []
     
     for b in st.session_state.banners:
         if not isinstance(b, dict) or "expire" not in b:
@@ -59,7 +64,13 @@ def show_banners():
         
         if expire_date > now:
             active_banners.append(b)
+        else:
+            banners_to_delete.append(b["id"]) # 6. نجمع القديم عشان نمسحه من السحابة
             
+    # نمسح المنتهي من السحابة
+    for banner_id in banners_to_delete:
+        delete_banner_from_db(banner_id)
+
     st.session_state.banners = active_banners
 
     for banner in active_banners:
@@ -86,13 +97,14 @@ def banner_sidebar():
         if st.form_submit_button("اضافة يافطة"):
             if banner_text:
                 expire_time = datetime.now() + timedelta(minutes=duration_minutes)
-                st.session_state.banners.append({
+                new_banner = {
                     "text": banner_text, 
                     "color": banner_color, 
                     "expire": expire_time.isoformat(),
                     "created_at": datetime.now().isoformat()
-                })
-                save_banners(st.session_state.banners)
+                }
+                save_banner_to_db(new_banner) # 7. حفظ في السحابة
+                st.session_state.banners = load_banners() # 8. نعمل ريفريش
                 st.rerun()
 
     st.sidebar.markdown("### حذف اليافطات")
@@ -100,10 +112,11 @@ def banner_sidebar():
         col1, col2 = st.sidebar.columns([4,1])
         with col1: st.write(f"• {banner['text'][:20]}...")
         with col2: 
-            if st.button("🗑️", key=f"del_admin_{i}"):
-                st.session_state.banners.pop(i)
-                save_banners(st.session_state.banners)
+            if st.button("🗑️", key=f"del_admin_{banner['id']}"): # 9. استخدمنا id بتاع السحابة
+                delete_banner_from_db(banner['id']) # 10. حذف من السحابة
+                st.session_state.banners = load_banners() # 11. نعمل ريفريش
                 st.rerun()
+# ===== نهاية اليافطة =====
 # ===== نهاية اليافطة =====
 
 # دالة التصدير
