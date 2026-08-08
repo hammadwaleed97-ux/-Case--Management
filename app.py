@@ -190,12 +190,13 @@ def load_users():
     try:
         response = supabase.table("users").select("*").execute()
         users = response.data
-        if users:
+        if users and len(users) > 0:
             return users
     except Exception as e:
         st.warning(f"مقدرتش اجيب اليوزرز من السحابة: {e}")
 
-    # لو اول مرة ومفيش يوزرز نعمل الادمن ونسجله في السحابة
+    # لو الجدول فاضي خالص نعمل الادمن ونسجله
+    st.info("اول تشغيل: جاري انشاء حساب الادمن...")
     admin_pass = bcrypt.hashpw(ADMIN_DEFAULT_PASS.encode(), bcrypt.gensalt()).decode()
     admin_user = {
         "username": ADMIN_USERNAME,
@@ -206,16 +207,16 @@ def load_users():
         "status": "active",
         "password_set": True
     }
-    save_users([admin_user]) # هيعمله insert في السحابة ويجيب id
+    supabase.table("users").insert(admin_user).execute()
     return [admin_user]
 
 def save_users(users):
     try:
         for user in users:
             user_id = user.get("id")
-            if user_id: # لو اليوزر قديم نعمل update
+            if user_id:
                 supabase.table("users").update(user).eq("id", user_id).execute()
-            else: # لو يوزر جديد نعمل insert ونجيب ال id الجديد
+            else:
                 result = supabase.table("users").insert(user).execute()
                 if result.data:
                     user["id"] = result.data[0]["id"]
@@ -226,13 +227,10 @@ def check_login(username, password):
     users = load_users()
     for user in users:
         if user["username"] == username and user["status"] == "active":
-            # 1- تشييك الباسورد المتشفر العادي
-            if user.get("password") and bcrypt.checkpw(password.encode(), user["password"].encode()):
-                return user
-            # 2- تشييك باسورد الادمن الافتراضي لو لسه متسجلش في السحابة
-            if username == ADMIN_USERNAME and password == ADMIN_DEFAULT_PASS:
+            if bcrypt.checkpw(password.encode(), user["password"].encode()):
                 return user
     return None
+# ===============================================
 # ===============================================
 
 def is_admin_email(email):
