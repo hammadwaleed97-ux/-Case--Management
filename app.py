@@ -251,7 +251,7 @@ def delete_user_db(user_id):
     supabase.table("users").delete().eq("id", user_id).execute()
 
 # ====== الصفحات ======
-# ====== الصفحات ======
+# ===== الصفحات ======
 def login_page():
     st.markdown("<h3 style='text-align:center; color:white'>دخول السادة الاعضاء</h3>", unsafe_allow_html=True)
     tab1, tab2 = st.tabs(["تسجيل الدخول", "تفعيل حساب جديد"])
@@ -266,7 +266,7 @@ def login_page():
             user = check_login(username, password)
             if user:
                 st.session_state.user = user
-                st.session_state.role = user["role"] # <--- ده التعديل المهم
+                st.session_state.role = user["role"]
                 if user["role"] == "member" and not user.get("password_set", False):
                     st.session_state.page = "set_password"
                     st.session_state.temp_user = user["username"]
@@ -282,7 +282,7 @@ def login_page():
         admin_recover_email = st.text_input("ايميل الادمن", key="admin_recover")
         if st.button("ارسال كود للادمن", key="admin_send", use_container_width=True):
             if is_admin_email(admin_recover_email):
-                code = str(random.randint(100000, 999999))
+                code = str(random.randint(100000, 999))
                 st.session_state.RESET_CODES[admin_recover_email] = {"code": code, "role": "admin"}
                 body = f"كود اعادة تعيين كلمة سر الادمن: {code}"
                 if send_email(admin_recover_email, "كود استرجاع الادمن", body):
@@ -327,7 +327,7 @@ def login_page():
                     st.session_state.show_reset_admin = False
                     st.session_state.show_reset_member = False
                     st.session_state.user = logged_user
-                    st.session_state.role = logged_user["role"] # <--- وده كمان
+                    st.session_state.role = logged_user["role"]
                     st.session_state.page = "الرئيسية"
                     st.success("تم تسجيل الدخول بنجاح")
                     st.rerun()
@@ -351,7 +351,7 @@ def login_page():
 def extract_member_page():
     st.markdown("<h2 style='text-align:center; color:#C9A961'>استخراج عضوية جديدة</h2>", unsafe_allow_html=True)
     if st.button("العودة للرئيسية"):
-        st.session_state.page = "الرئيسية"; st.session_state.role = None; st.rerun() # <--- زودت role
+        st.session_state.page = "الرئيسية"; st.session_state.role = None; st.rerun()
     new_username = st.text_input("اسم المستخدم الجديد")
     if st.button("استخراج العضو", use_container_width=True, type="primary"):
         if new_username.strip():
@@ -371,7 +371,7 @@ def extract_member_page():
 
 def manage_users_page():
     st.markdown("<h2 style='text-align:center; color:#C9A961'>ادارة الاعضاء</h2>", unsafe_allow_html=True)
-    if st.button("العودة للرئيسية"): st.session_state.page = "الرئيسية"; st.session_state.role = None; st.rerun() # <--- زودت role
+    if st.button("العودة للرئيسية"): st.session_state.page = "الرئيسية"; st.session_state.role = None; st.rerun()
     users = load_users()
     for user in users:
         if user["role"] == "member":
@@ -403,7 +403,7 @@ def manage_users_page():
 
 def recovery_settings_page():
     st.markdown("<h2 style='text-align:center; color:#C9A961'>تأكيد البريد الالكتروني</h2>", unsafe_allow_html=True)
-    if st.button("العودة للرئيسية"): st.session_state.page = "الرئيسية"; st.session_state.role = None; st.rerun() # <--- زودت role
+    if st.button("العودة للرئيسية"): st.session_state.page = "الرئيسية"; st.session_state.role = None; st.rerun()
     users = load_users()
     user = next((u for u in users if u["id"] == st.session_state.user["id"]), None)
     email = st.text_input("البريد الالكتروني", value=user.get("email",""))
@@ -417,7 +417,7 @@ def recovery_settings_page():
 
 def change_password_page():
     st.markdown("<h1 style='text-align:center; color:#C9A961'>تغيير كلمة السر</h1>", unsafe_allow_html=True)
-    if st.button("العودة للرئيسية"): st.session_state.page = "الرئيسية"; st.session_state.role = None; st.rerun() # <--- زودت role
+    if st.button("العودة للرئيسية"): st.session_state.page = "الرئيسية"; st.session_state.role = None; st.rerun()
     old_pass = st.text_input("كلمة السر القديمة", type="password")
     new_pass = st.text_input("كلمة السر الجديدة", type="password")
     if st.button("تغيير", use_container_width=True):
@@ -438,12 +438,11 @@ def set_password_page():
             user_id = next(u["id"] for u in load_users() if u["username"] == st.session_state.temp_user)
             update_user_db(user_id, {"password": hashed, "password_set": True})
             st.session_state.user = check_login(st.session_state.temp_user, new_pass)
-            st.session_state.role = st.session_state.user["role"] # <--- وده كمان
+            st.session_state.role = st.session_state.user["role"]
             st.session_state.page = "الرئيسية"
             st.success("تم التفعيل وتسجيل الدخول")
             st.rerun()
         else: st.error("الباسوردين مش زي بعض")
-# ===== تشغيل الصفحات ====
 # ===== تشغيل الصفحات =====
 if st.session_state.page == "login":
     login_page()
@@ -457,7 +456,7 @@ elif st.session_state.page == "extract":
 elif st.session_state.page == "manage":
     if st.session_state.user and st.session_state.user["role"] == "admin":
         manage_users_page()
-        
+
         if st.button("⚙️ إدارة اليافطات", use_container_width=True):
             st.session_state.page = "banners"
             st.rerun()
@@ -466,51 +465,39 @@ elif st.session_state.page == "manage":
 
 elif st.session_state.page == "banners":
     st.markdown("<h2>⚙️ إدارة اليافطات</h2>", unsafe_allow_html=True)
-    
+
     if st.button("العودة لإدارة الاعضاء", use_container_width=True):
         st.session_state.page = "manage"
         st.rerun()
-    
+
     st.write("---")
-    
+
     with st.expander("➕ اضافة يافطة جديدة"):
         st.markdown("<p style='color:white; font-weight:bold; font-size:16px;'>🏷️ اسم اليافطة</p>", unsafe_allow_html=True)
         title = st.text_input("", label_visibility="collapsed")
-        
+
         st.markdown("<p style='color:white; font-weight:bold; font-size:16px;'>📝 محتوى اليافطة</p>", unsafe_allow_html=True)
         content = st.text_area("", label_visibility="collapsed")
-        
+
         st.markdown("<p style='color:white; font-weight:bold; font-size:16px;'>🎨 لون اليافطة</p>", unsafe_allow_html=True)
         color_option = st.selectbox("", ["اصفر", "احمر", "اخضر", "ازرق", "برتقاني"], label_visibility="collapsed")
         colors = {"اصفر": "#FFFF00","احمر": "#FF0000","اخضر": "#00FF00","ازرق": "#00BFFF","برتقاني": "#FF8C00"}
         selected_color = colors[color_option]
-        
+
         st.markdown("<p style='color:white; font-weight:bold; font-size:16px;'>🔤 حجم الخط</p>", unsafe_allow_html=True)
         font_size = st.slider("", 14, 32, 18, label_visibility="collapsed")
-        
-        st.markdown("<p style='color:white; font-weight:bold; font-size:16px;'>📁 رفع صورة</p>", unsafe_allow_html=True)
-        uploaded_file = st.file_uploader("", type=['png','jpg','jpeg'], label_visibility="collapsed")
 
         if st.button("💾 حفظ اليافطة", use_container_width=True):
             if title and content:
-                banners = load_banners()
-                
-                image_path = ""
-                if uploaded_file:
-                    image_path = f"{UPLOAD_FOLDER}/{uploaded_file.name}"
-                    with open(image_path, "wb") as f:
-                        f.write(uploaded_file.getbuffer())
-
+                expire_time = datetime.now() + timedelta(days=7)
                 new_banner = {
-                    "id": str(datetime.now().timestamp()),
                     "text": f"<b>{title}</b><br>{content}",
                     "color": selected_color,
-                    "font_size": font_size,
-                    "image_path": image_path,
-                    "expire": (datetime.now() + timedelta(days=7)).isoformat() # استخدمت expire زي فوق
+                    "expire": expire_time.isoformat(),
+                    "created_at": datetime.now().isoformat()
                 }
-                banners.append(new_banner)
-                save_banners(banners)
+                save_banner_to_db(new_banner) # <--- متعدلة للسحابة
+                st.session_state.banners = load_banners() # <--- ريفريش
                 st.success("✅ تم اضافة اليافطة")
                 st.rerun()
             else:
@@ -518,71 +505,75 @@ elif st.session_state.page == "banners":
 
     st.write("---")
     st.markdown("<h3>🗑️ اليافطات الموجودة</h3>", unsafe_allow_html=True)
-    
+
     banners = load_banners()
     if not banners:
         st.info("مفيش يافطات لسه")
-    
+
     for banner in banners:
         col1, col2 = st.columns([4,1])
         with col1:
             st.markdown(f"<div style='background:{banner['color']}; padding:10px; border-radius:8px;'>{banner['text']}</div>", unsafe_allow_html=True)
         with col2:
-            if st.button("🗑️ حذف", key=banner['id']):
-                banners = [b for b in banners if b['id'] != banner['id']]
-                save_banners(banners)
+            if st.button("🗑️ حذف", key=f"del_banner_{banner['id']}"):
+                delete_banner_from_db(banner['id']) # <--- متعدلة للسحابة
+                st.session_state.banners = load_banners() # <--- ريفريش
                 st.success("تم الحذف")
                 st.rerun()
 
-elif st.session_state.page == "recovery": 
+elif st.session_state.page == "recovery":
     recovery_settings_page()
 
-elif st.session_state.page == "set_password": 
+elif st.session_state.page == "set_password":
     set_password_page()
 
-elif st.session_state.page == "change_pass": 
+elif st.session_state.page == "change_pass":
     change_password_page()
 
 elif st.session_state.page == "الرئيسية":
+    init_session_state() # <--- ضفت دي
+    show_banners() # <--- ضفت دي
     st.title("الرئيسية")
     st.write(f"اهلا {st.session_state.user['username']}")
-    banner_sidebar() # دي بتاعت الادمن في السايدبار
-    
+    banner_sidebar()
+
     st.markdown("""
     <style>
-    .stButton>button {
-        color: white !important;
-        background-color: #0d6efd !important;
-        border-radius: 12px !important;
-        padding: 10px !important;
-        margin-bottom: 8px !important;
+   .stButton>button {
+        color: white!important;
+        background-color: #0d6efd!important;
+        border-radius: 12px!important;
+        padding: 10px!important;
+        margin-bottom: 8px!important;
     }
     h1, h2, h3, p, div, label, span {
-        color: white !important;
+        color: white!important;
     }
     </style>
     """, unsafe_allow_html=True)
-    
+
     if st.session_state.user["role"] == "admin":
         if st.button("استخراج عضوية جديدة", use_container_width=True, type="primary"):
-            st.session_state.page = "extract" # وحدت الاسم
+            st.session_state.page = "extract"
             st.rerun()
         if st.button("ادارة الاعضاء", use_container_width=True):
-            st.session_state.page = "manage" # وحدت الاسم
+            st.session_state.page = "manage"
             st.rerun()
-    
-    if st.button("تغيير كلمة السر"): 
-        st.session_state.page = "change_pass" # وحدت الاسم
+
+    if st.button("تغيير كلمة السر"):
+        st.session_state.page = "change_pass"
         st.rerun()
-        
-    if st.button("تأكيد البريد الالكتروني"): 
-        st.session_state.page = "recovery" # وحدت الاسم
+
+    if st.button("تأكيد البريد الالكتروني"):
+        st.session_state.page = "recovery"
         st.rerun()
-        
-    if st.button("تسجيل الخروج"): 
+
+    if st.button("تسجيل الخروج"):
         st.session_state.user = None
+        st.session_state.role = None # <--- ضفت دي
         st.session_state.page = "login"
         st.rerun()
+# ========================
 # ============================================
 import streamlit as st
 import pandas as pd
