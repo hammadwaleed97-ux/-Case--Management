@@ -195,14 +195,18 @@ def load_users():
     except Exception as e:
         st.warning(f"مقدرتش اجيب اليوزرز من السحابة: {e}")
 
-    # لو اول مرة ومفيش يوزرز نعمل الادمن
+    # لو اول مرة ومفيش يوزرز نعمل الادمن ونسجله في السحابة
     admin_pass = bcrypt.hashpw(ADMIN_DEFAULT_PASS.encode(), bcrypt.gensalt()).decode()
     admin_user = {
-        "id": 1, "username": ADMIN_USERNAME, "password": admin_pass, 
-        "email": SENDER_EMAIL, "recovery_email": "", "role": "admin", 
-        "status": "active", "password_set": True
+        "username": ADMIN_USERNAME,
+        "password": admin_pass,
+        "email": SENDER_EMAIL,
+        "recovery_email": "",
+        "role": "admin",
+        "status": "active",
+        "password_set": True
     }
-    save_users([admin_user])
+    save_users([admin_user]) # هيعمله insert في السحابة ويجيب id
     return [admin_user]
 
 def save_users(users):
@@ -217,14 +221,19 @@ def save_users(users):
                     user["id"] = result.data[0]["id"]
     except Exception as e:
         st.error(f"مقدرتش احفظ اليوزرز في السحابة: {e}")
-        st.error(f"مقدرتش احفظ اليوزرز في السحابة: {e}")
+
 def check_login(username, password):
     users = load_users()
     for user in users:
         if user["username"] == username and user["status"] == "active":
-            if user["password"] and bcrypt.checkpw(password.encode(), user["password"].encode()):
+            # 1- تشييك الباسورد المتشفر العادي
+            if user.get("password") and bcrypt.checkpw(password.encode(), user["password"].encode()):
+                return user
+            # 2- تشييك باسورد الادمن الافتراضي لو لسه متسجلش في السحابة
+            if username == ADMIN_USERNAME and password == ADMIN_DEFAULT_PASS:
                 return user
     return None
+# ===============================================
 
 def is_admin_email(email):
     users = load_users()
