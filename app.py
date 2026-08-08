@@ -245,8 +245,14 @@ def check_login(username, password):
     users = load_users()
     for user in users:
         if user["username"] == username and user["status"] == "active":
-            if bcrypt.checkpw(password.encode(), user["password"].encode()):
-                return user
+            # مهم جدا: لو الباسورد فاضي او العضو مش مفعل نطلع
+            if not user.get("password") or not user.get("password_set", False):
+                return None
+            try:
+                if bcrypt.checkpw(password.encode(), user["password"].encode()):
+                    return user
+            except Exception:
+                return None
     return None
 
 def is_admin_email(email):
