@@ -367,7 +367,6 @@ def extract_member_page():
                     existing_user = next((u for u in users if u['username'] == new_username), None)
 
                     if existing_user:
-                        # لو موجود بس محظور او لسه مفعلش الباسورد
                         if existing_user["status"] == "banned" or not existing_user.get("password_set"):
                             existing_user["status"] = "active"
                             existing_user["password"] = ""
@@ -378,7 +377,6 @@ def extract_member_page():
                         else:
                             st.error("الاسم موجود والعضو مفعل بالفعل")
                     else:
-                        # ده الجديد - هنضيف من غير id
                         users.append({
                             "username": new_username, 
                             "password": "", 
