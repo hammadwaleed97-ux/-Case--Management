@@ -152,22 +152,43 @@ div[data-testid="stWidgetLabel"] p {
     font-weight: 700 !important;
 }
 
-/* الجدول */
-thead tr th { color: black !important; background-color: #C9A961 !important; font-weight: bold; }
-tbody tr td { color: black !important; background-color: white !important; }
+import streamlit as st
+import smtplib
+import random
+from email.mime.text import MIMEText
+from supabase import create_client
+import bcrypt
+
+# ====== CSS الجدول ======
+st.markdown("""
+<style>
+thead tr th { color: black!important; background-color: #C9A961!important; font-weight: bold; }
+tbody tr td { color: black!important; background-color: white!important; }
+div[data-testid="stTabs"] button {color: white!important; font-weight: bold;}
+div[data-testid="stTabs"] button[aria-selected="true"] {color: #C9A961!important;}
+div[data-testid="stTextInput"] label {color: white!important; font-weight: bold;}
 </style>
 """, unsafe_allow_html=True)
 
+# ====== الاعدادات ======
+URL = "https://uhcgejkkwqesdjbvtzcx.supabase.co"
+KEY = "sb_publishable_urw9KKp2gxCnn4OTO0uf1A__SbAQan_"
+supabase = create_client(URL, KEY)
+
 USERS_FILE = "users.json"
-SENDER_EMAIL = ""
-SENDER_PASSWORD = ""
+SENDER_EMAIL = "" # حط ايميلك هنا لو عايز الارسال يشتغل
+SENDER_PASSWORD = "" # حط باسورد التطبيق هنا
 ADMIN_USERNAME = "admin"
 ADMIN_DEFAULT_PASS = "admin123"
 
 if "RESET_CODES" not in st.session_state:
     st.session_state.RESET_CODES = {}
 
+# ====== ارسال الايميل ======
 def send_email(to_email, subject, body):
+    if not SENDER_EMAIL:
+        st.warning("مفعلتش الايميل لسه. حط SENDER_EMAIL و SENDER_PASSWORD")
+        return False
     try:
         msg = MIMEText(body, "plain", "utf-8")
         msg["Subject"] = subject
@@ -186,15 +207,14 @@ def send_email(to_email, subject, body):
 # ====== اليوزرز في السحابة ======
 def load_users():
     try:
-        response = supabase.table("users").select("id, username, password, email, role, status, password_set").execute()
-        users = response.data
+        response = supabase.table("users").select("*").execute()
         users = response.data
         if users and len(users) > 0:
             return users
     except Exception as e:
         st.warning(f"مقدرتش اجيب اليوزرز من السحابة: {e}")
 
-    # لو الجدول فاضي خالص نعمل الادمن ونسجله
+    # لو الجدول فاضي نعمل الادمن
     st.info("اول تشغيل: جاري انشاء حساب الادمن...")
     admin_pass = bcrypt.hashpw(ADMIN_DEFAULT_PASS.encode(), bcrypt.gensalt()).decode()
     admin_user = {
@@ -225,12 +245,10 @@ def save_users(users):
 def check_login(username, password):
     users = load_users()
     for user in users:
-        if user["username"] == username:
-            if bcrypt.checkpw(password.encode(), user["password"].encode()): # <-- عدلتها لـ password
+        if user["username"] == username and user["status"] == "active":
+            if bcrypt.checkpw(password.encode(), user["password"].encode()):
                 return user
     return None
-# ===============================================
-# ===============================================
 
 def is_admin_email(email):
     users = load_users()
@@ -238,23 +256,14 @@ def is_admin_email(email):
     if not admin: return False
     return email == admin["email"] or email == admin.get("recovery_email","")
 
+# ====== الصفحات ======
 def login_page():
     st.markdown("<h3 style='text-align:center; color:white'>دخول السادة الاعضاء</h3>", unsafe_allow_html=True)
-
-    # CSS عشان التابس تبقى بيضا
-    st.markdown("""
-    <style>
-    div[data-testid="stTabs"] button {color: white!important; font-weight: bold;}
-    div[data-testid="stTabs"] button[aria-selected="true"] {color: #C9A961!important;}
-    </style>
-    """, unsafe_allow_html=True)
-
     tab1, tab2 = st.tabs(["تسجيل الدخول", "تفعيل حساب جديد"])
 
     with tab1:
         st.markdown("<p style='color:white; font-weight:bold;'>اسم المستخدم</p>", unsafe_allow_html=True)
         username = st.text_input("", key="login_user", label_visibility="collapsed")
-
         st.markdown("<p style='color:white; font-weight:bold;'>كلمة السر</p>", unsafe_allow_html=True)
         password = st.text_input("", type="password", key="login_pass", label_visibility="collapsed")
 
@@ -274,12 +283,10 @@ def login_page():
 
         st.markdown("---")
         st.markdown("<p style='color:white; font-weight:bold;'>نسيت بياناتك؟ استرجعها بالايميل</p>", unsafe_allow_html=True)
-
-        st.markdown("<p style='color:white; font-weight:bold;'>الادمن: ادخل ايميل من ايميلاتك</p>", unsafe_allow_html=True)
-        admin_recover_email = st.text_input("", key="admin_recover", label_visibility="collapsed")
+        admin_recover_email = st.text_input("ايميل الادمن", key="admin_recover")
         if st.button("ارسال كود للادمن", key="admin_send", use_container_width=True):
             if is_admin_email(admin_recover_email):
-                code = str(random.randint(100000, 999999))
+                code = str(random.randint(100000, 999))
                 st.session_state.RESET_CODES[admin_recover_email] = {"code": code, "role": "admin"}
                 body = f"كود اعادة تعيين كلمة سر الادمن: {code}"
                 if send_email(admin_recover_email, "كود استرجاع الادمن", body):
@@ -287,14 +294,13 @@ def login_page():
                     st.session_state.show_reset_admin = True
             else: st.error("هذا الايميل غير مسجل كادمن")
 
-        st.markdown("<p style='color:white; font-weight:bold;'>العضو: ادخل ايميلك</p>", unsafe_allow_html=True)
-        member_recover_email = st.text_input("", key="member_recover", label_visibility="collapsed")
+        member_recover_email = st.text_input("ايميل العضو", key="member_recover")
         if st.button("ارسال كود للعضو", key="member_send", use_container_width=True):
             users = load_users()
             found = [u for u in users if u.get("email") == member_recover_email]
             if found:
                 user = found[0]
-                code = str(random.randint(100000, 999))
+                code = str(random.randint(100000, 999999))
                 st.session_state.RESET_CODES[member_recover_email] = {"code": code, "user_id": user["id"]}
                 body = f"مرحبا {user['username']}\nاسم المستخدم: {user['username']}\nكود اعادة التعيين: {code}"
                 if send_email(member_recover_email, "استرجاع بيانات الدخول", body):
@@ -303,13 +309,9 @@ def login_page():
             else: st.error("الايميل ده مش متسجل")
 
         if st.session_state.get("show_reset_admin") or st.session_state.get("show_reset_member"):
-            st.markdown("<p style='color:white; font-weight:bold;'>ادخل الكود اللي وصل على الايميل</p>", unsafe_allow_html=True)
             email_to_reset = admin_recover_email if st.session_state.get("show_reset_admin") else member_recover_email
-            code_input = st.text_input("", key="code_input", label_visibility="collapsed")
-
-            st.markdown("<p style='color:white; font-weight:bold;'>كلمة السر الجديدة</p>", unsafe_allow_html=True)
-            new_pass = st.text_input("", type="password", key="new_pass", label_visibility="collapsed")
-
+            code_input = st.text_input("ادخل الكود")
+            new_pass = st.text_input("كلمة السر الجديدة", type="password")
             if st.button("تأكيد وتغيير كلمة السر"):
                 if st.session_state.RESET_CODES.get(email_to_reset, {}).get("code") == code_input:
                     users = load_users()
@@ -335,6 +337,7 @@ def login_page():
                     st.success("تم تسجيل الدخول بنجاح")
                     st.rerun()
                 else: st.error("الكود غلط")
+
     with tab2:
         st.markdown("**تفعيل حساب عضو**")
         member_name = st.text_input("اكتب اسم العضو للتفعيل", key="new_user")
@@ -352,63 +355,44 @@ def login_page():
 
 def extract_member_page():
     st.markdown("<h2 style='text-align:center; color:#C9A961'>استخراج عضوية جديدة</h2>", unsafe_allow_html=True)
-    
-    st.markdown("""
-    <style>
-    div[data-testid="stTextInput"] label {color: white!important; font-weight: bold;}
-    </style>
-    """, unsafe_allow_html=True)
-    
-    if st.button("العودة للرئيسية"): 
+    if st.button("العودة للرئيسية"):
         st.session_state.page = "الرئيسية"; st.rerun()
+    new_username = st.text_input("اسم المستخدم الجديد")
+    if st.button("استخراج العضو", use_container_width=True, type="primary"):
+        if new_username.strip():
+            users = load_users()
+            existing_user = next((u for u in users if u['username'] == new_username), None)
+            if existing_user:
+                if existing_user["status"] == "banned" or not existing_user.get("password_set"):
+                    existing_user["status"] = "active"
+                    existing_user["password"] = ""
+                    existing_user["password_set"] = False
+                    save_users(users)
+                    st.success(f"تم اعادة استخراج {new_username}")
+                    st.rerun()
+                else:
+                    st.error("الاسم موجود والعضو مفعل بالفعل")
+            else:
+                users.append({
+                    "username": new_username,
+                    "password": "",
+                    "email": "",
+                    "role": "member",
+                    "status": "active",
+                    "password_set": False
+                })
+                save_users(users)
+                st.success(f"تم استخراج العضو: {new_username}")
+                st.rerun()
 
-    with st.container(border=True):
-        st.markdown("<p style='color:white; font-weight:bold;'>اسم المستخدم الجديد</p>", unsafe_allow_html=True)
-        new_username = st.text_input("", key="new_username", label_visibility="collapsed")
-
-        if st.button("استخراج العضو", use_container_width=True, type="primary"):
-            if new_username.strip():
-                try:
-                    users = load_users()
-                    existing_user = next((u for u in users if u['username'] == new_username), None)
-
-                    if existing_user:
-                        if existing_user["status"] == "banned" or not existing_user.get("password_set"):
-                            existing_user["status"] = "active"
-                            existing_user["password"] = ""
-                            existing_user["password_set"] = False
-                            save_users(users)
-                            st.success(f"تم اعادة استخراج {new_username}")
-                            st.rerun()
-                        else:
-                            st.error("الاسم موجود والعضو مفعل بالفعل")
-                    else:
-                        users.append({
-                            "username": new_username, 
-                            "password": "", 
-                            "email": "",
-                            "role": "member", 
-                            "status": "active", 
-                            "password_set": False
-                        })
-                        save_users(users)
-                        st.success(f"تم استخراج العضو: {new_username}")
-                        st.rerun()
-                        
-                except Exception as e:
-                    st.error(f"حصل خطأ: {e}")
-            
 def manage_users_page():
     st.markdown("<h2 style='text-align:center; color:#C9A961'>ادارة الاعضاء</h2>", unsafe_allow_html=True)
     if st.button("العودة للرئيسية"): st.session_state.page = "الرئيسية"; st.rerun()
     users = load_users()
-
-    st.markdown("---")
     for user in users:
         if user["role"] == "member":
             status = "مفعل" if user.get("password_set") else "غير مفعل"
             if user["status"] == "banned": status = "موقوف لمخالفة"
-
             with st.container(border=True):
                 col1, col2 = st.columns([3,2])
                 with col1:
@@ -431,20 +415,16 @@ def manage_users_page():
                             user["status"] = "active"
                             user["password"] = ""; user["password_set"] = False
                             save_users(users); st.success(f"تم اعادة استخراج {user['username']}"); st.rerun()
-
                     if st.button("حذف", key=f"del_{user['id']}"):
-                        users = [u for u in users if u['id']!= user['id']]; save_users(users); st.rerun()
+                        supabase.table("users").delete().eq("id", user['id']).execute(); st.rerun()
 
 def recovery_settings_page():
     st.markdown("<h2 style='text-align:center; color:#C9A961'>تأكيد البريد الالكتروني</h2>", unsafe_allow_html=True)
     if st.button("العودة للرئيسية"): st.session_state.page = "الرئيسية"; st.rerun()
     users = load_users()
     user = next((u for u in users if u["id"] == st.session_state.user["id"]), None)
-    st.info("هذا البريد سيستخدم لاسترجاع حسابك في حالة الفقد")
     email = st.text_input("البريد الالكتروني", value=user.get("email",""))
-    if user["role"] == "admin":
-        recovery_email = st.text_input("ايميل استرجاع اضافي للادمن", value=user.get("recovery_email",""))
-    else: recovery_email = user.get("recovery_email","")
+    recovery_email = st.text_input("ايميل استرجاع اضافي للادمن", value=user.get("recovery_email","")) if user["role"] == "admin" else user.get("recovery_email","")
     if st.button("حفظ البريد", use_container_width=True):
         user["email"] = email
         if user["role"] == "admin": user["recovery_email"] = recovery_email
@@ -481,7 +461,27 @@ def set_password_page():
                     st.success("تم التفعيل وتسجيل الدخول")
                     st.rerun()
         else: st.error("الباسوردين مش زي بعض")
-            # ==========================
+
+# ====== كود التشغيل ======
+if "page" not in st.session_state:
+    st.session_state.page = "login"
+
+if st.session_state.page == "login":
+    login_page()
+elif st.session_state.page == "الرئيسية":
+    st.title("الرئيسية")
+    st.write(f"مرحبا {st.session_state.user['username']}")
+    if st.session_state.user['role'] == 'admin':
+        if st.button("ادارة الاعضاء"): st.session_state.page = "manage"; st.rerun()
+        if st.button("استخراج عضو"): st.session_state.page = "extract"; st.rerun()
+    if st.button("تغيير كلمة السر"): st.session_state.page = "change_pass"; st.rerun()
+    if st.button("تأكيد البريد"): st.session_state.page = "recovery"; st.rerun()
+    if st.button("تسجيل خروج"): st.session_state.clear(); st.rerun()
+elif st.session_state.page == "manage": manage_users_page()
+elif st.session_state.page == "extract": extract_member_page()
+elif st.session_state.page == "change_pass": change_password_page()
+elif st.session_state.page == "recovery": recovery_settings_page()
+elif st.session_state.page == "set_password": set_password_page()
 # ============================================
 # ======= كود التشغيل ==
 # ============================================
