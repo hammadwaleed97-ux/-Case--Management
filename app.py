@@ -1371,10 +1371,9 @@ elif st.session_state.page == "الحصر":
                 case["الاجراء"] = اخر_جلسة.get("الاجراء","") # <-- هنا بقت الاجراء
                 case["الحالة"] = اخر_جلسة.get("الحالة", case.get("الحالة","متداولة"))
         save_data(data)
-        # ============================================
-
         # ======= التعديل 1: نجيب المتداولة بتاعت العضو ده بس من الحصر العام =======
-        active_cases = [c for c in data["cases"] if c.get('حالة') == 'متداولة' and c.get('assigned_to') == st.session_state.username]
+        username = st.session_state.get("username", "")  # <-- ضفنا ده
+        active_cases = [c for c in data["cases"] if c.get('حالة') == 'متداولة' and c.get('assigned_to') == username]
         # ==================================================
 
         sorted_cases = sorted(active_cases, key=lambda x: x.get("تاريخ_جلسة","9999-12-31"))
