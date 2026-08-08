@@ -367,6 +367,7 @@ def extract_member_page():
                     existing_user = next((u for u in users if u['username'] == new_username), None)
 
                     if existing_user:
+                        # لو موجود بس محظور او لسه مفعلش الباسورد
                         if existing_user["status"] == "banned" or not existing_user.get("password_set"):
                             existing_user["status"] = "active"
                             existing_user["password"] = ""
@@ -376,26 +377,24 @@ def extract_member_page():
                             st.rerun()
                         else:
                             st.error("الاسم موجود والعضو مفعل بالفعل")
-                        else:
-    users.append({
-        "username": new_username, 
-        "password": "", 
-        "email": "",
-        "role": "member", 
-        "status": "active", 
-        "password_set": False
-    })
-    save_users(users)
-    st.success(f"تم استخراج العضو: {new_username}")
-    st.rerun()
-    save_users(users)
-    st.success(f"تم استخراج العضو: {new_username}")
-    st.rerun()
+                    else:
+                        # ده الجديد - هنضيف من غير id
+                        users.append({
+                            "username": new_username, 
+                            "password": "", 
+                            "email": "",
+                            "role": "member", 
+                            "status": "active", 
+                            "password_set": False
+                        })
                         save_users(users)
-                        st.success(f"تم استخراج: {new_username}")
+                        st.success(f"تم استخراج العضو: {new_username}")
                         st.rerun()
+                        
                 except Exception as e:
-                    st.error(f"حصل خطأ: {e}") # ده هيورينا الخطأ فين بالظبط
+                    st.error(f"حصل خطأ: {e}")
+            else:
+                st.error("من فضلك ادخل اسم المستخدم")
             else: 
                 st.error("لازم تكتب اسم المستخدم")
 def manage_users_page():
