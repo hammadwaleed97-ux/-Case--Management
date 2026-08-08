@@ -117,9 +117,7 @@ def banner_sidebar():
                 st.session_state.banners = load_banners() # 11. نعمل ريفريش
                 st.rerun()
 # ===== نهاية اليافطة =====
-# ===== نهاية اليافطة =====
-
-# دالة التصدير
+# ====== دالة التصدير HTML للطباعة ======
 def get_export_html(full_html, title):
     return f"""<!DOCTYPE html>
 <html dir="rtl" lang="ar">
@@ -141,19 +139,14 @@ def get_export_html(full_html, title):
 </html>"""
 
 # ====== CSS الاساسي ======
-init_session_state()
 st.markdown("""
 <style>
 .stApp { background-color: #0E1117; }
 h1, h2, h3, h4, h5, h6 { color: white!important; }
-
-/* الزرار والانبوت */
 .stButton>button { background-color: #C9A961; color: black; font-weight: bold; border-radius: 10px; }
 .stTextInput>div>div>input, .stSelectbox>div>div>div, .stTextArea>div>div>textarea { 
     color: black; background-color: white; border-radius: 8px; 
 }
-
-/* اهم سطرين: اسم الحقل فوق الانبوت */
 div[data-testid="stWidgetLabel"] p {
     color: #C9A961 !important; 
     font-size: 16px !important;
@@ -162,13 +155,6 @@ div[data-testid="stWidgetLabel"] p {
 </style>
 """, unsafe_allow_html=True)
 
-# ====== CSS الجدول ======
-st.markdown("""
-<style>
-thead tr th { color: black!important; background-color: #C9A961!important; font-weight: bold; }
-tbody tr td { color: black!important; background-color: white!important; }
-</style>
-""", unsafe_allow_html=True)
 # ====== CSS الجدول والتابات ======
 st.markdown("""
 <style>
@@ -181,14 +167,8 @@ div[data-testid="stTextInput"] label {color: white!important; font-weight: bold;
 """, unsafe_allow_html=True)
 
 # ====== الاعدادات ======
-# ملحوظة: احنا already عاملين supabase فوق. لو عايز تستخدم ده الغي اللي فوق
-# URL = "https://uhcgejkkwqesdjbvtzcx.supabase.co"
-# KEY = "sb_publishable_urw9KKp2gxCnn4OTO0uf1A__SbAQan_"
-# supabase = create_client(URL, KEY)
-
-USERS_FILE = "users.json"
-SENDER_EMAIL = "" # حط ايميلك هنا لو عايز الارسال يشتغل
-SENDER_PASSWORD = "" # حط باسورد التطبيق هنا
+SENDER_EMAIL = st.secrets.get("SENDER_EMAIL", "") # حط ايميلك في secrets
+SENDER_PASSWORD = st.secrets.get("SENDER_PASSWORD", "") # حط باسورد التطبيق في secrets
 ADMIN_USERNAME = "admin"
 ADMIN_DEFAULT_PASS = "admin123"
 
@@ -198,7 +178,7 @@ if "RESET_CODES" not in st.session_state:
 # ====== ارسال الايميل ======
 def send_email(to_email, subject, body):
     if not SENDER_EMAIL:
-        st.warning("مفعلتش الايميل لسه. حط SENDER_EMAIL و SENDER_PASSWORD")
+        st.warning("مفعلتش الايميل لسه. حطه في Secrets")
         return False
     try:
         msg = MIMEText(body, "plain", "utf-8")
@@ -215,6 +195,38 @@ def send_email(to_email, subject, body):
         st.error(f"خطأ في الارسال: {e}")
         return False
 
+# ====== اليوزرز في السحابة ======
+def load_users():
+    res = supabase.table("users").select("*").execute()
+    users = res.data
+    if not any(u["username"] == ADMIN_USERNAME for u in users):
+        hashed = bcrypt.hashpw(ADMIN_DEFAULT_PASS.encode(), bcrypt.gensalt()).decode()
+        supabase.table("users").insert({
+            "username": ADMIN_USERNAME, "password": hashed, "role": "admin", 
+            "status": "active", "password_set": True
+        }).execute()
+        return load_users()
+    return users
+
+def check_login(username, password):
+    users = load_users()
+    for user in users:
+        if user["username"] == username and user["status"] == "active":
+            if user["password"] and bcrypt.checkpw(password.encode(), user["password"].encode()): 
+                return user
+    return None
+
+def add_user(username):
+    supabase.table("users").insert({
+        "username": username, "password": "", "role": "member", 
+        "status": "active", "password_set": False
+    }).execute()
+
+def delete_user(username):
+    supabase.table("users").delete().eq("username", username).execute()
+
+def update_user(username, new_data):
+    supabase.table("users").update(new_data).eq("username", username).execute()
 # ====== اليوزرز في السحابة ======
 # ====== اليوزرز في ملف محلي ======
 USERS_FILE = "users.json"
