@@ -157,7 +157,7 @@ thead tr th { color: black!important; background-color: #C9A961!important; font-
 tbody tr td { color: black!important; background-color: white!important; }
 </style>
 """, unsafe_allow_html=True)
-# ====== CSS الجدول ======
+# ====== CSS الجدول والتابات ======
 st.markdown("""
 <style>
 thead tr th { color: black!important; background-color: #C9A961!important; font-weight: bold; }
@@ -169,9 +169,10 @@ div[data-testid="stTextInput"] label {color: white!important; font-weight: bold;
 """, unsafe_allow_html=True)
 
 # ====== الاعدادات ======
-URL = "https://uhcgejkkwqesdjbvtzcx.supabase.co"
-KEY = "sb_publishable_urw9KKp2gxCnn4OTO0uf1A__SbAQan_"
-supabase = create_client(URL, KEY)
+# ملحوظة: احنا already عاملين supabase فوق. لو عايز تستخدم ده الغي اللي فوق
+# URL = "https://uhcgejkkwqesdjbvtzcx.supabase.co"
+# KEY = "sb_publishable_urw9KKp2gxCnn4OTO0uf1A__SbAQan_"
+# supabase = create_client(URL, KEY)
 
 USERS_FILE = "users.json"
 SENDER_EMAIL = "" # حط ايميلك هنا لو عايز الارسال يشتغل
@@ -284,7 +285,7 @@ def login_page():
         admin_recover_email = st.text_input("ايميل الادمن", key="admin_recover")
         if st.button("ارسال كود للادمن", key="admin_send", use_container_width=True):
             if is_admin_email(admin_recover_email):
-                code = str(random.randint(100000, 999))
+                code = str(random.randint(100000, 999999)) # صلحتها كانت 999
                 st.session_state.RESET_CODES[admin_recover_email] = {"code": code, "role": "admin"}
                 body = f"كود اعادة تعيين كلمة سر الادمن: {code}"
                 if send_email(admin_recover_email, "كود استرجاع الادمن", body):
@@ -298,7 +299,7 @@ def login_page():
             found = [u for u in users if u.get("email") == member_recover_email]
             if found:
                 user = found[0]
-                code = str(random.randint(100000, 999999))
+                code = str(random.randint(100000, 999))
                 st.session_state.RESET_CODES[member_recover_email] = {"code": code, "user_id": user["id"]}
                 body = f"مرحبا {user['username']}\nاسم المستخدم: {user['username']}\nكود اعادة التعيين: {code}"
                 if send_email(member_recover_email, "استرجاع بيانات الدخول", body):
@@ -459,27 +460,11 @@ def set_password_page():
                     st.success("تم التفعيل وتسجيل الدخول")
                     st.rerun()
         else: st.error("الباسوردين مش زي بعض")
-
 # ====== كود التشغيل ======
 if "page" not in st.session_state:
     st.session_state.page = "login"
 
-if st.session_state.page == "login":
-    login_page()
-elif st.session_state.page == "الرئيسية":
-    st.title("الرئيسية")
-    st.write(f"مرحبا {st.session_state.user['username']}")
-    if st.session_state.user['role'] == 'admin':
-        if st.button("ادارة الاعضاء"): st.session_state.page = "manage"; st.rerun()
-        if st.button("استخراج عضو"): st.session_state.page = "extract"; st.rerun()
-    if st.button("تغيير كلمة السر"): st.session_state.page = "change_pass"; st.rerun()
-    if st.button("تأكيد البريد"): st.session_state.page = "recovery"; st.rerun()
-    if st.button("تسجيل خروج"): st.session_state.clear(); st.rerun()
-elif st.session_state.page == "manage": manage_users_page()
-elif st.session_state.page == "extract": extract_member_page()
-elif st.session_state.page == "change_pass": change_password_page()
-elif st.session_state.page == "recovery": recovery_settings_page()
-elif st.session_state.page == "set_password": set_password_page()
+set_password": set_password_page()
 # ============================================
 # ======= كود التشغيل ==
 # ============================================
