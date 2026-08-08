@@ -385,6 +385,9 @@ def extract_member_page():
         "status": "active", 
         "password_set": False
     })
+    save_users(users)
+    st.success(f"تم استخراج العضو: {new_username}")
+    st.rerun()
                         save_users(users)
                         st.success(f"تم استخراج: {new_username}")
                         st.rerun()
