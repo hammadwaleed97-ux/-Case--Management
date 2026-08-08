@@ -16,9 +16,18 @@ import arabic_reshaper
 from bidi.algorithm import get_display
 from openpyxl.styles import Font, Alignment, PatternFill
 
+st.set_page_config(page_title="إدارة القضايا", layout="wide")
+
+# ====== تهيئة السيشن ستيت ====== # <--- ضفت ده عشان الايرور
+if "page" not in st.session_state: st.session_state.page = "login"
+if "user" not in st.session_state: st.session_state.user = None
+if "role" not in st.session_state: st.session_state.role = None
+if "RESET_CODES" not in st.session_state: st.session_state.RESET_CODES = {}
+
 # ====== الاتصال بالسحابة ====== # 2. ضيفنا دي
 supabase: Client = create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"])
 
+# ====== اعدادات الادمن ======
 # ====== اعدادات الادمن ======
 ADMIN_USERNAME = "admin"
 ADMIN_DEFAULT_PASS = "admin123"
