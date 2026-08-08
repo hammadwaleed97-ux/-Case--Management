@@ -391,10 +391,7 @@ def extract_member_page():
                         
                 except Exception as e:
                     st.error(f"حصل خطأ: {e}")
-            else:
-                st.error("من فضلك ادخل اسم المستخدم")
-            else: 
-                st.error("لازم تكتب اسم المستخدم")
+            
 def manage_users_page():
     st.markdown("<h2 style='text-align:center; color:#C9A961'>ادارة الاعضاء</h2>", unsafe_allow_html=True)
     if st.button("العودة للرئيسية"): st.session_state.page = "الرئيسية"; st.rerun()
