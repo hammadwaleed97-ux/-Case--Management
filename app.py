@@ -196,48 +196,16 @@ def send_email(to_email, subject, body):
         return False
 
 # ====== اليوزرز في السحابة ======
-def load_users():
-    res = supabase.table("users").select("*").execute()
-    users = res.data
-    if not any(u["username"] == ADMIN_USERNAME for u in users):
-        hashed = bcrypt.hashpw(ADMIN_DEFAULT_PASS.encode(), bcrypt.gensalt()).decode()
-        supabase.table("users").insert({
-            "username": ADMIN_USERNAME, "password": hashed, "role": "admin", 
-            "status": "active", "password_set": True
-        }).execute()
-        return load_users()
-    return users
-
-def check_login(username, password):
-    users = load_users()
-    for user in users:
-        if user["username"] == username and user["status"] == "active":
-            if user["password"] and bcrypt.checkpw(password.encode(), user["password"].encode()): 
-                return user
-    return None
-
-def add_user(username):
-    supabase.table("users").insert({
-        "username": username, "password": "", "role": "member", 
-        "status": "active", "password_set": False
-    }).execute()
-
-def delete_user(username):
-    supabase.table("users").delete().eq("username", username).execute()
-
-def update_user(username, new_data):
-    supabase.table("users").update(new_data).eq("username", username).execute()
-# ====== اليوزرز في السحابة ======
 
 def load_users():
     res = supabase.table("users").select("*").execute()
     users = res.data
-    
+
     # لو مفيش ادمن نعمله
     if not any(u["username"] == ADMIN_USERNAME for u in users):
         admin_pass = bcrypt.hashpw(ADMIN_DEFAULT_PASS.encode(), bcrypt.gensalt()).decode()
         supabase.table("users").insert({
-            "username": ADMIN_USERNAME, "password": admin_pass, "role": "admin", 
+            "username": ADMIN_USERNAME, "password": admin_pass, "role": "admin",
             "status": "active", "password_set": True, "email": ""
         }).execute()
         return load_users()
@@ -275,7 +243,6 @@ def update_user_db(user_id, new_data):
 def delete_user_db(user_id):
     supabase.table("users").delete().eq("id", user_id).execute()
 
-
 # ====== الصفحات ======
 def login_page():
     st.markdown("<h3 style='text-align:center; color:white'>دخول السادة الاعضاء</h3>", unsafe_allow_html=True)
@@ -290,12 +257,13 @@ def login_page():
         if st.button("دخول", type="primary", use_container_width=True):
             user = check_login(username, password)
             if user:
+                st.session_state.user = user
+                st.session_state.role = user["role"] # <--- ده التعديل المهم
                 if user["role"] == "member" and not user.get("password_set", False):
                     st.session_state.page = "set_password"
                     st.session_state.temp_user = user["username"]
                     st.rerun()
                 else:
-                    st.session_state.user = user
                     st.session_state.page = "الرئيسية"
                     st.rerun()
             else:
@@ -320,7 +288,7 @@ def login_page():
             found = [u for u in users if u.get("email") == member_recover_email]
             if found:
                 user = found[0]
-                code = str(random.randint(100000, 999))
+                code = str(random.randint(100000, 999999))
                 st.session_state.RESET_CODES[member_recover_email] = {"code": code, "user_id": user["id"]}
                 body = f"مرحبا {user['username']}\nاسم المستخدم: {user['username']}\nكود اعادة التعيين: {code}"
                 if send_email(member_recover_email, "استرجاع بيانات الدخول", body):
@@ -346,11 +314,12 @@ def login_page():
                         hashed = bcrypt.hashpw(new_pass.encode(), bcrypt.gensalt()).decode()
                         update_user_db(user_id, {"password": hashed, "status": "active", "password_set": True})
                         logged_user = check_login(next(u["username"] for u in users if u["id"]==user_id), new_pass)
-                    
+
                     st.session_state.RESET_CODES.clear()
                     st.session_state.show_reset_admin = False
                     st.session_state.show_reset_member = False
                     st.session_state.user = logged_user
+                    st.session_state.role = logged_user["role"] # <--- وده كمان
                     st.session_state.page = "الرئيسية"
                     st.success("تم تسجيل الدخول بنجاح")
                     st.rerun()
@@ -374,7 +343,7 @@ def login_page():
 def extract_member_page():
     st.markdown("<h2 style='text-align:center; color:#C9A961'>استخراج عضوية جديدة</h2>", unsafe_allow_html=True)
     if st.button("العودة للرئيسية"):
-        st.session_state.page = "الرئيسية"; st.rerun()
+        st.session_state.page = "الرئيسية"; st.session_state.role = None; st.rerun() # <--- زودت role
     new_username = st.text_input("اسم المستخدم الجديد")
     if st.button("استخراج العضو", use_container_width=True, type="primary"):
         if new_username.strip():
@@ -394,7 +363,7 @@ def extract_member_page():
 
 def manage_users_page():
     st.markdown("<h2 style='text-align:center; color:#C9A961'>ادارة الاعضاء</h2>", unsafe_allow_html=True)
-    if st.button("العودة للرئيسية"): st.session_state.page = "الرئيسية"; st.rerun()
+    if st.button("العودة للرئيسية"): st.session_state.page = "الرئيسية"; st.session_state.role = None; st.rerun() # <--- زودت role
     users = load_users()
     for user in users:
         if user["role"] == "member":
@@ -426,7 +395,7 @@ def manage_users_page():
 
 def recovery_settings_page():
     st.markdown("<h2 style='text-align:center; color:#C9A961'>تأكيد البريد الالكتروني</h2>", unsafe_allow_html=True)
-    if st.button("العودة للرئيسية"): st.session_state.page = "الرئيسية"; st.rerun()
+    if st.button("العودة للرئيسية"): st.session_state.page = "الرئيسية"; st.session_state.role = None; st.rerun() # <--- زودت role
     users = load_users()
     user = next((u for u in users if u["id"] == st.session_state.user["id"]), None)
     email = st.text_input("البريد الالكتروني", value=user.get("email",""))
@@ -440,7 +409,7 @@ def recovery_settings_page():
 
 def change_password_page():
     st.markdown("<h1 style='text-align:center; color:#C9A961'>تغيير كلمة السر</h1>", unsafe_allow_html=True)
-    if st.button("العودة للرئيسية"): st.session_state.page = "الرئيسية"; st.rerun()
+    if st.button("العودة للرئيسية"): st.session_state.page = "الرئيسية"; st.session_state.role = None; st.rerun() # <--- زودت role
     old_pass = st.text_input("كلمة السر القديمة", type="password")
     new_pass = st.text_input("كلمة السر الجديدة", type="password")
     if st.button("تغيير", use_container_width=True):
@@ -461,10 +430,12 @@ def set_password_page():
             user_id = next(u["id"] for u in load_users() if u["username"] == st.session_state.temp_user)
             update_user_db(user_id, {"password": hashed, "password_set": True})
             st.session_state.user = check_login(st.session_state.temp_user, new_pass)
+            st.session_state.role = st.session_state.user["role"] # <--- وده كمان
             st.session_state.page = "الرئيسية"
             st.success("تم التفعيل وتسجيل الدخول")
             st.rerun()
         else: st.error("الباسوردين مش زي بعض")
+# ===== تشغيل الصفحات ====
 # ===== تشغيل الصفحات =====
 if st.session_state.page == "login":
     login_page()
