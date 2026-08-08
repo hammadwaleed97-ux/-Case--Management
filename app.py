@@ -186,7 +186,8 @@ def send_email(to_email, subject, body):
 # ====== اليوزرز في السحابة ======
 def load_users():
     try:
-        response = supabase.table("users").select("*").execute()
+        response = supabase.table("users").select("id, username, password, email, role, status, password_set").execute()
+        users = response.data
         users = response.data
         if users and len(users) > 0:
             return users
@@ -224,8 +225,8 @@ def save_users(users):
 def check_login(username, password):
     users = load_users()
     for user in users:
-        if user["username"] == username and user["status"] == "active":
-            if bcrypt.checkpw(password.encode(), user["password"].encode()):
+        if user["username"] == username:
+            if bcrypt.checkpw(password.encode(), user["password"].encode()): # <-- عدلتها لـ password
                 return user
     return None
 # ===============================================
