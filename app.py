@@ -623,19 +623,20 @@ elif st.session_state.page == "الرئيسية":
     banner_sidebar()
     
     st.markdown("""
-    <style>
-    .stButton>button {
-        color: white !important;
-        background-color: #0d6efd !important;
-        border-radius: 12px !important;
-        padding: 10px !important;
-        margin-bottom: 8px !important;
-    }
-    h1, h2, h3, p, div, label, span {
-        color: white !important;
-    }
-    </style>
-    """, unsafe_allow_html=True)
+    st.markdown("""
+<style>
+.stButton>button {
+    color: white !important;
+    background-color: #0d6efd !important;
+    border-radius: 12px !important;
+    padding: 10px !important;
+    margin-bottom: 8px !important;
+}
+h1, h2, h3, p, div, label, span {
+    color: white !important;
+}
+</style>
+""", unsafe_allow_html=True)
     
     if st.session_state.user["role"] == "admin":
         if st.button("استخراج عضوية جديدة", use_container_width=True, type="primary"):
