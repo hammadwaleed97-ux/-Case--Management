@@ -207,10 +207,16 @@ def load_users():
 
 def save_users(users):
     try:
-        supabase.table("users").delete().neq("id", 0).execute() # امسح الكل
-        if users:
-            supabase.table("users").insert(users).execute() # ضيف الكل الجديد
+        for user in users:
+            user_id = user.get("id")
+            if user_id: # لو اليوزر قديم نعمل update
+                supabase.table("users").update(user).eq("id", user_id).execute()
+            else: # لو يوزر جديد نعمل insert ونجيب ال id الجديد
+                result = supabase.table("users").insert(user).execute()
+                if result.data:
+                    user["id"] = result.data[0]["id"]
     except Exception as e:
+        st.error(f"مقدرتش احفظ اليوزرز في السحابة: {e}")
         st.error(f"مقدرتش احفظ اليوزرز في السحابة: {e}")
 def check_login(username, password):
     users = load_users()
