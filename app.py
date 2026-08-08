@@ -185,32 +185,33 @@ def send_email(to_email, subject, body):
         st.error(f"خطأ في الارسال: {e}")
         return False
 
-import os
-import json
-
-USERS_FILE = "/tmp/users.json"  # <<< ده اهم سطر . ده اللي بيخلي الحفظ يشتغل
-
-import os
-import json
-
-USERS_FILE = "/tmp/users.json"  # <<< السطر ده هو السر كله
-
+# ====== اليوزرز في السحابة ======
 def load_users():
-    # لو الملف موجود في /tmp نقراه
-    if os.path.exists(USERS_FILE):
-        with open(USERS_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    
-    # لو مش موجود يبقى اول مره ننشئ الادمن ونحفظه في /tmp
-    admin_pass = bcrypt.hashpw(ADMIN_DEFAULT_PASS.encode(), bcrypt.gensalt())
-    users = [{"id": 1, "username": ADMIN_USERNAME, "password": admin_pass.decode(), "email": SENDER_EMAIL, "recovery_email": "", "role": "admin", "status": "active", "password_set": True}]
-    save_users(users)
-    return users
+    try:
+        response = supabase.table("users").select("*").execute()
+        users = response.data
+        if users:
+            return users
+    except Exception as e:
+        st.warning(f"مقدرتش اجيب اليوزرز من السحابة: {e}")
+
+    # لو اول مرة ومفيش يوزرز نعمل الادمن
+    admin_pass = bcrypt.hashpw(ADMIN_DEFAULT_PASS.encode(), bcrypt.gensalt()).decode()
+    admin_user = {
+        "id": 1, "username": ADMIN_USERNAME, "password": admin_pass, 
+        "email": SENDER_EMAIL, "recovery_email": "", "role": "admin", 
+        "status": "active", "password_set": True
+    }
+    save_users([admin_user])
+    return [admin_user]
 
 def save_users(users):
-    # بنحفظ في /tmp مش في ملف المشروع
-    with open(USERS_FILE, "w", encoding="utf-8") as f:
-        json.dump(users, f, ensure_ascii=False, indent=4)
+    try:
+        supabase.table("users").delete().neq("id", 0).execute() # امسح الكل
+        if users:
+            supabase.table("users").insert(users).execute() # ضيف الكل الجديد
+    except Exception as e:
+        st.error(f"مقدرتش احفظ اليوزرز في السحابة: {e}")
 def check_login(username, password):
     users = load_users()
     for user in users:
