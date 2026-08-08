@@ -920,17 +920,32 @@ UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER,exist_ok=True)
 
 def load_data():
-    if not os.path.exists(DATA_FILE):
-        return {"cases":[],"library":[]}
+    # 1. نجيب من السحابة الاول
     try:
-        with open(DATA_FILE,"r",encoding="utf-8") as f:
-            data=json.load(f)
-        if not isinstance(data,dict): data={}
-        data.setdefault("cases",[])
-        data.setdefault("library",[])
+        response = supabase.table("cases").select("*").execute()
+        cases_from_cloud = []
+        for row in response.data:
+            case = row.get("data", {}) 
+            case["id"] = row.get("id") 
+            cases_from_cloud.append(case)
+        
+        if cases_from_cloud:
+            return {"cases": cases_from_cloud, "library": []}
+    except Exception as e:
+        st.warning(f"مش قادر اوصل للسحابة: {e}")
+
+    # 2. لو السحابة فاضية نرجع للملف المحلي cases_data.json
+    if not os.path.exists(DATA_FILE):
+        return {"cases":[], "library":[]}
+    try:
+        with open(DATA_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        if not isinstance(data, dict): data = {"cases": [], "library": []}
+        data.setdefault("cases", [])
+        data.setdefault("library", [])
         return data
     except Exception:
-        return {"cases":[],"library":[]}
+        return {"cases":[], "library":[]}
 
 def save_data(data):
     data.setdefault("cases",[])
