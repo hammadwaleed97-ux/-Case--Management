@@ -1835,36 +1835,50 @@ elif st.session_state.page == "بحث":
                     
                     st.markdown("</div>", unsafe_allow_html=True)
                     st.markdown("</div>", unsafe_allow_html=True)
-# ============ مركز التنبيهات ====================
-# ================================================
+# ============ مركز التنبيهات =============
+# =========== مركز التنبيهات ====================
 elif st.session_state.page == "التنبيهات":
     st.markdown("<h1 style='text-align:center; color:#C9A961;'>مركز التنبيهات</h1>", unsafe_allow_html=True)
     
-    # === زر العودة للرئيسية ===
     if st.button("⬅️ العودة للرئيسية", use_container_width=True):
         st.session_state.page = "الرئيسية"
         st.rerun()
-    # ===========================
 
-    st.divider() # فاصل فوق
+    st.divider()
     
     with st.container(border=True):
         st.markdown("<h2 style='text-align:center; color:#C9A961;'>ارسال التنبيهات بالايميل</h2>", unsafe_allow_html=True)
         
-        user_email = st.text_input("سجل ايميلك عشان يجيلك التنبيهات", key="alert_email_input")
+        # نجيب الايميل المحفوظ من التوكنز
+        tokens = load_tokens()
+        username = st.session_state.user["username"] if st.session_state.user else ""
+        user_token = next((t for t in tokens["tokens"] if t["username"] == username), {})
+        user_email = user_token.get("email", "")
+
+        user_email_input = st.text_input("سجل ايميلك عشان يجيلك التنبيهات", value=user_email, key="alert_email_input")
 
         col1, col2 = st.columns(2)
         with col1:
             if st.button("1. حفظ الايميل", use_container_width=True):
-                if user_email and "@" in user_email:
-                    st.session_state['saved_email'] = user_email
-                    st.success(f"✅ تم حفظ الايميل: {user_email}")
+                if user_email_input and "@" in user_email_input:
+                    # نحفظ الايميل في التوكنز
+                    found = False
+                    for t in tokens["tokens"]:
+                        if t["username"] == username:
+                            t["email"] = user_email_input
+                            found = True
+                            break
+                    if not found:
+                        tokens["tokens"].append({"username": username, "email": user_email_input})
+                    save_tokens(tokens)
+                    st.success(f"✅ تم حفظ الايميل: {user_email_input}")
+                    st.rerun()
                 else:
                     st.warning("دخل ايميل صحيح")
 
         with col2:
             if st.button("2. 📧 ارسل التنبيهات دلوقتي", use_container_width=True):
-                if 'saved_email' in st.session_state:
+                if user_email_input:
                     alerts = get_alert_cases()
                     body = "<div style='direction:rtl; text-align:right; font-family:Arial;'>"
                     body += "<h2 style='color:#C9A961; text-align:center;'>تنبيهات القضايا</h2>"
@@ -1894,12 +1908,14 @@ elif st.session_state.page == "التنبيهات":
                         body += "<p>✅ لا توجد طعون قريبة</p>"
                     body += "</div>"
 
-                    if send_email(st.session_state['saved_email'], "تنبيهات القضايا من النظام", body):
+                    if send_email(user_email_input, "تنبيهات القضايا من النظام", body):
                         st.success("✅ تم ارسال التنبيهات بنجاح للايميل")
                 else:
                     st.error("❌ سجل الايميل الاول من الزرار اللي جنبه")
 
     st.divider()
+    
+    # نجيب التنبيهات بتاعت المستخدم بس
     alerts = get_alert_cases()
     st.markdown(f"<h3 style='text-align:center; color:#C9A961;'>التنبيهات الموجوده حاليا</h3>", unsafe_allow_html=True)
 
@@ -1913,6 +1929,10 @@ elif st.session_state.page == "التنبيهات":
                 st.write(f"**الموضوع:** {case.get('موضوع','')}")
                 st.write(f"**تاريخ الجلسة:** {case.get('تاريخ_جلسة','')}")
                 st.write(f"**فاضل:** {case.get('days_left',0)} يوم")
+                if st.button("📄 فتح القضية", key=f"open_alert_s_{case['id']}"):
+                    st.session_state.selected_case_id = case['id']
+                    st.session_state.page = "تفاصيل"
+                    st.rerun()
     else:
         st.info("لا توجد جلسات خلال 7 ايام")
 
@@ -1926,12 +1946,14 @@ elif st.session_state.page == "التنبيهات":
                 st.write(f"**الموضوع:** {case.get('موضوع','')}")
                 st.write(f"**اخر ميعاد للطعن:** {case.get('deadline','')}")
                 st.write(f"**فاضل:** {case.get('days_left_appeal',0)} يوم")
+                if st.button("📄 فتح القضية", key=f"open_alert_a_{case['id']}"):
+                    st.session_state.selected_case_id = case['id']
+                    st.session_state.page = "تفاصيل"
+                    st.rerun()
     else:
         st.info("لا توجد طعون خلال 15 يوم")
         
-    st.divider() # فاصل تحت
-# ================================================
-# ============ صفحة المكتبة القانونية ============
+    st.divider()
         # ================================================
 # ============ صفحة المكتبة القانونية ============
 # ==================================================
