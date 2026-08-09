@@ -1672,9 +1672,8 @@ elif st.session_state.page == "الأرشيف":
             st.markdown("</div>", unsafe_allow_html=True)
     else: st.info("لا توجد قضايا محفوظة نهائي")
     st.markdown("</div>", unsafe_allow_html=True)
-# ================================================
-# ============ الجزء السادس: البحث ============
-# ================================================
+# ==========================================
+# =========== الجزء السادس: البحث ============
 elif st.session_state.page == "بحث":
     import base64
     data = load_data()
@@ -1715,10 +1714,19 @@ elif st.session_state.page == "بحث":
         if not بحث_اسم.strip() and not بحث_رقم.strip():
             st.error("اكتب اسم او رقم للبحث")
         else:
+            # فلترة حسب المستخدم
+            username = st.session_state.user["username"] if st.session_state.user else ""
+            user_role = st.session_state.user["role"] if st.session_state.user else "member"
+
+            if user_role == "admin":
+                all_cases = data["cases"]
+            else:
+                all_cases = [c for c in data["cases"] if c.get('assigned_to') == username]
+
             results = []
             بحث_اسم = بحث_اسم.lower()
             
-            for case in data["cases"]:
+            for case in all_cases:
                 match = False
                 if بحث_اسم:
                     if any(بحث_اسم in str(قيمة).lower() for قيمة in case.values() if isinstance(قيمة, str)):
@@ -1780,7 +1788,7 @@ elif st.session_state.page == "بحث":
                     </table>
                     """, unsafe_allow_html=True)
 
-                    # التفاصيل مفتوحة على طول تحتها
+                    # التفاصيل
                     st.markdown("<div style='background:#142038; padding:20px; border-radius:12px; border:2px solid #4DA8DA; margin-top:10px'>", unsafe_allow_html=True)
                     st.markdown(f"<div style='color:#4DA8DA; font-size:20px; font-weight:900; text-align:center; margin-bottom:15px'>📄 تفاصيل كاملة - {رقم_كامل}</div>", unsafe_allow_html=True)
                     
@@ -1809,22 +1817,24 @@ elif st.session_state.page == "بحث":
                         st.markdown("<div style='color:#FFD700; font-size:16px; font-weight:900; margin-bottom:10px'>3- سجل الجلسات</div>", unsafe_allow_html=True)
                         جلسات_مرتبة = sorted(case['جلسات'], key=lambda x: x.get("تاريخ",""), reverse=True)
                         for ج in جلسات_مرتبة:
-                            st.markdown(f"<div style='background:#1E2A47; padding:10px; border-radius:8px; margin-bottom:5px; border:1px solid #D4AF37'><b style='color:#FFD700'>تاريخ:</b> <span style='color:#FFF'>{ج.get('تاريخ')}</span> | <b style='color:#FFD700'>الاجراء:</b> <span style='color:#FFF'>{ج.get('الاجراء')}</span> | <b style='color:#FFD700'>الحالة:</b> <span style='color:#FFF'>{ج.get('الحالة')}</span></div>", unsafe_allow_html=True)
+                            st.markdown(f"<div style='background:#1E2A47; padding:10px; border-radius:8px; margin-bottom:5px; border:1px solid #D4AF37'><b style='color:#FFD700'>تاريخ:</b> <span style='color:#FFF'>{ج.get('تاريخ')}</span> | <b style='color:#FFD700'>الاجراء:</b> <span style='color:#FFF'>{ج.get('الاجراء')}</span></div>", unsafe_allow_html=True)
                     else:
                         st.info("لا يوجد سجل جلسات مسجل")
 
                     if case.get('مستندات'):
                         st.markdown("<div style='color:#FFD700; font-size:16px; font-weight:900; margin:15px 0 10px 0'>4- المستندات المرفقة</div>", unsafe_allow_html=True)
                         for i, مستند in enumerate(case['مستندات']):
-                            file_data = base64.b64decode(مستند['محتوى'])
-                            st.download_button(f"📥 تحميل {مستند['نوع']}", data=file_data, file_name=مستند['نوع'], key=f"dl_search_{case['id']}_{i}", use_container_width=True)
+                            # <--- التعديل هنا عشان الاسم الجديد
+                            اسم_الملف = مستند.get('name', مستند.get('نوع', f'ملف_{i}'))
+                            محتوى_الملف = مستند.get('data', مستند.get('محتوى', ''))
+                            if محتوى_الملف:
+                                file_data = base64.b64decode(محتوى_الملف)
+                                st.download_button(f"📥 تحميل {اسم_الملف}", data=file_data, file_name=اسم_الملف, key=f"dl_search_{case['id']}_{i}", use_container_width=True)
                     else:
                         st.info("لا يوجد مستندات مرفقة")
                     
                     st.markdown("</div>", unsafe_allow_html=True)
                     st.markdown("</div>", unsafe_allow_html=True)
-                    # ======
-# ================================================
 # ============ مركز التنبيهات ====================
 # ================================================
 elif st.session_state.page == "التنبيهات":
