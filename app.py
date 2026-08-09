@@ -1476,19 +1476,16 @@ elif st.session_state.page == "تفاصيل":
             if st.button("الغاء", use_container_width=True):
                 st.session_state.confirm_delete = False; st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
-# ==========================================
-# ==============================================
+# ========================================
 # ============ الجزء الخامس: الأرشيف ============
-# ==============================================
 elif st.session_state.page == "الأرشيف":
     data = load_data()
 
-    # تلوين اللابل والـ placeholder عشان يبانوا
     st.markdown("""
     <style>
         label { color: #FFD700 !important; font-weight: 900 !important; font-size: 15px !important; }
         input::placeholder, textarea::placeholder {
-            color: #FFD700 !important;  /* اصفر دهبي */
+            color: #FFD700 !important;
             opacity: 1 !important;
             font-weight: 600;
         }
@@ -1498,7 +1495,6 @@ elif st.session_state.page == "الأرشيف":
     st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
     st.markdown("<h2 style='color:#D4AF37; text-align:center'>📁 الأرشيف</h2>", unsafe_allow_html=True)
     
-    # زر العودة للرئيسية
     if st.button("⬅️ العودة للرئيسية", use_container_width=True): 
         st.session_state.page = "الرئيسية"; 
         st.rerun()
@@ -1512,10 +1508,16 @@ elif st.session_state.page == "الأرشيف":
     with col3: st.markdown("<div style='height:28px'></div>", unsafe_allow_html=True); بحث_زر = st.button("🔍 بحث", use_container_width=True, type="primary")
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # فلترة القضايا المنتهية فقط
-    قضايا_منتهية = [c for c in data["cases"] if c.get("حالة") == "منتهية"]
+    # فلترة القضايا المنتهية فقط + بتاعت العضو لو مش ادمن
+    username = st.session_state.user["username"] if st.session_state.user else ""
+    user_role = st.session_state.user["role"] if st.session_state.user else "member"
+
+    if user_role == "admin":
+        قضايا_منتهية = [c for c in data["cases"] if c.get("حالة") == "منتهية"]
+    else:
+        قضايا_منتهية = [c for c in data["cases"] if c.get("حالة") == "منتهية" and c.get('assigned_to') == username]
     
-    # فلترة البحث - بيدور في اي حاجة
+    # فلترة البحث
     if بحث_زر:
         if بحث_مدعي: 
             بحث_مدعي = بحث_مدعي.lower()
@@ -1531,7 +1533,7 @@ elif st.session_state.page == "الأرشيف":
     قضايا_جاري = [c for c in قضايا_منتهية if not c.get("تم_الحفظ_النهائي")]
     قضايا_محفوظة = [c for c in قضايا_منتهية if c.get("تم_الحفظ_النهائي")]
 
-    # تبويب 1: احكام صادرة وجاري اتخاذ الاجراء اللازم بشأنها
+    # تبويب 1: احكام صادرة وجاري اتخاذ الاجراء
     st.markdown("<div style='background:#1E2A47; padding:15px; border-radius:15px; border:2px solid #FFD700; margin-bottom:15px'>", unsafe_allow_html=True)
     st.markdown("<div style='color:#FFD700; font-size:20px; font-weight:900; text-align:center; margin-bottom:15px'>1- احكام صادرة وجاري اتخاذ الاجراء اللازم بشأنها</div>", unsafe_allow_html=True)
     
@@ -1539,7 +1541,6 @@ elif st.session_state.page == "الأرشيف":
         for case in قضايا_جاري:
             لون = "#4CAF50" if case.get('مسندة_ل_الحكم') == "الصالح" else "#FF5252"
             
-            # تحديد الخصوم حسب النوع
             نوع = case.get('نوع', '').lower()
             if 'استئناف' in نوع:
                 طرف1_عنوان = "المستأنف"
@@ -1553,7 +1554,6 @@ elif st.session_state.page == "الأرشيف":
 
             st.markdown(f"<div style='background:#142038; padding:15px; border-radius:12px; border:2px solid {لون}; margin-bottom:10px'>", unsafe_allow_html=True)
             
-            # جدول بيانات القضية كامل
             st.markdown(f"""
             <table style='width:100%; border-collapse:collapse; margin-bottom:10px;'>
                 <tr><th colspan='2' style='background:{لون}; color:#FFF; padding:10px; text-align:center; font-size:16px; border-radius:8px 8px 0 0;'>رقم {case.get('رقم')} لسنة {case.get('سنة')} - {case.get('نوع')}</th></tr>
@@ -1591,7 +1591,7 @@ elif st.session_state.page == "الأرشيف":
                         case['مستندات_الحفظ'] = []
                         for f in مستندات_الحفظ:
                             file_base64 = base64.b64encode(f.getvalue()).decode('utf-8')
-                            case['مستندات_الحفظ'].append({"نوع": f.name, "محتوى": file_base64})
+                            case['مستندات_الحفظ'].append({"name": f.name, "data": file_base64}) # <--- وحدنا الاسم
                         case['تم_الحفظ_النهائي'] = True
                         case['تاريخ_الحفظ'] = str(datetime.now().date())
                         save_data(data); st.session_state.save_case_id = None
@@ -1603,6 +1603,7 @@ elif st.session_state.page == "الأرشيف":
                 c1,c2 = st.columns(2)
                 with c1:
                     if st.button("نعم احذف", key=f"confirm_del_{case['id']}"):
+                        supabase.table("cases").delete().eq("id", case["id"]).execute() # <--- حذف من السحابة
                         data["cases"] = [c for c in data["cases"] if c["id"]!= case["id"]]
                         save_data(data); st.session_state.del_arch_id = None; st.success("تم الحذف"); st.rerun()
                 with c2:
@@ -1612,13 +1613,12 @@ elif st.session_state.page == "الأرشيف":
     else: st.info("لا توجد احكام")
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # تبويب 2: احكام صادرة وتم اتخاذ الاجراء اللازم بشأنها وحفظت
+    # تبويب 2: احكام صادرة وتم حفظها
     st.markdown("<div style='background:#1E2A47; padding:15px; border-radius:15px; border:2px solid #4CAF50; margin-bottom:15px'>", unsafe_allow_html=True)
     st.markdown("<div style='color:#4CAF50; font-size:20px; font-weight:900; text-align:center; margin-bottom:15px'>2- احكام صادرة وتم اتخاذ الاجراء اللازم بشأنها وحفظت</div>", unsafe_allow_html=True)
 
     if قضايا_محفوظة:
         for case in قضايا_محفوظة:
-            # تحديد الخصوم حسب النوع
             نوع = case.get('نوع', '').lower()
             if 'استئناف' in نوع:
                 طرف1_عنوان = "المستأنف"
@@ -1647,8 +1647,8 @@ elif st.session_state.page == "الأرشيف":
             if case.get('مستندات_الحفظ'):
                 st.markdown("<div style='color:#D4AF37; margin-top:10px'>مستندات الحفظ:</div>", unsafe_allow_html=True)
                 for i, مستند in enumerate(case['مستندات_الحفظ']):
-                    file_data = base64.b64decode(مستند['محتوى'])
-                    st.download_button(f"📥 {مستند['نوع']}", data=file_data, file_name=مستند['نوع'], key=f"dl_save_{case['id']}_{i}")
+                    file_data = base64.b64decode(مستند['data']) # <--- وحدنا الاسم
+                    st.download_button(f"📥 {مستند['name']}", data=file_data, file_name=مستند['name'], key=f"dl_save_{case['id']}_{i}")
 
             col1, col2 = st.columns(2)
             with col1:
@@ -1663,6 +1663,7 @@ elif st.session_state.page == "الأرشيف":
                 c1,c2 = st.columns(2)
                 with c1:
                     if st.button("نعم احذف", key=f"confirm_del_saved_{case['id']}"):
+                        supabase.table("cases").delete().eq("id", case["id"]).execute() # <--- حذف من السحابة
                         data["cases"] = [c for c in data["cases"] if c["id"]!= case["id"]]
                         save_data(data); st.session_state.del_saved_id = None; st.success("تم الحذف"); st.rerun()
                 with c2:
@@ -1671,8 +1672,6 @@ elif st.session_state.page == "الأرشيف":
             st.markdown("</div>", unsafe_allow_html=True)
     else: st.info("لا توجد قضايا محفوظة نهائي")
     st.markdown("</div>", unsafe_allow_html=True)
-# =========================================
-# ======================================
 # ================================================
 # ============ الجزء السادس: البحث ============
 # ================================================
