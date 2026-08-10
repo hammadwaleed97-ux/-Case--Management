@@ -2393,120 +2393,83 @@ if st.session_state.page == "تقارير":
                     for col in worksheet.columns: worksheet.column_dimensions[col[0].column_letter].width = 25
                     for cell in worksheet[1]: cell.alignment = cell.alignment.copy(wrap_text=True, horizontal='right')
                 st.download_button("⬇️ Excel", data=excel_buffer.getvalue(), file_name=f"بيان_عددي_{region_stat}.xlsx", use_container_width=True, key="dl_stat3")
-# ========================= نهاية التقارير =========================
-# ========================= نهاية الجزء 
+# ========================= نهاية التقارير =====================
 import json
 import os
 from datetime import datetime, date
 
-BANNERS_FILE = "banners_v2.json" # ملف جديد نضيف
+BANNERS_FILE = "banners_v2.json"
 
-def load_banners():
-    if not os.path.exists(BANNERS_FILE):
-        return []
-    
+def load_banners(): 
     try:
-        with open(BANNERS_FILE, "r", encoding="utf-8") as f:
-            content = f.read().strip()
-            if not content: 
-                return []
-            data = json.loads(content)
-            
-            clean_data = []
-            for b in data:
-                clean_data.append({
-                    "text": str(b.get("text", "")),
-                    "color": str(b.get("color", "#FFC107")),
-                    "expire": str(b.get("expire", "")),
-                    "created_at": str(b.get("created_at", ""))
-                })
-            return clean_data
-            
-    except Exception:
-        return []
+        with open(BANNERS_FILE, "r", encoding="utf-8") as f: return json.load(f)
+    except: return []
 
 def save_banners(banners):
-    clean_banners = []
-    for b in banners:
-        clean_banners.append({
-            "text": str(b.get("text", "")),
-            "color": str(b.get("color", "#FFC107")),
-            "expire": str(b.get("expire", "")),
-            "created_at": str(b.get("created_at", ""))
-        })
-    with open(BANNERS_FILE, "w", encoding="utf-8") as f:
-        json.dump(clean_banners, f, ensure_ascii=False, indent=2)
+    with open(BANNERS_FILE, "w", encoding="utf-8") as f: json.dump(banners, f, ensure_ascii=False, indent=2)
+    try: supabase.table("banners").upsert({"id": 1, "data": banners}).execute()
+    except: pass
 
 # =========================================
 # ============ صفحة إدارة اليافطات ============
 # =========================================
 if st.session_state.page == "إدارة اليافطات":
+
+    try:
+        res = supabase.table("banners").select("data").eq("id", 1).single().execute()
+        st.session_state.banners = res.data["data"] if res.data and res.data["data"] else load_banners()
+    except: st.session_state.banners = load_banners()
     
-    if 'banners' not in st.session_state:
-        st.session_state.banners = load_banners()
+    users = load_users() # نجيب كل اليوزرز
 
     st.title("⚙️ إدارة اليافطات")
-    st.markdown("---")
+    
+    if st.session_state.user["role"] != "admin":
+        st.warning("⚠️ هذه الصفحة متاحة للادمن فقط")
+        st.stop()
 
     # ========== 1. اضافة يافطة جديدة ==========
     with st.form("add_banner_form"):
         st.subheader("➕ اضافة يافطة جديدة")
-        
         banner_text = st.text_area("نص اليافطة", placeholder="اكتب هنا نص الاعلان...", height=100)
         col1, col2 = st.columns(2)
-        with col1:
-            banner_color = st.color_picker("لون اليافطة", "#FFC107")
-        with col2:
-            banner_expire = st.date_input("تاريخ الانتهاء")
+        with col1: banner_color = st.color_picker("لون اليافطة", "#FFC107")
+        with col2: banner_expire = st.date_input("تاريخ الانتهاء", value=date.today())
+
+        st.markdown("### 👥 مين يشوف اليافطة دي؟")
+        audience_type = st.radio("اختر الجمهور", ["الكل", "اعضاء محددين"], horizontal=True, key="audience_type")
         
-        submitted = st.form_submit_button("🚀 نشر اليافطة", use_container_width=True)
-        if submitted:
-            if banner_text.strip():
-                new_banner = {
-                    "text": banner_text,
-                    "color": banner_color,
-                    "expire": str(banner_expire),
-                    "created_at": datetime.now().strftime("%Y-%m-%d %H:%M")
-                }
-                st.session_state.banners.append(new_banner)
+        visible_to = []
+        if audience_type == "اعضاء محددين":
+            all_usernames = [u["username"] for u in users]
+            visible_to = st.multiselect("حدد الاعضاء", all_usernames, key="visible_users")
+            if not visible_to: st.warning("لازم تختار عضو واحد على الاقل")
+        
+        if st.form_submit_button("🚀 نشر اليافطة", use_container_width=True, type="primary"):
+            if banner_text.strip() and (audience_type == "الكل" or visible_to):
+                st.session_state.banners.append({
+                    "text": banner_text, "color": banner_color, "expire": str(banner_expire),
+                    "created_at": datetime.now().strftime("%Y-%m-%d %H:%M"),
+                    "audience": audience_type, "visible_to": visible_to # <--- الجديد
+                })
                 save_banners(st.session_state.banners)
-                st.success("✅ تم نشر اليافطة بنجاح!")
-                st.rerun()
-            else:
-                st.error("❌ لازم تكتب نص اليافطة")
+                st.success("✅ تم نشر اليافطة بنجاح!"); st.rerun()
+            else: st.error("❌ املى كل الحقول")
 
     st.markdown("---")
 
-    # ========== 2. عرض وحذف اليافطات الحالية ==========
+    # ========== 2. حذف اليافطات ==========
     st.subheader(f"🗑️ اليافطات الحالية - العدد: {len(st.session_state.banners)}")
-    
-    if len(st.session_state.banners) == 0:
-        st.info("مفيش يافطات حاليا. ضيف اول يافطة من فوق")
-    else:
-        for i, banner in enumerate(st.session_state.banners):
-            
-            st.markdown("========================================")
-            st.markdown(f"# ============ يافطة رقم {i+1} ============")
-            st.markdown("========================================")
-            
-            with st.container(border=True):
-                col1, col2 = st.columns([5,1])
-                with col1:
-                    st.markdown(f'<div style="background:{banner["color"]};padding:15px;border-radius:10px;color:black;font-weight:bold;font-size:16px;">📢 {banner["text"]}</div>', unsafe_allow_html=True)
-                    
-                    تاريخ_الانتهاء = banner.get('expire', 'غير محدد')
-                    تاريخ_النشر = banner.get('created_at', 'غير محدد')
-                    st.caption(f"📅 تنتهي: {تاريخ_الانتهاء} | 📝 تم النشر: {تاريخ_النشر}")
-                    
-                with col2:
-                    if st.button("🗑️ حذف", key=f"del_{i}", type="primary", use_container_width=True):
-                        st.session_state.banners.pop(i)
-                        save_banners(st.session_state.banners)
-                        st.rerun()
+    for i, banner in enumerate(st.session_state.banners):
+        with st.container(border=True):
+            col1, col2 = st.columns([4,1])
+            with col1:
+                st.markdown(f'<div style="background:{banner["color"]};padding:15px;border-radius:10px;color:black;font-weight:bold;">📢 {banner["text"]}</div>', unsafe_allow_html=True)
+                audience = "الكل" if banner.get("audience") == "الكل" else f"محدد: {', '.join(banner.get('visible_to', []))}"
+                st.caption(f"📅 تنتهي: {banner.get('expire')} | 👥 تظهر لـ: {audience}")
+            with col2:
+                if st.button("🗑️ حذف", key=f"del_{i}", type="primary", use_container_width=True):
+                    st.session_state.banners.pop(i); save_banners(st.session_state.banners); st.rerun()
 
-    st.markdown("---")
-    
-    # ========== 3. زرار الرجوع ==========
     if st.button("⬅️ الرجوع للرئيسية", use_container_width=True):
-        st.session_state.page = "الرئيسية"
-        st.rerun()
+        st.session_state.page = "الرئيسية"; st.rerun()
