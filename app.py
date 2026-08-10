@@ -37,14 +37,18 @@ h1, h2, h3, h4, h5, h6 { color: white!important; text-align: center; }
     direction: rtl !important; text-align: right;
 }
 
+/* تقوية الليبل عشان ميبقاش باهت */
 div[data-testid="stWidgetLabel"] p {
-    color: #C9A961 !important; font-size: 16px !important; font-weight: 700 !important;
+    color: #C9A961 !important; 
+    font-size: 16px !important; 
+    font-weight: 700 !important;
+    opacity: 1 !important;
 }
 
 thead tr th { color: black!important; background-color: #C9A961!important; font-weight: bold; }
 tbody tr td { color: black!important; background-color: white!important; }
 
-/* الحل: نستهدف السايدبار فقط وممنوع التسريب */
+/* السايدبار: تعديل العنوان بس ممنوع * */
 [data-testid="stSidebar"] {
     direction: rtl !important;
 }
@@ -73,6 +77,10 @@ def fix_arabic(text):
         return ""
     reshaped_text = arabic_reshaper.reshape(str(text))
     return reshaped_text
+
+def load_users():
+    res = supabase.table("users").select("*").execute()
+    return res.data if res.data else []
 
 # ===== نظام اليافطة =====
 def load_banners():
