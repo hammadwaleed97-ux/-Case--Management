@@ -28,16 +28,18 @@ if "RESET_CODES" not in st.session_state: st.session_state.RESET_CODES = {}
 supabase: Client = create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"])
 
 # ====== اعدادات الادمن ======
+# ===== اعدادات الادمن ======
 ADMIN_USERNAME = "admin"
 ADMIN_DEFAULT_PASS = "admin123"
-def fix_arabic(text):
-    """ بتظبط العربي عشان ميطلعش متقطع """
-    if not text: return ""
-    reshaped_text = arabic_reshaper.reshape(str(text))
-    bidi_text = get_display(reshaped_text)
-    return bidi_text
 
-# =====
+def fix_arabic(text):
+    """ نسخة متعدلة للسحابة - من غير bidi عشان ميقطعش الكلام """
+    if not text: 
+        return ""
+    # بنعمل reshape بس من غير get_display
+    reshaped_text = arabic_reshaper.reshape(str(text))
+    return reshaped_text
+
 # =====
 # ===== نظام اليافطة - متعدل للسحابة + RTL ثابت =====
 from datetime import datetime, timedelta
