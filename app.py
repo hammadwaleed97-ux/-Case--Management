@@ -17,10 +17,10 @@ from openpyxl.styles import Font, Alignment, PatternFill
 
 st.set_page_config(page_title="إدارة القضايا", layout="wide")
 
-# ====== CSS القنبلة للسحابة ======
+# ====== CSS نضيف بدون تكسير ======
 st.markdown("""
 <style>
-html, body, [class*="css"] {
+html, body {
     direction: rtl !important;
 }
 .main .block-container { padding-top: 2rem; padding-left: 1rem; padding-right: 1rem; max-width: 100%; }
@@ -32,12 +32,15 @@ h1, h2, h3, h4, h5, h6 { color: white!important; text-align: center; }
     border-radius: 10px; width: 100%; white-space: normal !important; line-height: 1.4;
 }
 
-/* قنبلة السايدبار - تمسح اي عمودي */
-section[data-testid="stSidebar"] * {
+.stTextInput>div>div>input, .stSelectbox>div>div>div, .stTextArea>div>div>textarea { 
+    color: black; background-color: white; border-radius: 8px; 
+    direction: rtl !important; text-align: right;
+}
+
+/* حل السايدبار: نستهدف العنوان فقط */
+section[data-testid="stSidebar"] h3 {
     writing-mode: horizontal-tb !important;
-    text-orientation: mixed !important;
-    transform: none !important;
-    direction: rtl !important;
+    text-align: center !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -107,17 +110,15 @@ def show_banners():
     st.session_state.banners = active_banners
 
     for banner in active_banners:
-        # عدلت direction من ltr ل rtl
         st.markdown(f"""
         <div style="
-            direction: rtl !important;
+            direction: rtl;
             text-align: right;
             background:linear-gradient(90deg, {banner['color']}, #ffffff22); 
             padding:14px; border-radius:12px; 
-            font-size:24px; font-weight:bold; color:white; margin:15px 0;
+            font-size:18px; font-weight:bold; color:white; margin:15px 0;
             border: 2px solid {banner['color']}; animation: pulse 2s infinite;
-            white-space: normal !important; word-wrap: break-word;
-            writing-mode: horizontal-tb !important;
+            white-space: normal; word-wrap: break-word;
         ">
             📢 {banner['text']}
         </div>
@@ -132,8 +133,7 @@ def banner_sidebar():
     users = load_users()
     
     st.sidebar.markdown("---")
-    # عدلت title ل markdown عشان نجبره افقي
-    st.sidebar.markdown('<h3 style="writing-mode: horizontal-tb !important; text-align: center; color: #C9A961;">📢 تحكم الادمن</h3>', unsafe_allow_html=True)
+    st.sidebar.markdown("### 📢 تحكم الادمن")
     
     with st.sidebar.form("add_banner_form"):
         banner_text = st.text_input("اكتب التهنئة")
@@ -175,6 +175,7 @@ def banner_sidebar():
                 delete_banner_from_db(banner['id'])
                 st.session_state.banners = load_banners()
                 st.rerun()
+# ===== نهاية اليافطة =====
 # ===== نهاية اليافطة =====
 import json, os, bcrypt, smtplib, random, io
 from datetime import datetime, timedelta
