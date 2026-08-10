@@ -174,8 +174,8 @@ def get_export_html(full_html, title):
 </body>
 </html>"""
 
-# ====== CSS الاساسي ======
-# ====== CSS الاساسي + تعديل الموبايل RTL ======
+# ====== CSS الاساسي ====
+# ====== CSS الاساسي + تعديل الموبايل RTL + حماية اليافطة ======
 st.markdown("""
 <style>
 /* 1. اهم حاجة: نجبر كل حاجة تبقى افقي */
@@ -203,11 +203,13 @@ h1, h2, h3, h4, h5, h6 { color: white!important; text-align: center; }
     border-radius: 10px; 
     width: 100%;
     white-space: normal !important; /* يخلي زرار "استخراج عضوية جديدة" ينزل سطرين */
+    line-height: 1.4;
 }
 
 .stTextInput>div>div>input, .stSelectbox>div>div>div, .stTextArea>div>div>textarea { 
     color: black; background-color: white; border-radius: 8px; 
     direction: rtl !important; /* يخلي الكتابة من اليمين */
+    text-align: right;
 }
 
 div[data-testid="stWidgetLabel"] p {
@@ -222,20 +224,28 @@ thead tr th {
     background-color: #C9A961!important; 
     font-weight: bold; 
     white-space: normal !important;
+    word-wrap: break-word;
 }
 tbody tr td { 
     color: black!important; 
     background-color: white!important; 
     white-space: normal !important;
+    word-wrap: break-word;
 }
 
 /* 3. التابات */
 div[data-testid="stTabs"] button {color: white!important; font-weight: bold;}
 div[data-testid="stTabs"] button[aria-selected="true"] {color: #C9A961!important;}
+
+/* 4. حماية اضافية: عزل اي عنصر ltr زي اليافطة */
+div[style*="direction: ltr"] {
+    writing-mode: horizontal-tb !important;
+    text-orientation: mixed !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
-# ====== الاعدادات =====
+# ====== الاعدادات ======
 # ====== الاعدادات ======
 SENDER_EMAIL = st.secrets.get("SENDER_EMAIL", "")
 SENDER_PASSWORD = st.secrets.get("SENDER_PASSWORD", "")
