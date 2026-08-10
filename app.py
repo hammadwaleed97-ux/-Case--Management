@@ -176,88 +176,47 @@ def get_export_html(full_html, title):
 </html>"""
 
 # ====== 
-# ====== CSS الاساسي + تعديل الموبايل RTL + حماية اليافطة + حماية السايدبار ======
+# ======
+# ====== CSS الاساسي + قنبلة للسايدبار ======
 st.markdown("""
 <style>
-/* 1. اهم حاجة: نجبر كل حاجة تبقى افقي */
 html, body, [class*="css"] {
     direction: rtl !important;
-    writing-mode: horizontal-tb !important; 
-    text-orientation: mixed !important;
     overflow-x: hidden !important;
 }
 
-.main .block-container {
-    padding-top: 2rem;
-    padding-left: 1rem;
-    padding-right: 1rem;
-    max-width: 100%;
-}
-
+.main .block-container { padding-top: 2rem; padding-left: 1rem; padding-right: 1rem; max-width: 100%; }
 .stApp { background-color: #0E1117; }
 h1, h2, h3, h4, h5, h6 { color: white!important; text-align: center; }
 
 .stButton>button { 
-    background-color: #C9A961; 
-    color: black; 
-    font-weight: bold; 
-    border-radius: 10px; 
-    width: 100%;
-    white-space: normal !important;
-    line-height: 1.4;
+    background-color: #C9A961; color: black; font-weight: bold; 
+    border-radius: 10px; width: 100%; white-space: normal !important; line-height: 1.4;
 }
 
 .stTextInput>div>div>input, .stSelectbox>div>div>div, .stTextArea>div>div>textarea { 
     color: black; background-color: white; border-radius: 8px; 
-    direction: rtl !important;
-    text-align: right;
+    direction: rtl !important; text-align: right;
 }
 
 div[data-testid="stWidgetLabel"] p {
-    color: #C9A961 !important; 
-    font-size: 16px !important;
-    font-weight: 700 !important;
+    color: #C9A961 !important; font-size: 16px !important; font-weight: 700 !important;
 }
 
-/* 2. تعديل الجدول */
-thead tr th { 
-    color: black!important; 
-    background-color: #C9A961!important; 
-    font-weight: bold; 
-    white-space: normal !important;
-    word-wrap: break-word;
-}
-tbody tr td { 
-    color: black!important; 
-    background-color: white!important; 
-    white-space: normal !important;
-    word-wrap: break-word;
-}
+thead tr th { color: black!important; background-color: #C9A961!important; font-weight: bold; }
+tbody tr td { color: black!important; background-color: white!important; }
 
-/* 3. التابات */
-div[data-testid="stTabs"] button {color: white!important; font-weight: bold;}
-div[data-testid="stTabs"] button[aria-selected="true"] {color: #C9A961!important;}
-
-/* 4. حماية اليافطة */
-div[style*="direction: ltr"] {
+/* قنبلة السايدبار - تمسح اي عمودي */
+section[data-testid="stSidebar"] * {
     writing-mode: horizontal-tb !important;
     text-orientation: mixed !important;
-}
-
-/* 5. اهم اضافة: اصلاح السايدبار */
-[data-testid="stSidebar"] {
-    direction: rtl !important; /* يخلي السايدبار يمين */
-    text-align: right !important;
-}
-[data-testid="stSidebar"] * {
-    writing-mode: horizontal-tb !important; /* يمنع العمودي */
-    text-orientation: mixed !important;
+    transform: none !important;
+    display: block !important;
     white-space: normal !important;
+    direction: rtl !important;
 }
 </style>
 """, unsafe_allow_html=True)
-
-# ====== الاعدادات ======
 # ====== الاعدادات ======
 SENDER_EMAIL = st.secrets.get("SENDER_EMAIL", "")
 SENDER_PASSWORD = st.secrets.get("SENDER_PASSWORD", "")
