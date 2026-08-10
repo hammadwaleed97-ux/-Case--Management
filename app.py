@@ -5,7 +5,7 @@ from email.mime.multipart import MIMEMultipart
 
 import streamlit as st
 import pandas as pd
-from supabase import create_client, Client # 1. ضيفنا دي
+from supabase import create_client, Client
 
 # بتوع التقارير
 from fpdf import FPDF
@@ -17,6 +17,31 @@ from openpyxl.styles import Font, Alignment, PatternFill
 
 st.set_page_config(page_title="إدارة القضايا", layout="wide")
 
+# ====== CSS القنبلة للسحابة ======
+st.markdown("""
+<style>
+html, body, [class*="css"] {
+    direction: rtl !important;
+}
+.main .block-container { padding-top: 2rem; padding-left: 1rem; padding-right: 1rem; max-width: 100%; }
+.stApp { background-color: #0E1117; }
+h1, h2, h3, h4, h5, h6 { color: white!important; text-align: center; }
+
+.stButton>button { 
+    background-color: #C9A961; color: black; font-weight: bold; 
+    border-radius: 10px; width: 100%; white-space: normal !important; line-height: 1.4;
+}
+
+/* قنبلة السايدبار - تمسح اي عمودي */
+section[data-testid="stSidebar"] * {
+    writing-mode: horizontal-tb !important;
+    text-orientation: mixed !important;
+    transform: none !important;
+    direction: rtl !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
 # ====== تهيئة السيشن ستيت ======
 if "page" not in st.session_state: st.session_state.page = "login"
 if "user" not in st.session_state: st.session_state.user = None
@@ -27,22 +52,17 @@ if "RESET_CODES" not in st.session_state: st.session_state.RESET_CODES = {}
 supabase: Client = create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"])
 
 # ====== اعدادات الادمن ======
-# ===== اعدادات الادمن ======
 ADMIN_USERNAME = "admin"
 ADMIN_DEFAULT_PASS = "admin123"
 
 def fix_arabic(text):
-    """ نسخة متعدلة للسحابة - من غير bidi عشان ميقطعش الكلام """
+    """ نسخة متعدلة للسحابة - من غير bidi """
     if not text: 
         return ""
-    # بنعمل reshape بس من غير get_display
     reshaped_text = arabic_reshaper.reshape(str(text))
     return reshaped_text
 
-# =====
 # ===== نظام اليافطة - متعدل للسحابة + RTL ثابت =====
-from datetime import datetime, timedelta
-
 def load_banners():
     res = supabase.table("banners").select("*").order("created_at", desc=True).execute()
     return res.data if res.data else []
@@ -74,7 +94,6 @@ def show_banners():
         except: continue
         
         if expire_date > now:
-            # فلترة الجمهور
             audience = b.get("audience", "الكل")
             visible_to = b.get("visible_to", [])
             if audience == "الكل" or current_user in visible_to:
@@ -88,15 +107,17 @@ def show_banners():
     st.session_state.banners = active_banners
 
     for banner in active_banners:
+        # عدلت direction من ltr ل rtl
         st.markdown(f"""
         <div style="
-            direction: ltr !important; /* اهم سطر - يخلي الكلام افقي */
-            text-align: right; /* النص نفسه يبقى يمين */
+            direction: rtl !important;
+            text-align: right;
             background:linear-gradient(90deg, {banner['color']}, #ffffff22); 
             padding:14px; border-radius:12px; 
             font-size:24px; font-weight:bold; color:white; margin:15px 0;
             border: 2px solid {banner['color']}; animation: pulse 2s infinite;
             white-space: normal !important; word-wrap: break-word;
+            writing-mode: horizontal-tb !important;
         ">
             📢 {banner['text']}
         </div>
@@ -108,10 +129,12 @@ def banner_sidebar():
         return 
     
     init_session_state()
-    users = load_users() # لازم تكون عامل الدالة دي
+    users = load_users()
     
     st.sidebar.markdown("---")
-    st.sidebar.title("📢 تحكم الادمن")
+    # عدلت title ل markdown عشان نجبره افقي
+    st.sidebar.markdown('<h3 style="writing-mode: horizontal-tb !important; text-align: center; color: #C9A961;">📢 تحكم الادمن</h3>', unsafe_allow_html=True)
+    
     with st.sidebar.form("add_banner_form"):
         banner_text = st.text_input("اكتب التهنئة")
         banner_color = st.color_picker("اللون", "#FFD700")
@@ -152,7 +175,7 @@ def banner_sidebar():
                 delete_banner_from_db(banner['id'])
                 st.session_state.banners = load_banners()
                 st.rerun()
-# ===== نهاية اليافطة ===
+# ===== نهاية اليافطة =====
 # ===== نهاية اليافطة =====
 # ====== دالة التصدير HTML للطباعة ======
 def get_export_html(full_html, title):
