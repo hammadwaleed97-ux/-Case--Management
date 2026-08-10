@@ -17,7 +17,7 @@ from openpyxl.styles import Font, Alignment, PatternFill
 
 st.set_page_config(page_title="إدارة القضايا", layout="wide")
 
-# ====== CSS نضيف بدون تكسير ======
+# ====== CSS نضيف بدون تكسير ولا اختفاء ======
 st.markdown("""
 <style>
 html, body {
@@ -37,10 +37,18 @@ h1, h2, h3, h4, h5, h6 { color: white!important; text-align: center; }
     direction: rtl !important; text-align: right;
 }
 
+div[data-testid="stWidgetLabel"] p {
+    color: #C9A961 !important; font-size: 16px !important; font-weight: 700 !important;
+}
+
+thead tr th { color: black!important; background-color: #C9A961!important; font-weight: bold; }
+tbody tr td { color: black!important; background-color: white!important; }
+
 /* حل السايدبار: نستهدف العنوان فقط */
 section[data-testid="stSidebar"] h3 {
     writing-mode: horizontal-tb !important;
     text-align: center !important;
+    color: #C9A961 !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -110,6 +118,7 @@ def show_banners():
     st.session_state.banners = active_banners
 
     for banner in active_banners:
+        # شلنا الانيميشن عشان ميختفيش لما تسحب
         st.markdown(f"""
         <div style="
             direction: rtl;
@@ -117,12 +126,11 @@ def show_banners():
             background:linear-gradient(90deg, {banner['color']}, #ffffff22); 
             padding:14px; border-radius:12px; 
             font-size:18px; font-weight:bold; color:white; margin:15px 0;
-            border: 2px solid {banner['color']}; animation: pulse 2s infinite;
+            border: 2px solid {banner['color']};
             white-space: normal; word-wrap: break-word;
         ">
             📢 {banner['text']}
         </div>
-        <style>@keyframes pulse {{ 0% {{transform: scale(1);}} 50% {{transform: scale(1.02);}} 100% {{transform: scale(1);}} }}</style>
         """, unsafe_allow_html=True)
 
 def banner_sidebar():
@@ -176,73 +184,6 @@ def banner_sidebar():
                 st.session_state.banners = load_banners()
                 st.rerun()
 # ===== نهاية اليافطة =====
-# ===== نهاية اليافطة =====
-import json, os, bcrypt, smtplib, random, io
-from datetime import datetime, timedelta
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-
-import streamlit as st
-import pandas as pd
-from supabase import create_client, Client
-
-# بتوع التقارير
-from fpdf import FPDF
-from docx import Document
-from docx.shared import Pt
-from docx.enum.text import WD_ALIGN_PARAGRAPH
-import arabic_reshaper
-from openpyxl.styles import Font, Alignment, PatternFill
-
-st.set_page_config(page_title="إدارة القضايا", layout="wide")
-
-# ====== CSS الاساسي + قنبلة للسايدبار ======
-st.markdown("""
-<style>
-html, body, [class*="css"] {
-    direction: rtl!important;
-    overflow-x: hidden!important;
-}
-
-.main.block-container { padding-top: 2rem; padding-left: 1rem; padding-right: 1rem; max-width: 100%; }
-.stApp { background-color: #0E1117; }
-h1, h2, h3, h4, h5, h6 { color: white!important; text-align: center; }
-
-.stButton>button {
-    background-color: #C9A961; color: black; font-weight: bold;
-    border-radius: 10px; width: 100%; white-space: normal!important; line-height: 1.4;
-}
-
-.stTextInput>div>div>input,.stSelectbox>div>div>div,.stTextArea>div>div>textarea {
-    color: black; background-color: white; border-radius: 8px;
-    direction: rtl!important; text-align: right;
-}
-
-div[data-testid="stWidgetLabel"] p {
-    color: #C9A961!important; font-size: 16px!important; font-weight: 700!important;
-}
-
-thead tr th { color: black!important; background-color: #C9A961!important; font-weight: bold; }
-tbody tr td { color: black!important; background-color: white!important; }
-
-/* قنبلة السايدبار - تمسح اي عمودي */
-section[data-testid="stSidebar"] * {
-    writing-mode: horizontal-tb!important;
-    text-orientation: mixed!important;
-    transform: none!important;
-    display: block!important;
-    white-space: normal!important;
-    direction: rtl!important;
-}
-</style>
-""", unsafe_allow_html=True)
-
-# ====== تهيئة السيشن ستيت ======
-if "page" not in st.session_state: st.session_state.page = "login"
-if "user" not in st.session_state: st.session_state.user = None
-if "role" not in st.session_state: st.session_state.role = None
-if "RESET_CODES" not in st.session_state: st.session_state.RESET_CODES = {}
-
 # ====== الاتصال بالسحابة ======
 supabase: Client = create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"])
 
