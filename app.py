@@ -171,51 +171,60 @@ def get_export_html(full_html, title):
 # ====== CSS الاساسي + تعديل الموبايل RTL ======
 st.markdown("""
 <style>
-/* 1. ظبط الاتجاه العام */
-body { 
-    direction: rtl; 
-    overflow-x: hidden; /* يمنع السكرول الجانبي اللي بيقطع */
+/* 1. اهم حاجة: نجبر كل حاجة تبقى افقي */
+html, body, [class*="css"] {
+    direction: rtl !important;
+    writing-mode: horizontal-tb !important; /* ده اللي بيعدل العمودي */
+    text-orientation: mixed !important;
+    overflow-x: hidden !important;
 }
-.block-container {
+
+.main .block-container {
+    padding-top: 2rem;
     padding-left: 1rem;
     padding-right: 1rem;
+    max-width: 100%;
 }
+
 .stApp { background-color: #0E1117; }
 h1, h2, h3, h4, h5, h6 { color: white!important; text-align: center; }
-.stButton>button { background-color: #C9A961; color: black; font-weight: bold; border-radius: 10px; width: 100%; }
+
+.stButton>button { 
+    background-color: #C9A961; 
+    color: black; 
+    font-weight: bold; 
+    border-radius: 10px; 
+    width: 100%;
+    white-space: normal !important; /* يخلي زرار "استخراج عضوية جديدة" ينزل سطرين */
+}
+
 .stTextInput>div>div>input, .stSelectbox>div>div>div, .stTextArea>div>div>textarea { 
     color: black; background-color: white; border-radius: 8px; 
+    direction: rtl !important; /* يخلي الكتابة من اليمين */
 }
+
 div[data-testid="stWidgetLabel"] p {
     color: #C9A961 !important; 
     font-size: 16px !important;
     font-weight: 700 !important;
 }
 
-/* 2. تعديل الجدول عشان الكلام ميتقطعش */
+/* 2. تعديل الجدول */
 thead tr th { 
     color: black!important; 
     background-color: #C9A961!important; 
     font-weight: bold; 
-    white-space: normal !important; /* مهم */
-    word-wrap: break-word !important;
+    white-space: normal !important;
 }
 tbody tr td { 
     color: black!important; 
     background-color: white!important; 
-    white-space: normal !important; /* مهم */
-    word-wrap: break-word !important;
+    white-space: normal !important;
 }
 
 /* 3. التابات */
 div[data-testid="stTabs"] button {color: white!important; font-weight: bold;}
 div[data-testid="stTabs"] button[aria-selected="true"] {color: #C9A961!important;}
-div[data-testid="stTextInput"] label {color: white!important; font-weight: bold;}
-
-/* 4. ظبط الازرار في الموبايل */
-@media (max-width: 768px) {
-    .stButton>button { font-size: 14px; }
-}
 </style>
 """, unsafe_allow_html=True)
 
