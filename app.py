@@ -37,11 +37,13 @@ def fix_arabic(text):
     bidi_text = get_display(reshaped_text)
     return bidi_text
 
-# ===== نظام اليافطة - متعدل للسحابة =====
+# =====
+# ===== نظام اليافطة - متعدل للسحابة + اختيار الاعضاء =====
+from datetime import datetime, timedelta
 
 def load_banners():
     res = supabase.table("banners").select("*").order("created_at", desc=True).execute()
-    return res.data
+    return res.data if res.data else []
 
 def save_banner_to_db(banner_data):
     supabase.table("banners").insert(banner_data).execute()
@@ -56,23 +58,25 @@ def init_session_state():
         st.session_state.banners = []
 
 def show_banners():
-    """ يعرض اليافطات اللي لسه منتهتش وينضف القديم """
-    init_session_state() # <--- ضفت دي
+    """ يعرض اليافطات اللي لسه منتهتش ولليوزر ده بس """
+    init_session_state()
     
     now = datetime.now()
+    current_user = st.session_state.user["username"]
     active_banners = []
     banners_to_delete = []
     
     for b in st.session_state.banners:
-        if not isinstance(b, dict) or "expire" not in b:
-            continue
-        try:
-            expire_date = datetime.fromisoformat(b["expire"])
-        except:
-            continue
+        if not isinstance(b, dict) or "expire" not in b: continue
+        try: expire_date = datetime.fromisoformat(b["expire"])
+        except: continue
         
         if expire_date > now:
-            active_banners.append(b)
+            # فلترة الجمهور
+            audience = b.get("audience", "الكل")
+            visible_to = b.get("visible_to", [])
+            if audience == "الكل" or current_user in visible_to:
+                active_banners.append(b)
         else:
             banners_to_delete.append(b["id"])
             
@@ -96,7 +100,8 @@ def banner_sidebar():
     if 'role' not in st.session_state or st.session_state.role != 'admin':
         return 
     
-    init_session_state() # <--- ضفت دي
+    init_session_state()
+    users = load_users() # لازم تكون عامل الدالة دي
     
     st.sidebar.markdown("---")
     st.sidebar.title("📢 تحكم الادمن")
@@ -104,30 +109,43 @@ def banner_sidebar():
         banner_text = st.text_input("اكتب التهنئة")
         banner_color = st.color_picker("اللون", "#FFD700")
         duration_minutes = st.number_input("المدة بالدقايق", 1, 10080, 60)
+        
+        st.markdown("### 👥 الظهور لـ")
+        audience_type = st.radio("اختر الجمهور", ["الكل", "اعضاء محددين"], horizontal=True, key="audience_banner")
+        
+        visible_to = []
+        if audience_type == "اعضاء محددين":
+            all_usernames = [u["username"] for u in users]
+            visible_to = st.multiselect("حدد الاعضاء", all_usernames, key="visible_users_banner")
+
         if st.form_submit_button("اضافة يافطة"):
-            if banner_text:
+            if banner_text and (audience_type == "الكل" or visible_to):
                 expire_time = datetime.now() + timedelta(minutes=duration_minutes)
                 new_banner = {
                     "text": banner_text, 
                     "color": banner_color, 
                     "expire": expire_time.isoformat(),
-                    "created_at": datetime.now().isoformat()
+                    "created_at": datetime.now().isoformat(),
+                    "audience": audience_type, # <--- جديد
+                    "visible_to": visible_to   # <--- جديد
                 }
                 save_banner_to_db(new_banner)
                 st.session_state.banners = load_banners()
-                st.rerun()
+                st.success("تم النشر"); st.rerun()
+            else: st.error("املى كل الحقول")
 
     st.sidebar.markdown("### حذف اليافطات")
     for i, banner in enumerate(st.session_state.banners):
         col1, col2 = st.sidebar.columns([4,1])
-        with col1: st.write(f"• {banner['text'][:20]}...")
+        with col1: 
+            audience_info = "الكل" if banner.get("audience")=="الكل" else "محدد"
+            st.write(f"• {banner['text'][:20]}... ({audience_info})")
         with col2: 
             if st.button("🗑️", key=f"del_admin_{banner['id']}"):
                 delete_banner_from_db(banner['id'])
                 st.session_state.banners = load_banners()
                 st.rerun()
 # ===== نهاية اليافطة =====
-
 # ====== دالة التصدير HTML للطباعة ======
 def get_export_html(full_html, title):
     return f"""<!DOCTYPE html>
