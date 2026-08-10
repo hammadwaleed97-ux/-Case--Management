@@ -406,9 +406,9 @@ def login_page():
 
     with tab1:
         st.markdown("<p style='color:white; font-weight:bold;'>اسم المستخدم</p>", unsafe_allow_html=True)
-        username = st.text_input("", key="login_user", label_visibility="collapsed")
+        username = st.text_input("", key="login_user_final_v3", label_visibility="collapsed")
         st.markdown("<p style='color:white; font-weight:bold;'>كلمة السر</p>", unsafe_allow_html=True)
-        password = st.text_input("", type="password", key="login_pass", label_visibility="collapsed")
+        password = st.text_input("", type="password", key="login_pass_final_v3", label_visibility="collapsed")
 
         if st.button("دخول", type="primary", use_container_width=True):
             user = check_login(username, password)
@@ -424,7 +424,6 @@ def login_page():
                     st.rerun()
             else:
                 st.error("اسم المستخدم او كلمة السر غلط او العضوية موقوفة")
-
         st.markdown("---")
         st.markdown("<p style='color:white; font-weight:bold;'>نسيت بياناتك؟ استرجعها بالايميل</p>", unsafe_allow_html=True)
         admin_recover_email = st.text_input("ايميل الادمن", key="admin_recover")
