@@ -17,7 +17,7 @@ from openpyxl.styles import Font, Alignment, PatternFill
 
 st.set_page_config(page_title="إدارة القضايا", layout="wide")
 
-# ====== CSS نضيف بدون تكسير ولا اختفاء ======
+# ====== CSS قوي للسحابة والموبايل ======
 st.markdown("""
 <style>
 html, body {
@@ -37,18 +37,24 @@ h1, h2, h3, h4, h5, h6 { color: white!important; text-align: center; }
     direction: rtl !important; text-align: right;
 }
 
-div[data-testid="stWidgetLabel"] p {
-    color: #C9A961 !important; font-size: 16px !important; font-weight: 700 !important;
+/* تعديل قوي للسايدبار عشان الموبايل */
+section[data-testid="stSidebar"] {
+    direction: rtl !important;
 }
-
-thead tr th { color: black!important; background-color: #C9A961!important; font-weight: bold; }
-tbody tr td { color: black!important; background-color: white!important; }
-
-/* حل السايدبار: نستهدف العنوان فقط */
-section[data-testid="stSidebar"] h3 {
+section[data-testid="stSidebar"] * {
     writing-mode: horizontal-tb !important;
+    text-align: right !important;
+    color: #000000 !important; /* نخلي الخط اسود واضح */
+    opacity: 1 !important; /* نشيل البهتان */
+}
+section[data-testid="stSidebar"] h3 {
     text-align: center !important;
     color: #C9A961 !important;
+    font-size: 20px !important;
+}
+section[data-testid="stSidebar"] label {
+    font-weight: bold !important;
+    font-size: 16px !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -67,13 +73,12 @@ ADMIN_USERNAME = "admin"
 ADMIN_DEFAULT_PASS = "admin123"
 
 def fix_arabic(text):
-    """ نسخة متعدلة للسحابة - من غير bidi """
     if not text: 
         return ""
     reshaped_text = arabic_reshaper.reshape(str(text))
     return reshaped_text
 
-# ===== نظام اليافطة - متعدل للسحابة + RTL ثابت =====
+# ===== نظام اليافطة =====
 def load_banners():
     res = supabase.table("banners").select("*").order("created_at", desc=True).execute()
     return res.data if res.data else []
@@ -91,9 +96,7 @@ def init_session_state():
         st.session_state.banners = []
 
 def show_banners():
-    """ يعرض اليافطات اللي لسه منتهتش ولليوزر ده بس """
     init_session_state()
-    
     now = datetime.now()
     current_user = st.session_state.user["username"]
     active_banners = []
@@ -103,7 +106,6 @@ def show_banners():
         if not isinstance(b, dict) or "expire" not in b: continue
         try: expire_date = datetime.fromisoformat(b["expire"])
         except: continue
-        
         if expire_date > now:
             audience = b.get("audience", "الكل")
             visible_to = b.get("visible_to", [])
@@ -114,15 +116,12 @@ def show_banners():
             
     for banner_id in banners_to_delete:
         delete_banner_from_db(banner_id)
-
     st.session_state.banners = active_banners
 
     for banner in active_banners:
-        # شلنا الانيميشن عشان ميختفيش لما تسحب
         st.markdown(f"""
         <div style="
-            direction: rtl;
-            text-align: right;
+            direction: rtl; text-align: right;
             background:linear-gradient(90deg, {banner['color']}, #ffffff22); 
             padding:14px; border-radius:12px; 
             font-size:18px; font-weight:bold; color:white; margin:15px 0;
@@ -148,8 +147,8 @@ def banner_sidebar():
         banner_color = st.color_picker("اللون", "#FFD700")
         duration_minutes = st.number_input("المدة بالدقايق", 1, 10080, 60)
         
-        st.markdown("### 👥 الظهور لـ")
-        audience_type = st.radio("اختر الجمهور", ["الكل", "اعضاء محددين"], horizontal=True, key="audience_banner")
+        st.markdown("<h4 style='color:#C9A961; text-align:right'>👥 الظهور لـ</h4>", unsafe_allow_html=True)
+        audience_type = st.radio("", ["الكل", "اعضاء محددين"], horizontal=True, key="audience_banner", label_visibility="collapsed")
         
         visible_to = []
         if audience_type == "اعضاء محددين":
