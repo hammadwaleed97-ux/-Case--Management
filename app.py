@@ -17,7 +17,7 @@ from openpyxl.styles import Font, Alignment, PatternFill
 
 st.set_page_config(page_title="إدارة القضايا", layout="wide")
 
-# ====== CSS قوي للسحابة والموبايل ======
+# ====== CSS آمن 100% بدون تسريب ======
 st.markdown("""
 <style>
 html, body {
@@ -37,24 +37,20 @@ h1, h2, h3, h4, h5, h6 { color: white!important; text-align: center; }
     direction: rtl !important; text-align: right;
 }
 
-/* تعديل قوي للسايدبار عشان الموبايل */
-section[data-testid="stSidebar"] {
+div[data-testid="stWidgetLabel"] p {
+    color: #C9A961 !important; font-size: 16px !important; font-weight: 700 !important;
+}
+
+thead tr th { color: black!important; background-color: #C9A961!important; font-weight: bold; }
+tbody tr td { color: black!important; background-color: white!important; }
+
+/* الحل: نستهدف السايدبار فقط وممنوع التسريب */
+[data-testid="stSidebar"] {
     direction: rtl !important;
 }
-section[data-testid="stSidebar"] * {
-    writing-mode: horizontal-tb !important;
-    text-align: right !important;
-    color: #000000 !important; /* نخلي الخط اسود واضح */
-    opacity: 1 !important; /* نشيل البهتان */
-}
-section[data-testid="stSidebar"] h3 {
+[data-testid="stSidebar"] h3 {
     text-align: center !important;
     color: #C9A961 !important;
-    font-size: 20px !important;
-}
-section[data-testid="stSidebar"] label {
-    font-weight: bold !important;
-    font-size: 16px !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -182,6 +178,7 @@ def banner_sidebar():
                 delete_banner_from_db(banner['id'])
                 st.session_state.banners = load_banners()
                 st.rerun()
+# ===== نهاية اليافطة =====
 # ===== نهاية اليافطة =====
 # ====== الاتصال بالسحابة ======
 supabase: Client = create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"])
