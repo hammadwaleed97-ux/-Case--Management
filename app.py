@@ -201,7 +201,7 @@ def banner_sidebar():
                     st.session_state.banners = load_banners()
                     st.rerun()
 # ===== نهاية اليافطة =====
-===== الاتصال بالسحابة ======
+# ===== الاتصال بالسحابة ======
 supabase: Client = create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"])
 
 # ====== اعدادات الادمن ======
