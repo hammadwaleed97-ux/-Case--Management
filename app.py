@@ -168,11 +168,21 @@ def get_export_html(full_html, title):
 </html>"""
 
 # ====== CSS الاساسي ======
+# ====== CSS الاساسي + تعديل الموبايل RTL ======
 st.markdown("""
 <style>
+/* 1. ظبط الاتجاه العام */
+body { 
+    direction: rtl; 
+    overflow-x: hidden; /* يمنع السكرول الجانبي اللي بيقطع */
+}
+.block-container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+}
 .stApp { background-color: #0E1117; }
-h1, h2, h3, h4, h5, h6 { color: white!important; }
-.stButton>button { background-color: #C9A961; color: black; font-weight: bold; border-radius: 10px; }
+h1, h2, h3, h4, h5, h6 { color: white!important; text-align: center; }
+.stButton>button { background-color: #C9A961; color: black; font-weight: bold; border-radius: 10px; width: 100%; }
 .stTextInput>div>div>input, .stSelectbox>div>div>div, .stTextArea>div>div>textarea { 
     color: black; background-color: white; border-radius: 8px; 
 }
@@ -181,20 +191,35 @@ div[data-testid="stWidgetLabel"] p {
     font-size: 16px !important;
     font-weight: 700 !important;
 }
-</style>
-""", unsafe_allow_html=True)
 
-# ====== CSS الجدول والتابات ======
-st.markdown("""
-<style>
-thead tr th { color: black!important; background-color: #C9A961!important; font-weight: bold; }
-tbody tr td { color: black!important; background-color: white!important; }
+/* 2. تعديل الجدول عشان الكلام ميتقطعش */
+thead tr th { 
+    color: black!important; 
+    background-color: #C9A961!important; 
+    font-weight: bold; 
+    white-space: normal !important; /* مهم */
+    word-wrap: break-word !important;
+}
+tbody tr td { 
+    color: black!important; 
+    background-color: white!important; 
+    white-space: normal !important; /* مهم */
+    word-wrap: break-word !important;
+}
+
+/* 3. التابات */
 div[data-testid="stTabs"] button {color: white!important; font-weight: bold;}
 div[data-testid="stTabs"] button[aria-selected="true"] {color: #C9A961!important;}
 div[data-testid="stTextInput"] label {color: white!important; font-weight: bold;}
+
+/* 4. ظبط الازرار في الموبايل */
+@media (max-width: 768px) {
+    .stButton>button { font-size: 14px; }
+}
 </style>
 """, unsafe_allow_html=True)
 
+# ====== الاعدادات =====
 # ====== الاعدادات ======
 SENDER_EMAIL = st.secrets.get("SENDER_EMAIL", "")
 SENDER_PASSWORD = st.secrets.get("SENDER_PASSWORD", "")
