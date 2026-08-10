@@ -202,134 +202,6 @@ def banner_sidebar():
                     st.rerun()
 # ===== نهاية اليافطة =====
 # ===== نهاية اليافطة =====
-# ====== الاتصال بالسحابة ======
-supabase: Client = create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"])
-
-# ====== اعدادات الادمن ======
-ADMIN_USERNAME = "admin"
-ADMIN_DEFAULT_PASS = "admin123"
-
-def fix_arabic(text):
-    """ نسخة متعدلة للسحابة - من غير bidi """
-    if not text:
-        return ""
-    reshaped_text = arabic_reshaper.reshape(str(text))
-    return reshaped_text
-
-# ===== نظام اليافطة - متعدل للسحابة + RTL ثابت =====
-def load_banners():
-    res = supabase.table("banners").select("*").order("created_at", desc=True).execute()
-    return res.data if res.data else []
-
-def save_banner_to_db(banner_data):
-    supabase.table("banners").insert(banner_data).execute()
-
-def delete_banner_from_db(banner_id):
-    supabase.table("banners").delete().eq("id", banner_id).execute()
-
-def init_session_state():
-    if "banners" not in st.session_state:
-        st.session_state.banners = load_banners()
-    if "banners" in st.session_state and st.session_state.banners is None:
-        st.session_state.banners = []
-
-def show_banners():
-    """ يعرض اليافطات اللي لسه منتهتش ولليوزر ده بس """
-    init_session_state()
-
-    now = datetime.now()
-    current_user = st.session_state.user["username"]
-    active_banners = []
-    banners_to_delete = []
-
-    for b in st.session_state.banners:
-        if not isinstance(b, dict) or "expire" not in b: continue
-        try: expire_date = datetime.fromisoformat(b["expire"])
-        except: continue
-
-        if expire_date > now:
-            audience = b.get("audience", "الكل")
-            visible_to = b.get("visible_to", [])
-            if audience == "الكل" or current_user in visible_to:
-                active_banners.append(b)
-        else:
-            banners_to_delete.append(b["id"])
-
-    for banner_id in banners_to_delete:
-        delete_banner_from_db(banner_id)
-
-    st.session_state.banners = active_banners
-
-    for banner in active_banners:
-        # عدلت من ltr ل rtl واجبرتها افقي
-        st.markdown(f"""
-        <div style="
-            direction: rtl!important;
-            writing-mode: horizontal-tb!important;
-            text-align: right;
-            background:linear-gradient(90deg, {banner['color']}, #ffffff22);
-            padding:14px; border-radius:12px;
-            font-size:24px; font-weight:bold; color:white; margin:15px 0;
-            border: 2px solid {banner['color']}; animation: pulse 2s infinite;
-            white-space: normal!important; word-wrap: break-word;
-        ">
-            📢 {banner['text']}
-        </div>
-        <style>@keyframes pulse {{ 0% {{transform: scale(1);}} 50% {{transform: scale(1.02);}} 100% {{transform: scale(1);}} }}</style>
-        """, unsafe_allow_html=True)
-
-def banner_sidebar():
-    if 'role' not in st.session_state or st.session_state.role!= 'admin':
-        return
-
-    init_session_state()
-    users = load_users()
-
-    st.sidebar.markdown("---")
-    # عدلت title ل markdown عشان ميقلبش عمودي
-    st.sidebar.markdown('<h3 style="writing-mode: horizontal-tb!important; text-align: center; color: #C9A961;">📢 تحكم الادمن</h3>', unsafe_allow_html=True)
-
-    with st.sidebar.form("add_banner_form"):
-        banner_text = st.text_input("اكتب التهنئة")
-        banner_color = st.color_picker("اللون", "#FFD700")
-        duration_minutes = st.number_input("المدة بالدقايق", 1, 10080, 60)
-
-        st.markdown("### 👥 الظهور لـ")
-        audience_type = st.radio("اختر الجمهور", ["الكل", "اعضاء محددين"], horizontal=True, key="audience_banner")
-
-        visible_to = []
-        if audience_type == "اعضاء محددين":
-            all_usernames = [u["username"] for u in users]
-            visible_to = st.multiselect("حدد الاعضاء", all_usernames, key="visible_users_banner")
-
-        if st.form_submit_button("اضافة يافطة"):
-            if banner_text and (audience_type == "الكل" or visible_to):
-                expire_time = datetime.now() + timedelta(minutes=duration_minutes)
-                new_banner = {
-                    "text": banner_text,
-                    "color": banner_color,
-                    "expire": expire_time.isoformat(),
-                    "created_at": datetime.now().isoformat(),
-                    "audience": audience_type,
-                    "visible_to": visible_to
-                }
-                save_banner_to_db(new_banner)
-                st.session_state.banners = load_banners()
-                st.success("تم النشر"); st.rerun()
-            else: st.error("املى كل الحقول")
-
-    st.sidebar.markdown("### حذف اليافطات")
-    for i, banner in enumerate(st.session_state.banners):
-        col1, col2 = st.sidebar.columns([4,1])
-        with col1:
-            audience_info = "الكل" if banner.get("audience")=="الكل" else "محدد"
-            st.write(f"• {banner['text'][:20]}... ({audience_info})")
-        with col2:
-            if st.button("🗑️", key=f"del_admin_{banner['id']}"):
-                delete_banner_from_db(banner['id'])
-                st.session_state.banners = load_banners()
-                st.rerun()
-# ===== نهاية اليافطة =====
 
 # ====== الاعدادات ======
 SENDER_EMAIL = st.secrets.get("SENDER_EMAIL", "")
@@ -448,7 +320,7 @@ def login_page():
             found = [u for u in users if u.get("email") == member_recover_email]
             if found:
                 user = found[0]
-                code = str(random.randint(100000, 999999))
+                code = str(random.randint(100000, 999))
                 st.session_state.RESET_CODES[member_recover_email] = {"code": code, "user_id": user["id"]}
                 body = f"مرحبا {user['username']}\nاسم المستخدم: {user['username']}\nكود اعادة التعيين: {code}"
                 if send_email(member_recover_email, "استرجاع بيانات الدخول", body):
@@ -501,6 +373,7 @@ def login_page():
                 st.rerun()
 
 def extract_member_page():
+    show_banners() # 1. اليافطة تظهر فوق
     st.markdown("<h2 style='text-align:center; color:#C9A961'>استخراج عضوية جديدة</h2>", unsafe_allow_html=True)
     if st.button("العودة للرئيسية"):
         st.session_state.page = "الرئيسية"; st.session_state.role = None; st.rerun()
@@ -522,6 +395,7 @@ def extract_member_page():
                 st.rerun()
 
 def manage_users_page():
+    show_banners() # 1. اليافطة تظهر فوق
     st.markdown("<h2 style='text-align:center; color:#C9A961'>ادارة الاعضاء</h2>", unsafe_allow_html=True)
     if st.button("العودة للرئيسية"): st.session_state.page = "الرئيسية"; st.session_state.role = None; st.rerun()
     users = load_users()
@@ -554,6 +428,7 @@ def manage_users_page():
                         delete_user_db(user['id']); st.rerun()
 
 def recovery_settings_page():
+    show_banners() # 1. اليافطة تظهر فوق
     st.markdown("<h2 style='text-align:center; color:#C9A961'>تأكيد البريد الالكتروني</h2>", unsafe_allow_html=True)
     if st.button("العودة للرئيسية"): st.session_state.page = "الرئيسية"; st.session_state.role = None; st.rerun()
     users = load_users()
@@ -568,21 +443,46 @@ def recovery_settings_page():
         st.success("تم حفظ البريد بنجاح")
 
 def change_password_page():
+    show_banners() # 1. اليافطة تظهر فوق
     st.markdown("<h1 style='text-align:center; color:#C9A961'>تغيير كلمة السر</h1>", unsafe_allow_html=True)
-    if st.button("العودة للرئيسية"): 
+    if st.button("العودة للرئيسية"):
         st.session_state.page = "الرئيسية"; st.session_state.role = None; st.rerun()
-    
+
     old_pass = st.text_input("كلمة السر القديمة", type="password")
     new_pass = st.text_input("كلمة السر الجديدة", type="password")
-    
+
     if st.button("تغيير", use_container_width=True):
         if bcrypt.checkpw(old_pass.encode(), st.session_state.user["password"].encode()):
             hashed = bcrypt.hashpw(new_pass.encode(), bcrypt.gensalt()).decode()
             update_user_db(st.session_state.user["id"], {"password": hashed})
             st.session_state.user["password"] = hashed
             st.success("تم تغيير الباسورد"); st.rerun()
-        else: 
+        else:
             st.error("كلمة السر القديمة غلط")
+
+def main_page():
+    show_banners() # 1. اليافطة تظهر فوق
+    st.title("الرئيسية")
+
+    # 2. تحكم الادمن في السايدبار
+    if st.session_state.role == "admin":
+        banner_sidebar()
+
+    st.write(f"مرحبا {st.session_state.user['username']}")
+
+# ===== تشغيل الصفحات =====
+if st.session_state.page == "login":
+    login_page()
+elif st.session_state.page == "الرئيسية":
+    main_page()
+elif st.session_state.page == "استخراج":
+    extract_member_page()
+elif st.session_state.page == "ادارة":
+    manage_users_page()
+elif st.session_state.page == "الايميل":
+    recovery_settings_page()
+elif st.session_state.page == "تغيير_الباسورد":
+    change_password_page()
 # ===== تشغيل الصفحات =====
 if st.session_state.page == "login":
     login_page()
