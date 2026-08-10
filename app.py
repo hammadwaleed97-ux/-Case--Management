@@ -38,7 +38,8 @@ def fix_arabic(text):
     return bidi_text
 
 # =====
-# ===== نظام اليافطة - متعدل للسحابة + اختيار الاعضاء =====
+# =====
+# ===== نظام اليافطة - متعدل للسحابة + RTL ثابت =====
 from datetime import datetime, timedelta
 
 def load_banners():
@@ -87,10 +88,15 @@ def show_banners():
 
     for banner in active_banners:
         st.markdown(f"""
-        <div style="background:linear-gradient(90deg, {banner['color']}, #ffffff22); 
-                    padding:14px; border-radius:12px; text-align:center; 
-                    font-size:24px; font-weight:bold; color:white; margin:15px 0;
-                    border: 2px solid {banner['color']}; animation: pulse 2s infinite;">
+        <div style="
+            direction: ltr !important; /* اهم سطر - يخلي الكلام افقي */
+            text-align: right; /* النص نفسه يبقى يمين */
+            background:linear-gradient(90deg, {banner['color']}, #ffffff22); 
+            padding:14px; border-radius:12px; 
+            font-size:24px; font-weight:bold; color:white; margin:15px 0;
+            border: 2px solid {banner['color']}; animation: pulse 2s infinite;
+            white-space: normal !important; word-wrap: break-word;
+        ">
             📢 {banner['text']}
         </div>
         <style>@keyframes pulse {{ 0% {{transform: scale(1);}} 50% {{transform: scale(1.02);}} 100% {{transform: scale(1);}} }}</style>
@@ -126,8 +132,8 @@ def banner_sidebar():
                     "color": banner_color, 
                     "expire": expire_time.isoformat(),
                     "created_at": datetime.now().isoformat(),
-                    "audience": audience_type, # <--- جديد
-                    "visible_to": visible_to   # <--- جديد
+                    "audience": audience_type,
+                    "visible_to": visible_to
                 }
                 save_banner_to_db(new_banner)
                 st.session_state.banners = load_banners()
@@ -145,6 +151,7 @@ def banner_sidebar():
                 delete_banner_from_db(banner['id'])
                 st.session_state.banners = load_banners()
                 st.rerun()
+# ===== نهاية اليافطة ===
 # ===== نهاية اليافطة =====
 # ====== دالة التصدير HTML للطباعة ======
 def get_export_html(full_html, title):
