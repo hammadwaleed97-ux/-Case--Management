@@ -174,14 +174,14 @@ def get_export_html(full_html, title):
 </body>
 </html>"""
 
-# ====== CSS الاساسي ====
-# ====== CSS الاساسي + تعديل الموبايل RTL + حماية اليافطة ======
+# ====== 
+# ====== CSS الاساسي + تعديل الموبايل RTL + حماية اليافطة + حماية السايدبار ======
 st.markdown("""
 <style>
 /* 1. اهم حاجة: نجبر كل حاجة تبقى افقي */
 html, body, [class*="css"] {
     direction: rtl !important;
-    writing-mode: horizontal-tb !important; /* ده اللي بيعدل العمودي */
+    writing-mode: horizontal-tb !important; 
     text-orientation: mixed !important;
     overflow-x: hidden !important;
 }
@@ -202,13 +202,13 @@ h1, h2, h3, h4, h5, h6 { color: white!important; text-align: center; }
     font-weight: bold; 
     border-radius: 10px; 
     width: 100%;
-    white-space: normal !important; /* يخلي زرار "استخراج عضوية جديدة" ينزل سطرين */
+    white-space: normal !important;
     line-height: 1.4;
 }
 
 .stTextInput>div>div>input, .stSelectbox>div>div>div, .stTextArea>div>div>textarea { 
     color: black; background-color: white; border-radius: 8px; 
-    direction: rtl !important; /* يخلي الكتابة من اليمين */
+    direction: rtl !important;
     text-align: right;
 }
 
@@ -237,10 +237,21 @@ tbody tr td {
 div[data-testid="stTabs"] button {color: white!important; font-weight: bold;}
 div[data-testid="stTabs"] button[aria-selected="true"] {color: #C9A961!important;}
 
-/* 4. حماية اضافية: عزل اي عنصر ltr زي اليافطة */
+/* 4. حماية اليافطة */
 div[style*="direction: ltr"] {
     writing-mode: horizontal-tb !important;
     text-orientation: mixed !important;
+}
+
+/* 5. اهم اضافة: اصلاح السايدبار */
+[data-testid="stSidebar"] {
+    direction: rtl !important; /* يخلي السايدبار يمين */
+    text-align: right !important;
+}
+[data-testid="stSidebar"] * {
+    writing-mode: horizontal-tb !important; /* يمنع العمودي */
+    text-orientation: mixed !important;
+    white-space: normal !important;
 }
 </style>
 """, unsafe_allow_html=True)
