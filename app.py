@@ -613,7 +613,7 @@ def change_password_page():
     old_pass = st.text_input("كلمة السر القديمة", type="password")
     new_pass = st.text_input("كلمة السر الجديدة", type="password")
     if st.button("تغيير", use_container_width=True):
-        if bcrypt.checkpw(old_pass.e
+    if bcrypt.checkpw(old_pass.e
 # ===== تشغيل الصفحات =====
 if st.session_state.page == "login":
     login_page()
