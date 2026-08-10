@@ -1956,7 +1956,6 @@ elif st.session_state.page == "التنبيهات":
     st.divider()
         # ================================================
 # ============ صفحة المكتبة القانونية ============
-# ==================================================
 elif st.session_state.page == "مكتبة":
     data = load_data()
     st.markdown('<h1 style="text-align: center; color: #FFD700;">المكتبة 📚<br>القانونية</h1>', unsafe_allow_html=True)
@@ -2060,10 +2059,10 @@ elif st.session_state.page == "مكتبة":
                         "content": file_base64
                     }
                     data.setdefault("library", []).append(new_doc)
-                    save_data(data)
+                    save_data(data) # <--- بيحفظ في السحابة والمحلي
                     st.success(f"✅ تم حفظ '{doc_name}' في قسم '{section_select}'")
                     st.session_state.show_upload = False
-                    st.session_state.selected_section = section_select # يفتح القسم بعد الحفظ
+                    st.session_state.selected_section = section_select
                     st.rerun()
                 else:
                     st.error("❌ لازم تختار قسم + اسم + ملف")
@@ -2095,7 +2094,7 @@ elif st.session_state.page == "مكتبة":
                 if doc.get("user_id") == st.session_state.user["id"] or st.session_state.user["role"] == "admin":
                     if st.button("🗑️ حذف", key=f"del_{doc['id']}", use_container_width=True):
                         data["library"] = [d for d in data["library"] if d["id"] != doc["id"]]
-                        save_data(data)
+                        save_data(data) # <--- حذف من السحابة
                         st.rerun()
             st.markdown('</div>', unsafe_allow_html=True)
     
