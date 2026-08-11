@@ -6,8 +6,6 @@ from email.mime.multipart import MIMEMultipart
 import streamlit as st
 import pandas as pd
 from supabase import create_client, Client
-
-# بتوع التقارير
 from fpdf import FPDF
 from docx import Document
 from docx.shared import Pt
@@ -17,41 +15,18 @@ from openpyxl.styles import Font, Alignment, PatternFill
 
 st.set_page_config(page_title="إدارة القضايا", layout="wide")
 
-# ====== CSS آمن 100% ======
+# ====== CSS ======
 st.markdown("""
 <style>
 html, body { direction: rtl !important; }
 .stApp { background-color: #0E1117; }
 h1, h2, h3, h4, h5, h6 { color: white!important; text-align: center; }
-
-.stButton>button { 
-    background-color: #C9A961; color: black; font-weight: bold; 
-    border-radius: 10px; width: 100%; white-space: normal !important; line-height: 1.4;
-}
-
-.stTextInput>div>div>input, .stSelectbox>div>div>div, .stTextArea>div>div>textarea { 
-    color: black; background-color: white; border-radius: 8px; 
-    direction: rtl !important; text-align: right;
-}
-
-/* تقوية الليبل والراديو والمالتي سيلكت */
-div[data-testid="stWidgetLabel"] p, 
-div[data-testid="stRadio"] label, 
-div[data-testid="stMultiSelect"] label {
-    color: #C9A961 !important; 
-    font-size: 16px !important; 
-    font-weight: 700 !important; 
-    opacity: 1 !important;
-}
-
+.stButton>button { background-color: #C9A961; color: black; font-weight: bold; border-radius: 10px; width: 100%; white-space: normal !important;}
+.stTextInput>div>div>input, .stSelectbox>div>div>div, .stTextArea>div>div>textarea { color: black; background-color: white; border-radius: 8px; direction: rtl !important; text-align: right;}
+div[data-testid="stWidgetLabel"] p, div[data-testid="stRadio"] label, div[data-testid="stMultiSelect"] label { color: #C9A961 !important; font-size: 16px !important; font-weight: 700 !important; }
 thead tr th { color: black!important; background-color: #C9A961!important; font-weight: bold; }
 tbody tr td { color: black!important; background-color: white!important; }
-
-/* عنوان السايدبار بس */
-[data-testid="stSidebar"] h3 {
-    text-align: center !important;
-    color: #C9A961 !important;
-}
+[data-testid="stSidebar"] h3 { text-align: center !important; color: #C9A961 !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -69,10 +44,8 @@ ADMIN_USERNAME = "admin"
 ADMIN_DEFAULT_PASS = "admin123"
 
 def fix_arabic(text):
-    if not text: 
-        return ""
-    reshaped_text = arabic_reshaper.reshape(str(text))
-    return reshaped_text
+    if not text: return ""
+    return arabic_reshaper.reshape(str(text))
 
 def load_users():
     res = supabase.table("users").select("*").execute()
@@ -92,225 +65,54 @@ def delete_banner_from_db(banner_id):
 def init_session_state():
     if "banners" not in st.session_state:
         st.session_state.banners = load_banners()
-    if "banners" in st.session_state and st.session_state.banners is None:
-        st.session_state.banners = []
 
 def show_banners():
-    if not st.session_state.get("user"): return # <--- اضافة مهمة
-    init_session_state()
-    now = datetime.now()
-    current_user = st.session_state.user["username"]
-    active_banners = []
-    banners_to_delete = []
-    
-    for b in st.session_state.banners:
-        if not isinstance(b, dict) or "expire" not in b: continue
-        try: expire_date = datetime.fromisoformat(b["expire"])
-        except: continue
-        if expire_date > now:
-            audience = b.get("audience", "الكل")
-            visible_to = b.get("visible_to", [])
-            if audience == "الكل" or current_user in visible_to:
-                active_banners.append(b)
-        else:
-            banners_to_delete.append(b["id"])
-            
-    for banner_id in banners_to_delete:
-        delete_banner_from_db(banner_id)
-    st.session_state.banners = [b for b in st.session_state.banners if b["id"] not in banners_to_delete]
-
-    for banner in active_banners:
-        st.markdown(f"""
-        <div style="
-            direction: rtl; text-align: right;
-            background:linear-gradient(90deg, {banner['color']}, #ffffff22); 
-            padding:14px; border-radius:12px; 
-            font-size:18px; font-weight:bold; color:white; margin:15px 0;
-            border: 2px solid {banner['color']};
-            white-space: normal; word-wrap: break-word;
-        ">
-            📢 {banner['text']}
-        </div>
-        """, unsafe_allow_html=True)
-
-def banner_sidebar():
-    if 'role' not in st.session_state or st.session_state.role != 'admin':
-        return 
-    
-    init_session_state()
-    users = load_users()
-    
-    with st.sidebar:
-        st.markdown("---")
-        st.markdown("### 📢 تحكم الادمن")
-        
-        with st.form("add_banner_form_unique"): # <--- غيرت الاسم
-            banner_text = st.text_input("اكتب التهنئة", key="banner_text_input") # <--- اضافة key
-            
-            banner_color = st.color_picker("اللون", "#FFD700", key="banner_color_picker") # <--- اضافة key
-            
-            duration_minutes = st.number_input("المدة بالدقايق", 1, 10080, 60, key="banner_duration") # <--- اضافة key
-            
-            st.markdown("---")
-            st.markdown("#### 👥 الظهور لـ")
-            audience_type = st.radio(
-                "اختيار الجمهور", 
-                ["الكل", "اعضاء محددين"], 
-                horizontal=True, 
-                key="audience_banner_unique" # <--- غيرت الاسم
-            )
-            
-            visible_to = []
-            if audience_type == "اعضاء محددين":
-                all_usernames = [u["username"] for u in users]
-                visible_to = st.multiselect("حدد الاعضاء", all_usernames, key="visible_users_banner_unique") # <--- غيرت الاسم
-
-            st.markdown("---")
-            if st.form_submit_button("✅ اضافة يافطة", use_container_width=True):
-                if banner_text and (audience_type == "الكل" or visible_to):
-                    expire_time = datetime.now() + timedelta(minutes=duration_minutes)
-                    new_banner = {
-                        "text": banner_text, 
-                        "color": banner_color, 
-                        "expire": expire_time.isoformat(),
-                        "created_at": datetime.now().isoformat(),
-                        "audience": audience_type,
-                        "visible_to": visible_to
-                    }
-                    save_banner_to_db(new_banner)
-                    st.session_state.banners = load_banners()
-                    st.success("تم النشر بنجاح"); st.rerun()
-                else: 
-                    st.error("املى كل الحقول")
-
-        st.markdown("### 🗑️ حذف اليافطات")
-        if not st.session_state.banners:
-            st.write("مفيش يافطات حاليا")
-        for i, banner in enumerate(st.session_state.banners):
-            col1, col2 = st.columns([4,1])
-            with col1: 
-                audience_info = "الكل" if banner.get("audience")=="الكل" else "محدد"
-                st.write(f"• {banner['text'][:25]}... ({audience_info})")
-            with col2: 
-                if st.button("🗑️", key=f"del_admin_{banner['id']}_{i}"): # <--- زودت i
-                    delete_banner_from_db(banner['id'])
-                    st.session_state.banners = load_banners()
-                    st.rerun()
-# ===== نهاية اليافطة =====
-# ===== نهاية اليافطة =====
-# ===== الاتصال بالسحابة ======
-supabase: Client = create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"])
-
-# ====== اعدادات الادمن ======
-ADMIN_USERNAME = "admin"
-ADMIN_DEFAULT_PASS = "admin123"
-
-def fix_arabic(text):
-    """ نسخة متعدلة للسحابة - من غير bidi """
-    if not text:
-        return ""
-    reshaped_text = arabic_reshaper.reshape(str(text))
-    return reshaped_text
-
-# ===== نظام اليافطة - متعدل للسحابة + RTL ثابت =====
-def load_banners():
-    res = supabase.table("banners").select("*").order("created_at", desc=True).execute()
-    return res.data if res.data else []
-
-def save_banner_to_db(banner_data):
-    supabase.table("banners").insert(banner_data).execute()
-
-def delete_banner_from_db(banner_id):
-    supabase.table("banners").delete().eq("id", banner_id).execute()
-
-def init_session_state():
-    if "banners" not in st.session_state:
-        st.session_state.banners = load_banners()
-    if "banners" in st.session_state and st.session_state.banners is None:
-        st.session_state.banners = []
-
-def show_banners():
-    """ يعرض اليافطات اللي لسه منتهتش ولليوزر ده بس """
     if not st.session_state.get("user"): return
     init_session_state()
-
     now = datetime.now()
     current_user = st.session_state.user["username"]
     active_banners = []
-    banners_to_delete = []
-
     for b in st.session_state.banners:
         if not isinstance(b, dict) or "expire" not in b: continue
         try: expire_date = datetime.fromisoformat(b["expire"])
         except: continue
-
         if expire_date > now:
             audience = b.get("audience", "الكل")
             visible_to = b.get("visible_to", [])
             if audience == "الكل" or current_user in visible_to:
                 active_banners.append(b)
-        else:
-            banners_to_delete.append(b["id"])
-
-    for banner_id in banners_to_delete:
-        delete_banner_from_db(banner_id)
-    if banners_to_delete:
-        st.session_state.banners = load_banners()
-
     for banner in active_banners:
         st.markdown(f"""
-        <div dir="rtl" style="
-            text-align: right;
-            background:linear-gradient(90deg, {banner['color']}, #ffffff22);
-            padding:14px; border-radius:12px;
-            font-size:24px; font-weight:bold; color:white; margin:15px 0;
-            border: 2px solid {banner['color']}; animation: pulse 2s infinite;
-            white-space: normal; word-wrap: break-word;
-        ">
+        <div dir="rtl" style="text-align: right; background:linear-gradient(90deg, {banner['color']}, #ffffff22); padding:14px; border-radius:12px; font-size:24px; font-weight:bold; color:white; margin:15px 0; border: 2px solid {banner['color']}; animation: pulse 2s infinite; white-space: normal; word-wrap: break-word;">
             📢 {banner['text']}
         </div>
         <style>@keyframes pulse {{ 0% {{transform: scale(1);}} 50% {{transform: scale(1.02);}} 100% {{transform: scale(1);}} }}</style>
         """, unsafe_allow_html=True)
 
 def banner_sidebar():
-    if 'role' not in st.session_state or st.session_state.role!= 'admin':
-        return
-
+    if 'role' not in st.session_state or st.session_state.role!= 'admin': return
     init_session_state()
     users = load_users()
-
     st.sidebar.markdown("---")
-    st.sidebar.markdown('<h3 style="text-align: center; color: #C9A961;">📢 تحكم الادمن</h3>', unsafe_allow_html=True)
-
+    st.sidebar.markdown('<h3>📢 تحكم الادمن</h3>', unsafe_allow_html=True)
     with st.sidebar.form("add_banner_form_unique"):
         banner_text = st.text_input("اكتب التهنئة", key="banner_text_input_unique")
-        banner_color = st.color_picker("اللون", "#FFD700")
-        duration_minutes = st.number_input("المدة بالدقايق", 1, 10080, 60)
-
+        banner_color = st.color_picker("اللون", "#FFD700", key="banner_color_unique")
+        duration_minutes = st.number_input("المدة بالدقايق", 1, 10080, 60, key="banner_duration_unique")
         st.markdown("### 👥 الظهور لـ")
         audience_type = st.radio("اختر الجمهور", ["الكل", "اعضاء محددين"], horizontal=True, key="audience_banner_sidebar_unique")
-
         visible_to = []
         if audience_type == "اعضاء محددين":
             all_usernames = [u["username"] for u in users]
             visible_to = st.multiselect("حدد الاعضاء", all_usernames, key="visible_users_banner_sidebar_unique")
-
         if st.form_submit_button("اضافة يافطة", use_container_width=True):
             if banner_text and (audience_type == "الكل" or visible_to):
                 expire_time = datetime.now() + timedelta(minutes=duration_minutes)
-                new_banner = {
-                    "text": banner_text,
-                    "color": banner_color,
-                    "expire": expire_time.isoformat(),
-                    "created_at": datetime.now().isoformat(),
-                    "audience": audience_type,
-                    "visible_to": visible_to
-                }
+                new_banner = {"text": banner_text, "color": banner_color, "expire": expire_time.isoformat(), "created_at": datetime.now().isoformat(), "audience": audience_type, "visible_to": visible_to}
                 save_banner_to_db(new_banner)
                 st.session_state.banners = load_banners()
                 st.success("تم النشر"); st.rerun()
             else: st.error("املى كل الحقول")
-
     st.sidebar.markdown("### حذف اليافطات")
     for i, banner in enumerate(st.session_state.banners):
         col1, col2 = st.sidebar.columns([4,1])
@@ -323,7 +125,7 @@ def banner_sidebar():
                 st.session_state.banners = load_banners()
                 st.rerun()
 # ===== نهاية اليافطة =====
-
+# ===== نهاية اليافطة =====
 # ====== الاعدادات ======
 SENDER_EMAIL = st.secrets.get("SENDER_EMAIL", "")
 SENDER_PASSWORD = st.secrets.get("SENDER_PASSWORD", "")
