@@ -96,6 +96,7 @@ def init_session_state():
         st.session_state.banners = []
 
 def show_banners():
+    if not st.session_state.get("user"): return # <--- اضافة مهمة
     init_session_state()
     now = datetime.now()
     current_user = st.session_state.user["username"]
@@ -143,31 +144,26 @@ def banner_sidebar():
         st.markdown("---")
         st.markdown("### 📢 تحكم الادمن")
         
-        with st.form("add_banner_form"):
-            # 1. نص اليافطة
-            banner_text = st.text_input("اكتب التهنئة")
+        with st.form("add_banner_form_unique"): # <--- غيرت الاسم
+            banner_text = st.text_input("اكتب التهنئة", key="banner_text_input") # <--- اضافة key
             
-            # 2. لون اليافطة
-            banner_color = st.color_picker("اللون", "#FFD700")
+            banner_color = st.color_picker("اللون", "#FFD700", key="banner_color_picker") # <--- اضافة key
             
-            # 3. مدة اليافطة
-            duration_minutes = st.number_input("المدة بالدقايق", 1, 10080, 60)
+            duration_minutes = st.number_input("المدة بالدقايق", 1, 10080, 60, key="banner_duration") # <--- اضافة key
             
             st.markdown("---")
-            # 4. مين اللي هيشوفها
             st.markdown("#### 👥 الظهور لـ")
             audience_type = st.radio(
                 "اختيار الجمهور", 
                 ["الكل", "اعضاء محددين"], 
                 horizontal=True, 
-                key="audience_banner"
+                key="audience_banner_unique" # <--- غيرت الاسم
             )
             
-            # 5. تحديد الاعضاء
             visible_to = []
             if audience_type == "اعضاء محددين":
                 all_usernames = [u["username"] for u in users]
-                visible_to = st.multiselect("حدد الاعضاء", all_usernames, key="visible_users_banner")
+                visible_to = st.multiselect("حدد الاعضاء", all_usernames, key="visible_users_banner_unique") # <--- غيرت الاسم
 
             st.markdown("---")
             if st.form_submit_button("✅ اضافة يافطة", use_container_width=True):
@@ -196,10 +192,11 @@ def banner_sidebar():
                 audience_info = "الكل" if banner.get("audience")=="الكل" else "محدد"
                 st.write(f"• {banner['text'][:25]}... ({audience_info})")
             with col2: 
-                if st.button("🗑️", key=f"del_admin_{banner['id']}"):
+                if st.button("🗑️", key=f"del_admin_{banner['id']}_{i}"): # <--- زودت i
                     delete_banner_from_db(banner['id'])
                     st.session_state.banners = load_banners()
                     st.rerun()
+# ===== نهاية اليافطة =====
 # ===== نهاية اليافطة =====
 # ===== الاتصال بالسحابة ======
 supabase: Client = create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"])
