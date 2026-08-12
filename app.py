@@ -20,13 +20,22 @@ ADMIN_USERNAME = "admin"
 ADMIN_DEFAULT_PASS = "admin123" 
 SENDER_EMAIL = ""
 SENDER_PASSWORD = ""
+
+# ===== نظام اليافطة =====
+from datetime import timedelta
+
+LOCAL_DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
+os.makedirs(LOCAL_DATA_DIR, exist_ok=True)
+
+BANNERS_FILE = os.path.join(LOCAL_DATA_DIR, "banners_v2.json")  # <-- ضفته هنا
+USERS_FILE = os.path.join(LOCAL_DATA_DIR, "users.json")  # <-- ضفته هنا
+
 def fix_arabic(text):
     """ بتظبط العربي عشان ميطلعش متقطع """
     if not text: return ""
     reshaped_text = arabic_reshaper.reshape(str(text))
     bidi_text = get_display(reshaped_text)
     return bidi_text
-    # ===== نظام اليافطة ====
 # ====== اليافطة نظام ====
 from datetime import timedelta
 
