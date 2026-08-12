@@ -13,6 +13,8 @@ from docx import Document
 from docx.shared import Pt
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 import arabic_reshaper
+ADMIN_USERNAME = "admin"
+ADMIN_DEFAULT_PASS = "admin123"
 from bidi.algorithm import get_display
 from openpyxl.styles import Font, Alignment, PatternFill # <-- زودت PatternFill هنا
 
