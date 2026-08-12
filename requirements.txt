@@ -1,12 +1,9 @@
 streamlit
 pandas
-openpyxl
-python-docx
-plotly
+bcrypt
+requests
 fpdf2
+python-docx
 arabic-reshaper
 python-bidi
-bcrypt
-xlsxwriter
-pillow
-supabase
+openpyxl
