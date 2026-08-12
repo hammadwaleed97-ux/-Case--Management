@@ -15,7 +15,7 @@ from openpyxl.styles import Font, Alignment, PatternFill
 
 st.set_page_config(page_title="إدارة القضايا", layout="wide")
 
-# ====== CSS =====
+# ====== CSS ====
 st.markdown("""
 <style>
 html, body { direction: rtl !important; }
