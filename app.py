@@ -572,6 +572,177 @@ elif st.session_state.page == "تغيير_الباسورد":
     change_password_page()
 elif st.session_state.page == "set_password":
     set_password_page()
+    # ====== الصفحات ======
+def login_page():
+    st.markdown("<h3 style='text-align:center; color:white'>دخول السادة الاعضاء</h3>", unsafe_allow_html=True)
+    tab1, tab2 = st.tabs(["تسجيل الدخول", "تفعيل حساب جديد"])
+
+    with tab1:
+        st.markdown("<p style='color:white; font-weight:bold;'>اسم المستخدم</p>", unsafe_allow_html=True)
+        username = st.text_input("", key="login_user_v5", label_visibility="collapsed")
+        st.markdown("<p style='color:white; font-weight:bold;'>كلمة السر</p>", unsafe_allow_html=True)
+        password = st.text_input("", type="password", key="login_pass_v5", label_visibility="collapsed")
+
+        if st.button("دخول", type="primary", use_container_width=True, key="btn_login_v5"):
+            user = check_login(username, password)
+            if user:
+                st.session_state.user = user
+                st.session_state.role = user["role"]
+                if user["role"] == "member" and not user.get("password_set", False):
+                    st.session_state.page = "set_password"
+                    st.session_state.temp_user = user["username"]
+                    st.rerun()
+                else:
+                    st.session_state.page = "الرئيسية"
+                    st.rerun()
+            else:
+                st.error("اسم المستخدم او كلمة السر غلط او العضوية موقوفة")
+
+    with tab2:
+        st.markdown("**تفعيل حساب عضو**")
+        member_name = st.text_input("اكتب اسم العضو للتفعيل", key="new_user_v5")
+        if st.button("تفعيل الحساب", use_container_width=True, key="btn_activate_v5"):
+            users = load_users()
+            found_user = next((u for u in users if u.get('username') == member_name), None)
+            if not found_user:
+                st.error("الاسم ده مش موجود")
+            elif found_user.get("password_set"):
+                st.error("العضو ده مفعل بالفعل")
+            else:
+                st.session_state.page = "set_password"
+                st.session_state.temp_user = found_user["username"]
+                st.rerun()
+
+def set_password_page():
+    st.markdown("<h2 style='text-align:center; color:#C9A961'>تفعيل الحساب وتعيين كلمة السر</h2>", unsafe_allow_html=True)
+    st.write(f"العضو: {st.session_state.temp_user}")
+    pass1 = st.text_input("كلمة السر الجديدة", type="password", key="setpass1")
+    pass2 = st.text_input("تأكيد كلمة السر", type="password", key="setpass2")
+    if st.button("تفعيل", use_container_width=True, key="btn_setpass"):
+        if pass1 == pass2 and pass1:
+            users = load_users()
+            user = next((u for u in users if u["username"] == st.session_state.temp_user), None)
+            hashed = bcrypt.hashpw(pass1.encode(), bcrypt.gensalt()).decode()
+            update_user_db(user["id"], {"password": hashed, "password_set": True})
+            user["password"] = hashed
+            user["password_set"] = True
+            st.session_state.user = user
+            st.session_state.role = user["role"]
+            st.session_state.page = "الرئيسية"
+            st.success("تم التفعيل وتسجيل الدخول")
+            st.rerun()
+        else:
+            st.error("الباسوردين مش زي بعض")
+
+def extract_member_page():
+    show_banners()
+    st.markdown("<h2 style='text-align:center; color:#C9A961'>استخراج عضوية جديدة</h2>", unsafe_allow_html=True)
+    if st.button("العودة للرئيسية", key="back_extract"):
+        st.session_state.page = "الرئيسية"; st.rerun()
+    new_username = st.text_input("اسم المستخدم الجديد", key="extract_user")
+    new_email = st.text_input("الايميل", key="extract_email")
+    if st.button("استخراج العضو", use_container_width=True, type="primary", key="btn_extract"):
+        if new_username.strip():
+            users = load_users()
+            existing_user = next((u for u in users if u['username'] == new_username), None)
+            if existing_user:
+                if existing_user["status"] == "banned" or not existing_user.get("password_set"):
+                    update_user_db(existing_user["id"], {"status": "active", "password": "", "password_set": False, "email": new_email})
+                    st.success(f"تم اعادة استخراج {new_username}")
+                    st.rerun()
+                else:
+                    st.error("الاسم موجود والعضو مفعل بالفعل")
+            else:
+                add_user_db(new_username)
+                users = load_users()
+                new_user = next((u for u in users if u['username'] == new_username), None)
+                update_user_db(new_user["id"], {"email": new_email})
+                st.success(f"تم استخراج العضو: {new_username}")
+                st.rerun()
+        else:
+            st.error("لازم تكتب اسم المستخدم")
+
+def manage_users_page():
+    show_banners()
+    st.markdown("<h2 style='text-align:center; color:#C9A961'>ادارة الاعضاء</h2>", unsafe_allow_html=True)
+    if st.button("العودة للرئيسية", key="back_manage"): st.session_state.page = "الرئيسية"; st.rerun()
+    users = load_users()
+    for user in users:
+        if user["role"] == "member":
+            status = "مفعل" if user.get("password_set") else "غير مفعل"
+            if user["status"] == "banned": status = "موقوف لمخالفة"
+            with st.container(border=True):
+                col1, col2 = st.columns([3,2])
+                with col1:
+                    st.write(f"**{user['username']}** - {user.get('email','بدون ايميل')}")
+                    st.write(f"الحالة: {status}")
+                with col2:
+                    if user["status"] == "active":
+                        if st.button("ايقاف لمخالفة قواعد", key=f"ban_{user['id']}"):
+                            update_user_db(user["id"], {"status": "banned", "password": "", "password_set": False})
+                            st.rerun()
+                        if st.button("ايقاف لفقد البيانات", key=f"lose_{user['id']}"):
+                            update_user_db(user["id"], {"password": "", "password_set": False})
+                            st.rerun()
+                    elif user["status"] == "banned":
+                        if st.button("تنشيط", key=f"unban_{user['id']}", type="primary"):
+                            update_user_db(user["id"], {"status": "active"})
+                            st.success(f"تم تنشيط {user['username']}"); st.rerun()
+                    else:
+                        if st.button("اعادة استخراج", key=f"re_extract_{user['id']}", type="primary"):
+                            update_user_db(user["id"], {"status": "active", "password": "", "password_set": False})
+                            st.success(f"تم اعادة استخراج {user['username']}"); st.rerun()
+                    if st.button("حذف", key=f"del_{user['id']}"):
+                        delete_user_db(user['id']); st.rerun()
+
+def recovery_settings_page():
+    show_banners()
+    st.markdown("<h2 style='text-align:center; color:#C9A961'>تأكيد البريد الالكتروني</h2>", unsafe_allow_html=True)
+    if st.button("العودة للرئيسية", key="back_recovery"): st.session_state.page = "الرئيسية"; st.rerun()
+    users = load_users()
+    user = next((u for u in users if u["id"] == st.session_state.user["id"]), None)
+    email = st.text_input("البريد الالكتروني", value=user.get("email",""), key="email_recovery")
+    recovery_email = st.text_input("ايميل استرجاع اضافي للادمن", value=user.get("recovery_email",""), key="recovery_email_extra") if user["role"] == "admin" else user.get("recovery_email","")
+    if st.button("حفظ البريد", use_container_width=True, key="btn_save_email"):
+        new_data = {"email": email}
+        if user["role"] == "admin": new_data["recovery_email"] = recovery_email
+        update_user_db(user["id"], new_data)
+        st.session_state.user = {**user, **new_data}
+        st.success("تم حفظ البريد بنجاح")
+
+def change_password_page():
+    show_banners()
+    st.markdown("<h1 style='text-align:center; color:#C9A961'>تغيير كلمة السر</h1>", unsafe_allow_html=True)
+    if st.button("العودة للرئيسية", key="back_changepass"):
+        st.session_state.page = "الرئيسية"; st.rerun()
+    old_pass = st.text_input("كلمة السر القديمة", type="password", key="old_pass")
+    new_pass = st.text_input("كلمة السر الجديدة", type="password", key="new_pass")
+    if st.button("تغيير", use_container_width=True, key="btn_change"):
+        if bcrypt.checkpw(old_pass.encode(), st.session_state.user["password"].encode()):
+            hashed = bcrypt.hashpw(new_pass.encode(), bcrypt.gensalt()).decode()
+            update_user_db(st.session_state.user["id"], {"password": hashed})
+            st.session_state.user["password"] = hashed
+            st.success("تم تغيير الباسورد"); st.rerun()
+        else:
+            st.error("كلمة السر القديمة غلط")
+
+# ===== تشغيل الصفحات - مرة واحدة بس =====
+if st.session_state.page == "login":
+    login_page()
+elif st.session_state.page == "الرئيسية":
+    main_page()
+elif st.session_state.page == "استخراج":
+    if st.session_state.user and st.session_state.role == "admin": extract_member_page()
+    else: st.session_state.page = "login"; st.rerun()
+elif st.session_state.page == "ادارة":
+    if st.session_state.user and st.session_state.role == "admin": manage_users_page()
+    else: st.session_state.page = "login"; st.rerun()
+elif st.session_state.page == "الايميل":
+    recovery_settings_page()
+elif st.session_state.page == "تغيير_الباسورد":
+    change_password_page()
+elif st.session_state.page == "set_password":
+    set_password_page()
 # ====== دالة التصدير للورد ======
 def to_word(df, title, region):
     doc = Document()
