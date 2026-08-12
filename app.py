@@ -16,6 +16,10 @@ import arabic_reshaper
 from bidi.algorithm import get_display
 from openpyxl.styles import Font, Alignment, PatternFill # <-- زودت PatternFill هنا
 
+ADMIN_USERNAME = "admin"
+ADMIN_DEFAULT_PASS = "admin123" 
+SENDER_EMAIL = ""
+SENDER_PASSWORD = ""
 def fix_arabic(text):
     """ بتظبط العربي عشان ميطلعش متقطع """
     if not text: return ""
