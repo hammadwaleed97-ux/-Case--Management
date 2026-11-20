@@ -2192,7 +2192,7 @@ elif st.session_state.page == "الأرشيف":
                 qq = q_sav.strip()
                 saved_cases = [c for c in saved_cases if any(qq in str(c.get(k, '')) for k in ['رقم', 'سنة', 'مدعي', 'مدعي_عليه', 'سبب_الحفظ', 'محكمة_اسم'])]
             for case in saved_cases:
-                محكمة_str = f"{case.get('محكمة_اسم')} {f'- مأمورية {case.get(\"مأمورية\")}' if case.get('مأمورية') else ''}"
+                محكمة_str = f"{case.get('محكمة_اسم')}{' - مأمورية ' + str(case.get('مأمورية')) if case.get('مأمورية') else ''}"
                 st.markdown(f"""
                 <table style='width:100%; border-collapse:collapse; direction:rtl; margin-bottom:12px;'>
                 <tr><td style='background:#1E2A47; color:#FFD700; padding:8px; width:35%; font-weight:900;'>القضية</td><td style='background:#FFF; color:#000; padding:8px; font-weight:700;'>{case.get('رقم')}/{case.get('سنة')} ({case.get('نوع','')})</td></tr>
