@@ -1489,7 +1489,7 @@ def create_case_file_word(case):
     rtl(f"ملف قضية رقم {case.get('رقم')} لسنة {case.get('سنة')} ({case.get('نوع')})", 13, True, WD_ALIGN_PARAGRAPH.CENTER)
     rtl("____________________________________________________", 10, False, WD_ALIGN_PARAGRAPH.CENTER)
     rtl("1- بيانات القضية والمحكمة:", 12, True)
-    rtl(f"• المحكمة: {case.get('محكمة_اسم')} {f'- مأمورية {case.get(\"مأمورية\")}' if case.get('مأمورية') else ''}")
+    mamoria = f" - مأمورية {case.get('مأمورية')}" if case.get('مأمورية') else ""; rtl(f"• المحكمة: {case.get('محكمة_اسم')}{mamoria}")
     rtl(f"• الدائرة: {case.get('دائرة')}")
     rtl(f"• المدعي: {case.get('مدعي')}")
     rtl(f"• المدعي عليه: {case.get('مدعي_عليه')}")
