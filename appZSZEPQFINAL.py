@@ -1459,6 +1459,187 @@ def to_pdf(df, title, region, member_name="", specialization="", manager_name=""
 
     raw = pdf.output()
     return raw.encode("latin-1", errors="replace") if isinstance(raw, str) else bytes(raw)
+def create_paper_pdf(case_data):
+    papers_dir = BASE_DIR / "papers"
+    papers_dir.mkdir(parents=True, exist_ok=True)
+    pdf = FPDF(orientation='P', unit='mm', format='A4')
+    pdf.add_page()
+    pdf.add_font('Cairo', '', 'Cairo-Regular.ttf', uni=True)
+    pdf.set_font('Cairo', '', 14); pdf.set_right_margin(15)
+    pdf.cell(0,10,fix_arabic(f"صحيفة {case_data.get('مسندة_ل','')}"),ln=1,align='R')
+    pdf.ln(5)
+    pdf.cell(0,10,fix_arabic(f"محكمة: {case_data.get('محكمة_اسم','')}"),ln=1,align='R')
+    pdf.cell(0,10,fix_arabic(f"رقم: {case_data.get('رقم','')} لسنة {case_data.get('سنة','')}"),ln=1,align='R')
+    pdf.cell(0,10,fix_arabic(f"المدعي: {case_data.get('مدعي','')}"),ln=1,align='R')
+    pdf.cell(0,10,fix_arabic(f"ضد: {case_data.get('مدعي_عليه','')}"),ln=1,align='R')
+    pdf.multi_cell(0,10,fix_arabic(f"الموضوع: {case_data.get('موضوع','')}"),align='R')
+    name = str(papers_dir / f"صحيفة_{case_data.get('رقم')}_{case_data.get('سنة')}.pdf"); pdf.output(name); return name
+
+# --- نهاية التعديلات الجذرية ---
+
+def create_case_file_word(case):
+    doc = Document()
+    for sec in doc.sections:
+        sec.top_margin = Inches(0.8); sec.bottom_margin = Inches(0.8); sec.left_margin = Inches(0.8); sec.right_margin = Inches(0.8)
+    def rtl(t, s=11, b=False, a=WD_ALIGN_PARAGRAPH.RIGHT):
+        p = doc.add_paragraph(); p.alignment = a; p._p.get_or_add_pPr().append(OxmlElement('w:bidi'))
+        r = p.add_run(str(t)); r.font.name = 'Arial'; r.font.size = Pt(s); r.bold = b; return p
+    rtl("الهيئة القومية للتأمين الاجتماعي", 15, True, WD_ALIGN_PARAGRAPH.CENTER)
+    rtl("الإدارة المركزية للإدارات القانونية - الإدارة العامة للقضايا", 12, True, WD_ALIGN_PARAGRAPH.CENTER)
+    rtl(f"ملف قضية رقم {case.get('رقم')} لسنة {case.get('سنة')} ({case.get('نوع')})", 13, True, WD_ALIGN_PARAGRAPH.CENTER)
+    rtl("____________________________________________________", 10, False, WD_ALIGN_PARAGRAPH.CENTER)
+    rtl("1- بيانات القضية والمحكمة:", 12, True)
+    rtl(f"• المحكمة: {case.get('محكمة_اسم')} {f'- مأمورية {case.get(\"مأمورية\")}' if case.get('مأمورية') else ''}")
+    rtl(f"• الدائرة: {case.get('دائرة')}")
+    rtl(f"• المدعي: {case.get('مدعي')}")
+    rtl(f"• المدعي عليه: {case.get('مدعي_عليه')}")
+    rtl(f"• الموضوع: {case.get('موضوع')}")
+    rtl(f"• الحالة: {case.get('حالة')} | المكان: {case.get('مكان')}", 11, True)
+    if case.get('جلسات'):
+        rtl("2- سجل الجلسات:", 12, True)
+        t = doc.add_table(rows=1, cols=4); t.style = 'Table Grid'
+        for i, h in enumerate(['الرول', 'التاريخ', 'الاجراء', 'ملاحظات']): t.rows[0].cells[i].text = h
+        for ج in case.get('جلسات', []):
+            row = t.add_row().cells
+            row[0].text = str(ج.get('الرول','')); row[1].text = str(_fmt_date_dmy(ج.get('تاريخ',''))); row[2].text = str(ج.get('الاجراء','')); row[3].text = str(ج.get('ملاحظات',''))
+    if case.get('حالة') == 'منتهية':
+        rtl("3- بيانات الحكم:", 12, True)
+        rtl(f"• تاريخ الحكم: {_fmt_date_dmy(case.get('تاريخ_الحكم'))} | مسندة لـ: {case.get('مسندة_ل_الحكم')}")
+        rtl(f"• منطوق الحكم: {case.get('منطوق_الحكم')}")
+    if case.get('تم_الحفظ_النهائي'):
+        rtl("4- بيانات الحفظ النهائي:", 12, True)
+        rtl(f"• تاريخ الحفظ: {_fmt_date_dmy(case.get('تاريخ_الحفظ'))} | سبب الحفظ: {case.get('سبب_الحفظ')}")
+    out = io.BytesIO(); doc.save(out); return out.getvalue()
+
+def create_case_file_html(case):
+    html_doc = f"""<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="UTF-8"><style>
+    body {{ font-family: 'Arial', sans-serif; padding: 20px; color: #000; background: #fff; }}
+    .header {{ text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px; }}
+    .section {{ margin-bottom: 20px; }}
+    .section-title {{ background: #eee; padding: 8px; font-weight: bold; border-right: 4px solid #000; margin-bottom: 10px; }}
+    .row {{ margin-bottom: 6px; }}
+    .label {{ font-weight: bold; display: inline-block; width: 140px; }}
+    table {{ width: 100%; border-collapse: collapse; margin-top: 10px; }}
+    th, td {{ border: 1px solid #000; padding: 8px; text-align: right; }}
+    th {{ background: #f2f2f2; }}
+    </style></head><body>
+    <div class="header"><h2>الهيئة القومية للتأمين الاجتماعي</h2><h3>الإدارة المركزية للإدارات القانونية - الإدارة العامة للقضايا</h3>
+    <h3>ملف قضية رقم {case.get('رقم')} لسنة {case.get('سنة')} ({case.get('نوع')})</h3></div>
+    <div class="section"><div class="section-title">1- بيانات القضية والمحكمة</div>
+    <div class="row"><span class="label">المحكمة:</span> {case.get('محكمة_اسم')} {f'- مأمورية {case.get("مأمورية")}' if case.get('مأمورية') else ''}</div>
+    <div class="row"><span class="label">الدائرة:</span> {case.get('دائرة')}</div>
+    <div class="row"><span class="label">المدعي:</span> {case.get('مدعي')}</div>
+    <div class="row"><span class="label">المدعي عليه:</span> {case.get('مدعي_عليه')}</div>
+    <div class="row"><span class="label">الموضوع:</span> {case.get('موضوع')}</div>
+    <div class="row"><span class="label">الحالة والمكان:</span> {case.get('حالة')} - {case.get('مكان')}</div></div>"""
+    if case.get('جلسات'):
+        html_doc += """<div class="section"><div class="section-title">2- سجل الجلسات</div><table><tr><th>الرول</th><th>التاريخ</th><th>الاجراء</th><th>ملاحظات</th></tr>"""
+        for ج in case.get('جلسات', []):
+            html_doc += f"<tr><td>{ج.get('الرول','')}</td><td>{_fmt_date_dmy(ج.get('تاريخ',''))}</td><td>{ج.get('الاجراء','')}</td><td>{ج.get('ملاحظات','')}</td></tr>"
+        html_doc += "</table></div>"
+    if case.get('حالة') == 'منتهية':
+        html_doc += f"""<div class="section"><div class="section-title">3- بيانات الحكم</div>
+        <div class="row"><span class="label">تاريخ الحكم:</span> {_fmt_date_dmy(case.get('تاريخ_الحكم'))}</div>
+        <div class="row"><span class="label">مسندة لـ:</span> {case.get('مسندة_ل_الحكم')}</div>
+        <div class="row"><span class="label">منطوق الحكم:</span> {case.get('منطوق_الحكم')}</div></div>"""
+    if case.get('تم_الحفظ_النهائي'):
+        html_doc += f"""<div class="section"><div class="section-title">4- بيانات الحفظ النهائي</div>
+        <div class="row"><span class="label">تاريخ الحفظ:</span> {_fmt_date_dmy(case.get('تاريخ_الحفظ'))}</div>
+        <div class="row"><span class="label">سبب الحفظ:</span> {case.get('سبب_الحفظ')}</div></div>"""
+    html_doc += "</body></html>"
+    return html_doc
+
+def create_case_file_pdf(case):
+    pdf = FPDF(orientation='P', unit='mm', format='A4')
+    pdf.add_page()
+    fp = _report_font_path()
+    font = 'Cairo' if fp else 'Helvetica'
+    if fp:
+        pdf.add_font('Cairo', '', fp, uni=True)
+    pdf.set_font(font, '', 14); pdf.set_right_margin(15)
+    pdf.cell(0,10,fix_arabic("الهيئة القومية للتأمين الاجتماعي"),ln=1,align='C')
+    pdf.set_font(font, '', 11)
+    pdf.cell(0,8,fix_arabic(f"ملف قضية رقم {case.get('رقم')} لسنة {case.get('سنة')}"),ln=1,align='C')
+    pdf.ln(4)
+    pdf.cell(0,8,fix_arabic(f"المحكمة: {case.get('محكمة_اسم','')}"),ln=1,align='R')
+    pdf.cell(0,8,fix_arabic(f"المدعي: {case.get('مدعي','')}"),ln=1,align='R')
+    pdf.cell(0,8,fix_arabic(f"المدعي عليه: {case.get('مدعي_عليه','')}"),ln=1,align='R')
+    pdf.multi_cell(0,8,fix_arabic(f"الموضوع: {case.get('موضوع','')}"),align='R')
+    raw = pdf.output()
+    return raw.encode("latin-1", errors="replace") if isinstance(raw, str) else bytes(raw)
+
+# ==============================================================================
+# 🗄️ التخزين المحلي الدائم + مزامنة اختيارية مع Supabase / GitHub
+# ==============================================================================
+LOCAL_DATA_DIR = BASE_DIR / "local_storage_data"
+LOCAL_DATA_DIR.mkdir(parents=True, exist_ok=True)
+USERS_FILE = LOCAL_DATA_DIR / "users_data.json"
+DATA_FILE = LOCAL_DATA_DIR / "cases_data.json"
+TOKENS_FILE = LOCAL_DATA_DIR / "tokens_data.json"
+LIBRARY_FILE = LOCAL_DATA_DIR / "library_data.json"
+
+def _read_json_file(path, default_factory):
+    try:
+        if path.exists():
+            with open(path, "r", encoding="utf-8") as f:
+                txt = f.read().strip()
+                if txt:
+                    return json.loads(txt)
+    except Exception:
+        pass
+    return default_factory() if callable(default_factory) else default_factory
+
+def _write_json_file(path, payload):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(payload, f, ensure_ascii=False, indent=2)
+    os.replace(tmp, path)
+
+def load_json_persistent(key, local_path, default_value):
+    default_fn = (lambda: copy.deepcopy(default_value)) if not callable(default_value) else default_value
+    if key in st.session_state and st.session_state[key] is not None:
+        return st.session_state[key]
+    data_val = _read_json_file(local_path, default_fn)
+    st.session_state[key] = data_val
+    return data_val
+
+def save_json_persistent(key, local_path, payload):
+    st.session_state[key] = payload
+    _write_json_file(local_path, payload)
+    return True
+
+def upload_bytes_to_supabase(file_bytes, filename, folder="uploads"):
+    up_dir = LOCAL_DATA_DIR / folder
+    up_dir.mkdir(parents=True, exist_ok=True)
+    safe_name = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{re.sub(r'[^A-Za-z0-9._-]', '_', filename)}"
+    target = up_dir / safe_name
+    with open(target, "wb") as f:
+        f.write(file_bytes)
+    return {"ok": True, "path": str(target), "url": str(target)}
+
+def load_data():
+    data=load_json_persistent("data", DATA_FILE, {"cases":[],"library":[]})
+    if not isinstance(data,dict):
+        data={}
+    data.setdefault("cases",[]); data.setdefault("library",[])
+    changed = False
+    admin = next((u for u in load_users() if u.get("role") == "admin"), None)
+    admin_id = admin.get("id") if admin else None
+    admin_username = admin.get("username") if admin else ""
+    for case in data["cases"]:
+        if "owner_user_id" not in case and case.get("assigned_to"):
+            owner = next((u for u in load_users() if u.get("username") == case.get("assigned_to")), None)
+            if owner:
+                case["owner_user_id"] = owner.get("id")
+                changed = True
+        if "assigned_to" not in case and admin_id is not None:
+            case["assigned_to"] = admin_username
+            case["owner_user_id"] = admin_id
+            changed = True
+    if changed:
+        save_json_persistent("data", DATA_FILE, data)
+    return data
 def load_notifications():
     n = load_json_persistent("notifications", LOCAL_DATA_DIR / "notifications_data.json", list)
     return n if isinstance(n, list) else []
