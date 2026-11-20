@@ -2147,7 +2147,7 @@ elif st.session_state.page == "الأرشيف":
 
             for case in judg_cases:
                 لون = "#4CAF50" if case.get('مسندة_ل_الحكم') == "الصالح" else "#FF5252"
-                محكمة_str = f"{case.get('محكمة_اسم')} {f'- مأمورية {case.get(\"مأمورية\")}' if case.get('مأمورية') else ''}"
+                محكمة_str = f"{case.get('محكمة_اسم')}{' - مأمورية ' + str(case.get('مأمورية')) if case.get('مأمورية') else ''}"
                 st.markdown(f"""
                 <table style='width:100%; border-collapse:collapse; direction:rtl; margin-bottom:12px;'>
                 <tr><td style='background:#1E2A47; color:#FFD700; padding:8px; width:35%; font-weight:900;'>القضية</td><td style='background:#FFF; color:#000; padding:8px; font-weight:700;'>{case.get('رقم')}/{case.get('سنة')} ({case.get('نوع','')})</td></tr>
