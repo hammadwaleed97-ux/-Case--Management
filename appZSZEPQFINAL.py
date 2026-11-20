@@ -2245,7 +2245,7 @@ elif st.session_state.page == "بحث":
         """, unsafe_allow_html=True)
 
         with st.expander(f"عرض تفاصيل القضية {c.get('رقم')}/{c.get('سنة')}"):
-            محكمة_تفصيل = f"{c.get('محكمة_اسم')} {f'- مأمورية {c.get(\"مأمورية\")}' if c.get('مأمورية') else ''}"
+            محكمة_تفصيل = f"{c.get('محكمة_اسم')}{' - مأمورية ' + str(c.get('مأمورية')) if c.get('مأمورية') else ''}"
             st.markdown(f"""
             <table style='width:100%; border-collapse:collapse; direction:rtl; margin-bottom:10px;'>
             <tr><td style='background:#1E2A47; color:#FFD700; padding:8px; font-weight:900;'>المحكمة</td><td style='background:#FFF; color:#000; padding:8px; font-weight:700;'>{محكمة_تفصيل}</td></tr>
