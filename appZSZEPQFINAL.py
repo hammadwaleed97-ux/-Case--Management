@@ -3033,6 +3033,7 @@ def to_pdf(cases, report_type, settings, filters=None):
         return out.encode("latin1")
     return bytes(out)
 # ===== مكونات الواجهة (الهيدر، الإحصائيات، عرض القضايا) =====
+# ===== مكونات الواجهة (الهيدر، الإحصائيات، عرض القضايا) =====
 def render_header(settings):
     title = settings.get("app_title", "إدارة القضايا")
     subtitle = settings.get("subtitle", "منظومة متكاملة لإدارة الدعاوى والقرارات والأحكام والمذكرات")
@@ -3102,11 +3103,10 @@ def render_case_card(c, index=0, allow_edit=True, allow_delete=True, data_ref=No
         if sessions:
             st.markdown("**🗓️ سجل الجلسات:**")
             for idx_s, s in enumerate(sessions, 1):
-                                note_part = f"— *ملاحظات:* {s.get('ملاحظات')}" if s.get("ملاحظات") else ""
+                note_part = f"— *ملاحظات:* {s.get('ملاحظات')}" if s.get("ملاحظات") else ""
                 st.markdown(
                     f"- **جلسة {idx_s}** ({fmt_date_ar(s.get('تاريخ',''), '—')}): {s.get('قرار','') or '—'} {note_part}"
                 )
-
 
         docs = c.get("مستندات") or []
         if docs:
@@ -3148,6 +3148,7 @@ def render_case_card(c, index=0, allow_edit=True, allow_delete=True, data_ref=No
                         st.session_state.pop(f"confirm_del_case_{cid}_{index}", None)
                         st.rerun()
 
+# ===== الصفحات الرئيسية للمنظومة =====
 # ===== الصفحات الرئيسية للمنظومة =====
 def home_page(data):
     settings = data["settings"]
