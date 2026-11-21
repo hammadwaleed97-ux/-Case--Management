@@ -203,6 +203,60 @@ label, [data-testid="stCheckbox"] label, [data-testid="stRadio"] label, [data-te
 [data-testid="stButton"] button svg, [data-testid="stDownloadButton"] button svg, [data-testid="stTabs"] button svg, [data-testid="stExpander"] svg, [data-testid="stFileUploader"] svg { display:inline-block !important; visibility:visible !important; opacity:1 !important; color:#fff !important; fill:#fff !important; stroke:#fff !important; }
 [data-testid="stButton"] button > div, [data-testid="stDownloadButton"] button > div { display:flex !important; align-items:center !important; justify-content:center !important; gap:.45rem !important; }
 
+/* إصلاح الشريط الجانبي والاتجاه على الموبايل والشاشات الصغيرة */
+section[data-testid="stSidebar"] {
+    min-width: 260px !important;
+    max-width: 82vw !important;
+    width: 270px !important;
+}
+section[data-testid="stSidebar"] > div:first-child {
+    width: 100% !important;
+    padding: 1rem 0.75rem !important;
+}
+section[data-testid="stSidebar"] button,
+section[data-testid="stSidebar"] [data-testid="stButton"] button,
+section[data-testid="stSidebar"] span,
+section[data-testid="stSidebar"] p,
+section[data-testid="stSidebar"] div {
+    white-space: normal !important;
+    word-break: normal !important;
+    overflow-wrap: break-word !important;
+    writing-mode: horizontal-tb !important;
+    text-orientation: mixed !important;
+}
+section[data-testid="stSidebar"] [data-testid="stButton"] button > div {
+    justify-content: flex-start !important;
+    text-align: right !important;
+    width: 100% !important;
+}
+
+@media (max-width: 768px) {
+    .block-container {
+        padding-left: 0.75rem !important;
+        padding-right: 0.75rem !important;
+        padding-top: 0.9rem !important;
+    }
+    .main-header {
+        padding: 16px 14px !important;
+    }
+    .main-title {
+        font-size: 24px !important;
+    }
+    .stat-box {
+        margin-bottom: 10px !important;
+    }
+    [data-testid="column"] {
+        width: 100% !important;
+        flex: 1 1 100% !important;
+        min-width: 100% !important;
+    }
+    section[data-testid="stSidebar"] [data-testid="column"] {
+        width: auto !important;
+        flex: 1 1 auto !important;
+        min-width: 0 !important;
+    }
+}
+
 [data-testid="stFileUploader"] small, [data-testid="stFileUploader"] span {color:#fff!important;}
 </style>
 """, unsafe_allow_html=True)
@@ -1872,7 +1926,7 @@ def _render_doc_viewer(doc_obj, key_prefix="doc"):
         "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         "doc": "application/msword",
         "xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        "xls": "application/vnd.msword",
+        "xls": "application/msword",
     }
     mime = mime_map.get(ext, "application/octet-stream")
     st.download_button(
@@ -3033,7 +3087,6 @@ def to_pdf(cases, report_type, settings, filters=None):
         return out.encode("latin1")
     return bytes(out)
 # ===== مكونات الواجهة (الهيدر، الإحصائيات، عرض القضايا) =====
-# ===== مكونات الواجهة (الهيدر، الإحصائيات، عرض القضايا) =====
 def render_header(settings):
     title = settings.get("app_title", "إدارة القضايا")
     subtitle = settings.get("subtitle", "منظومة متكاملة لإدارة الدعاوى والقرارات والأحكام والمذكرات")
@@ -3148,7 +3201,6 @@ def render_case_card(c, index=0, allow_edit=True, allow_delete=True, data_ref=No
                         st.session_state.pop(f"confirm_del_case_{cid}_{index}", None)
                         st.rerun()
 
-# ===== الصفحات الرئيسية للمنظومة =====
 # ===== الصفحات الرئيسية للمنظومة =====
 def home_page(data):
     settings = data["settings"]
