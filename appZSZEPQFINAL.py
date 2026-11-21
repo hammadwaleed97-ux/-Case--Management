@@ -3597,7 +3597,8 @@ elif st.session_state.page == "مكتبة":
 
 # ===========
 # =========== الجزء الثامن: التقارير =========
-# ================ القسم 1 من 2 =================
+# ===== الجزء الثامن: التقارير ============
+# ================= القسم 1 من 2 =================
 
 def get_export_html(content_html, title):
     import html as _html
@@ -3677,7 +3678,7 @@ if st.session_state.page == "تقارير":
         safe_odo = _html.escape(str(عضو_قانوني or ""))
         safe_mgr = _html.escape(str(مدير_ادارة or ""))
         safe_gm = _html.escape(str(مدير_عام or ""))
-        return f"""<div style="margin-top:25px; color:#B8860B; font-size:12px;"><p style="text-align:center; margin-bottom:20px; font-size:13px; font-weight:700;">تفضلوا بقبول وافر الاحترام والتقدير،</p><table style="width:100%;"><tr><td style="width:50%; text-align:right; vertical-align:top;"><div style="font-weight:900;">العضو القانوني</div><div style="margin-top:4px;">{safe_odo}</div><div style="margin-top:12px;">....................</div><div style="margin-top:20px;">تحرر في: {datetime.now().strftime('%d-%m-%Y')}</div></td><td style="width:50%; text-align:left; vertical-align:top;"><div style="font-weight:900;">مدير إدارة القضايا</div><div style="margin-top:4px;">{safe_mgr}</div><div style="margin-top:12px;">....................</div></td></tr></table><div style="text-align:center; margin-top:20px;"><div style="font-weight:900; color:#dc3545;">مدير عام الإدارات القانونية</div><div style="margin-top:4px;">{safe_gm}</div><div style="margin-top:12px;">....................</div></div></div>"""
+        return f"""<div style="margin-top:25px; color:#B8860B; font-size:12px;"><p style="text-align:center; margin-bottom:20px; font-size:13px; font-weight:700;">تفضلوا بقبول وافر الاحترام والتقدير،</p><table style="width:100%;"><tr><td style="width:50%; text-align:right; vertical-align:top;"><div style="font-weight:900;">العضو القانوني</div><div style="margin-top:6px;">{safe_odo}</div><div style="margin-top:12px;">....................</div><div style="margin-top:20px;">تحرر في: {datetime.now().strftime('%d-%m-%Y')}</div></td><td style="width:50%; text-align:left; vertical-align:top;"><div style="font-weight:900;">مدير إدارة القضايا</div><div style="margin-top:6px;">{safe_mgr}</div><div style="margin-top:12px;">....................</div></td></tr></table><div style="text-align:center; margin-top:20px;"><div style="font-weight:900; color:#dc3545;">مدير عام الإدارات القانونية</div><div style="margin-top:6px;">{safe_gm}</div><div style="margin-top:12px;">....................</div></div></div>"""
 
     def _export_word_rtl(df_export, title_text, region_val, odo_val, lawyer_val, mgr_val, gm_val):
         raw_bytes = to_word(df_export, title_text, region_val, odo_val, lawyer_val, mgr_val, gm_val)
@@ -3890,7 +3891,7 @@ if st.session_state.page == "تقارير":
                 "dlx1", "بيان_الدعاوى_المتداولة", rep1["df"], rep1["full_html"],
                 rep1["title"], rep1["region"], rep1["odo"], rep1["lawyer"], rep1["mgr"], rep1["gm"]
     )
-# ====== تبويب 2: الاحكام =========
+# ======= تبويب 2: الاحكام =========
     with tab2:
         st.markdown("<div style='background:#1E2A47; padding:12px; border-radius:8px; border:2px solid #B8860B; margin-bottom:12px'>", unsafe_allow_html=True)
         نوع_التقرير = st.selectbox("نوع البيان", ["بيان بجميع الاحكام الصادرة للصالح والضد", "بيان بالاحكام الصادرة للصالح", "بيان بالاحكام الصادرة للضد", "بيان بالاحكام الصادرة حسب موضوع الدعوى"], key="no3_tقرير")
@@ -4124,4 +4125,4 @@ if st.session_state.page == "تقارير":
             _render_export_buttons(
                 "dl_stat3", "بيان_عددي", rep4["df"], rep4["full_html"],
                 rep4["title"], rep4["region"], rep4["odo"], rep4["lawyer"], rep4["mgr"], rep4["gm"]
-            )
+)
