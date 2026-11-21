@@ -19,6 +19,16 @@ import arabic_reshaper
 from bidi.algorithm import get_display
 from openpyxl.styles import Font, Alignment, PatternFill
 
+# ===== تهيئة آمنة لحالة الجلسة لتجنب KeyError / AttributeError =====
+if "page" not in st.session_state:
+    st.session_state.page = "الرئيسية"
+if "user" not in st.session_state:
+    st.session_state.user = None
+if "role" not in st.session_state:
+    st.session_state.role = None
+if "RESET_CODES" not in st.session_state:
+    st.session_state.RESET_CODES = {}
+
 
 # ===== دوال توحيد وتنسيق التواريخ (يوم / شهر / سنة) بقائمة منسدلة =====
 def parse_date_safe(val):
@@ -114,7 +124,6 @@ def date_input_dmy(label, value=None, min_value=None, max_value=None, key=None, 
     months = list(range(1, 13))
     days = list(range(1, 32))
 
-    # سطر واحد متصل للقوائم المنسدلة: اليوم ، الشهر ، السنة
     st.markdown(f"<div data-dmy-row='{html.escape(base_key)}' style='display:flex!important;flex-direction:row!important;align-items:center!important;gap:6px!important;width:100%!important;'>", unsafe_allow_html=True)
     c_d, c_m, c_y = st.columns([1, 1, 1.35], gap="small")
     with c_d:
@@ -152,7 +161,6 @@ def date_input_dmy(label, value=None, min_value=None, max_value=None, key=None, 
 # ===== التصميم القضائي الجديد =====
 st.markdown("""
 <style>
-/* صفوف التاريخ القوائم المنسدلة في سطر واحد: يوم ، شهر ، سنة */
 [data-testid="stHorizontalBlock"]:has([data-dmy-row]) {
     display: flex !important;
     flex-direction: row !important;
@@ -166,7 +174,6 @@ st.markdown("""
     width: auto !important;
 }
 
-/* وضوح نصوص اختيارات التبويبات والتقارير */
 [data-testid="stTabs"] button,
 [data-testid="stTabs"] button * {
     color: #FFFFFF !important;
@@ -187,7 +194,6 @@ st.markdown("""
     opacity: 1 !important;
 }
 
-/* صفحة الدخول */
 .login-shell{
     max-width:760px;margin:45px auto;padding:28px;
     background:linear-gradient(145deg,#111c33,#1f3154);
@@ -227,7 +233,6 @@ div[data-testid="stTabs"] button[aria-selected="true"]{
 .status-final{color:#ff5252;font-weight:900}
 .incoming-messages-title{color:#D4AF37;font-size:24px;font-weight:900;text-align:center;margin:8px 0 14px;padding:10px;border-bottom:2px solid #D4AF37;}
 
-/* إبراز الأيقونات والأزرار الملتصقة بخلفية الموقع */
 button, [data-testid="stButton"] button, [data-testid="stDownloadButton"] button {
     color:#fff !important;
     font-weight:900 !important;
@@ -309,7 +314,6 @@ def cloud_delete_file(storage_path):
         return False, str(exc)
 
 def fix_arabic(text):
-    """ بتظبط العربي عشان ميطلعش متقطع """
     if not text:
         return ""
     reshaped_text = arabic_reshaper.reshape(str(text))
@@ -450,7 +454,6 @@ def _cloud_get(key):
     return _cloud_get_storage(key)
 
 def _write_local_json_atomic(file_path, data):
-    """كتابة آمنة محلياً عبر ملف مؤقت ثم استبدال ذري + نسخة احتياطية محلية."""
     path = Path(file_path)
     path.parent.mkdir(parents=True, exist_ok=True)
     serialized = json.dumps(data, ensure_ascii=False, indent=2, default=str)
@@ -465,7 +468,6 @@ def _write_local_json_atomic(file_path, data):
     return True
 
 def _read_local_json_safe(file_path):
-    """قراءة آمنة من الملف المحلي مع الرجوع للنسخة الاحتياطية المحلية عند الحاجة."""
     path = Path(file_path)
     for candidate in (path, LOCAL_BACKUP_DIR / path.stem / f"{path.name}.bak"):
         try:
@@ -497,11 +499,6 @@ def load_json_persistent(key, local_path, default):
     return local_obj
 
 def save_json_persistent(key, file_path, data):
-    """
-    تعديل جزء الحفظ محلياً:
-    يعتمد الحفظ المحلي أولاً وبشكل آمن ومستقل، ويحفظ نسخة احتياطية محلية،
-    ثم يحاول المزامنة مع السحابة دون إفساد أو إبطال الحفظ المحلي إذا تعذرت السحابة.
-    """
     try:
         local_ok = _write_local_json_atomic(file_path, data)
     except Exception as exc:
@@ -537,9 +534,6 @@ def load_banners():
 
 def save_banners(banners):
     return save_json_persistent("banners", BANNERS_FILE, banners)
-
-if "RESET_CODES" not in st.session_state:
-    st.session_state.RESET_CODES = {}
 
 def send_email(to_email, subject, body):
     try:
@@ -798,7 +792,6 @@ def login_page():
 
         st.markdown("</div>", unsafe_allow_html=True)
 def calculate_age(birth_date, on_date=None):
-    """حساب العمر بدقة بالسنوات الكاملة."""
     parsed_b = parse_date_safe(birth_date)
     if not parsed_b:
         return None
@@ -806,7 +799,6 @@ def calculate_age(birth_date, on_date=None):
     return on_date.year - parsed_b.year - ((on_date.month, on_date.day) < (parsed_b.month, parsed_b.day))
 
 def member_age_status(user):
-    """يعيد حالة السن، مع مراعاة تاريخ مد العضوية إن وجد."""
     birth = user.get("birth_date")
     age = calculate_age(birth)
     extension = user.get("membership_extended_until")
@@ -895,7 +887,6 @@ def extract_member_page():
                 st.rerun()
 
 def _transfer_member_data(source_user, target_user):
-    """نقل القضايا والمكتبة للعضو الجديد مع الإبقاء على السجلات دون حذف."""
     data = load_data()
     source_name = source_user.get("username", "")
     target_name = target_user.get("username", "")
@@ -920,7 +911,6 @@ def _transfer_member_data(source_user, target_user):
     return changed
 
 def _age_action_dialog(user_id):
-    """حوار إجراءات بلوغ الستين للعضو."""
     users = _cached_users_snapshot()
     user = next((u for u in users if u.get("id") == user_id), None)
     if not user:
@@ -995,7 +985,8 @@ def _age_action_dialog(user_id):
     age_dialog()
 
 def manage_users_page():
-    if not st.session_state.user or st.session_state.user.get("role") != "admin":
+    cur_user = st.session_state.get("user") or {}
+    if not cur_user or cur_user.get("role") != "admin":
         st.error("هذه الصفحة متاحة للادمن فقط")
         return
 
@@ -1100,7 +1091,6 @@ def manage_users_page():
                         st.session_state.pop(f"confirm_member_delete_{user['id']}", None)
                         st.rerun()
 
-# ===== الرسائل والبيانات الداخلية =====
 MESSAGES_FILE = os.path.join(LOCAL_DATA_DIR, "messages_v1.json")
 
 def load_messages():
@@ -1442,7 +1432,8 @@ def global_people_search():
             st.info("لا توجد نتيجة بهذا الاسم")
 
 def admin_control_page():
-    if not st.session_state.user or st.session_state.user.get("role") != "admin":
+    cur_user = st.session_state.get("user") or {}
+    if not cur_user or cur_user.get("role") != "admin":
         st.error("هذه الصفحة متاحة للادمن فقط")
         return
 
@@ -1464,7 +1455,6 @@ def admin_control_page():
         st.markdown("<h3 style='color:#D4AF37;'>📜 سجل البيانات والرسائل</h3>", unsafe_allow_html=True)
         users = _cached_users_snapshot()
         banners = _cached_banners_snapshot()
-        now = datetime.now()
 
         with st.form("admin_banner_add_v2"):
             text = st.text_area("نص الرسالة أو البيان", height=90)
@@ -1497,13 +1487,13 @@ def admin_control_page():
                         "expire_at": (created + timedelta(minutes=minutes)).isoformat(),
                         "audience": "الكل" if audience == "كل الأعضاء" else "اعضاء محددين",
                         "visible_to": visible_to,
-                        "sender_id": st.session_state.user.get("id"),
-                        "sender_name": st.session_state.user.get("display_name") or st.session_state.user.get("username"),
-                        "sender_role": st.session_state.user.get("role"),
-                        "sender_job_title": st.session_state.user.get("job_title") or role_label(st.session_state.user.get("role")),
-                        "sender_insurance_area": st.session_state.user.get("insurance_area") or "",
-                        "sender_photo": st.session_state.user.get("profile_photo") or "",
-                        "sender_photo_type": st.session_state.user.get("profile_photo_type") or "",
+                        "sender_id": cur_user.get("id"),
+                        "sender_name": cur_user.get("display_name") or cur_user.get("username"),
+                        "sender_role": cur_user.get("role"),
+                        "sender_job_title": cur_user.get("job_title") or role_label(cur_user.get("role")),
+                        "sender_insurance_area": cur_user.get("insurance_area") or "",
+                        "sender_photo": cur_user.get("profile_photo") or "",
+                        "sender_photo_type": cur_user.get("profile_photo_type") or "",
                         "image_data": "",
                         "image_type": "",
                         "attachments": [{"data": base64.b64encode(f.getvalue()).decode("utf-8"), "name": f.name, "type": f.type or "application/octet-stream"} for f in (banner_files or [])]
@@ -1585,7 +1575,7 @@ def admin_control_page():
         global_people_search()
         st.markdown("---")
         st.markdown("<h3 style='color:#D4AF37;'>👤 الملف الشخصي</h3>", unsafe_allow_html=True)
-        admin_user = next((u for u in load_users() if u.get("role") == "admin"), st.session_state.user)
+        admin_user = next((u for u in load_users() if u.get("role") == "admin"), cur_user)
         st.write(f"**الاسم:** {admin_user.get('username','')}")
         st.write(f"**الوظيفة:** {role_label(admin_user.get('role'))}")
         st.write(f"**البريد الإلكتروني:** {admin_user.get('email') or 'غير مسجل'}")
@@ -1636,28 +1626,33 @@ def admin_control_page():
 def recovery_settings_page():
     st.markdown("<h2 style='text-align:center; color:#C9A961'>تأكيد البريد الالكتروني</h2>", unsafe_allow_html=True)
     users = _cached_users_snapshot()
-    user = next((u for u in users if u["id"] == st.session_state.user["id"]), None)
+    cur_user = st.session_state.get("user") or {}
+    user = next((u for u in users if u.get("id") == cur_user.get("id")), None)
+    if not user:
+        return
     st.info("هذا البريد سيستخدم لاسترجاع حسابك في حالة الفقد")
     email = st.text_input("البريد الالكتروني", value=user.get("email",""))
-    if user["role"] == "admin":
+    if user.get("role") == "admin":
         recovery_email = st.text_input("ايميل استرجاع اضافي للادمن", value=user.get("recovery_email",""))
     else:
         recovery_email = user.get("recovery_email","")
     if st.button("حفظ البريد", use_container_width=True):
         user["email"] = email
-        if user["role"] == "admin":
+        if user.get("role") == "admin":
             user["recovery_email"] = recovery_email
         save_users(users); st.session_state.user = user; st.success("تم حفظ البريد بنجاح")
 
 def change_password_page():
     st.markdown("<h1 style='text-align:center; color:#C9A961'>تغيير كلمة السر</h1>", unsafe_allow_html=True)
+    cur_user = st.session_state.get("user") or {}
     old_pass = st.text_input("كلمة السر القديمة", type="password")
     new_pass = st.text_input("كلمة السر الجديدة", type="password")
     if st.button("تغيير", use_container_width=True):
-        if bcrypt.checkpw(old_pass.encode(), st.session_state.user["password"].encode()):
+        stored_pw = cur_user.get("password") or ""
+        if stored_pw and bcrypt.checkpw(old_pass.encode(), stored_pw.encode()):
             users = _cached_users_snapshot()
             for user in users:
-                if user["id"] == st.session_state.user["id"]:
+                if user.get("id") == cur_user.get("id"):
                     user["password"] = bcrypt.hashpw(new_pass.encode(), bcrypt.gensalt()).decode()
                     save_users(users); st.session_state.user = user; st.success("تم تغيير الباسورد"); st.rerun()
         else:
@@ -1794,9 +1789,10 @@ def _early_load_banners():
         return []
 
 def show_banners():
-    if not st.session_state.get("user"):
+    cur_user = st.session_state.get("user")
+    if not cur_user:
         return
-    username = st.session_state.user.get("username", "")
+    username = cur_user.get("username", "")
     now = datetime.now()
     for b in _early_load_banners():
         try:
@@ -1812,20 +1808,11 @@ def show_banners():
             f"<div style='background:linear-gradient(90deg,{b.get('color','#D4AF37')},#ffffff22);color:#fff;padding:16px;border-radius:16px;margin:0 0 14px;font-weight:900;font-size:20px;text-align:center;border:2px solid {b.get('color','#D4AF37')};'>📢 {b.get('text','')}</div>",
             unsafe_allow_html=True
         )
-# ======= الجزء الاول: الاساسيات ============
-# ============================================
-import arabic_reshaper
-from bidi.algorithm import get_display
-from docx import Document
-from docx.shared import Pt, Inches
-from docx.enum.text import WD_ALIGN_PARAGRAPH
-from docx.oxml import OxmlElement
-from fpdf import FPDF
 
+# ======= الجزء الاول: الاساسيات ============
 st.markdown('\n<style id="visible-controls-v4">\nbutton,.stButton button,.stDownloadButton button,\ndiv[data-testid="stFileUploader"] button,\ndiv[data-testid="stTabs"] button,\ndiv[data-testid="stExpander"] button {\n    opacity:1!important;\n    visibility:visible!important;\n}\nbutton p,button span,.stButton button p,.stButton button span,\n.stDownloadButton button p,.stDownloadButton button span {\n    opacity:1!important;\n    visibility:visible!important;\n    color:#fff!important;\n}\n</style>\n', unsafe_allow_html=True)
 st.set_page_config(page_title="إدارة القضايا", layout="wide", page_icon="⚖️")
 
-# ===== تثبيت ظهور أسماء الأزرار والأيقونات بوضوح ومنع تداخل الجداول =====
 st.markdown("""
 <style>
 .stButton > button,
@@ -1923,14 +1910,6 @@ div[data-testid="stTextArea"] label {
 }
 </style>
 """, unsafe_allow_html=True)
-
-def fix_arabic(text):
-    if not text:
-        return ""
-    text = str(text)
-    reshaped_text = arabic_reshaper.reshape(text)
-    bidi_text = get_display(reshaped_text)
-    return bidi_text
 
 def _report_font_path():
     for p in (
@@ -2227,7 +2206,6 @@ def _pdf_split_lines(pdf, text, col_w, font_name, font_size):
     return lines or [""]
 
 def _protect_pdf_dates(text):
-    """يحافظ على فواصل التاريخ (DD / MM / YYYY) بوضوح عند تحويل النص للـ PDF."""
     s = "" if text is None else str(text)
     return re.sub(r'(\d{1,2})\s*/\s*(\d{1,2})\s*/\s*(\d{4})', r'\1 / \2 / \3', s)
 
@@ -2330,7 +2308,6 @@ def to_pdf(df, title, region, member_name="", specialization="", manager_name=""
     raw = pdf.output()
     return raw.encode("latin-1", errors="replace") if isinstance(raw, str) else bytes(raw)
 # =========== الجزء الثامن: التقارير ============
-# ================= القسم 1 من 2 =================
 def get_export_html(content_html, title):
     return f"""<!DOCTYPE html>
 <html dir="rtl" lang="ar">
@@ -2385,7 +2362,9 @@ def _clear_other_report_checkboxes(active_key, all_keys):
         if k != active_key:
             st.session_state[k] = False
 
-if st.session_state.page == "تقارير":
+current_page = st.session_state.get("page", "الرئيسية")
+
+if current_page == "تقارير":
     data = load_data()
     my_cases = get_my_cases(data)
 
@@ -2457,9 +2436,6 @@ if st.session_state.page == "تقارير":
     def report_footer(مدير_عام, مدير_ادارة, عضو_قانوني):
         return _report_signatures_html(عضو_قانوني, مدير_ادارة, مدير_عام, datetime.now().date(), dark_theme=True)
 
-    # ------------------------------------------------------------------
-    # التبويب الأول: بيان بجميع الدعاوى المتداولة
-    # ------------------------------------------------------------------
     with tab1:
         st.markdown("<h3 style='color:#B8860B; text-align:center; font-size:15px;'>📊 بيان بجميع الدعاوى المتداولة</h3>", unsafe_allow_html=True)
         with st.container(border=True):
@@ -2606,9 +2582,6 @@ if st.session_state.page == "تقارير":
                 st.session_state.last_report_meta = {"region": منطقة1, "member": عضو_قانوني1, "manager": مدير_ادارة1, "gm": مدير_عام1}
                 st.markdown(html_rep, unsafe_allow_html=True)
 
-    # ------------------------------------------------------------------
-    # التبويب الثاني: بيان الأحكام
-    # ------------------------------------------------------------------
     with tab2:
         st.markdown("<h3 style='color:#B8860B; text-align:center; font-size:15px;'>⚖️ بيان الاحكام</h3>", unsafe_allow_html=True)
         with st.container(border=True):
@@ -2732,9 +2705,6 @@ if st.session_state.page == "تقارير":
                 st.session_state.last_report_meta = {"region": منطقة2, "member": عضو_قانوني2, "manager": مدير_ادارة2, "gm": مدير_عام2}
                 st.markdown(html_rep, unsafe_allow_html=True)
 
-    # ------------------------------------------------------------------
-    # التبويب الثالث: الإحصائيات
-    # ------------------------------------------------------------------
     with tab3:
         st.markdown("<h3 style='color:#B8860B; text-align:center; font-size:15px;'>📈 الإحصائيات</h3>", unsafe_allow_html=True)
         with st.container(border=True):
@@ -2894,9 +2864,6 @@ if st.session_state.page == "تقارير":
             except Exception as exc:
                 st.error(f"حدث خطأ أثناء تجهيز الإحصائيات: {exc}")
 
-    # ------------------------------------------------------------------
-    # التبويب الرابع: البيان العددي
-    # ------------------------------------------------------------------
     with tab4:
         st.markdown("<h3 style='color:#B8860B; text-align:center; font-size:15px;'>📊 البيان العددي</h3>", unsafe_allow_html=True)
         with st.container(border=True):
@@ -3086,9 +3053,6 @@ if st.session_state.page == "تقارير":
                 st.session_state.last_report_meta = {"region": منطقة4, "member": عضو_قانوني4, "manager": مدير_ادارة4, "gm": مدير_عام4}
                 st.markdown(html_rep, unsafe_allow_html=True)
 
-    # ------------------------------------------------------------------
-    # شريط تصدير التقرير المعروض (HTML / Word / Excel / PDF)
-    # ------------------------------------------------------------------
     if st.session_state.get("last_report_html"):
         st.markdown("---")
         st.markdown("<h4 style='color:#B8860B; text-align:center;'>📥 تحميل وطباعة التقرير</h4>", unsafe_allow_html=True)
@@ -3150,16 +3114,16 @@ if st.session_state.page == "تقارير":
                 key="dl_rep_pdf"
             )
 
-elif st.session_state.page == "لوحة التحكم":
+elif current_page == "لوحة التحكم":
     admin_control_page()
-elif st.session_state.page == "extract_member":
+elif current_page == "extract_member":
     extract_member_page()
-elif st.session_state.page == "الرسائل":
+elif current_page == "الرسائل":
     if st.button("⬅️ العودة للرئيسية", use_container_width=True, key="back_from_messages_page"):
         st.session_state.page = "الرئيسية"
         st.rerun()
     messaging_page()
-elif st.session_state.page == "set_password":
+elif current_page == "set_password":
     set_password_page()
-elif st.session_state.page == "لوحة تحكمى":
+elif current_page == "لوحة تحكمى":
     personal_control_page()
