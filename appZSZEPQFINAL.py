@@ -3102,7 +3102,11 @@ def render_case_card(c, index=0, allow_edit=True, allow_delete=True, data_ref=No
         if sessions:
             st.markdown("**🗓️ سجل الجلسات:**")
             for idx_s, s in enumerate(sessions, 1):
-                st.markdown(f"- **جلسة {idx_s}** ({fmt_date_ar(s.get('تاريخ',''), '—')}): {s.get('قرار','') or '—'} {f'— *ملاحظات:* {s.get(\"ملاحظات\")}' if s.get('ملاحظات') else ''}")
+                                note_part = f"— *ملاحظات:* {s.get('ملاحظات')}" if s.get("ملاحظات") else ""
+                st.markdown(
+                    f"- **جلسة {idx_s}** ({fmt_date_ar(s.get('تاريخ',''), '—')}): {s.get('قرار','') or '—'} {note_part}"
+                )
+
 
         docs = c.get("مستندات") or []
         if docs:
