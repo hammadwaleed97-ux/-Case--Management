@@ -20,7 +20,7 @@ from bidi.algorithm import get_display
 from openpyxl.styles import Font, Alignment, PatternFill
 
 
-# ===== دوال توحيد وتنسيق التواريخ (يوم / شهر / سنة) بقائمة منسدلة =====
+# ==== دوال توحيد وتنسيق التواريخ (يوم / شهر / سنة) بقائمة منسدلة =====
 def parse_date_safe(val):
     if not val:
         return None
