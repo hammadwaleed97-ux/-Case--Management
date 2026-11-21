@@ -3597,7 +3597,8 @@ elif st.session_state.page == "مكتبة":
 
 # ===========
 # =========== الجزء الثامن: التقارير =========
-# ======================= القسم 1 من 2 =================
+# ======= الجزء الثامن: التقارير ============
+# ================= القسم 1 من 2 =================
 
 def get_export_html(content_html, title):
     import html as _html
@@ -3686,12 +3687,7 @@ if st.session_state.page == "تقارير":
         return f"""<div style="margin-top:25px; color:#B8860B; font-size:12px;"><p style="text-align:center; margin-bottom:20px; font-size:13px; font-weight:700;">تفضلوا بقبول وافر الاحترام والتقدير،</p><table style="width:100%;"><tr><td style="width:50%; text-align:right; vertical-align:top;"><div style="font-weight:900;">العضو القانوني</div><br><div style="margin-top:4px;">{safe_odo}</div><div style="margin-top:12px;">....................</div><div style="margin-top:20px;">تحرر في: {datetime.now().strftime('%d/%m/%Y')}</div></td><td style="width:50%; text-align:left; vertical-align:top;"><div style="font-weight:900;">مدير إدارة القضايا</div><br><div style="margin-top:4px;">{safe_mgr}</div><div style="margin-top:12px;">....................</div></td></tr></table><div style="text-align:center; margin-top:20px;"><div style="font-weight:900; color:#dc3545;">مدير عام الإدارات القانونية</div><br><div style="margin-top:4px;">{safe_gm}</div><div style="margin-top:12px;">....................</div></div></div>"""
 
     def _export_pdf_with_signatures(df_export, title_text, region_val, odo_val, lawyer_val, mgr_val, gm_val):
-        # وضع الاسم تحت مسمى الوظيفة بسطر مستقل قبل استدعاء to_pdf ثم تعديل أي سطر مدمج داخل PDF إن وُجد
-        odo_line = f"العضو القانوني\n{str(odo_val or '').strip()}" if str(odo_val or "").strip() else "العضو القانوني"
-        mgr_line = f"مدير إدارة القضايا\n{str(mgr_val or '').strip()}" if str(mgr_val or "").strip() else "مدير إدارة القضايا"
-        gm_line = f"مدير عام الإدارات القانونية\n{str(gm_val or '').strip()}" if str(gm_val or "").strip() else "مدير عام الإدارات القانونية"
-
-        raw_pdf = to_pdf(df_export, title_text, region_val, odo_line, lawyer_val, mgr_line, gm_line)
+        raw_pdf = to_pdf(df_export, title_text, region_val, odo_val, lawyer_val, mgr_val, gm_val)
         try:
             import io as _io
             import fitz as _fitz
@@ -3702,30 +3698,89 @@ if st.session_state.page == "تقارير":
                 ("مدير إدارة القضايا", str(mgr_val or "").strip()),
                 ("مدير عام الإدارات القانونية", str(gm_val or "").strip()),
             ]
+
+            def _shape_ar(t):
+                try:
+                    import arabic_reshaper
+                    from bidi.algorithm import get_display
+                    return get_display(arabic_reshaper.reshape(t))
+                except Exception:
+                    return t
+
+            font_path = None
+            for fp in [
+                "/usr/share/fonts/truetype/noto/NotoNaskhArabic-Regular.ttf",
+                "/usr/share/fonts/truetype/noto/NotoSansArabic-Regular.ttf",
+                "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+            ]:
+                try:
+                    with open(fp, "rb"):
+                        font_path = fp
+                        break
+                except Exception:
+                    pass
+
             for page in doc:
                 for role_lbl, person_name in pairs:
                     if not person_name:
                         continue
-                    combined_hits = page.search_for(f"{role_lbl} {person_name}")
-                    for rect in combined_hits:
+                    combined_text = f"{person_name} {role_lbl}"
+                    hits = page.search_for(combined_text)
+                    if not hits:
+                        hits = page.search_for(f"{role_lbl} {person_name}")
+                    if not hits:
+                        r_hits = page.search_for(role_lbl)
+                        n_hits = page.search_for(person_name)
+                        for rh in r_hits:
+                            for nh in n_hits:
+                                if abs(rh.y0 - nh.y0) < 12:
+                                    union_r = _fitz.Rect(
+                                        min(rh.x0, nh.x0) - 2,
+                                        min(rh.y0, nh.y0) - 1,
+                                        max(rh.x1, nh.x1) + 2,
+                                        max(rh.y1, nh.y1) + 1,
+                                    )
+                                    hits.append(union_r)
+                    for rect in hits:
                         page.add_redact_annot(rect, fill=(1, 1, 1))
-                    if combined_hits:
+                    if hits:
                         page.apply_redactions()
-                        for rect in combined_hits:
-                            page.insert_text(
-                                (rect.x1, rect.y0 + rect.height * 0.78),
-                                role_lbl,
-                                fontsize=10,
-                                fontname="helv",
-                                color=(0, 0, 0),
-                            )
-                            page.insert_text(
-                                (rect.x1, rect.y0 + rect.height * 1.95),
-                                person_name,
-                                fontsize=10,
-                                fontname="helv",
-                                color=(0, 0, 0),
-                            )
+                        for rect in hits:
+                            line_h = max(rect.height, 11.0)
+                            x_anchor = rect.x1 - 2
+                            y_role = rect.y0 + line_h * 0.85
+                            y_name = rect.y0 + line_h * 1.95
+                            if font_path:
+                                page.insert_text(
+                                    (x_anchor, y_role),
+                                    _shape_ar(role_lbl),
+                                    fontsize=10,
+                                    fontname="ArFont",
+                                    fontfile=font_path,
+                                    color=(0, 0, 0),
+                                )
+                                page.insert_text(
+                                    (x_anchor, y_name),
+                                    _shape_ar(person_name),
+                                    fontsize=10,
+                                    fontname="ArFont",
+                                    fontfile=font_path,
+                                    color=(0, 0, 0),
+                                )
+                            else:
+                                page.insert_text(
+                                    (x_anchor, y_role),
+                                    role_lbl,
+                                    fontsize=10,
+                                    color=(0, 0, 0),
+                                )
+                                page.insert_text(
+                                    (x_anchor, y_name),
+                                    person_name,
+                                    fontsize=10,
+                                    color=(0, 0, 0),
+                                )
+
             out_buf = _io.BytesIO()
             doc.save(out_buf)
             doc.close()
@@ -3740,8 +3795,8 @@ if st.session_state.page == "تقارير":
             from docx import Document as _DocxDocument
             from docx.enum.text import WD_ALIGN_PARAGRAPH
             from docx.enum.table import WD_TABLE_ALIGNMENT
-            from docx.oxml import OxmlElement
-            from docx.oxml.ns import qn
+            from docx.oxml import OxmlElement, parse_xml
+            from docx.oxml.ns import qn, nsdecls
 
             doc = _DocxDocument(_io.BytesIO(raw_bytes))
 
@@ -3764,19 +3819,21 @@ if st.session_state.page == "تقارير":
                 tbl.alignment = WD_TABLE_ALIGNMENT.RIGHT
                 tblPr = tbl._tbl.tblPr
                 if tblPr.find(qn('w:bidiVisual')) is None:
-                    tblPr.append(OxmlElement('w:bidiVisual'))
+                    tblPr.append(parse_xml(f'<w:bidiVisual {nsdecls("w")}/>'))
                 for row in tbl.rows:
                     trPr = row._tr.get_or_add_trPr()
                     if trPr.find(qn('w:cantSplit')) is None:
                         trPr.append(OxmlElement('w:cantSplit'))
-                    # عكس ترتيب الخلايا في الصف ليبدأ الجدول من اليمين إلى اليسار
+                    # عكس ترتيب الخلايا في كل صف ليبدأ الجدول فعليًا من اليمين في جميع عارضات Word
                     cells_list = list(row.cells)
                     n_cols = len(cells_list)
                     if n_cols > 1:
                         orig_texts = [c.text for c in cells_list]
                         for i, cell in enumerate(cells_list):
-                            rev_txt = orig_texts[n_cols - 1 - i]
-                            cell.text = rev_txt
+                            cell.text = orig_texts[n_cols - 1 - i]
+                            tcPr = cell._tc.get_or_add_tcPr()
+                            if tcPr.find(qn('w:textDirection')) is None:
+                                tcPr.append(parse_xml(f'<w:textDirection {nsdecls("w")} w:val="lrTb"/>'))
                             for p in cell.paragraphs:
                                 _set_rtl_para(p, WD_ALIGN_PARAGRAPH.RIGHT)
                     else:
@@ -3879,7 +3936,7 @@ if st.session_state.page == "تقارير":
         <hr style="border:1px solid #B8860B; margin:8px 0;">
         <h3 style="margin:6px 0; font-size:13px; font-weight:900; text-align:center; text-decoration: underline;"> {safe_title} </h3>
         </div>"""
-# ======= تبويب 1: الدعاوى المتداولة =========
+# ======== تبويب 1: الدعاوى المتداولة =========
     with tab1:
         st.markdown("<div style='background:#1E2A47; padding:12px; border-radius:8px; border:2px solid #B8860B; margin-bottom:12px'>", unsafe_allow_html=True)
         نوع_تقرير_متداولة = st.selectbox("نوع البيان", ["بيان بجميع الدعاوى المتداولة", "بيان بالدعاوى المتداولة حسب موضوع الدعوى"], key="no1_tقرير")
@@ -3969,7 +4026,7 @@ if st.session_state.page == "تقارير":
                 "dlx1", "بيان_الدعاوى_المتداولة", rep1["df"], rep1["full_html"],
                 rep1["title"], rep1["region"], rep1["odo"], rep1["lawyer"], rep1["mgr"], rep1["gm"]
             )
-# ======= تبويب 2: الاحكام =========
+# ======== تبويب 2: الاحكام =========
     with tab2:
         st.markdown("<div style='background:#1E2A47; padding:12px; border-radius:8px; border:2px solid #B8860B; margin-bottom:12px'>", unsafe_allow_html=True)
         نوع_التقرير = st.selectbox("نوع البيان", ["بيان بجميع الاحكام الصادرة للصالح والضد", "بيان بالاحكام الصادرة للصالح", "بيان بالاحكام الصادرة للضد", "بيان بالاحكام الصادرة حسب موضوع الدعوى"], key="no3_tقرير")
@@ -4203,4 +4260,4 @@ if st.session_state.page == "تقارير":
             _render_export_buttons(
                 "dl_stat3", "بيان_عددي", rep4["df"], rep4["full_html"],
                 rep4["title"], rep4["region"], rep4["odo"], rep4["lawyer"], rep4["mgr"], rep4["gm"]
-                    )
+        )
