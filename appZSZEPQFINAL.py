@@ -3597,7 +3597,7 @@ elif st.session_state.page == "مكتبة":
 
 # ===========
 # =========== الجزء الثامن: التقارير =========
-# ================= القسم 1 من 2 =================
+# ================ القسم 1 من 2 =================
 
 def get_export_html(content_html, title):
     import html as _html
@@ -3677,7 +3677,46 @@ if st.session_state.page == "تقارير":
         safe_odo = _html.escape(str(عضو_قانوني or ""))
         safe_mgr = _html.escape(str(مدير_ادارة or ""))
         safe_gm = _html.escape(str(مدير_عام or ""))
-        return f"""<div style="margin-top:25px; color:#B8860B; font-size:12px;"><p style="text-align:center; margin-bottom:20px; font-size:13px; font-weight:700;">تفضلوا بقبول وافر الاحترام والتقدير،</p><table style="width:100%;"><tr><td style="width:50%; text-align:right; vertical-align:top;"><div style="font-weight:900;">العضو القانوني</div><div>{safe_odo}</div><div style="margin-top:12px;">....................</div><div style="margin-top:20px;">تحرر في: {datetime.now().strftime('%d-%m-%Y')}</div></td><td style="width:50%; text-align:left; vertical-align:top;"><div style="font-weight:900;">مدير إدارة القضايا</div><div>{safe_mgr}</div><div style="margin-top:12px;">....................</div></td></tr></table><div style="text-align:center; margin-top:20px;"><div style="font-weight:900; color:#dc3545;">مدير عام الإدارات القانونية</div><div>{safe_gm}</div><div style="margin-top:12px;">....................</div></div></div>"""
+        return f"""<div style="margin-top:25px; color:#B8860B; font-size:12px;"><p style="text-align:center; margin-bottom:20px; font-size:13px; font-weight:700;">تفضلوا بقبول وافر الاحترام والتقدير،</p><table style="width:100%;"><tr><td style="width:50%; text-align:right; vertical-align:top;"><div style="font-weight:900;">العضو القانوني</div><div style="margin-top:4px;">{safe_odo}</div><div style="margin-top:12px;">....................</div><div style="margin-top:20px;">تحرر في: {datetime.now().strftime('%d-%m-%Y')}</div></td><td style="width:50%; text-align:left; vertical-align:top;"><div style="font-weight:900;">مدير إدارة القضايا</div><div style="margin-top:4px;">{safe_mgr}</div><div style="margin-top:12px;">....................</div></td></tr></table><div style="text-align:center; margin-top:20px;"><div style="font-weight:900; color:#dc3545;">مدير عام الإدارات القانونية</div><div style="margin-top:4px;">{safe_gm}</div><div style="margin-top:12px;">....................</div></div></div>"""
+
+    def _export_word_rtl(df_export, title_text, region_val, odo_val, lawyer_val, mgr_val, gm_val):
+        raw_bytes = to_word(df_export, title_text, region_val, odo_val, lawyer_val, mgr_val, gm_val)
+        try:
+            import io as _io
+            from docx import Document as _DocxDocument
+            from docx.enum.text import WD_ALIGN_PARAGRAPH
+            from docx.oxml import OxmlElement
+            from docx.oxml.ns import qn
+
+            doc = _DocxDocument(_io.BytesIO(raw_bytes))
+
+            def _set_rtl_para(p, align=WD_ALIGN_PARAGRAPH.RIGHT):
+                p.alignment = align
+                pPr = p._p.get_or_add_pPr()
+                if pPr.find(qn('w:bidi')) is None:
+                    pPr.append(OxmlElement('w:bidi'))
+
+            def _set_table_rtl(tbl):
+                tblPr = tbl._tbl.tblPr
+                if tblPr.find(qn('w:bidiVisual')) is None:
+                    tblPr.append(OxmlElement('w:bidiVisual'))
+                for row in tbl.rows:
+                    for cell in row.cells:
+                        for p in cell.paragraphs:
+                            _set_rtl_para(p)
+                        for sub_tbl in cell.tables:
+                            _set_table_rtl(sub_tbl)
+
+            for p in doc.paragraphs:
+                _set_rtl_para(p)
+            for tbl in doc.tables:
+                _set_table_rtl(tbl)
+
+            out_buf = _io.BytesIO()
+            doc.save(out_buf)
+            return out_buf.getvalue()
+        except Exception:
+            return raw_bytes
 
     def _render_export_buttons(prefix_key, file_prefix, df_export, full_html, title_text, region_val, odo_val, lawyer_val, mgr_val, gm_val):
         if df_export is None or df_export.empty or not full_html:
@@ -3705,7 +3744,7 @@ if st.session_state.page == "تقارير":
         with c3:
             st.download_button(
                 "📝 Word",
-                data=to_word(df_export, title_text, region_val, odo_val, lawyer_val, mgr_val, gm_val),
+                data=_export_word_rtl(df_export, title_text, region_val, odo_val, lawyer_val, mgr_val, gm_val),
                 file_name=report_download_name(file_prefix, odo_val, lawyer_val, region_val, "docx"),
                 mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                 use_container_width=True,
@@ -3749,7 +3788,7 @@ if st.session_state.page == "تقارير":
     if 'tab_reports_cache' not in st.session_state:
         st.session_state.tab_reports_cache = {}
 
-    tab1, tab2, tab3, tab4 = st.tabs(["📊 بيان بجميع الدعاوى المتداولة", "⚖️ بيان الاحكام", "📈 الإحصائيات", "📊 بيان عددي"])
+    tab1, tab2, tab4 = st.tabs(["📊 بيان بجميع الدعاوى المتداولة", "⚖️ بيان الاحكام", "📊 بيان عددي"])
 
     def report_header(region, title, مدير_عام, مدير_ادارة, عضو_قانوني):
         safe_region = _html.escape(str(region or ""))
@@ -3772,8 +3811,8 @@ if st.session_state.page == "تقارير":
         with colC: مدير_ادارة1 = st.text_input("اسم مدير إدارة القضايا", key="modir_idara1")
         عضو_قانوني1 = st.text_input("اسم العضو القانوني", key="odo1")
         col1, col2, col3 = st.columns(3)
-        with col1: from_date = st.date_input("من الفترة", key="from1")
-        with col2: to_date = st.date_input("حتى الفترة", key="to1")
+        with col1: from_date = st.date_input("من الفترة", format="DD/MM/YYYY", key="from1")
+        with col2: to_date = st.date_input("حتى الفترة", format="DD/MM/YYYY", key="to1")
         with col3: lawyer = st.text_input("طرف الاستاذ/ المحامي", key="lawyer1")
         topic = ""
         if "حسب موضوع" in نوع_تقرير_متداولة:
@@ -3850,9 +3889,8 @@ if st.session_state.page == "تقارير":
             _render_export_buttons(
                 "dlx1", "بيان_الدعاوى_المتداولة", rep1["df"], rep1["full_html"],
                 rep1["title"], rep1["region"], rep1["odo"], rep1["lawyer"], rep1["mgr"], rep1["gm"]
-                    )
-            
-# ======== تبويب 2: الاحكام =========
+    )
+            # ====== تبويب 2: الاحكام =========
     with tab2:
         st.markdown("<div style='background:#1E2A47; padding:12px; border-radius:8px; border:2px solid #B8860B; margin-bottom:12px'>", unsafe_allow_html=True)
         نوع_التقرير = st.selectbox("نوع البيان", ["بيان بجميع الاحكام الصادرة للصالح والضد", "بيان بالاحكام الصادرة للصالح", "بيان بالاحكام الصادرة للضد", "بيان بالاحكام الصادرة حسب موضوع الدعوى"], key="no3_tقرير")
@@ -3862,8 +3900,8 @@ if st.session_state.page == "تقارير":
         with colC: مدير_ادارة2 = st.text_input("اسم مدير إدارة القضايا", key="modir_idara2")
         عضو_قانوني2 = st.text_input("اسم العضو القانوني", key="odo2")
         col1, col2, col3 = st.columns(3)
-        with col1: from_date2 = st.date_input("من الفترة", key="from2")
-        with col2: to_date2 = st.date_input("حتى الفترة", key="to2")
+        with col1: from_date2 = st.date_input("من الفترة", format="DD/MM/YYYY", key="from2")
+        with col2: to_date2 = st.date_input("حتى الفترة", format="DD/MM/YYYY", key="to2")
         with col3: lawyer2 = st.text_input("طرف الاستاذ/ المحامي", key="lawyer2")
         topic2 = ""
         if "حسب موضوع" in نوع_التقرير:
@@ -3950,90 +3988,8 @@ if st.session_state.page == "تقارير":
             )
 
     # ================= القسم 2 من 2 =================
-    # ========= تبويب 3: الاحصائيات =========
-    with tab3:
-        st.markdown("<h3 style='color:#B8860B; text-align:center; font-size:16px;'>📈 الإحصائيات العددية</h3>", unsafe_allow_html=True)
-        st.markdown("<div style='background:#1E2A47; padding:12px; border-radius:8px; border:2px solid #B8860B; margin-bottom:12px'>", unsafe_allow_html=True)
-        colA, colB, colC = st.columns(3)
-        with colA: region_s3 = st.text_input("ديوان عام منطقة", key="region_s3")
-        with colB: مدير_عام_s3 = st.text_input("اسم مدير عام الإدارات القانونية", key="modir_s3")
-        with colC: مدير_ادارة_s3 = st.text_input("اسم مدير إدارة القضايا", key="modir_idara_s3")
-        col_o, col_l = st.columns(2)
-        with col_o: عضو_قانوني_s3 = st.text_input("اسم العضو القانوني", key="odo_s3")
-        with col_l: lawyer_s3 = st.text_input("طرف الاستاذ/ المحامي", key="lawyer_s3")
-        col1, col2 = st.columns(2)
-        with col1: stat_from = st.date_input("من تاريخ", key="s1")
-        with col2: stat_to = st.date_input("حتى تاريخ", key="s2")
-        st.markdown("</div>", unsafe_allow_html=True)
-
-        if st.button("استخراج الإحصائيات", use_container_width=True, type="primary", key="show_stats3"):
-            all_cases = my_cases
-            متداولة = [
-                c for c in all_cases
-                if str(c.get('حالة', '')).strip() == 'متداولة'
-                and (_parse_date_safe(c.get('تاريخ_جلسة')) is not None)
-                and stat_from <= _parse_date_safe(c.get('تاريخ_جلسة')) <= stat_to
-            ]
-            احكام = [
-                c for c in all_cases
-                if str(c.get('حالة', '')).strip() == 'منتهية'
-                and not c.get('تم_الحفظ_النهائي')
-                and (_parse_date_safe(c.get('تاريخ_الحكم')) is not None)
-                and stat_from <= _parse_date_safe(c.get('تاريخ_الحكم')) <= stat_to
-            ]
-            للصالح = [c for c in احكام if str(c.get('مسندة_ل_الحكم', '')).strip() == 'الصالح']
-            للضد = [c for c in احكام if str(c.get('مسندة_ل_الحكم', '')).strip() == 'الضد']
-            محفوظة = [c for c in all_cases if c.get('تم_الحفظ_النهائي')]
-
-            rows_stats = [
-                {"م": 1, "البند الإحصائي": "عدد القضايا المتداولة خلال الفترة", "العدد": len(متداولة)},
-                {"م": 2, "البند الإحصائي": "إجمالي الأحكام الصادرة خلال الفترة", "العدد": len(احكام)},
-                {"م": 3, "البند الإحصائي": "الأحكام الصادرة لصالح الهيئة", "العدد": len(للصالح)},
-                {"م": 4, "البند الإحصائي": "الأحكام الصادرة ضد الهيئة", "العدد": len(للضد)},
-                {"م": 5, "البند الإحصائي": "القضايا المحفوظة نهائياً (الإجمالي)", "العدد": len(محفوظة)},
-            ]
-            df_stats3 = pd.DataFrame(rows_stats)
-            title_s3 = f"بيان إحصائي بأعمال القضايا والأحكام خلال الفترة من {stat_from.strftime('%d-%m-%Y')} إلى {stat_to.strftime('%d-%m-%Y')}"
-            if lawyer_s3.strip():
-                title_s3 += f" طرف الاستاذ/ {lawyer_s3} المحامي"
-            header_s3 = report_header(region_s3, title_s3, مدير_عام_s3, مدير_ادارة_s3, عضو_قانوني_s3)
-            table_s3 = "<table class='case-table'><tr><th>م</th><th>البند الإحصائي</th><th>العدد</th></tr>"
-            for r in rows_stats:
-                table_s3 += f"<tr><td>{r['م']}</td><td>{_html.escape(r['البند الإحصائي'])}</td><td><b style='color:#dc3545; font-size:13px'>{r['العدد']}</b></td></tr>"
-            table_s3 += "</table>"
-            footer_s3 = _build_footer(عضو_قانوني_s3, مدير_ادارة_s3, مدير_عام_s3)
-            full_html_s3 = header_s3 + f"<div class='table-container'>{table_s3}</div>" + footer_s3
-
-            st.session_state.last_report_html = full_html_s3
-            st.session_state.last_report_title = f"الاحصائيات_{region_s3}"
-            st.session_state.last_report_df = df_stats3
-            st.session_state.tab_reports_cache["tab3"] = {
-                "metrics": (len(متداولة), len(احكام), len(للصالح), len(للضد)),
-                "full_html": full_html_s3,
-                "df": df_stats3,
-                "title": title_s3,
-                "region": region_s3,
-                "odo": عضو_قانوني_s3,
-                "lawyer": lawyer_s3,
-                "mgr": مدير_ادارة_s3,
-                "gm": مدير_عام_s3,
-            }
-
-        if "tab3" in st.session_state.tab_reports_cache:
-            rep3 = st.session_state.tab_reports_cache["tab3"]
-            m1, m2, m3, m4 = rep3["metrics"]
-            c1, c2, c3, c4 = st.columns(4)
-            c1.metric("عدد القضايا المتداولة", m1)
-            c2.metric("عدد الاحكام الصادرة", m2)
-            c3.metric("عدد الاحكام للصالح", m3)
-            c4.metric("عدد الاحكام للضد", m4)
-            st.markdown(rep3["full_html"], unsafe_allow_html=True)
-            _render_export_buttons(
-                "dl_s3", "بيان_احصائي", rep3["df"], rep3["full_html"],
-                rep3["title"], rep3["region"], rep3["odo"], rep3["lawyer"], rep3["mgr"], rep3["gm"]
-            )
-
-    # ========= تبويب 4: البيان العددي =========
+    # ========= تبويب 4: البيان 
+======== تبويب 4: البيان العددي =========
     with tab4:
         st.markdown("<h3 style='color:#B8860B; text-align:center; font-size:16px;'>📊 البيان العددي</h3>", unsafe_allow_html=True)
         st.markdown("<div style='background:#1E2A47; padding:12px; border-radius:8px; border:2px solid #B8860B; margin-bottom:12px'>", unsafe_allow_html=True)
@@ -4058,8 +4014,8 @@ if st.session_state.page == "تقارير":
         عضو_قانوني_stat = st.text_input("اسم العضو القانوني", key="odo_stat")
         lawyer_stat = st.text_input("طرف الاستاذ/ المحامي", key="lawyer_stat")
         col1, col2 = st.columns(2)
-        with col1: stat_from2 = st.date_input("من الفترة", key="s_from2")
-        with col2: stat_to2 = st.date_input("حتى الفترة", key="s_to2")
+        with col1: stat_from2 = st.date_input("من الفترة", format="DD/MM/YYYY", key="s_from2")
+        with col2: stat_to2 = st.date_input("حتى الفترة", format="DD/MM/YYYY", key="s_to2")
         topic_stat = ""
         if "حسب موضوع الدعوى" in نوع_البيان_العددي:
             topic_stat = st.text_input("موضوع الدعوى للفلترة", key="topic_stat")
@@ -4168,4 +4124,4 @@ if st.session_state.page == "تقارير":
             _render_export_buttons(
                 "dl_stat3", "بيان_عددي", rep4["df"], rep4["full_html"],
                 rep4["title"], rep4["region"], rep4["odo"], rep4["lawyer"], rep4["mgr"], rep4["gm"]
-            )
+                    )
