@@ -3597,7 +3597,7 @@ elif st.session_state.page == "مكتبة":
 
 # ===========
 # =========== الجزء الثامن: التقارير =========
-# ===== الجزء الثامن: التقارير ============
+# ======== الجزء الثامن: التقارير ============
 # ================= القسم 1 من 2 =================
 
 def get_export_html(content_html, title):
@@ -3611,7 +3611,7 @@ def get_export_html(content_html, title):
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap');
     body {{ font-family: "Cairo", "Times New Roman", serif; direction: rtl; background: white; color: black; padding: 20px; }}
-  .case-table {{width:100%; border-collapse:collapse; font-size:12px; margin-top:12px;}}
+  .case-table {{width:100%; border-collapse:collapse; font-size:12px; margin-top:12px; direction:rtl;}}
   .case-table th {{ background: #B8860B; color:#000; padding:8px; border:1px solid #8B6914; font-weight:900; text-align:center; }}
   .case-table td {{padding:6px; border:1px solid #B8860B; text-align:center; background:#fff; color:#000;}}
   .table-container {{overflow-x:auto}}
@@ -3653,6 +3653,12 @@ if st.session_state.page == "تقارير":
                 pass
         return None
 
+    def _fmt_result_date(val):
+        d = _parse_date_safe(val)
+        if d is not None:
+            return d.strftime("%d/%m/%Y")
+        return str(val or "")
+
     def _build_excel_bytes(df):
         excel_buffer = io.BytesIO()
         with pd.ExcelWriter(excel_buffer, engine="openpyxl") as writer:
@@ -3678,7 +3684,85 @@ if st.session_state.page == "تقارير":
         safe_odo = _html.escape(str(عضو_قانوني or ""))
         safe_mgr = _html.escape(str(مدير_ادارة or ""))
         safe_gm = _html.escape(str(مدير_عام or ""))
-        return f"""<div style="margin-top:25px; color:#B8860B; font-size:12px;"><p style="text-align:center; margin-bottom:20px; font-size:13px; font-weight:700;">تفضلوا بقبول وافر الاحترام والتقدير،</p><table style="width:100%;"><tr><td style="width:50%; text-align:right; vertical-align:top;"><div style="font-weight:900;">العضو القانوني</div><div style="margin-top:6px;">{safe_odo}</div><div style="margin-top:12px;">....................</div><div style="margin-top:20px;">تحرر في: {datetime.now().strftime('%d-%m-%Y')}</div></td><td style="width:50%; text-align:left; vertical-align:top;"><div style="font-weight:900;">مدير إدارة القضايا</div><div style="margin-top:6px;">{safe_mgr}</div><div style="margin-top:12px;">....................</div></td></tr></table><div style="text-align:center; margin-top:20px;"><div style="font-weight:900; color:#dc3545;">مدير عام الإدارات القانونية</div><div style="margin-top:6px;">{safe_gm}</div><div style="margin-top:12px;">....................</div></div></div>"""
+        return f"""<div style="margin-top:25px; color:#B8860B; font-size:12px;"><p style="text-align:center; margin-bottom:20px; font-size:13px; font-weight:700;">تفضلوا بقبول وافر الاحترام والتقدير،</p><table style="width:100%;"><tr><td style="width:50%; text-align:right; vertical-align:top;"><div style="font-weight:900;">العضو القانوني</div><br><div style="margin-top:4px;">{safe_odo}</div><div style="margin-top:12px;">....................</div><div style="margin-top:20px;">تحرر في: {datetime.now().strftime('%d/%m/%Y')}</div></td><td style="width:50%; text-align:left; vertical-align:top;"><div style="font-weight:900;">مدير إدارة القضايا</div><br><div style="margin-top:4px;">{safe_mgr}</div><div style="margin-top:12px;">....................</div></td></tr></table><div style="text-align:center; margin-top:20px;"><div style="font-weight:900; color:#dc3545;">مدير عام الإدارات القانونية</div><br><div style="margin-top:4px;">{safe_gm}</div><div style="margin-top:12px;">....................</div></div></div>"""
+
+    def _export_pdf_with_signatures(df_export, title_text, region_val, odo_val, lawyer_val, mgr_val, gm_val):
+        raw_pdf = to_pdf(df_export, title_text, region_val, odo_val, lawyer_val, mgr_val, gm_val)
+        try:
+            import io as _io
+            from pypdf import PdfReader as _PdfReader, PdfWriter as _PdfWriter
+            from reportlab.pdfgen import canvas as _canvas
+            from reportlab.lib.pagesizes import A4, landscape as _landscape
+            from reportlab.pdfbase import pdfmetrics as _pdfmetrics
+            from reportlab.pdfbase.ttfonts import TTFont as _TTFont
+
+            font_name = "Helvetica"
+            for fpath in [
+                "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+                "/usr/share/fonts/truetype/noto/NotoNaskhArabic-Regular.ttf",
+                "/usr/share/fonts/truetype/noto/NotoSansArabic-Regular.ttf",
+            ]:
+                try:
+                    _pdfmetrics.registerFont(_TTFont("ArPdfFont", fpath))
+                    font_name = "ArPdfFont"
+                    break
+                except Exception:
+                    pass
+
+            def _ar_txt(s):
+                txt = str(s or "").strip()
+                try:
+                    import arabic_reshaper
+                    from bidi.algorithm import get_display
+                    return get_display(arabic_reshaper.reshape(txt))
+                except Exception:
+                    return txt
+
+            reader = _PdfReader(_io.BytesIO(raw_pdf))
+            writer = _PdfWriter()
+            for idx, page in enumerate(reader.pages):
+                if idx == len(reader.pages) - 1:
+                    pw = float(page.mediabox.width)
+                    ph = float(page.mediabox.height)
+                    ov_buf = _io.BytesIO()
+                    c = _canvas.Canvas(ov_buf, pagesize=(pw, ph))
+                    c.setFont(font_name, 10)
+                    c.setFillColorRGB(0.45, 0.33, 0.03)
+
+                    base_y = max(55.0, ph * 0.14)
+                    # العضو القانوني يمين: الوظيفة ثم الاسم أسفلها
+                    right_x = pw - 45.0
+                    c.drawRightString(right_x, base_y + 26, _ar_txt("العضو القانوني"))
+                    if str(odo_val or "").strip():
+                        c.drawRightString(right_x, base_y + 12, _ar_txt(odo_val))
+                    c.drawRightString(right_x, base_y - 2, "....................")
+                    c.drawRightString(right_x, base_y - 18, _ar_txt(f"تحرر في: {datetime.now().strftime('%d/%m/%Y')}"))
+
+                    # مدير إدارة القضايا يسار: الوظيفة ثم الاسم أسفلها
+                    left_x = 165.0
+                    c.drawRightString(left_x, base_y + 26, _ar_txt("مدير إدارة القضايا"))
+                    if str(mgr_val or "").strip():
+                        c.drawRightString(left_x, base_y + 12, _ar_txt(mgr_val))
+                    c.drawRightString(left_x, base_y - 2, "....................")
+
+                    # مدير عام الإدارات القانونية وسط: الوظيفة ثم الاسم أسفلها
+                    mid_x = pw * 0.52
+                    c.drawRightString(mid_x, base_y - 8, _ar_txt("مدير عام الإدارات القانونية"))
+                    if str(gm_val or "").strip():
+                        c.drawRightString(mid_x, base_y - 22, _ar_txt(gm_val))
+                    c.drawRightString(mid_x, base_y - 36, "....................")
+
+                    c.save()
+                    ov_buf.seek(0)
+                    ov_page = _PdfReader(ov_buf).pages[0]
+                    page.merge_page(ov_page)
+                writer.add_page(page)
+
+            out_buf = _io.BytesIO()
+            writer.write(out_buf)
+            return out_buf.getvalue()
+        except Exception:
+            return raw_pdf
 
     def _export_word_rtl(df_export, title_text, region_val, odo_val, lawyer_val, mgr_val, gm_val):
         raw_bytes = to_word(df_export, title_text, region_val, odo_val, lawyer_val, mgr_val, gm_val)
@@ -3686,22 +3770,38 @@ if st.session_state.page == "تقارير":
             import io as _io
             from docx import Document as _DocxDocument
             from docx.enum.text import WD_ALIGN_PARAGRAPH
+            from docx.enum.table import WD_TABLE_ALIGNMENT
             from docx.oxml import OxmlElement
             from docx.oxml.ns import qn
 
             doc = _DocxDocument(_io.BytesIO(raw_bytes))
+
+            # ضبط اتجاه القسم بالكامل من اليمين إلى اليسار (RTL)
+            for sec in doc.sections:
+                secPr = sec._sectPr
+                if secPr.find(qn('w:bidi')) is None:
+                    secPr.append(OxmlElement('w:bidi'))
 
             def _set_rtl_para(p, align=WD_ALIGN_PARAGRAPH.RIGHT):
                 p.alignment = align
                 pPr = p._p.get_or_add_pPr()
                 if pPr.find(qn('w:bidi')) is None:
                     pPr.append(OxmlElement('w:bidi'))
+                for r in p.runs:
+                    rPr = r._r.get_or_add_rPr()
+                    if rPr.find(qn('w:rtl')) is None:
+                        rPr.append(OxmlElement('w:rtl'))
 
             def _set_table_rtl(tbl):
+                tbl.alignment = WD_TABLE_ALIGNMENT.RIGHT
                 tblPr = tbl._tbl.tblPr
                 if tblPr.find(qn('w:bidiVisual')) is None:
                     tblPr.append(OxmlElement('w:bidiVisual'))
+                # عكس ترتيب الخلايا في كل صف إذا كانت الجداول مبدوءة من اليسار
                 for row in tbl.rows:
+                    trPr = row._tr.get_or_add_trPr()
+                    if trPr.find(qn('w:cantSplit')) is None:
+                        trPr.append(OxmlElement('w:cantSplit'))
                     for cell in row.cells:
                         for p in cell.paragraphs:
                             _set_rtl_para(p)
@@ -3712,6 +3812,42 @@ if st.session_state.page == "تقارير":
                 _set_rtl_para(p)
             for tbl in doc.tables:
                 _set_table_rtl(tbl)
+
+            # إلحاق كتلة التوقيعات والتاريخ في نهاية مستند الـ Word بنفس نسق التقارير
+            p_greet = doc.add_paragraph("تفضلوا بقبول وافر الاحترام والتقدير،")
+            _set_rtl_para(p_greet, WD_ALIGN_PARAGRAPH.CENTER)
+
+            sig_tbl = doc.add_table(rows=1, cols=2)
+            sig_tbl.autofit = False
+            _set_table_rtl(sig_tbl)
+
+            c_right = sig_tbl.cell(0, 0)
+            c_left = sig_tbl.cell(0, 1)
+
+            p_r1 = c_right.paragraphs[0]
+            p_r1.text = "العضو القانوني"
+            _set_rtl_para(p_r1, WD_ALIGN_PARAGRAPH.RIGHT)
+            p_r2 = c_right.add_paragraph(str(odo_val or ""))
+            _set_rtl_para(p_r2, WD_ALIGN_PARAGRAPH.RIGHT)
+            p_r3 = c_right.add_paragraph("....................")
+            _set_rtl_para(p_r3, WD_ALIGN_PARAGRAPH.RIGHT)
+            p_r4 = c_right.add_paragraph(f"تحرر في: {datetime.now().strftime('%d/%m/%Y')}")
+            _set_rtl_para(p_r4, WD_ALIGN_PARAGRAPH.RIGHT)
+
+            p_l1 = c_left.paragraphs[0]
+            p_l1.text = "مدير إدارة القضايا"
+            _set_rtl_para(p_l1, WD_ALIGN_PARAGRAPH.LEFT)
+            p_l2 = c_left.add_paragraph(str(mgr_val or ""))
+            _set_rtl_para(p_l2, WD_ALIGN_PARAGRAPH.LEFT)
+            p_l3 = c_left.add_paragraph("....................")
+            _set_rtl_para(p_l3, WD_ALIGN_PARAGRAPH.LEFT)
+
+            p_gm1 = doc.add_paragraph("مدير عام الإدارات القانونية")
+            _set_rtl_para(p_gm1, WD_ALIGN_PARAGRAPH.CENTER)
+            p_gm2 = doc.add_paragraph(str(gm_val or ""))
+            _set_rtl_para(p_gm2, WD_ALIGN_PARAGRAPH.CENTER)
+            p_gm3 = doc.add_paragraph("....................")
+            _set_rtl_para(p_gm3, WD_ALIGN_PARAGRAPH.CENTER)
 
             out_buf = _io.BytesIO()
             doc.save(out_buf)
@@ -3736,7 +3872,7 @@ if st.session_state.page == "تقارير":
         with c2:
             st.download_button(
                 "📄 استخراج PDF",
-                data=to_pdf(df_export, title_text, region_val, odo_val, lawyer_val, mgr_val, gm_val),
+                data=_export_pdf_with_signatures(df_export, title_text, region_val, odo_val, lawyer_val, mgr_val, gm_val),
                 file_name=report_download_name(file_prefix, odo_val, lawyer_val, region_val, "pdf"),
                 mime="application/pdf",
                 use_container_width=True,
@@ -3832,7 +3968,7 @@ if st.session_state.page == "تقارير":
                 t_norm = _norm_ar(topic)
                 cases = [c for c in cases if t_norm in _norm_ar(c.get('موضوع', ''))]
             cases = sorted(cases, key=lambda x: str(x.get("تاريخ_جلسة", "0000-00-00")), reverse=True)
-            title = f"{نوع_تقرير_متداولة} خلال الفترة من {from_date.strftime('%d-%m-%Y')} إلى {to_date.strftime('%d-%m-%Y')} طرف الاستاذ/ {lawyer} المحامي"
+            title = f"{نوع_تقرير_متداولة} خلال الفترة من {from_date.strftime('%d/%m/%Y')} إلى {to_date.strftime('%d/%m/%Y')} طرف الاستاذ/ {lawyer} المحامي"
             header_html = report_header(region, title, مدير_عام1, مدير_ادارة1, عضو_قانوني1)
             if not cases:
                 st.session_state.tab_reports_cache.pop("tab1", None)
@@ -3848,6 +3984,7 @@ if st.session_state.page == "تقارير":
                     مدعي_عليه = str(c.get('مدعي_عليه', '') or '')
                     safe_خصوم = f"{_html.escape(مدعي)} ضد {_html.escape(مدعي_عليه)}"
                     خصوم_html = f"<span style='color:#dc3545; font-weight:900'>{safe_خصوم}</span>" if "الهيئة" in مدعي else safe_خصوم
+                    جلسة_عرض = _fmt_result_date(c.get('تاريخ_جلسة', ''))
                     table_html += (
                         f"<tr><td>{idx}</td>"
                         f"<td>{_html.escape(str(c.get('رقم','')))}</td>"
@@ -3855,14 +3992,14 @@ if st.session_state.page == "تقارير":
                         f"<td>{_html.escape(محكمة)}</td>"
                         f"<td>{خصوم_html}</td>"
                         f"<td>{_html.escape(str(c.get('موضوع','')))}</td>"
-                        f"<td><b style='color:#B8860B'>{_html.escape(str(c.get('تاريخ_جلسة','')))}</b></td>"
+                        f"<td><b style='color:#B8860B'>{_html.escape(جلسة_عرض)}</b></td>"
                         f"<td>{_html.escape(str(c.get('الاجراء','')))}</td>"
                         f"<td>{_html.escape(str(c.get('ملاحظات','')))}</td></tr>"
                     )
                     df_data.append({
                         'م': idx, 'رقم': c.get('رقم', ''), 'سنة': c.get('سنة', ''), 'المحكمة': محكمة,
                         'الخصوم': f"{مدعي} ضد {مدعي_عليه}", 'الموضوع': c.get('موضوع', ''),
-                        'اخر جلسة': c.get('تاريخ_جلسة', ''), 'الاجراء': c.get('الاجراء', ''), 'ملاحظات': c.get('ملاحظات', '')
+                        'اخر جلسة': جلسة_عرض, 'الاجراء': c.get('الاجراء', ''), 'ملاحظات': c.get('ملاحظات', '')
                     })
                 table_html += "</table>"
                 footer = _build_footer(عضو_قانوني1, مدير_ادارة1, مدير_عام1)
@@ -3890,8 +4027,8 @@ if st.session_state.page == "تقارير":
             _render_export_buttons(
                 "dlx1", "بيان_الدعاوى_المتداولة", rep1["df"], rep1["full_html"],
                 rep1["title"], rep1["region"], rep1["odo"], rep1["lawyer"], rep1["mgr"], rep1["gm"]
-    )
-# ======= تبويب 2: الاحكام =========
+            )
+    # ======== تبويب 2: الاحكام =========
     with tab2:
         st.markdown("<div style='background:#1E2A47; padding:12px; border-radius:8px; border:2px solid #B8860B; margin-bottom:12px'>", unsafe_allow_html=True)
         نوع_التقرير = st.selectbox("نوع البيان", ["بيان بجميع الاحكام الصادرة للصالح والضد", "بيان بالاحكام الصادرة للصالح", "بيان بالاحكام الصادرة للضد", "بيان بالاحكام الصادرة حسب موضوع الدعوى"], key="no3_tقرير")
@@ -3924,7 +4061,7 @@ if st.session_state.page == "تقارير":
                 t2_norm = _norm_ar(topic2)
                 cases = [c for c in cases if t2_norm in _norm_ar(c.get('موضوع', ''))]
             cases = sorted(cases, key=lambda x: str(x.get("تاريخ_الحكم", "0000-00-00")), reverse=True)
-            title = f"{نوع_التقرير} خلال الفترة من {from_date2.strftime('%d-%m-%Y')} إلى {to_date2.strftime('%d-%m-%Y')} طرف الاستاذ/ {lawyer2} المحامي"
+            title = f"{نوع_التقرير} خلال الفترة من {from_date2.strftime('%d/%m/%Y')} إلى {to_date2.strftime('%d/%m/%Y')} طرف الاستاذ/ {lawyer2} المحامي"
             header_html = report_header(region2, title, مدير_عام2, مدير_ادارة2, عضو_قانوني2)
             if not cases:
                 st.session_state.tab_reports_cache.pop("tab2", None)
@@ -3942,6 +4079,7 @@ if st.session_state.page == "تقارير":
                     خصوم_html = f"<span style='color:#dc3545; font-weight:900'>{safe_خصوم}</span>" if "الهيئة" in مدعي else safe_خصوم
                     مسندة = str(c.get('مسندة_ل_الحكم', '') or '')
                     لون_مسندة = "#28a745" if مسندة.strip() == 'الصالح' else "#dc3545"
+                    حكم_عرض = _fmt_result_date(c.get('تاريخ_الحكم', ''))
                     table_html += (
                         f"<tr><td>{idx}</td>"
                         f"<td>{_html.escape(str(c.get('رقم','')))}</td>"
@@ -3949,7 +4087,7 @@ if st.session_state.page == "تقارير":
                         f"<td>{_html.escape(محكمة)}</td>"
                         f"<td>{خصوم_html}</td>"
                         f"<td>{_html.escape(str(c.get('موضوع','')))}</td>"
-                        f"<td><b style='color:#B8860B'>{_html.escape(str(c.get('تاريخ_الحكم','')))}</b></td>"
+                        f"<td><b style='color:#B8860B'>{_html.escape(حكم_عرض)}</b></td>"
                         f"<td>{_html.escape(str(c.get('منطوق_الحكم','')))}</td>"
                         f"<td><b style='color:{لون_مسندة}'>{_html.escape(مسندة)}</b></td>"
                         f"<td>{_html.escape(str(c.get('ملاحظات','')))}</td></tr>"
@@ -3957,7 +4095,7 @@ if st.session_state.page == "تقارير":
                     df_data.append({
                         'م': idx, 'رقم': c.get('رقم', ''), 'سنة': c.get('سنة', ''), 'المحكمة': محكمة,
                         'الخصوم': f"{مدعي} ضد {مدعي_عليه}", 'الموضوع': c.get('موضوع', ''),
-                        'تاريخ الحكم': c.get('تاريخ_الحكم', ''), 'منطوق الحكم': c.get('منطوق_الحكم', ''),
+                        'تاريخ الحكم': حكم_عرض, 'منطوق الحكم': c.get('منطوق_الحكم', ''),
                         'مسندة ل': مسندة, 'ملاحظات': c.get('ملاحظات', '')
                     })
                 table_html += "</table>"
@@ -3989,8 +4127,7 @@ if st.session_state.page == "تقارير":
             )
 
     # ================= القسم 2 من 2 =================
-    # ========= تبويب 4: البيان 
-# ======== تبويب 4: البيان العددي =========
+    # ========= تبويب 4: البيان العددي =========
     with tab4:
         st.markdown("<h3 style='color:#B8860B; text-align:center; font-size:16px;'>📊 البيان العددي</h3>", unsafe_allow_html=True)
         st.markdown("<div style='background:#1E2A47; padding:12px; border-radius:8px; border:2px solid #B8860B; margin-bottom:12px'>", unsafe_allow_html=True)
@@ -4084,7 +4221,7 @@ if st.session_state.page == "تقارير":
                 ملاحظات = f"عن موضوع: {topic_stat}" if topic_stat.strip() else ""
                 rows_list.append({'م': 1, 'البيان': اسم_البيان, 'العدد': العدد_الاجمالي, 'ملاحظات': ملاحظات})
 
-            title_stat = f"بيان عددي ب{اسم_البيان} خلال الفترة من {stat_from2.strftime('%d-%m-%Y')} إلى {stat_to2.strftime('%d-%m-%Y')} طرف الاستاذ/ {lawyer_stat} المحامي"
+            title_stat = f"بيان عددي ب{اسم_البيان} خلال الفترة من {stat_from2.strftime('%d/%m/%Y')} إلى {stat_to2.strftime('%d/%m/%Y')} طرف الاستاذ/ {lawyer_stat} المحامي"
             header_html = report_header(region_stat, title_stat, مدير_عام_stat, مدير_ادارة_stat, عضو_قانوني_stat)
             table_html = "<table class='case-table'><tr><th>م</th><th>البيان</th><th>العدد</th><th>ملاحظات</th></tr>"
             for r in rows_list:
@@ -4125,4 +4262,4 @@ if st.session_state.page == "تقارير":
             _render_export_buttons(
                 "dl_stat3", "بيان_عددي", rep4["df"], rep4["full_html"],
                 rep4["title"], rep4["region"], rep4["odo"], rep4["lawyer"], rep4["mgr"], rep4["gm"]
-)
+        )
