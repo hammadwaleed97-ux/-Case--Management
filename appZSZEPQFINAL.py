@@ -3890,7 +3890,7 @@ if st.session_state.page == "تقارير":
                 "dlx1", "بيان_الدعاوى_المتداولة", rep1["df"], rep1["full_html"],
                 rep1["title"], rep1["region"], rep1["odo"], rep1["lawyer"], rep1["mgr"], rep1["gm"]
     )
-            # ====== تبويب 2: الاحكام =========
+# ====== تبويب 2: الاحكام =========
     with tab2:
         st.markdown("<div style='background:#1E2A47; padding:12px; border-radius:8px; border:2px solid #B8860B; margin-bottom:12px'>", unsafe_allow_html=True)
         نوع_التقرير = st.selectbox("نوع البيان", ["بيان بجميع الاحكام الصادرة للصالح والضد", "بيان بالاحكام الصادرة للصالح", "بيان بالاحكام الصادرة للضد", "بيان بالاحكام الصادرة حسب موضوع الدعوى"], key="no3_tقرير")
@@ -3989,7 +3989,7 @@ if st.session_state.page == "تقارير":
 
     # ================= القسم 2 من 2 =================
     # ========= تبويب 4: البيان 
-======== تبويب 4: البيان العددي =========
+# ======== تبويب 4: البيان العددي =========
     with tab4:
         st.markdown("<h3 style='color:#B8860B; text-align:center; font-size:16px;'>📊 البيان العددي</h3>", unsafe_allow_html=True)
         st.markdown("<div style='background:#1E2A47; padding:12px; border-radius:8px; border:2px solid #B8860B; margin-bottom:12px'>", unsafe_allow_html=True)
@@ -4124,4 +4124,4 @@ if st.session_state.page == "تقارير":
             _render_export_buttons(
                 "dl_stat3", "بيان_عددي", rep4["df"], rep4["full_html"],
                 rep4["title"], rep4["region"], rep4["odo"], rep4["lawyer"], rep4["mgr"], rep4["gm"]
-                    )
+            )
