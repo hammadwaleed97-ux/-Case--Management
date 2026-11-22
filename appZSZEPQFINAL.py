@@ -217,6 +217,79 @@ DATA_DIR = Path(LOCAL_DATA_DIR)
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 BANNERS_FILE = DATA_DIR / "banners.json"
 TOP_BAR_FILE = DATA_DIR / "top_bar_config.json"
+JOB_TITLES_FILE = DATA_DIR / "job_titles.json"
+
+DEFAULT_JOB_TITLES = [
+    "عضو قانونى",
+    "مدير إدارة",
+    "مدير عام",
+    "قيادي مركز رئيسى 1",
+    "قيادي مركز رئيسى 2",
+    "قيادي مركز رئيسى 3",
+]
+
+def load_job_titles():
+    raw = load_json_persistent("job_titles", JOB_TITLES_FILE, list(DEFAULT_JOB_TITLES))
+    if not isinstance(raw, list):
+        raw = list(DEFAULT_JOB_TITLES)
+    seen = set()
+    out = []
+    for item in DEFAULT_JOB_TITLES + [str(x or "").strip() for x in raw]:
+        s = str(item or "").strip()
+        if s and s not in seen:
+            seen.add(s)
+            out.append(s)
+    return out
+
+def save_job_titles(titles):
+    seen = set()
+    cleaned = []
+    for item in (titles or []):
+        s = str(item or "").strip()
+        if s and s not in seen:
+            seen.add(s)
+            cleaned.append(s)
+    for d in DEFAULT_JOB_TITLES:
+        if d not in seen:
+            seen.add(d)
+            cleaned.append(d)
+    ok = save_json_persistent("job_titles", JOB_TITLES_FILE, cleaned)
+    try:
+        _cached_job_titles_snapshot.clear()
+    except Exception:
+        pass
+    return ok
+
+@st.cache_data(ttl=15, show_spinner=False)
+def _cached_job_titles_snapshot():
+    return load_job_titles()
+
+def get_all_job_titles(include_users=True):
+    titles = list(_cached_job_titles_snapshot())
+    seen = set(titles)
+    if include_users:
+        try:
+            for u in _cached_users_snapshot():
+                for key_name in ("job_title", "job", "وظيفة", "role_name"):
+                    val = str(u.get(key_name) or "").strip()
+                    if val and val not in seen:
+                        seen.add(val)
+                        titles.append(val)
+        except Exception:
+            pass
+    return titles
+
+def register_job_title(title_text):
+    clean = str(title_text or "").strip()
+    if not clean:
+        return False, "أدخل اسم الوظيفة أولاً"
+    current = get_all_job_titles(include_users=True)
+    if clean in current:
+        return True, "الوظيفة موجودة بالفعل ومتاحة للجميع"
+    current.append(clean)
+    if save_job_titles(current):
+        return True, f"تمت إضافة الوظيفة ({clean}) وأصبحت متاحة للأدمن ولكل الأعضاء"
+    return False, "تعذر حفظ الوظيفة"
 
 DEFAULT_TOP_BAR_CONFIG = {
     "enabled": True,
@@ -889,7 +962,22 @@ def extract_member_page():
             key="new_member_birth_date"
         )
         insurance_area = st.text_input("المنطقة التأمينية التابع لها العضو", key="new_member_insurance_area")
-        job_role = st.selectbox("الوظيفة", ["عضو قانونى", "مدير إدارة", "مدير عام", "قيادي مركز رئيسى 1", "قيادي مركز رئيسى 2", "قيادي مركز رئيسى 3"], key="new_member_job_role")
+        all_jobs_extract = get_all_job_titles(include_users=True)
+        if st.session_state.get("user", {}).get("role") == "admin":
+            with st.expander("➕ إضافة وظيفة جديدة تظهر للأدمن ولكل الأعضاء"):
+                c_jt1, c_jt2 = st.columns([3, 1])
+                with c_jt1:
+                    new_jt_inp = st.text_input("اسم الوظيفة الجديدة", placeholder="مثال: باحث قانوني أول / مدير عام الشؤون القانونية", key="quick_add_job_title_inp")
+                with c_jt2:
+                    st.markdown("<div style='height:26px'></div>", unsafe_allow_html=True)
+                    if st.button("إضافة الوظيفة", key="quick_add_job_title_btn", use_container_width=True):
+                        ok_jt, msg_jt = register_job_title(new_jt_inp)
+                        if ok_jt:
+                            st.success(msg_jt)
+                            st.rerun()
+                        else:
+                            st.error(msg_jt)
+        job_role = st.selectbox("الوظيفة", all_jobs_extract, key="new_member_job_role")
         phone_number = st.text_input("رقم الموبايل (اختياري)", key="new_member_phone")
         profile_photo = st.file_uploader("الصورة الشخصية", type=["jpg","jpeg","png"], key="new_member_profile_photo")
 
@@ -910,6 +998,7 @@ def extract_member_page():
                     existing_user["display_name"] = existing_user.get("display_name") or name
                     existing_user["birth_date"] = birth_date_str
                     existing_user["insurance_area"] = area
+                    register_job_title(job_role)
                     existing_user["job_title"] = job_role
                     existing_user["phone"] = mobile_val
                     existing_user["mobile"] = mobile_val
@@ -1804,6 +1893,8 @@ def admin_control_page():
                     else:
                         admin_user["display_name"] = display_name.strip() or login_name
                         admin_user["username"] = login_name
+                        if job_title.strip():
+                            register_job_title(job_title.strip())
                         admin_user["job_title"] = job_title.strip()
                         admin_user["insurance_area"] = insurance_area.strip()
                         if admin_photo:
@@ -2854,7 +2945,7 @@ def edit_membership_data_page():
     selected = st.selectbox("اختر العضوية", labels, key="membership_edit_select")
     target = mapping[selected]
 
-    jobs = ["عضو قانونى", "مدير إدارة", "مدير عام", "قيادي مركز رئيسى 1", "قيادي مركز رئيسى 2", "قيادي مركز رئيسى 3"]
+    jobs = get_all_job_titles(include_users=True)
     current_job = str(target.get("job_title") or "")
     with st.form("membership_edit_form"):
         name = st.text_input("الاسم", value=str(target.get("display_name") or ""))
