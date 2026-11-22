@@ -2002,6 +2002,9 @@ def to_word(df, title, region, member_name="", specialization="", manager_name="
         sec.bottom_margin = Inches(0.6)
         sec.left_margin = Inches(0.6)
         sec.right_margin = Inches(0.6)
+        secPr = sec._sectPr
+        if secPr.find(qn("w:bidi")) is None:
+            secPr.append(OxmlElement("w:bidi"))
 
     def rtl(text, size=9.5, bold=False, align=WD_ALIGN_PARAGRAPH.RIGHT, space_after=2):
         p = doc.add_paragraph()
@@ -2009,7 +2012,9 @@ def to_word(df, title, region, member_name="", specialization="", manager_name="
         p.paragraph_format.space_before = Pt(0)
         p.paragraph_format.space_after = Pt(space_after)
         p.paragraph_format.line_spacing = 1.1
-        p._p.get_or_add_pPr().append(OxmlElement("w:bidi"))
+        pPr = p._p.get_or_add_pPr()
+        if pPr.find(qn("w:bidi")) is None:
+            pPr.append(OxmlElement("w:bidi"))
         r = p.add_run(str(text))
         r.font.name = "Arial"
         r.font.size = Pt(size)
@@ -2045,7 +2050,9 @@ def to_word(df, title, region, member_name="", specialization="", manager_name="
         p.paragraph_format.space_before = Pt(0)
         p.paragraph_format.space_after = Pt(0)
         p.paragraph_format.line_spacing = 1.05
-        p._p.get_or_add_pPr().append(OxmlElement("w:bidi"))
+        pPr = p._p.get_or_add_pPr()
+        if pPr.find(qn("w:bidi")) is None:
+            pPr.append(OxmlElement("w:bidi"))
         r = p.add_run(str(col))
         r.font.name = "Arial"
         r.font.size = Pt(8.5)
@@ -2064,7 +2071,9 @@ def to_word(df, title, region, member_name="", specialization="", manager_name="
             p.paragraph_format.space_before = Pt(0)
             p.paragraph_format.space_after = Pt(0)
             p.paragraph_format.line_spacing = 1.05
-            p._p.get_or_add_pPr().append(OxmlElement("w:bidi"))
+            pPr = p._p.get_or_add_pPr()
+            if pPr.find(qn("w:bidi")) is None:
+                pPr.append(OxmlElement("w:bidi"))
             r = p.add_run(str(val))
             r.font.name = "Arial"
             r.font.size = Pt(8.5)
@@ -2072,47 +2081,20 @@ def to_word(df, title, region, member_name="", specialization="", manager_name="
     rtl(f"تحريرًا في: {datetime.now().strftime('%d/%m/%Y')}", 9, False, WD_ALIGN_PARAGRAPH.RIGHT, 4)
     rtl("وتفضلوا بقبول وافر الاحترام والتقدير،", 9.5, True, WD_ALIGN_PARAGRAPH.CENTER, 6)
 
-    sig_tbl = doc.add_table(rows=1, cols=3)
-    _set_table_fixed_layout(sig_tbl, usable_w)
-    _set_row_cant_split(sig_tbl.rows[0])
+    rtl("العضو القانوني", 9.5, True, WD_ALIGN_PARAGRAPH.RIGHT, 1)
+    if str(member_name or "").strip():
+        rtl(str(member_name).strip(), 9.5, False, WD_ALIGN_PARAGRAPH.RIGHT, 1)
+    rtl("....................", 9.5, False, WD_ALIGN_PARAGRAPH.RIGHT, 4)
 
-    right_cell = sig_tbl.rows[0].cells[0]
-    gap_cell = sig_tbl.rows[0].cells[1]
-    left_cell = sig_tbl.rows[0].cells[2]
+    rtl("مدير إدارة القضايا", 9.5, True, WD_ALIGN_PARAGRAPH.RIGHT, 1)
+    if str(manager_name or "").strip():
+        rtl(str(manager_name).strip(), 9.5, False, WD_ALIGN_PARAGRAPH.RIGHT, 1)
+    rtl("....................", 9.5, False, WD_ALIGN_PARAGRAPH.RIGHT, 4)
 
-    right_cell.width = Inches(2.5)
-    gap_cell.width = Inches(2.3)
-    left_cell.width = Inches(2.5)
-
-    _set_cell_margins(right_cell, top=40, bottom=40, left=40, right=40)
-    _set_cell_margins(gap_cell, top=40, bottom=40, left=20, right=20)
-    _set_cell_margins(left_cell, top=40, bottom=40, left=40, right=40)
-
-    p_r = right_cell.paragraphs[0]
-    p_r.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-    p_r.paragraph_format.space_before = Pt(0)
-    p_r.paragraph_format.space_after = Pt(0)
-    p_r.paragraph_format.line_spacing = 1.15
-    p_r._p.get_or_add_pPr().append(OxmlElement("w:bidi"))
-    run_r = p_r.add_run(f"العضو القانوني\n{member_name}\n....................")
-    run_r.font.name = "Arial"
-    run_r.font.size = Pt(9.5)
-    run_r.bold = True
-
-    p_l = left_cell.paragraphs[0]
-    p_l.alignment = WD_ALIGN_PARAGRAPH.LEFT
-    p_l.paragraph_format.space_before = Pt(0)
-    p_l.paragraph_format.space_after = Pt(0)
-    p_l.paragraph_format.line_spacing = 1.15
-    p_l._p.get_or_add_pPr().append(OxmlElement("w:bidi"))
-    run_l = p_l.add_run(f"مدير إدارة القضايا\n{manager_name}\n....................")
-    run_l.font.name = "Arial"
-    run_l.font.size = Pt(9.5)
-    run_l.bold = True
-
-    rtl("مدير عام الإدارات القانونية", 9.5, True, WD_ALIGN_PARAGRAPH.CENTER, 1)
-    rtl(general_manager, 9.5, False, WD_ALIGN_PARAGRAPH.CENTER, 1)
-    rtl("....................", 9.5, False, WD_ALIGN_PARAGRAPH.CENTER, 2)
+    rtl("مدير عام الإدارات القانونية", 9.5, True, WD_ALIGN_PARAGRAPH.RIGHT, 1)
+    if str(general_manager or "").strip():
+        rtl(str(general_manager).strip(), 9.5, False, WD_ALIGN_PARAGRAPH.RIGHT, 1)
+    rtl("....................", 9.5, False, WD_ALIGN_PARAGRAPH.RIGHT, 2)
 
     out = io.BytesIO()
     doc.save(out)
@@ -2238,24 +2220,25 @@ def to_pdf(df, title, region, member_name="", specialization="", manager_name=""
                     pdf.cell(max(width - 2.0, 2.0), line_h, ar(ltxt), 0, 0, "R")
             pdf.set_xy(x_start, y_start + row_h)
 
+    def _pdf_sig_block(role_title, person_name):
+        if pdf.get_y() + 18 > pdf.h - 10:
+            pdf.add_page()
+        pdf.set_font(font, "", 9)
+        pdf.cell(0, 5.2, ar(role_title), 0, 1, "R")
+        if str(person_name or "").strip():
+            pdf.cell(0, 5.2, ar(str(person_name).strip()), 0, 1, "R")
+        pdf.cell(0, 5.2, ar("...................."), 0, 1, "R")
+        pdf.ln(2)
+
     pdf.ln(4)
     pdf.set_font(font, "", 8.5)
     pdf.cell(0, 5.5, ar(f"تحريرًا في: {datetime.now().strftime('%d/%m/%Y')}"), 0, 1, "R")
     pdf.ln(2)
     pdf.cell(0, 5.5, ar("وتفضلوا بقبول وافر الاحترام والتقدير،"), 0, 1, "C")
     pdf.ln(3)
-    y_sig = pdf.get_y()
-    pdf.set_xy(165, y_sig)
-    pdf.cell(122, 5.5, ar(f"العضو القانوني: {member_name}"), 0, 0, "R")
-    pdf.set_xy(10, y_sig)
-    pdf.cell(122, 5.5, ar(f"مدير إدارة القضايا: {manager_name}"), 0, 1, "L")
-    pdf.set_xy(165, y_sig + 5.5)
-    pdf.cell(122, 5.5, ar("...................."), 0, 0, "R")
-    pdf.set_xy(10, y_sig + 5.5)
-    pdf.cell(122, 5.5, ar("...................."), 0, 1, "L")
-    pdf.ln(5)
-    pdf.cell(0, 5.5, ar(f"مدير عام الإدارات القانونية: {general_manager}"), 0, 1, "C")
-    pdf.cell(0, 5.5, ar("...................."), 0, 1, "C")
+    _pdf_sig_block("العضو القانوني", member_name)
+    _pdf_sig_block("مدير إدارة القضايا", manager_name)
+    _pdf_sig_block("مدير عام الإدارات القانونية", general_manager)
     raw = pdf.output()
     return raw.encode("latin-1", errors="replace") if isinstance(raw, str) else bytes(raw)
 
