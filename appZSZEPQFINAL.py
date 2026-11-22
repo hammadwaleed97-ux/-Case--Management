@@ -216,6 +216,94 @@ LOCAL_BACKUP_DIR.mkdir(parents=True, exist_ok=True)
 DATA_DIR = Path(LOCAL_DATA_DIR)
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 BANNERS_FILE = DATA_DIR / "banners.json"
+TOP_BAR_FILE = DATA_DIR / "top_bar_config.json"
+
+DEFAULT_TOP_BAR_CONFIG = {
+    "enabled": True,
+    "text": "مع تحيات وليد حماد - الإدارة العامة للشئون القانونية بديوان عام منطقة البحيرة بالهيئة القومية للتأمين الاجتماعي",
+    "bg_start": "#D4AF37",
+    "bg_mid": "#FFD700",
+    "bg_end": "#D4AF37",
+    "text_color": "#0A1428",
+    "font_size": 16,
+    "speed_seconds": 15,
+    "mode": "marquee",
+}
+
+def load_top_bar_config():
+    cfg = load_json_persistent("top_bar_config", TOP_BAR_FILE, dict(DEFAULT_TOP_BAR_CONFIG))
+    if not isinstance(cfg, dict):
+        cfg = dict(DEFAULT_TOP_BAR_CONFIG)
+    merged = dict(DEFAULT_TOP_BAR_CONFIG)
+    for k, v in cfg.items():
+        if v is not None:
+            merged[k] = v
+    merged["enabled"] = bool(merged.get("enabled", True))
+    try:
+        merged["font_size"] = max(11, min(36, int(merged.get("font_size", 16))))
+    except Exception:
+        merged["font_size"] = 16
+    try:
+        merged["speed_seconds"] = max(4, min(120, int(merged.get("speed_seconds", 15))))
+    except Exception:
+        merged["speed_seconds"] = 15
+    if merged.get("mode") not in ("marquee", "static"):
+        merged["mode"] = "marquee"
+    return merged
+
+def save_top_bar_config(cfg):
+    merged = dict(DEFAULT_TOP_BAR_CONFIG)
+    if isinstance(cfg, dict):
+        for k, v in cfg.items():
+            if v is not None:
+                merged[k] = v
+    merged["enabled"] = bool(merged.get("enabled", True))
+    try:
+        merged["font_size"] = max(11, min(36, int(merged.get("font_size", 16))))
+    except Exception:
+        merged["font_size"] = 16
+    try:
+        merged["speed_seconds"] = max(4, min(120, int(merged.get("speed_seconds", 15))))
+    except Exception:
+        merged["speed_seconds"] = 15
+    if merged.get("mode") not in ("marquee", "static"):
+        merged["mode"] = "marquee"
+    ok = save_json_persistent("top_bar_config", TOP_BAR_FILE, merged)
+    try:
+        _cached_top_bar_snapshot.clear()
+    except Exception:
+        pass
+    return ok
+
+@st.cache_data(ttl=15, show_spinner=False)
+def _cached_top_bar_snapshot():
+    return load_top_bar_config()
+
+def render_top_bar():
+    cfg = _cached_top_bar_snapshot()
+    if not cfg.get("enabled", True):
+        return
+    txt = str(cfg.get("text") or "").strip()
+    if not txt:
+        return
+    bg1 = html.escape(str(cfg.get("bg_start") or "#D4AF37"))
+    bg2 = html.escape(str(cfg.get("bg_mid") or "#FFD700"))
+    bg3 = html.escape(str(cfg.get("bg_end") or "#D4AF37"))
+    fg = html.escape(str(cfg.get("text_color") or "#0A1428"))
+    fs = int(cfg.get("font_size", 16))
+    spd = int(cfg.get("speed_seconds", 15))
+    mode = cfg.get("mode", "marquee")
+    safe_txt = html.escape(txt)
+    if mode == "static":
+        st.markdown(
+            f"""<div style="background:linear-gradient(90deg,{bg1},{bg2},{bg3});color:{fg};padding:12px 16px;font-weight:900;font-size:{fs}px;text-align:center;border-radius:0 0 15px 15px;box-shadow:0 4px 14px rgba(0,0,0,.25);overflow-wrap:break-word;">{safe_txt}</div>""",
+            unsafe_allow_html=True,
+        )
+    else:
+        st.markdown(
+            f"""<div class="marquee" style="background:linear-gradient(90deg,{bg1},{bg2},{bg3});color:{fg};font-size:{fs}px;"><span style="animation:marquee {spd}s linear infinite;">{safe_txt}</span></div>""",
+            unsafe_allow_html=True,
+        )
 
 def cloud_status():
     try:
@@ -1437,9 +1525,10 @@ def admin_control_page():
     st.markdown("<h1 style='color:#D4AF37;text-align:center;'>⚖️ لوحة التحكم</h1>", unsafe_allow_html=True)
     st.markdown("<p style='color:white;text-align:center;'>جميع أدوات إدارة الموقع في مكان واحد</p>", unsafe_allow_html=True)
 
-    tab_users, tab_messages, tab_search, tab_account = st.tabs([
+    tab_users, tab_messages, tab_topbar, tab_search, tab_account = st.tabs([
         "👥 الأعضاء",
         "📢 الرسائل والبيانات",
+        "🪧 الشريط العلوي",
         "🔎 البحث والملف الشخصي",
         "🔐 حساب الادمن والإيميل",
     ])
@@ -1597,6 +1686,91 @@ def admin_control_page():
                             if st.form_submit_button("إلغاء", use_container_width=True):
                                 st.session_state.pop("edit_banner_id", None)
                                 st.rerun()
+
+    with tab_topbar:
+        st.markdown("<h3 style='color:#D4AF37;text-align:center;'>🪧 التحكم الكامل في الشريط الظاهر أعلى البرنامج</h3>", unsafe_allow_html=True)
+        st.caption("يمكنك من هنا إظهار الشريط أو إيقافه/إخفائه بالكامل، أو تعديل نصه وألوانه وحجمه وسرعته أو إلغاء نصه دون المساس بالكود.")
+        cur_bar = load_top_bar_config()
+
+        st.markdown("<div style='color:#D4AF37;font-weight:900;margin-bottom:6px;'>معاينة حية للشريط الحالي:</div>", unsafe_allow_html=True)
+        if cur_bar.get("enabled", True) and str(cur_bar.get("text") or "").strip():
+            render_top_bar()
+        else:
+            st.info("الشريط العلوي متوقف / مخفي حاليًا.")
+
+        with st.form("admin_top_bar_control_form"):
+            bar_enabled = st.checkbox(
+                "تفعيل / إظهار الشريط العلوي أعلى البرنامج",
+                value=bool(cur_bar.get("enabled", True)),
+                key="bar_enabled_chk"
+            )
+            bar_text = st.text_area(
+                "نص الشريط العلوي (اتركه فارغًا أو اضغط زر الإلغاء لإلغاء النص)",
+                value=str(cur_bar.get("text") or ""),
+                height=90,
+                key="bar_text_inp"
+            )
+            bar_mode = st.selectbox(
+                "نمط عرض الشريط",
+                ["marquee", "static"],
+                format_func=lambda m: "متحرك (شريط إخباري متحرك)" if m == "marquee" else "ثابت (نص ثابت واضح)",
+                index=0 if cur_bar.get("mode", "marquee") == "marquee" else 1,
+                key="bar_mode_sel"
+            )
+            c1, c2, c3 = st.columns(3)
+            with c1:
+                bar_bg_start = st.color_picker("لون بداية الخلفية", value=str(cur_bar.get("bg_start") or "#D4AF37"), key="bar_bg1")
+            with c2:
+                bar_bg_mid = st.color_picker("لون منتصف الخلفية", value=str(cur_bar.get("bg_mid") or "#FFD700"), key="bar_bg2")
+            with c3:
+                bar_bg_end = st.color_picker("لون نهاية الخلفية", value=str(cur_bar.get("bg_end") or "#D4AF37"), key="bar_bg3")
+
+            c4, c5, c6 = st.columns(3)
+            with c4:
+                bar_text_color = st.color_picker("لون النص", value=str(cur_bar.get("text_color") or "#0A1428"), key="bar_fg")
+            with c5:
+                bar_font_size = st.slider("حجم الخط (px)", min_value=12, max_value=32, value=int(cur_bar.get("font_size", 16)), key="bar_fs")
+            with c6:
+                bar_speed = st.slider("مدة دورة الحركة (ثواني)", min_value=5, max_value=60, value=int(cur_bar.get("speed_seconds", 15)), key="bar_spd")
+
+            if st.form_submit_button("💾 حفظ إعدادات الشريط العلوي", use_container_width=True, type="primary"):
+                updated_cfg = {
+                    "enabled": bool(bar_enabled),
+                    "text": bar_text.strip(),
+                    "mode": bar_mode,
+                    "bg_start": bar_bg_start,
+                    "bg_mid": bar_bg_mid,
+                    "bg_end": bar_bg_end,
+                    "text_color": bar_text_color,
+                    "font_size": int(bar_font_size),
+                    "speed_seconds": int(bar_speed),
+                }
+                if save_top_bar_config(updated_cfg):
+                    st.success("✅ تم حفظ إعدادات الشريط العلوي وتطبيقها فورًا.")
+                    st.rerun()
+
+        b_col1, b_col2, b_col3 = st.columns(3)
+        with b_col1:
+            if st.button("⏸️ إيقاف / إخفاء الشريط", use_container_width=True, key="bar_stop_btn"):
+                cur_bar["enabled"] = False
+                if save_top_bar_config(cur_bar):
+                    st.success("تم إيقاف الشريط العلوي.")
+                    st.rerun()
+        with b_col2:
+            if st.button("▶️ تشغيل / إظهار الشريط", use_container_width=True, key="bar_enable_btn"):
+                cur_bar["enabled"] = True
+                if not str(cur_bar.get("text") or "").strip():
+                    cur_bar["text"] = DEFAULT_TOP_BAR_CONFIG["text"]
+                if save_top_bar_config(cur_bar):
+                    st.success("تم تشغيل الشريط العلوي.")
+                    st.rerun()
+        with b_col3:
+            if st.button("🗑️ إلغاء نص الشريط وإيقافه", use_container_width=True, key="bar_clear_btn"):
+                cur_bar["text"] = ""
+                cur_bar["enabled"] = False
+                if save_top_bar_config(cur_bar):
+                    st.success("تم إلغاء نص الشريط وإيقافه.")
+                    st.rerun()
 
     with tab_search:
         st.markdown("<h3 style='color:#D4AF37;'>🔎 البحث عن عضو أو مدير إدارة أو مدير عامأو قيادي</h3>", unsafe_allow_html=True)
@@ -2645,7 +2819,7 @@ if not st.session_state.get("user"):
     login_page()
     st.stop()
 
-st.markdown("""<div class="marquee"><span>مع تحيات وليد حماد - الإدارة العامة للشئون القانونية بديوان عام منطقة البحيرة بالهيئة القومية للتأمين الاجتماعي</span></div>""", unsafe_allow_html=True)
+render_top_bar()
 st.markdown('<div class="main-title">⚖️ إدارة القضايا ⚖️</div>', unsafe_allow_html=True)
 
 st.session_state.setdefault("top_notice_index", 0)
