@@ -715,20 +715,27 @@ def login_page():
             activation_id = st.session_state.get("activation_user_id")
             target = next((u for u in users if u.get("id") == activation_id), None)
             if target:
-                st.markdown(f"<div style='background:#14233d;border:2px solid #D4AF37;border-radius:14px;padding:14px;margin-top:14px;color:#fff;text-align:center;font-weight:900;'>تم العثور على العضوية: {html.escape(str(target.get('display_name') or target.get('username')))}<br>أدخل كلمة السر التي تريد استخدامها.</div>", unsafe_allow_html=True)
+                st.markdown(f"<div style='background:#14233d;border:2px solid #D4AF37;border-radius:14px;padding:14px;margin-top:14px;color:#fff;text-align:center;font-weight:900;'>تم العثور على العضوية: {html.escape(str(target.get('display_name') or target.get('username')))}<br>أدخل البريد الإلكتروني لاسترداد الحساب وكلمة السر التي تريد استخدامها.</div>", unsafe_allow_html=True)
+                recovery_email_act = st.text_input("البريد الإلكتروني لاسترداد الحساب (اختياري)", value=target.get("email") or "", placeholder="example@domain.com", key="activation_recovery_email")
                 first = st.text_input("كلمة السر", type="password", key="activation_pass_1")
                 second = st.text_input("تأكيد كلمة السر", type="password", key="activation_pass_2")
                 activation_photo = st.file_uploader("الصورة الشخصية", type=["jpg","jpeg","png"], key="activation_profile_photo")
                 if st.button("💾 حفظ كلمة السر وتفعيل العضوية", type="primary", use_container_width=True, key="confirm_activation_v2"):
+                    cleaned_email = recovery_email_act.strip()
                     if not first:
                         st.error("اكتب كلمة السر أولاً")
                     elif first != second:
                         st.error("كلمتا السر غير متطابقتين")
+                    elif cleaned_email and ("@" not in cleaned_email or "." not in cleaned_email.split("@")[-1]):
+                        st.error("أدخل بريدًا إلكترونيًا صحيحًا لاسترداد الحساب")
                     else:
                         for u in users:
                             if u.get("id") == activation_id:
                                 u["password"] = bcrypt.hashpw(first.encode(), bcrypt.gensalt()).decode()
                                 u["password_set"] = True
+                                if cleaned_email:
+                                    u["email"] = cleaned_email
+                                    u["recovery_email"] = cleaned_email
                                 if activation_photo:
                                     u["profile_photo"] = base64.b64encode(activation_photo.getvalue()).decode("utf-8")
                                     u["profile_photo_type"] = activation_photo.type
@@ -1061,6 +1068,24 @@ def manage_users_page():
                 with n:
                     if st.button("إلغاء", key=f"no_delete_member_{user['id']}", use_container_width=True):
                         st.session_state.pop(f"confirm_member_delete_{user['id']}", None)
+                        st.rerun()
+
+            with st.expander("🔑 استخراج / تعيين كلمة سر جديدة للعضو (إذا نسيها)"):
+                st.caption("يحتفظ العضو بنفس عضويته وبياناته وقضاياه، ويمكنه بعد الدخول تغيير كلمة السر من لوحة تحكمه.")
+                admin_new_pass = st.text_input("كلمة السر الجديدة للعضو", type="password", key=f"admin_set_pass_inp_{user['id']}")
+                admin_confirm_pass = st.text_input("تأكيد كلمة السر الجديدة", type="password", key=f"admin_set_pass_conf_{user['id']}")
+                if st.button("🔑 حفظ كلمة السر الجديدة للعضو", key=f"admin_set_pass_btn_{user['id']}", type="primary", use_container_width=True):
+                    if not admin_new_pass:
+                        st.error("اكتب كلمة السر الجديدة أولاً")
+                    elif admin_new_pass != admin_confirm_pass:
+                        st.error("كلمتا السر غير متطابقتين")
+                    else:
+                        user["password"] = bcrypt.hashpw(admin_new_pass.encode(), bcrypt.gensalt()).decode()
+                        user["password_set"] = True
+                        if user.get("status") in ("suspended_temp", "suspended_final"):
+                            user["status"] = "active"
+                        save_users(users)
+                        st.success(f"تم استخراج وتعيين كلمة سر جديدة للعضو {user.get('display_name') or user.get('username')} بنفس عضويته وبياناته.")
                         st.rerun()
 
 # ===== الرسائل والبيانات الداخلية =====
@@ -1663,16 +1688,21 @@ def change_password_page():
 def set_password_page():
     st.markdown("<div class='login-shell'>", unsafe_allow_html=True)
     st.markdown("<h1 style='text-align:center;color:#D4AF37!important;'>🔐 تفعيل العضوية</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align:center;color:#fff!important;font-weight:900;'>أدخل كلمة السر التي تريد استخدامها لحسابك</p>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align:center;color:#fff!important;font-weight:900;'>أدخل البريد الإلكتروني لاسترداد الحساب وكلمة السر التي تريد استخدامها لحسابك</p>", unsafe_allow_html=True)
+    recovery_email_first = st.text_input("البريد الإلكتروني لاسترداد الحساب (اختياري)", placeholder="example@domain.com", key="first_recovery_email")
     new_pass = st.text_input("كلمة السر الجديدة", type="password", key="first_new_pass")
     confirm_pass = st.text_input("تأكيد كلمة السر", type="password", key="first_confirm_pass")
     profile_photo = st.file_uploader("الصورة الشخصية", type=["jpg","jpeg","png"], key="first_profile_photo")
     if st.button("حفظ كلمة السر والدخول", type="primary", use_container_width=True, key="save_first_password"):
+        cleaned_email = recovery_email_first.strip()
         if not new_pass:
             st.error("اكتب كلمة السر أولاً")
             return
         if new_pass != confirm_pass:
             st.error("كلمتا السر غير متطابقتين")
+            return
+        if cleaned_email and ("@" not in cleaned_email or "." not in cleaned_email.split("@")[-1]):
+            st.error("أدخل بريدًا إلكترونيًا صحيحًا لاسترداد الحساب")
             return
         users = _cached_users_snapshot()
         target_id = st.session_state.get("temp_user_id")
@@ -1690,6 +1720,9 @@ def set_password_page():
             return
         target["password"] = bcrypt.hashpw(new_pass.encode(), bcrypt.gensalt()).decode()
         target["password_set"] = True
+        if cleaned_email:
+            target["email"] = cleaned_email
+            target["recovery_email"] = cleaned_email
         if profile_photo:
             target["profile_photo"] = base64.b64encode(profile_photo.getvalue()).decode("utf-8")
             target["profile_photo_type"] = profile_photo.type
