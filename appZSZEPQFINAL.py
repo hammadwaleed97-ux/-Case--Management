@@ -1587,6 +1587,9 @@ def admin_control_page():
                 login_name = st.text_input("اسم الدخول", value=admin_user.get("username") or "admin")
                 admin_photo = st.file_uploader("الصورة الشخصية", type=["jpg", "jpeg", "png"], key="admin_profile_photo_upload")
                 if st.form_submit_button("💾 حفظ بيانات الادمن", use_container_width=True, type="primary"):
+                    if (st.session_state.get("user") or {}).get("role") != "admin":
+                        st.error("غير مصرح بتعديل بيانات الادمن إلا لحساب الادمن فقط")
+                        st.stop()
                     login_name = login_name.strip() or "admin"
                     if login_name != admin_user.get("username") and any(u.get("username") == login_name and u.get("id") != admin_user.get("id") for u in users):
                         st.error("اسم الدخول مستخدم بالفعل")
@@ -1733,28 +1736,8 @@ def personal_control_page():
         messaging_page()
 
     with tab_account:
-        st.markdown("<h3 style='color:#D4AF37;'>👤 بيانات حساب الادمن</h3>", unsafe_allow_html=True)
-        users = _cached_users_snapshot()
-        admin_user = next((u for u in users if u.get("role") == "admin"), None)
-        if admin_user:
-            with st.form("personal_admin_profile_form_v4"):
-                display_name = st.text_input("الاسم", value=admin_user.get("display_name") or admin_user.get("username") or "admin")
-                job_title = st.text_input("الوظيفة", value=admin_user.get("job_title") or "")
-                insurance_area = st.text_input("المنطقة التأمينية", value=admin_user.get("insurance_area") or "")
-                login_name = st.text_input("اسم الدخول", value=admin_user.get("username") or "admin")
-                if st.form_submit_button("💾 حفظ بيانات الادمن", use_container_width=True, type="primary"):
-                    login_name = login_name.strip() or "admin"
-                    if login_name != admin_user.get("username") and any(u.get("username") == login_name and u.get("id") != admin_user.get("id") for u in users):
-                        st.error("اسم الدخول مستخدم بالفعل")
-                    else:
-                        admin_user["display_name"] = display_name.strip() or login_name
-                        admin_user["username"] = login_name
-                        admin_user["job_title"] = job_title.strip()
-                        admin_user["insurance_area"] = insurance_area.strip()
-                        save_users(users)
-                        st.success("تم حفظ اسم الادمن والوظيفة والمنطقة التأمينية وبيانات الدخول")
-                        st.rerun()
-        st.info("تظل صفة الحساب ظاهرة دائمًا باسم: الادمن. ويمكن لمن لديه صلاحية مراسلة الادمن رؤيته بالاسم والوظيفة والمنطقة التأمينية.")
+        st.markdown("<h3 style='color:#D4AF37;'>🔐 إعدادات حسابك الشخصي</h3>", unsafe_allow_html=True)
+        st.info("تعديل بيانات حساب الادمن متاح لحساب الادمن فقط. من هنا يمكنك إدارة بريدك الإلكتروني وكلمة السر الخاصة بحسابك.")
         recovery_settings_page()
         st.markdown("---")
         change_password_page()
