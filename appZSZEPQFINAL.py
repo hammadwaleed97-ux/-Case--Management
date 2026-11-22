@@ -795,27 +795,33 @@ def extract_member_page():
         )
         insurance_area = st.text_input("المنطقة التأمينية التابع لها العضو", key="new_member_insurance_area")
         job_role = st.selectbox("الوظيفة", ["عضو قانونى", "مدير إدارة", "مدير عام", "قيادي مركز رئيسى 1", "قيادي مركز رئيسى 2", "قيادي مركز رئيسى 3"], key="new_member_job_role")
+        phone_number = st.text_input("رقم الموبايل (اختياري)", key="new_member_phone")
         profile_photo = st.file_uploader("الصورة الشخصية", type=["jpg","jpeg","png"], key="new_member_profile_photo")
 
         if st.button("🪪 استخراج العضوية", use_container_width=True, type="primary", key="extract_member_new_v3"):
             name = new_username.strip()
             area = insurance_area.strip()
+            mobile_val = phone_number.strip()
             if not name:
                 st.error("لازم تكتب اسم العضو")
             elif not area:
                 st.error("لازم تكتب المنطقة التأمينية")
             else:
                 users = _cached_users_snapshot()
-                existing_user = next((u for u in users if u.get("username") == name), None)
+                existing_user = next((u for u in users if u.get("username") == name or u.get("display_name") == name), None)
                 birth_date_str = fmt_date_ar(birth_date)
+                role_val = {"عضو قانونى":"member", "مدير إدارة":"manager", "مدير عام":"general_manager", "قيادي مركز رئيسى 1":"leader1", "قيادي مركز رئيسى 2":"leader2", "قيادي مركز رئيسى 3":"leader3"}.get(job_role, "member")
                 if existing_user:
+                    existing_user["display_name"] = existing_user.get("display_name") or name
                     existing_user["birth_date"] = birth_date_str
                     existing_user["insurance_area"] = area
                     existing_user["job_title"] = job_role
+                    existing_user["phone"] = mobile_val
+                    existing_user["mobile"] = mobile_val
                     if profile_photo:
                         existing_user["profile_photo"] = base64.b64encode(profile_photo.getvalue()).decode("utf-8")
                         existing_user["profile_photo_type"] = profile_photo.type
-                    existing_user["role"] = {"عضو قانونى":"member", "مدير إدارة":"manager", "مدير عام":"general_manager", "قيادي مركز رئيسى 1":"leader1", "قيادي مركز رئيسى 2":"leader2", "قيادي مركز رئيسى 3":"leader3"}.get(job_role, "member")
+                    existing_user["role"] = role_val
                     existing_user.setdefault("membership_extended_until", None)
                     if existing_user.get("status") in ("banned", "deleted"):
                         existing_user["status"] = "active"
@@ -828,11 +834,14 @@ def extract_member_page():
                     users.append({
                         "id": new_id,
                         "username": name,
+                        "display_name": name,
                         "password": "",
                         "email": "",
                         "recovery_email": "",
-                        "role": {"عضو قانونى":"member", "مدير إدارة":"manager", "مدير عام":"general_manager", "قيادي مركز رئيسى 1":"leader1", "قيادي مركز رئيسى 2":"leader2", "قيادي مركز رئيسى 3":"leader3"}.get(job_role, "member"),
+                        "role": role_val,
                         "job_title": job_role,
+                        "phone": mobile_val,
+                        "mobile": mobile_val,
                         "status": "active",
                         "password_set": False,
                         "birth_date": birth_date_str,
