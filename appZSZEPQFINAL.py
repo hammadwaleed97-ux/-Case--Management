@@ -1403,7 +1403,12 @@ def admin_control_page():
     st.markdown("<h1 style='color:#D4AF37;text-align:center;'>⚖️ لوحة التحكم</h1>", unsafe_allow_html=True)
     st.markdown("<p style='color:white;text-align:center;'>جميع أدوات إدارة الموقع في مكان واحد</p>", unsafe_allow_html=True)
 
-    tab_users, tab_messages, tab_search, tab_account = st.tabs(["👥 الأعضاء", "📢 الرسائل والبيانات", "🔎 البحث والملف الشخصي", "🔐 حساب الادمن والإيميل"])
+    tab_users, tab_messages, tab_search, tab_account = st.tabs([
+        "👥 الأعضاء",
+        "📢 الرسائل والبيانات",
+        "🔎 البحث والملف الشخصي",
+        "🔐 حساب الادمن والإيميل",
+    ])
 
     with tab_users:
         manage_users_page()
@@ -1424,12 +1429,12 @@ def admin_control_page():
             text = st.text_area("نص الرسالة أو البيان", height=90)
             color = st.color_picker("لون الرسالة أو البيان", "#D4AF37")
             banner_files = st.file_uploader("مرفقات البيان", type=None, accept_multiple_files=True, key="banner_files_add_v4")
-            col1,col2 = st.columns(2)
+            col1, col2 = st.columns(2)
             with col1:
                 duration_value = st.number_input("مدة الإبقاء", min_value=1, max_value=3650, value=7, step=1)
             with col2:
-                duration_unit = st.selectbox("وحدة المدة", ["أيام","ساعات","دقائق"])
-            audience = st.radio("يظهر لـ", ["كل الأعضاء","أعضاء محددين"], horizontal=True, key="banner_audience_v2")
+                duration_unit = st.selectbox("وحدة المدة", ["أيام", "ساعات", "دقائق"])
+            audience = st.radio("يظهر لـ", ["كل الأعضاء", "أعضاء محددين"], horizontal=True, key="banner_audience_v2")
             visible_to = []
             if audience == "أعضاء محددين":
                 banner_candidates = [u for u in users if u.get("status") == "active"]
@@ -1460,7 +1465,14 @@ def admin_control_page():
                         "sender_photo_type": st.session_state.user.get("profile_photo_type") or "",
                         "image_data": "",
                         "image_type": "",
-                        "attachments": [{"data": base64.b64encode(f.getvalue()).decode("utf-8"), "name": f.name, "type": f.type or "application/octet-stream"} for f in (banner_files or [])]
+                        "attachments": [
+                            {
+                                "data": base64.b64encode(f.getvalue()).decode("utf-8"),
+                                "name": f.name,
+                                "type": f.type or "application/octet-stream",
+                            }
+                            for f in (banner_files or [])
+                        ],
                     }
                     banners.append(banner)
                     save_banners(banners)
@@ -1470,7 +1482,7 @@ def admin_control_page():
         st.markdown("---")
         st.markdown(f"<h3 style='color:#D4AF37;'>الرسائل والبيانات الظاهرة أعلى الصفحة: {len(banners)}</h3>", unsafe_allow_html=True)
 
-        for i,b in enumerate(banners):
+        for i, b in enumerate(banners):
             expire_raw = b.get("expire_at") or b.get("expire")
             expire_dt = parse_date_safe(expire_raw)
             try:
@@ -1478,7 +1490,7 @@ def admin_control_page():
             except Exception:
                 expire_full_dt = None
             expired = bool(expire_full_dt and expire_full_dt <= datetime.now())
-            audience_text = "الكل" if b.get("audience") in ("الكل","كل الأعضاء") else "، ".join(b.get("visible_to", []))
+            audience_text = "الكل" if b.get("audience") in ("الكل", "كل الأعضاء") else "، ".join(b.get("visible_to", []))
             expire_display = fmt_date_ar(expire_raw, "غير محدد")
             with st.container(border=True):
                 st.markdown(
@@ -1487,9 +1499,9 @@ def admin_control_page():
                     f"<div style='color:#ddd;'>تنتهي: {expire_display} | الحالة: {'منتهية' if expired else 'فعالة'}</div>"
                     + "".join(f"<div style='color:#fff;margin-top:5px;'>📎 {html.escape(str(a.get('name') or 'مرفق'))}</div>" for a in (b.get('attachments') or []))
                     + "</div>",
-                    unsafe_allow_html=True
+                    unsafe_allow_html=True,
                 )
-                e1,e2 = st.columns(2)
+                e1, e2 = st.columns(2)
                 with e1:
                     if st.button("✏️ تعديل", key=f"edit_banner_{b.get('id',i)}", use_container_width=True):
                         st.session_state["edit_banner_id"] = b.get("id")
@@ -1502,18 +1514,29 @@ def admin_control_page():
 
                 if st.session_state.get("edit_banner_id") == b.get("id"):
                     with st.form(f"edit_banner_form_{b.get('id',i)}"):
-                        nt = st.text_area("نص الرسالة أو البيان", value=b.get("text",""), key=f"et_{b.get('id',i)}")
-                        nc = st.color_picker("اللون", value=b.get("color","#D4AF37"), key=f"ec_{b.get('id',i)}")
+                        nt = st.text_area("نص الرسالة أو البيان", value=b.get("text", ""), key=f"et_{b.get('id',i)}")
+                        nc = st.color_picker("اللون", value=b.get("color", "#D4AF37"), key=f"ec_{b.get('id',i)}")
                         nfiles = st.file_uploader("مرفقات البيان", type=None, accept_multiple_files=True, key=f"eimg_{b.get('id',i)}")
-                        na = st.radio("المستلمون", ["كل الأعضاء","أعضاء محددين"], index=0 if b.get("audience") in ("الكل","كل الأعضاء") else 1, horizontal=True, key=f"ea_{b.get('id',i)}")
+                        na = st.radio(
+                            "المستلمون",
+                            ["كل الأعضاء", "أعضاء محددين"],
+                            index=0 if b.get("audience") in ("الكل", "كل الأعضاء") else 1,
+                            horizontal=True,
+                            key=f"ea_{b.get('id',i)}",
+                        )
                         nvis = []
                         if na == "أعضاء محددين":
                             edit_candidates = [u for u in users if u.get("status") == "active"]
                             default_ids = [u.get("id") for u in edit_candidates if u.get("username") in b.get("visible_to", [])]
                             selected_edit_ids = _recipient_groups(edit_candidates, f"banner_edit_recipient_{b.get('id',i)}", default_ids)
                             nvis = [u.get("username") for u in edit_candidates if u.get("id") in selected_edit_ids]
-                        new_expire = date_input_dmy("تاريخ الانتهاء", value=expire_dt or datetime.now().date(), max_value=date(2100, 12, 31), key=f"ed_{b.get('id',i)}")
-                        ec1,ec2 = st.columns(2)
+                        new_expire = date_input_dmy(
+                            "تاريخ الانتهاء",
+                            value=expire_dt or datetime.now().date(),
+                            max_value=date(2100, 12, 31),
+                            key=f"ed_{b.get('id',i)}",
+                        )
+                        ec1, ec2 = st.columns(2)
                         with ec1:
                             if st.form_submit_button("💾 حفظ التعديل", use_container_width=True):
                                 b["text"] = nt.strip()
@@ -1522,7 +1545,14 @@ def admin_control_page():
                                 b["visible_to"] = nvis
                                 if nfiles:
                                     b["attachments"] = b.get("attachments") or []
-                                    b["attachments"].extend([{"data": base64.b64encode(f.getvalue()).decode("utf-8"), "name": f.name, "type": f.type or "application/octet-stream"} for f in nfiles])
+                                    b["attachments"].extend([
+                                        {
+                                            "data": base64.b64encode(f.getvalue()).decode("utf-8"),
+                                            "name": f.name,
+                                            "type": f.type or "application/octet-stream",
+                                        }
+                                        for f in nfiles
+                                    ])
                                 old_dt = expire_full_dt or datetime.now()
                                 parsed_exp = parse_date_safe(new_expire) or datetime.now().date()
                                 b["expire_at"] = datetime.combine(parsed_exp, old_dt.time()).isoformat()
@@ -1555,7 +1585,7 @@ def admin_control_page():
                 job_title = st.text_input("الوظيفة", value=admin_user.get("job_title") or "")
                 insurance_area = st.text_input("المنطقة التأمينية", value=admin_user.get("insurance_area") or "")
                 login_name = st.text_input("اسم الدخول", value=admin_user.get("username") or "admin")
-                admin_photo = st.file_uploader("الصورة الشخصية", type=["jpg","jpeg","png"], key="admin_profile_photo_upload")
+                admin_photo = st.file_uploader("الصورة الشخصية", type=["jpg", "jpeg", "png"], key="admin_profile_photo_upload")
                 if st.form_submit_button("💾 حفظ بيانات الادمن", use_container_width=True, type="primary"):
                     login_name = login_name.strip() or "admin"
                     if login_name != admin_user.get("username") and any(u.get("username") == login_name and u.get("id") != admin_user.get("id") for u in users):
@@ -1587,6 +1617,7 @@ def admin_control_page():
     if st.button("⬅️ العودة للرئيسية", use_container_width=True, key="back_admin_panel"):
         st.session_state.page = "الرئيسية"
         st.rerun()
+
 def recovery_settings_page():
     st.markdown("<h2 style='text-align:center; color:#C9A961'>تأكيد البريد الالكتروني</h2>", unsafe_allow_html=True)
     users = _cached_users_snapshot()
@@ -1688,9 +1719,9 @@ def personal_control_page():
     with tab_permissions:
         st.markdown("<h3 style='color:#D4AF37;'>الصلاحيات المقررة لحسابك</h3>", unsafe_allow_html=True)
         targets = [
-            ("الادمن","admin"), ("عضو قانونى","member"), ("مدير إدارة","manager"),
-            ("مدير عام","general_manager"), ("قيادي مركز رئيسى 1","leader1"),
-            ("قيادي مركز رئيسى 2","leader2"), ("قيادي مركز رئيسى 3","leader3")
+            ("الادمن", "admin"), ("عضو قانونى", "member"), ("مدير إدارة", "manager"),
+            ("مدير عام", "general_manager"), ("قيادي مركز رئيسى 1", "leader1"),
+            ("قيادي مركز رئيسى 2", "leader2"), ("قيادي مركز رئيسى 3", "leader3"),
         ]
         allowed = [label for label, target_role in targets if can_message(role, target_role)]
         if allowed:
@@ -1706,7 +1737,7 @@ def personal_control_page():
         users = _cached_users_snapshot()
         admin_user = next((u for u in users if u.get("role") == "admin"), None)
         if admin_user:
-            with st.form("admin_profile_edit_form_v4"):
+            with st.form("personal_admin_profile_form_v4"):
                 display_name = st.text_input("الاسم", value=admin_user.get("display_name") or admin_user.get("username") or "admin")
                 job_title = st.text_input("الوظيفة", value=admin_user.get("job_title") or "")
                 insurance_area = st.text_input("المنطقة التأمينية", value=admin_user.get("insurance_area") or "")
@@ -1721,7 +1752,6 @@ def personal_control_page():
                         admin_user["job_title"] = job_title.strip()
                         admin_user["insurance_area"] = insurance_area.strip()
                         save_users(users)
-                        st.session_state.user = admin_user
                         st.success("تم حفظ اسم الادمن والوظيفة والمنطقة التأمينية وبيانات الدخول")
                         st.rerun()
         st.info("تظل صفة الحساب ظاهرة دائمًا باسم: الادمن. ويمكن لمن لديه صلاحية مراسلة الادمن رؤيته بالاسم والوظيفة والمنطقة التأمينية.")
@@ -1738,7 +1768,6 @@ def personal_control_page():
         st.session_state.role = None
         st.session_state.page = "login"
         st.rerun()
-
 # ===== عرض الرسائل والبيانات أعلى الصفحة =====
 def _early_load_banners():
     try:
@@ -2668,6 +2697,12 @@ def edit_membership_data_page():
 
 if st.session_state.page == "تعديل_بيانات_العضويات":
     edit_membership_data_page()
+elif st.session_state.page == "لوحة التحكم":
+    admin_control_page()
+elif st.session_state.page == "لوحة تحكمى":
+    personal_control_page()
+elif st.session_state.page == "extract_member":
+    extract_member_page()
 
 if st.session_state.page == "الرئيسية":
     user = st.session_state.get("user") or {}
