@@ -2019,6 +2019,9 @@ def to_word(df, title, region, member_name="", specialization="", manager_name="
         r.font.name = "Arial"
         r.font.size = Pt(size)
         r.bold = bold
+        rPr = r._r.get_or_add_rPr()
+        if rPr.find(qn("w:rtl")) is None:
+            rPr.append(OxmlElement("w:rtl"))
         return p
 
     rtl("الهيئة القومية للتأمين الاجتماعي", 13, True, WD_ALIGN_PARAGRAPH.CENTER, 2)
@@ -2057,6 +2060,9 @@ def to_word(df, title, region, member_name="", specialization="", manager_name="
         r.font.name = "Arial"
         r.font.size = Pt(8.5)
         r.bold = True
+        rPr = r._r.get_or_add_rPr()
+        if rPr.find(qn("w:rtl")) is None:
+            rPr.append(OxmlElement("w:rtl"))
 
     for _, row in df.iterrows():
         cells = table.add_row().cells
@@ -2077,24 +2083,67 @@ def to_word(df, title, region, member_name="", specialization="", manager_name="
             r = p.add_run(str(val))
             r.font.name = "Arial"
             r.font.size = Pt(8.5)
+            rPr = r._r.get_or_add_rPr()
+            if rPr.find(qn("w:rtl")) is None:
+                rPr.append(OxmlElement("w:rtl"))
 
     rtl(f"تحريرًا في: {datetime.now().strftime('%d/%m/%Y')}", 9, False, WD_ALIGN_PARAGRAPH.RIGHT, 4)
     rtl("وتفضلوا بقبول وافر الاحترام والتقدير،", 9.5, True, WD_ALIGN_PARAGRAPH.CENTER, 6)
 
-    rtl("العضو القانوني", 9.5, True, WD_ALIGN_PARAGRAPH.RIGHT, 1)
-    if str(member_name or "").strip():
-        rtl(str(member_name).strip(), 9.5, False, WD_ALIGN_PARAGRAPH.RIGHT, 1)
-    rtl("....................", 9.5, False, WD_ALIGN_PARAGRAPH.RIGHT, 4)
+    sig_tbl = doc.add_table(rows=3, cols=2)
+    sig_tbl.autofit = False
+    sig_tbl.alignment = WD_TABLE_ALIGNMENT.CENTER
+    sig_tblPr = sig_tbl._tbl.tblPr
+    if sig_tblPr.find(qn("w:bidiVisual")) is None:
+        sig_tblPr.append(OxmlElement("w:bidiVisual"))
+    borders_xml = OxmlElement("w:tblBorders")
+    for b_name in ("top", "left", "bottom", "right", "insideH", "insideV"):
+        b_node = OxmlElement(f"w:{b_name}")
+        b_node.set(qn("w:val"), "none")
+        b_node.set(qn("w:sz"), "0")
+        b_node.set(qn("w:space"), "0")
+        b_node.set(qn("w:color"), "auto")
+        borders_xml.append(b_node)
+    sig_tblPr.append(borders_xml)
 
-    rtl("مدير إدارة القضايا", 9.5, True, WD_ALIGN_PARAGRAPH.RIGHT, 1)
-    if str(manager_name or "").strip():
-        rtl(str(manager_name).strip(), 9.5, False, WD_ALIGN_PARAGRAPH.RIGHT, 1)
-    rtl("....................", 9.5, False, WD_ALIGN_PARAGRAPH.RIGHT, 4)
+    m_txt = str(member_name or "").strip()
+    mgr_txt = str(manager_name or "").strip()
+    gm_txt = str(general_manager or "").strip()
 
-    rtl("مدير عام الإدارات القانونية", 9.5, True, WD_ALIGN_PARAGRAPH.RIGHT, 1)
-    if str(general_manager or "").strip():
-        rtl(str(general_manager).strip(), 9.5, False, WD_ALIGN_PARAGRAPH.RIGHT, 1)
-    rtl("....................", 9.5, False, WD_ALIGN_PARAGRAPH.RIGHT, 2)
+    top_rows_data = [
+        ("العضو القانوني", "مدير إدارة القضايا", True),
+        (m_txt if m_txt else "....................", mgr_txt if mgr_txt else "....................", False),
+        ("...................." if m_txt else "", "...................." if mgr_txt else "", False),
+    ]
+    for r_idx, (right_val, left_val, is_bold) in enumerate(top_rows_data):
+        row_cells = sig_tbl.rows[r_idx].cells
+        _set_row_cant_split(sig_tbl.rows[r_idx])
+        for c_idx, txt_val, align_mode in [
+            (0, right_val, WD_ALIGN_PARAGRAPH.RIGHT),
+            (1, left_val, WD_ALIGN_PARAGRAPH.LEFT),
+        ]:
+            c = row_cells[c_idx]
+            c.width = Inches(usable_w / 2.0)
+            _set_cell_margins(c, top=20, bottom=20, left=40, right=40)
+            p = c.paragraphs[0]
+            p.alignment = align_mode
+            p.paragraph_format.space_before = Pt(0)
+            p.paragraph_format.space_after = Pt(1)
+            pPr = p._p.get_or_add_pPr()
+            if pPr.find(qn("w:bidi")) is None:
+                pPr.append(OxmlElement("w:bidi"))
+            r = p.add_run(txt_val)
+            r.font.name = "Arial"
+            r.font.size = Pt(9.5)
+            r.bold = is_bold
+            rPr = r._r.get_or_add_rPr()
+            if rPr.find(qn("w:rtl")) is None:
+                rPr.append(OxmlElement("w:rtl"))
+
+    rtl("مدير عام الإدارات القانونية", 9.5, True, WD_ALIGN_PARAGRAPH.CENTER, 1)
+    rtl(gm_txt if gm_txt else "....................", 9.5, False, WD_ALIGN_PARAGRAPH.CENTER, 1)
+    if gm_txt:
+        rtl("....................", 9.5, False, WD_ALIGN_PARAGRAPH.CENTER, 2)
 
     out = io.BytesIO()
     doc.save(out)
@@ -2220,15 +2269,12 @@ def to_pdf(df, title, region, member_name="", specialization="", manager_name=""
                     pdf.cell(max(width - 2.0, 2.0), line_h, ar(ltxt), 0, 0, "R")
             pdf.set_xy(x_start, y_start + row_h)
 
-    def _pdf_sig_block(role_title, person_name):
-        if pdf.get_y() + 18 > pdf.h - 10:
-            pdf.add_page()
-        pdf.set_font(font, "", 9)
-        pdf.cell(0, 5.2, ar(role_title), 0, 1, "R")
-        if str(person_name or "").strip():
-            pdf.cell(0, 5.2, ar(str(person_name).strip()), 0, 1, "R")
-        pdf.cell(0, 5.2, ar("...................."), 0, 1, "R")
-        pdf.ln(2)
+    m_txt = str(member_name or "").strip()
+    mgr_txt = str(manager_name or "").strip()
+    gm_txt = str(general_manager or "").strip()
+
+    if pdf.get_y() + 36 > pdf.h - 10:
+        pdf.add_page()
 
     pdf.ln(4)
     pdf.set_font(font, "", 8.5)
@@ -2236,9 +2282,37 @@ def to_pdf(df, title, region, member_name="", specialization="", manager_name=""
     pdf.ln(2)
     pdf.cell(0, 5.5, ar("وتفضلوا بقبول وافر الاحترام والتقدير،"), 0, 1, "C")
     pdf.ln(3)
-    _pdf_sig_block("العضو القانوني", member_name)
-    _pdf_sig_block("مدير إدارة القضايا", manager_name)
-    _pdf_sig_block("مدير عام الإدارات القانونية", general_manager)
+
+    x_left_margin = 10.0
+    usable_w = 277.0
+    half_w = usable_w / 2.0
+    y_top = pdf.get_y()
+
+    pdf.set_font(font, "", 9)
+    pdf.set_xy(x_left_margin + half_w, y_top)
+    pdf.cell(half_w, 5.2, ar("العضو القانوني"), 0, 0, "R")
+    pdf.set_xy(x_left_margin, y_top)
+    pdf.cell(half_w, 5.2, ar("مدير إدارة القضايا"), 0, 1, "L")
+
+    y_names = pdf.get_y()
+    pdf.set_xy(x_left_margin + half_w, y_names)
+    pdf.cell(half_w, 5.2, ar(m_txt if m_txt else "...................."), 0, 0, "R")
+    pdf.set_xy(x_left_margin, y_names)
+    pdf.cell(half_w, 5.2, ar(mgr_txt if mgr_txt else "...................."), 0, 1, "L")
+
+    if m_txt or mgr_txt:
+        y_dots = pdf.get_y()
+        pdf.set_xy(x_left_margin + half_w, y_dots)
+        pdf.cell(half_w, 5.2, ar("...................." if m_txt else ""), 0, 0, "R")
+        pdf.set_xy(x_left_margin, y_dots)
+        pdf.cell(half_w, 5.2, ar("...................." if mgr_txt else ""), 0, 1, "L")
+
+    pdf.ln(2)
+    pdf.cell(0, 5.2, ar("مدير عام الإدارات القانونية"), 0, 1, "C")
+    pdf.cell(0, 5.2, ar(gm_txt if gm_txt else "...................."), 0, 1, "C")
+    if gm_txt:
+        pdf.cell(0, 5.2, ar("...................."), 0, 1, "C")
+
     raw = pdf.output()
     return raw.encode("latin-1", errors="replace") if isinstance(raw, str) else bytes(raw)
 
@@ -3669,150 +3743,48 @@ if st.session_state.page == "تقارير":
         return f"""<div style="margin-top:25px; color:#B8860B; font-size:12px;"><p style="text-align:center; margin-bottom:20px; font-size:13px; font-weight:700;">تفضلوا بقبول وافر الاحترام والتقدير،</p><table style="width:100%;"><tr><td style="width:50%; text-align:right; vertical-align:top;"><div style="font-weight:900;">العضو القانوني</div><br><div style="margin-top:4px;">{safe_odo}</div><div style="margin-top:12px;">....................</div><div style="margin-top:20px;">تحرر في: {datetime.now().strftime('%d/%m/%Y')}</div></td><td style="width:50%; text-align:left; vertical-align:top;"><div style="font-weight:900;">مدير إدارة القضايا</div><br><div style="margin-top:4px;">{safe_mgr}</div><div style="margin-top:12px;">....................</div></td></tr></table><div style="text-align:center; margin-top:20px;"><div style="font-weight:900; color:#dc3545;">مدير عام الإدارات القانونية</div><br><div style="margin-top:4px;">{safe_gm}</div><div style="margin-top:12px;">....................</div></div></div>"""
 
     def _export_pdf_with_signatures(df_export, title_text, region_val, odo_val, lawyer_val, mgr_val, gm_val):
-        # تمرير الاسم في سطر مستقل تحت مسمى الوظيفة مباشرة إلى to_pdf
-        odo_arg = f"العضو القانوني\n{str(odo_val or '').strip()}" if str(odo_val or "").strip() else "العضو القانوني"
-        mgr_arg = f"مدير إدارة القضايا\n{str(mgr_val or '').strip()}" if str(mgr_val or "").strip() else "مدير إدارة القضايا"
-        gm_arg = f"مدير عام الإدارات القانونية\n{str(gm_val or '').strip()}" if str(gm_val or "").strip() else "مدير عام الإدارات القانونية"
-
-        raw_pdf = to_pdf(df_export, title_text, region_val, odo_arg, lawyer_val, mgr_arg, gm_arg)
-        try:
-            import io as _io
-            from pypdf import PdfReader as _PdfReader, PdfWriter as _PdfWriter
-            from reportlab.pdfgen import canvas as _canvas
-            from reportlab.pdfbase import pdfmetrics as _pdfmetrics
-            from reportlab.pdfbase.ttfonts import TTFont as _TTFont
-
-            font_name = "Helvetica"
-            for fpath in [
-                "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-                "/usr/share/fonts/truetype/noto/NotoNaskhArabic-Regular.ttf",
-                "/usr/share/fonts/truetype/noto/NotoSansArabic-Regular.ttf",
-            ]:
-                try:
-                    _pdfmetrics.registerFont(_TTFont("ArPdfFont", fpath))
-                    font_name = "ArPdfFont"
-                    break
-                except Exception:
-                    pass
-
-            def _ar_txt(s):
-                txt = str(s or "").strip()
-                try:
-                    import arabic_reshaper
-                    from bidi.algorithm import get_display
-                    return get_display(arabic_reshaper.reshape(txt))
-                except Exception:
-                    return txt
-
-            reader = _PdfReader(_io.BytesIO(raw_pdf))
-            writer = _PdfWriter()
-            for idx, page in enumerate(reader.pages):
-                if idx == len(reader.pages) - 1:
-                    pw = float(page.mediabox.width)
-                    ph = float(page.mediabox.height)
-                    ov_buf = _io.BytesIO()
-                    c = _canvas.Canvas(ov_buf, pagesize=(pw, ph))
-                    c.setFont(font_name, 9)
-                    c.setFillColorRGB(0.2, 0.2, 0.2)
-
-                    base_y = max(65.0, ph * 0.13)
-                    rx = pw - 48.0
-                    c.setFillColorRGB(1, 1, 1)
-                    c.rect(rx - 155, base_y - 22, 165, 58, stroke=0, fill=1)
-                    c.setFillColorRGB(0.15, 0.15, 0.15)
-                    c.drawRightString(rx, base_y + 22, _ar_txt("العضو القانوني"))
-                    if str(odo_val or "").strip():
-                        c.drawRightString(rx, base_y + 9, _ar_txt(str(odo_val).strip()))
-                    c.drawRightString(rx, base_y - 4, "....................")
-
-                    lx = 165.0
-                    c.setFillColorRGB(1, 1, 1)
-                    c.rect(lx - 155, base_y - 22, 165, 58, stroke=0, fill=1)
-                    c.setFillColorRGB(0.15, 0.15, 0.15)
-                    c.drawRightString(lx, base_y + 22, _ar_txt("مدير إدارة القضايا"))
-                    if str(mgr_val or "").strip():
-                        c.drawRightString(lx, base_y + 9, _ar_txt(str(mgr_val).strip()))
-                    c.drawRightString(lx, base_y - 4, "....................")
-
-                    mx = pw * 0.54
-                    my = base_y - 12
-                    c.setFillColorRGB(1, 1, 1)
-                    c.rect(mx - 175, my - 22, 185, 52, stroke=0, fill=1)
-                    c.setFillColorRGB(0.15, 0.15, 0.15)
-                    c.drawRightString(mx, my + 16, _ar_txt("مدير عام الإدارات القانونية"))
-                    if str(gm_val or "").strip():
-                        c.drawRightString(mx, my + 3, _ar_txt(str(gm_val).strip()))
-                    c.drawRightString(mx, my - 10, "....................")
-
-                    c.save()
-                    ov_buf.seek(0)
-                    ov_page = _PdfReader(ov_buf).pages[0]
-                    page.merge_page(ov_page)
-                writer.add_page(page)
-
-            out_buf = _io.BytesIO()
-            writer.write(out_buf)
-            return out_buf.getvalue()
-        except Exception:
-            return raw_pdf
+        return to_pdf(df_export, title_text, region_val, odo_val, lawyer_val, mgr_val, gm_val)
 
     def _export_word_rtl(df_export, title_text, region_val, odo_val, lawyer_val, mgr_val, gm_val):
         raw_bytes = to_word(df_export, title_text, region_val, odo_val, lawyer_val, mgr_val, gm_val)
         try:
             import io as _io
             from docx import Document as _DocxDocument
-            from docx.enum.text import WD_ALIGN_PARAGRAPH
             from docx.enum.table import WD_TABLE_ALIGNMENT
-            from docx.oxml import OxmlElement, parse_xml
-            from docx.oxml.ns import qn, nsdecls
+            from docx.oxml import OxmlElement
+            from docx.oxml.ns import qn
 
             doc = _DocxDocument(_io.BytesIO(raw_bytes))
 
             for sec in doc.sections:
                 secPr = sec._sectPr
-                if secPr.find(qn('w:bidi')) is None:
-                    secPr.append(OxmlElement('w:bidi'))
+                if secPr.find(qn("w:bidi")) is None:
+                    secPr.append(OxmlElement("w:bidi"))
 
-            def _set_rtl_para(p, align=WD_ALIGN_PARAGRAPH.RIGHT):
-                p.alignment = align
+            def _apply_rtl_runs(p):
                 pPr = p._p.get_or_add_pPr()
-                if pPr.find(qn('w:bidi')) is None:
-                    pPr.append(OxmlElement('w:bidi'))
+                if pPr.find(qn("w:bidi")) is None:
+                    pPr.append(OxmlElement("w:bidi"))
                 for r in p.runs:
                     rPr = r._r.get_or_add_rPr()
-                    if rPr.find(qn('w:rtl')) is None:
-                        rPr.append(OxmlElement('w:rtl'))
-
-            def _set_table_rtl(tbl):
-                tbl.alignment = WD_TABLE_ALIGNMENT.RIGHT
-                tblPr = tbl._tbl.tblPr
-                if tblPr.find(qn('w:bidiVisual')) is None:
-                    tblPr.append(parse_xml(f'<w:bidiVisual {nsdecls("w")}/>'))
-                if tblPr.find(qn('w:tableLayout')) is None:
-                    tblPr.append(parse_xml(f'<w:tableLayout {nsdecls("w")} w:type="autofit"/>'))
-                for row in tbl.rows:
-                    trPr = row._tr.get_or_add_trPr()
-                    if trPr.find(qn('w:cantSplit')) is None:
-                        trPr.append(OxmlElement('w:cantSplit'))
-                    cells_list = list(row.cells)
-                    n_cols = len(cells_list)
-                    if n_cols > 1:
-                        orig_texts = [c.text for c in cells_list]
-                        for i, cell in enumerate(cells_list):
-                            cell.text = orig_texts[n_cols - 1 - i]
-                            for p in cell.paragraphs:
-                                _set_rtl_para(p, WD_ALIGN_PARAGRAPH.RIGHT)
-                    else:
-                        for cell in cells_list:
-                            for p in cell.paragraphs:
-                                _set_rtl_para(p, WD_ALIGN_PARAGRAPH.RIGHT)
-                            for sub_tbl in cell.tables:
-                                _set_table_rtl(sub_tbl)
+                    if rPr.find(qn("w:rtl")) is None:
+                        rPr.append(OxmlElement("w:rtl"))
 
             for p in doc.paragraphs:
-                _set_rtl_para(p, WD_ALIGN_PARAGRAPH.RIGHT)
+                _apply_rtl_runs(p)
+
             for tbl in doc.tables:
-                _set_table_rtl(tbl)
+                tbl.alignment = WD_TABLE_ALIGNMENT.RIGHT
+                tblPr = tbl._tbl.tblPr
+                if tblPr.find(qn("w:bidiVisual")) is None:
+                    tblPr.append(OxmlElement("w:bidiVisual"))
+                for row in tbl.rows:
+                    trPr = row._tr.get_or_add_trPr()
+                    if trPr.find(qn("w:cantSplit")) is None:
+                        trPr.append(OxmlElement("w:cantSplit"))
+                    for cell in row.cells:
+                        for p in cell.paragraphs:
+                            _apply_rtl_runs(p)
 
             out_buf = _io.BytesIO()
             doc.save(out_buf)
