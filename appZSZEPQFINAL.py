@@ -985,8 +985,10 @@ def find_user_for_activation(users, typed_name):
     return None
 
 def membership_job_title(user):
-    job = str(user.get("job") or user.get("وظيفة") or user.get("role_name") or "")
-    return "مدير عام (قيادى مناطق)" if job.strip() == "مدير عام" else job
+    if not isinstance(user, dict):
+        return ""
+    job = str(user.get("job_title") or user.get("job") or user.get("وظيفة") or user.get("role_name") or "").strip()
+    return "مدير عام (قيادى مناطق)" if job == "مدير عام" else job
 
 def login_page():
     st.markdown("""
@@ -2797,18 +2799,31 @@ def show_member_directory():
         cols = st.columns(6)
         for i,u in enumerate(area_users):
             with cols[i % 6]:
-                name = html.escape(str(u.get("display_name") or u.get("username") or ""))
+                raw_name = str(u.get("display_name") or u.get("username") or "").strip()
+                name = html.escape(raw_name)
                 is_asst = is_assistant_admin(u)
-                job_value = get_assistant_admin_title(u) if is_asst else (membership_job_title(u) or role_label(u.get("role")))
-                job = html.escape(job_value)
-                photo = _photo_html(u.get("profile_photo"), u.get("profile_photo_type") or "image/png", 42)
                 is_admin = is_primary_admin(u) or (u.get("role") == "admin" and not is_asst)
+                custom_job = membership_job_title(u)
+                if is_asst:
+                    job_value = get_assistant_admin_title(u)
+                elif is_admin:
+                    job_value = custom_job or "الادمن"
+                else:
+                    job_value = custom_job or role_label(u.get("role"))
+                job = html.escape(job_value)
+                photo = _photo_html(u.get("profile_photo"), u.get("profile_photo_type") or "image/png", 44)
                 border = "#00E676" if (is_admin or is_asst) else "#D4AF37"
                 name_color = "#00E676" if (is_admin or is_asst) else "#fff"
-                admin_badge = "<div style='color:#00E676;font-size:10px;font-weight:900;'>ADMIN</div>" if is_admin else ("<div style='color:#00E676;font-size:10px;font-weight:900;'>" + html.escape(job_value) + "</div>" if is_asst else "")
+                if is_admin:
+                    admin_title_line = f"الادمن — {name}" if raw_name and raw_name.casefold() != "ادمن" and raw_name.casefold() != "الادمن" else "الادمن"
+                    admin_badge = f"<div style='color:#00E676;font-size:10px;font-weight:900;line-height:1.2;'>{html.escape(admin_title_line)}</div>"
+                elif is_asst:
+                    admin_badge = "<div style='color:#00E676;font-size:10px;font-weight:900;'>" + html.escape(job_value) + "</div>"
+                else:
+                    admin_badge = ""
                 phone_txt = html.escape(get_member_phone(u))
                 phone_badge = f"<div style='color:#42d77d;font-size:10px;font-weight:800;line-height:1.2;margin-top:2px;'>📱 {phone_txt}</div>" if phone_txt else "<div style='color:#94a3b8;font-size:9px;line-height:1.2;margin-top:2px;'>📱 غير مسجل</div>"
-                card = f"<div style='background:#142038;border:2px solid {border};border-radius:12px;padding:6px;text-align:center;min-height:128px;margin-bottom:5px;'>{photo}<div style='color:{name_color};font-size:12px;font-weight:900;line-height:1.2;'>{name}</div>{admin_badge}<div style='color:#D4AF37;font-size:10px;font-weight:800;line-height:1.2;'>{job}</div><div style='color:#cbd5e1;font-size:9px;line-height:1.2;'>{html.escape(area)}</div>{phone_badge}</div>"
+                card = f"<div style='background:#142038;border:2px solid {border};border-radius:12px;padding:6px;text-align:center;min-height:134px;margin-bottom:5px;'>{photo}<div style='color:{name_color};font-size:12px;font-weight:900;line-height:1.2;'>{name}</div>{admin_badge}<div style='color:#D4AF37;font-size:10px;font-weight:800;line-height:1.2;'>{job}</div><div style='color:#cbd5e1;font-size:9px;line-height:1.2;'>{html.escape(area)}</div>{phone_badge}</div>"
                 st.markdown(card, unsafe_allow_html=True)
                 if u.get("id") != current.get("id") and can_message(current.get("role"), u.get("role")):
                     if st.button("✉️ إرسال", key=f"dir_msg_v5_{current.get('id')}_{u.get('id')}", use_container_width=True):
@@ -2826,7 +2841,14 @@ def global_people_search():
                 _ph = get_member_phone(u) or "غير مسجل"
                 if u.get("profile_photo"):
                     st.markdown(_photo_html(u.get("profile_photo"), u.get("profile_photo_type") or "image/png", 48), unsafe_allow_html=True)
-                st.markdown(f"**👤 {u.get('display_name') or u.get('username')}** — {role_label(u.get('role'))} — المنطقة التأمينية: {u.get('insurance_area') or 'لا توجد منطقة'} — 📱 الموبايل: {_ph} — الحالة: {u.get('status','')}")
+                _disp_name = str(u.get("display_name") or u.get("username") or "").strip()
+                _job_disp = membership_job_title(u) or role_label(u.get("role"))
+                if u.get("role") == "admin" and not is_assistant_admin(u):
+                    _role_prefix = f"الادمن ({_disp_name})" if _disp_name else "الادمن"
+                    _job_str = f"{_role_prefix} — الوظيفة: {_job_disp}" if _job_disp and _job_disp != "الادمن" else _role_prefix
+                else:
+                    _job_str = f"{_disp_name} — {_job_disp}"
+                st.markdown(f"**👤 {_job_str}** — المنطقة التأمينية: {u.get('insurance_area') or 'لا توجد منطقة'} — 📱 الموبايل: {_ph} — الحالة: {u.get('status','')}")
         else:
             st.info("لا توجد نتيجة بهذا الاسم")
 
@@ -3100,8 +3122,15 @@ def admin_control_page():
         st.markdown("---")
         st.markdown("<h3 style='color:#D4AF37;'>👤 الملف الشخصي</h3>", unsafe_allow_html=True)
         admin_user = next((u for u in load_users() if u.get("role") == "admin"), st.session_state.user)
-        st.write(f"**الاسم:** {admin_user.get('username','')}")
-        st.write(f"**الوظيفة:** {role_label(admin_user.get('role'))}")
+        _adm_name = str(admin_user.get("display_name") or admin_user.get("username") or "").strip()
+        _adm_job = membership_job_title(admin_user) or role_label(admin_user.get("role"))
+        _adm_phone = get_member_phone(admin_user) or "غير مسجل"
+        if admin_user.get("profile_photo"):
+            st.markdown(_photo_html(admin_user.get("profile_photo"), admin_user.get("profile_photo_type") or "image/png", 80), unsafe_allow_html=True)
+        st.write(f"**الصفة والاسم:** الادمن — {_adm_name}" if _adm_name else "**الصفة:** الادمن")
+        st.write(f"**الوظيفة:** {_adm_job}")
+        st.write(f"**المنطقة التأمينية:** {admin_user.get('insurance_area') or 'غير مسجلة'}")
+        st.write(f"**رقم الموبايل:** {_adm_phone}")
         st.write(f"**البريد الإلكتروني:** {admin_user.get('email') or 'غير مسجل'}")
         st.write(f"**الحالة:** {admin_user.get('status','')}")
 
@@ -3111,9 +3140,10 @@ def admin_control_page():
         admin_user = next((u for u in users if u.get("role") == "admin"), None)
         if admin_user:
             with st.form("admin_profile_edit_form_v4"):
-                display_name = st.text_input("الاسم", value=admin_user.get("display_name") or admin_user.get("username") or "admin")
+                display_name = st.text_input("الاسم (يظهر بجانب الادمن للجميع)", value=admin_user.get("display_name") or admin_user.get("username") or "admin")
                 job_title = st.text_input("الوظيفة", value=admin_user.get("job_title") or "")
                 insurance_area = st.text_input("المنطقة التأمينية", value=admin_user.get("insurance_area") or "")
+                admin_phone = st.text_input("رقم الموبايل", value=get_member_phone(admin_user), placeholder="01xxxxxxxxx", key="admin_profile_phone_inp")
                 login_name = st.text_input("اسم الدخول", value=admin_user.get("username") or "admin")
                 admin_photo = st.file_uploader("الصورة الشخصية", type=["jpg", "jpeg", "png"], key="admin_profile_photo_upload")
                 if st.form_submit_button("💾 حفظ بيانات الادمن", use_container_width=True, type="primary"):
@@ -3124,20 +3154,23 @@ def admin_control_page():
                     if login_name != admin_user.get("username") and any(u.get("username") == login_name and u.get("id") != admin_user.get("id") for u in users):
                         st.error("اسم الدخول مستخدم بالفعل")
                     else:
+                        clean_adm_phone = admin_phone.strip()
                         admin_user["display_name"] = display_name.strip() or login_name
                         admin_user["username"] = login_name
                         if job_title.strip():
                             register_job_title(job_title.strip())
                         admin_user["job_title"] = job_title.strip()
                         admin_user["insurance_area"] = insurance_area.strip()
+                        admin_user["phone"] = clean_adm_phone
+                        admin_user["mobile"] = clean_adm_phone
                         if admin_photo:
                             admin_user["profile_photo"] = base64.b64encode(admin_photo.getvalue()).decode("utf-8")
                             admin_user["profile_photo_type"] = admin_photo.type
                         save_users(users)
                         st.session_state.user = admin_user
-                        st.success("تم حفظ اسم الادمن والوظيفة والمنطقة التأمينية وبيانات الدخول")
+                        st.success("تم حفظ اسم الادمن والوظيفة والمنطقة التأمينية ورقم الموبايل والصورة وبيانات الدخول")
                         st.rerun()
-        st.info("تظل صفة الحساب ظاهرة دائمًا باسم: الادمن. ويمكن لمن لديه صلاحية مراسلة الادمن رؤيته بالاسم والوظيفة والمنطقة التأمينية.")
+        st.info("يظهر اسم الادمن بجوار كلمة الادمن، وكذلك وظيفته ورقم موبايله وصورته للجميع في العضويات والبحث.")
         recovery_settings_page()
         st.markdown("---")
         change_password_page()
