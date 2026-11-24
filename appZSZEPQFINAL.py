@@ -2933,6 +2933,10 @@ def show_member_directory():
                         st.session_state.message_target_ids = [u.get("id")]
                         st.session_state.page = "الرسائل"
                         st.rerun()
+                elif u.get("id") == current.get("id") and current.get("role") != "admin":
+                    if st.button("⚙️ لوحة تحكمى", key=f"dir_my_ctrl_{current.get('id')}_{u.get('id')}", use_container_width=True):
+                        st.session_state.page = "لوحة تحكمى"
+                        st.rerun()
 
 def global_people_search():
     users=_cached_users_snapshot()
@@ -4446,6 +4450,11 @@ if st.session_state.page == "الرئيسية":
         st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
         if st.button("⚙️  لوحة التحكم", use_container_width=True, key="admin_control_main_unique"):
             st.session_state.page = "لوحة التحكم"
+            st.rerun()
+    else:
+        st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
+        if st.button("⚙️  لوحة تحكمى", use_container_width=True, type="primary", key="member_control_main_unique"):
+            st.session_state.page = "لوحة تحكمى"
             st.rerun()
 
     show_member_directory()
