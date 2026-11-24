@@ -1,6 +1,6 @@
 from pathlib import Path
 
-import json, os, bcrypt, smtplib, random, io, requests, base64, html, secrets, re
+import json, os, bcrypt, smtplib, random, io, requests, base64, html, secrets, re, sqlite3, hashlib
 from datetime import datetime, timedelta, date
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -2078,6 +2078,11 @@ def _ensure_perms_db_ready():
     except Exception:
         pass
 
+def get_member_phone(u):
+    if not isinstance(u, dict):
+        return ""
+    return str(u.get("phone") or u.get("mobile") or u.get("رقم_الموبايل") or "").strip()
+
 def sync_session_user_to_perms_db(u):
     if not isinstance(u, dict):
         return None
@@ -2501,6 +2506,85 @@ def render_assistant_admin_management_section():
                             st.rerun()
                         else:
                             st.error(msg_r)
+
+
+def render_admin_permissions_page(actor_record):
+    st.markdown("<h4 style='color:#D4AF37;'>🛡️ إدارة صلاحيات الأعضاء والمراسلات</h4>", unsafe_allow_html=True)
+    users_db = get_all_users(include_inactive=True)
+    if not users_db:
+        st.info("لا يوجد مستخدمون مسجلون في قاعدة الصلاحيات.")
+        return
+
+    user_options = {
+        f"{u.get('full_name') or u.get('username')} ({u.get('username')}) — {ROLES.get(u.get('role'), u.get('role'))}": int(u["id"])
+        for u in users_db
+    }
+    selected_label = st.selectbox("اختر العضو لتعديل صلاحياته", list(user_options.keys()), key="perm_target_user_sel")
+    target_uid = user_options[selected_label]
+    current_perms = get_user_permissions(target_uid)
+
+    with st.form(f"perms_form_{target_uid}"):
+        p_send = st.checkbox(PERMISSION_LABELS["can_send_messages"], value=bool(current_perms.get("can_send_messages", True)))
+        p_scope = st.selectbox(
+            "نطاق المراسلة المسموح",
+            list(SCOPE_LABELS.keys()),
+            format_func=lambda k: SCOPE_LABELS.get(k, k),
+            index=list(SCOPE_LABELS.keys()).index(current_perms.get("message_scope", "roles")) if current_perms.get("message_scope", "roles") in SCOPE_LABELS else 0,
+        )
+        p_roles = st.multiselect(
+            "الأدوار المسموح بمراسلتها",
+            ALL_ROLES,
+            default=[r for r in current_perms.get("allowed_message_roles", []) if r in ALL_ROLES],
+            format_func=lambda r: ROLES.get(r, r),
+        )
+        other_users = [u for u in users_db if int(u["id"]) != int(target_uid)]
+        other_map = {int(u["id"]): f"{u.get('full_name') or u.get('username')} ({u.get('username')})" for u in other_users}
+        p_users = st.multiselect(
+            "أعضاء محددون بالاسم للمراسلة",
+            list(other_map.keys()),
+            default=[uid_x for uid_x in current_perms.get("allowed_message_users", []) if uid_x in other_map],
+            format_func=lambda uid_x: other_map.get(uid_x, str(uid_x)),
+        )
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            p_view = st.checkbox(PERMISSION_LABELS["can_view_cases"], value=bool(current_perms.get("can_view_cases", True)))
+            p_edit = st.checkbox(PERMISSION_LABELS["can_edit_cases"], value=bool(current_perms.get("can_edit_cases", True)))
+        with c2:
+            p_del = st.checkbox(PERMISSION_LABELS["can_delete_cases"], value=bool(current_perms.get("can_delete_cases", False)))
+            p_exp = st.checkbox(PERMISSION_LABELS["can_export_reports"], value=bool(current_perms.get("can_export_reports", True)))
+        with c3:
+            p_mgr_u = st.checkbox(PERMISSION_LABELS["can_manage_users"], value=bool(current_perms.get("can_manage_users", False)))
+            p_mgr_p = st.checkbox(PERMISSION_LABELS["can_manage_permissions"], value=bool(current_perms.get("can_manage_permissions", False)))
+
+        col_s1, col_s2 = st.columns(2)
+        with col_s1:
+            saved = st.form_submit_button("💾 حفظ الصلاحيات", type="primary", use_container_width=True)
+        with col_s2:
+            reset_def = st.form_submit_button("↩️ استعادة الافتراضي", use_container_width=True)
+
+    if saved:
+        new_perms = {
+            "can_send_messages": p_send,
+            "message_scope": p_scope,
+            "allowed_message_roles": p_roles,
+            "allowed_message_users": p_users,
+            "can_view_cases": p_view,
+            "can_edit_cases": p_edit,
+            "can_delete_cases": p_del,
+            "can_export_reports": p_exp,
+            "can_manage_users": p_mgr_u,
+            "can_manage_permissions": p_mgr_p,
+        }
+        actor_id = int(actor_record.get("id") or 1)
+        apply_permissions_bulk([target_uid], new_perms, actor_id=actor_id, scope_desc=f"تحديث صلاحيات العضو رقم {target_uid}")
+        st.success("✅ تم حفظ الصلاحيات بنجاح.")
+        st.rerun()
+
+    if reset_def:
+        actor_id = int(actor_record.get("id") or 1)
+        reset_user_to_role_defaults(target_uid, actor_id=actor_id)
+        st.success("✅ تمت استعادة الصلاحيات الافتراضية.")
+        st.rerun()
 
 
 def render_integrated_admin_permissions_panel():
