@@ -1190,6 +1190,7 @@ def extract_member_page():
     </style>
     """, unsafe_allow_html=True)
 
+    render_return_home_button("⬅️ العودة للرئيسية", key="extract_member_home")
     if st.button("⬅️ العودة للوحة التحكم", use_container_width=True):
         st.session_state.page = "لوحة التحكم"
         st.rerun()
@@ -1393,6 +1394,7 @@ def manage_users_page():
         st.info(f"أنت تعمل بصلاحيات الأدمن المساعد ({html.escape(get_assistant_admin_title(cur_u))}). لا يمكن حذف أو إيقاف أو تعديل عضوية الأدمن 1 أو إغلاق الموقع.")
 
     st.markdown("<h2 style='color:#D4AF37;text-align:center;'>👥 إدارة الأعضاء</h2>", unsafe_allow_html=True)
+    render_return_home_button("⬅️ العودة للرئيسية", key="manage_users_top_home")
     users = _cached_users_snapshot()
     members = [u for u in users if u.get("role") != "admin"]
 
@@ -2638,11 +2640,13 @@ def messaging_page():
     user = st.session_state.get("user") or {}
     sr = user.get("role")
     if sr not in ("admin", "member", "manager", "general_manager", "leader1", "leader2", "leader3"):
+        render_return_home_button("⬅️ العودة للرئيسية", key=f"msg_no_role_home_{sr}")
         return
 
     users = _cached_users_snapshot()
     messages = load_messages()
     st.markdown("<h2 style='color:#D4AF37;text-align:center;'>📢 الرسائل والبيانات</h2>", unsafe_allow_html=True)
+    render_return_home_button("⬅️ العودة للرئيسية", key=f"msg_top_home_{sr}")
 
     target_options = [
         ("الادمن", "admin"), ("عضو قانونى", "member"), ("مدير إدارة", "manager"),
@@ -2655,6 +2659,7 @@ def messaging_page():
 
     if not candidates:
         st.info("لا يوجد مستلمون متاحون وفق صلاحيات الحساب")
+        render_return_home_button("⬅️ العودة للرئيسية", key=f"msg_nocand_home_{sr}")
         return
 
     target_kind = st.selectbox(
@@ -2722,6 +2727,8 @@ def messaging_page():
         st.session_state.pop("message_target_ids", None)
         st.success("تم إرسال الرسالة وحفظها")
         st.rerun()
+    st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+    render_return_home_button("⬅️ العودة للرئيسية", key=f"msg_bottom_home_{sr}")
 
 def _photo_html(photo_data, photo_type="image/png", size=72):
     if not photo_data:
@@ -2744,6 +2751,16 @@ def _visible_banners_for_user(user):
             continue
         out.append(b)
     return out
+
+
+def render_return_home_button(label="⬅️ العودة للرئيسية", key=None, reset_keys=None):
+    """زر موحّد للعودة للرئيسية في أي صفحة أو نافذة أو رسالة للأدمن والأعضاء."""
+    safe_key = key or f"home_btn_{secrets.token_hex(4)}"
+    if st.button(label, key=safe_key, use_container_width=True):
+        st.session_state.page = "الرئيسية"
+        for k in (reset_keys or []):
+            st.session_state.pop(k, None)
+        st.rerun()
 
 def show_top_notices():
     user = st.session_state.get("user") or {}
@@ -2825,6 +2842,7 @@ def show_top_notices():
             st.rerun()
 
     if n["kind"] == "message":
+        render_return_home_button("⬅️ العودة للرئيسية", key=f"open_msg_home_{item.get('id','x')}_{idx}")
         st.markdown("<div style='color:#D4AF37;font-size:18px;font-weight:900;text-align:center;margin-top:10px;'>الرد على الرسالة</div>", unsafe_allow_html=True)
         reply_text = st.text_area("نص الرد", height=110, key=f"top_reply_text_{item.get('id','x')}")
         reply_count_key = f"reply_attach_count_{item.get('id','x')}"
@@ -2867,6 +2885,7 @@ def show_top_notices():
                     save_messages(msgs)
                     st.success("تم إرسال الرد")
                     st.rerun()
+    render_return_home_button("⬅️ العودة للرئيسية", key=f"after_notice_home_{idx}")
 
 def role_order(role):
     return {"leader1":0,"leader2":1,"leader3":2,"general_manager":3,"manager":4,"member":5,"admin":-1}.get(role,99)
@@ -2946,6 +2965,7 @@ def admin_control_page():
 
     st.markdown("<h1 style='color:#D4AF37;text-align:center;'>⚖️ لوحة التحكم</h1>", unsafe_allow_html=True)
     st.markdown("<p style='color:white;text-align:center;'>جميع أدوات إدارة الموقع في مكان واحد</p>", unsafe_allow_html=True)
+    render_return_home_button("⬅️ العودة للرئيسية", key="admin_control_top_home")
 
     tab_users, tab_perms, tab_messages, tab_topbar, tab_search, tab_account = st.tabs([
         "👥 الأعضاء",
@@ -3361,6 +3381,7 @@ def personal_control_page():
 
     st.markdown("<h1 style='color:#D4AF37;text-align:center;'>⚙️ لوحة تحكمى</h1>", unsafe_allow_html=True)
     st.markdown("<p style='color:white;text-align:center;font-weight:800;'>ملفك الشخصي وصلاحياتك وحسابك ورسائلك</p>", unsafe_allow_html=True)
+    render_return_home_button("⬅️ العودة للرئيسية", key="personal_control_top_home")
 
     tab_profile, tab_permissions, tab_messages, tab_account = st.tabs(
         ["👤 الملف الشخصي", "🛡️ صلاحياتى", "📢 الرسائل والبيانات", "🔐 الحساب"]
@@ -4622,6 +4643,7 @@ elif st.session_state.page == "تفاصيل":
     st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
     st.markdown(f"<h2 style='color:#D4AF37; text-align:center'>📄 تفاصيل القضية رقم {case.get('رقم')} لسنة {case.get('سنة')}</h2>", unsafe_allow_html=True)
 
+    render_return_home_button("⬅️ العودة للرئيسية", key="details_back_home")
     if st.button("⬅️ العودة للحصر", use_container_width=True):
         st.session_state.page = "الحصر"; st.rerun()
 
@@ -5307,6 +5329,8 @@ elif st.session_state.page == "مكتبة":
 
     if title:
         st.subheader(title)
+        if "selected_section" in st.session_state or "search_filters" in st.session_state:
+            render_return_home_button("⬅️ العودة للرئيسية", key="lib_subview_home", reset_keys=["selected_section", "search_filters", "show_upload"])
 
     if st.button("➕ اضافة مادة قانونية لمكتبتك", key="btn_add_lib", type="primary", use_container_width=True):
         st.session_state.show_upload = True
@@ -5927,3 +5951,8 @@ if st.session_state.page == "تقارير":
                 "dl_stat3", "بيان_عددي", rep4["df"], rep4["full_html"],
                 rep4["title"], rep4["region"], rep4["odo"], rep4["lawyer"], rep4["mgr"], rep4["gm"]
             )
+
+
+if st.session_state.get("user") and st.session_state.get("page") not in (None, "", "الرئيسية", "login"):
+    st.markdown("<hr style='border-color:#D4AF37;opacity:0.45;'>", unsafe_allow_html=True)
+    render_return_home_button("⬅️ العودة للرئيسية", key=f"global_footer_home_{st.session_state.get('page')}")
