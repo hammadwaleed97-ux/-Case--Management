@@ -1142,9 +1142,12 @@ def _age_action_dialog(user_id):
     age_dialog()
 
 def manage_users_page():
-    if not st.session_state.user or st.session_state.user.get("role") != "admin":
+    cur_u = st.session_state.get("user") or {}
+    if cur_u.get("role") != "admin" and not is_assistant_admin(cur_u):
         st.error("هذه الصفحة متاحة للادمن فقط")
         return
+    if not is_primary_admin(cur_u):
+        st.info(f"أنت تعمل بصلاحيات الأدمن المساعد ({html.escape(get_assistant_admin_title(cur_u))}). لا يمكن حذف أو إيقاف أو تعديل عضوية الأدمن 1 أو إغلاق الموقع.")
 
     st.markdown("<h2 style='color:#D4AF37;text-align:center;'>👥 إدارة الأعضاء</h2>", unsafe_allow_html=True)
     users = _cached_users_snapshot()
@@ -1969,6 +1972,294 @@ def current_user_has_permission(perm_key):
         return True
     return bool(has_permission(uid, perm_key))
 
+
+# ===== نظام تعيين وإدارة الأدمن المساعد بواسطة الأدمن 1 =====
+def get_primary_admin_user():
+    """يعيد سجل الأدمن الأساسي (الأدمن 1) سواء من قاعدة البيانات أو من users.json."""
+    try:
+        users = load_users()
+        admins = [u for u in users if u.get("role") == "admin"]
+        if admins:
+            admins.sort(key=lambda x: int(x.get("id") or 999999))
+            return admins[0]
+    except Exception:
+        pass
+    try:
+        conn = get_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM users WHERE role = 'admin' ORDER BY id ASC LIMIT 1")
+        row = cur.fetchone()
+        conn.close()
+        if row:
+            return dict(row)
+    except Exception:
+        pass
+    return None
+
+def is_primary_admin(user_or_id=None):
+    """يتحقق ما إذا كان المستخدم هو الأدمن 1 (الأدمن الأساسي)."""
+    primary = get_primary_admin_user()
+    if not primary:
+        return False
+    p_id = primary.get("id")
+    p_uname = str(primary.get("username") or "").strip().casefold()
+
+    if user_or_id is None:
+        u = st.session_state.get("user") or {}
+    elif isinstance(user_or_id, dict):
+        u = user_or_id
+    else:
+        u = {"id": user_or_id}
+
+    if not u:
+        return False
+    if u.get("id") is not None and p_id is not None and str(u.get("id")) == str(p_id):
+        return True
+    uname = str(u.get("username") or "").strip().casefold()
+    if uname and p_uname and uname == p_uname:
+        return True
+    # لو كان أول حساب admin في القائمة ولم يكن مساعداً
+    if u.get("role") == "admin" and not u.get("is_assistant_admin"):
+        if p_id is None and not p_uname:
+            return True
+    return False
+
+def is_assistant_admin(user_or_dict=None):
+    """يتحقق ما إذا كان المستخدم معيناً كأدمن مساعد."""
+    if user_or_dict is None:
+        u = st.session_state.get("user") or {}
+    elif isinstance(user_or_dict, dict):
+        u = user_or_dict
+    else:
+        users = _cached_users_snapshot()
+        u = next((x for x in users if str(x.get("id")) == str(user_or_dict)), {})
+    if not u:
+        return False
+    if is_primary_admin(u):
+        return False
+    return bool(u.get("is_assistant_admin")) or str(u.get("role") or "") == "assistant_admin"
+
+def get_assistant_admin_title(user_or_dict=None):
+    """يعيد المسمى الذي منحه الأدمن 1 للأدمن المساعد."""
+    if user_or_dict is None:
+        u = st.session_state.get("user") or {}
+    elif isinstance(user_or_dict, dict):
+        u = user_or_dict
+    else:
+        users = _cached_users_snapshot()
+        u = next((x for x in users if str(x.get("id")) == str(user_or_dict)), {})
+    if not u:
+        return "أدمن مساعد"
+    custom_title = str(u.get("assistant_admin_title") or u.get("job_title") or "").strip()
+    return custom_title or "أدمن مساعد"
+
+def assign_assistant_admin(target_user_id, custom_title, actor_user=None):
+    """يعين عضواً كأدمن مساعد بالمسمى الذي يحدده الأدمن 1، ويمنحه كافة الصلاحيات ما عدا المساس بالأدمن 1 أو غلق الموقع."""
+    actor = actor_user or st.session_state.get("user") or {}
+    if not is_primary_admin(actor):
+        return False, "تعيين أو إدارة الأدمن المساعد متاح للأدمن 1 فقط."
+    clean_title = str(custom_title or "").strip()
+    if not clean_title:
+        return False, "يرجى إدخال المسمى المخصص لعضوية الأدمن المساعد."
+
+    users = load_users()
+    target = next((u for u in users if str(u.get("id")) == str(target_user_id)), None)
+    if not target:
+        return False, "لم يتم العثور على العضو المختار."
+    if is_primary_admin(target):
+        return False, "لا يمكن تعديل عضوية الأدمن 1."
+
+    target["is_assistant_admin"] = True
+    target["assistant_admin_title"] = clean_title
+    target["job_title"] = clean_title
+    target["status"] = "active"
+    target["can_close_site"] = False
+    target["can_modify_primary_admin"] = False
+    register_job_title(clean_title)
+    save_users(users)
+
+    # مزامنة ومنح كافة الصلاحيات في قاعدة بيانات الصلاحيات باستثناء غلق الموقع أو المساس بالأدمن 1
+    uid_db = sync_session_user_to_perms_db(target)
+    if uid_db:
+        full_assistant_perms = {
+            "can_send_messages": True,
+            "message_scope": "all_users",
+            "allowed_message_roles": ALL_ROLES,
+            "allowed_message_users": [],
+            "can_manage_permissions": True,
+            "can_view_cases": True,
+            "can_edit_cases": True,
+            "can_delete_cases": True,
+            "can_export_reports": True,
+            "can_manage_users": True,
+        }
+        upsert_user_permissions(uid_db, full_assistant_perms)
+        actor_db_id = sync_session_user_to_perms_db(actor) or uid_db
+        now = datetime.now().isoformat(timespec="seconds")
+        conn = get_connection()
+        cur = conn.cursor()
+        cur.execute(
+            "UPDATE users SET full_name = ?, is_active = 1 WHERE id = ?",
+            (f"{target.get('display_name') or target.get('username')} ({clean_title})", uid_db),
+        )
+        cur.execute(
+            """
+            INSERT INTO permission_audit_log (actor_id, target_scope_desc, details_json, created_at)
+            VALUES (?, ?, ?, ?)
+            """,
+            (
+                actor_db_id,
+                f"تعيين أدمن مساعد: {target.get('display_name') or target.get('username')} بالمسمى ({clean_title})",
+                json.dumps({"target_user_id": target_user_id, "assistant_title": clean_title}, ensure_ascii=False),
+                now,
+            ),
+        )
+        conn.commit()
+        conn.close()
+
+    cur_session_u = st.session_state.get("user") or {}
+    if str(cur_session_u.get("id")) == str(target.get("id")):
+        st.session_state.user = dict(target)
+
+    return True, f"تم تعيين ({target.get('display_name') or target.get('username')}) كأدمن مساعد بالمسمى: {clean_title}"
+
+def revoke_assistant_admin(target_user_id, actor_user=None):
+    """يلغي صفة الأدمن المساعد عن العضو ويعيده كعضو عادي وتطبق عليه صلاحيات الأدمن 1 كباقي الأعضاء."""
+    actor = actor_user or st.session_state.get("user") or {}
+    if not is_primary_admin(actor):
+        return False, "إلغاء صفة الأدمن المساعد متاح للأدمن 1 فقط."
+
+    users = load_users()
+    target = next((u for u in users if str(u.get("id")) == str(target_user_id)), None)
+    if not target:
+        return False, "لم يتم العثور على العضو."
+    if is_primary_admin(target):
+        return False, "لا يمكن المساس بعضوية الأدمن 1."
+
+    default_job = "عضو قانونى"
+    target["is_assistant_admin"] = False
+    target["assistant_admin_title"] = ""
+    target["job_title"] = default_job
+    target["role"] = "member"
+    save_users(users)
+
+    uid_db = sync_session_user_to_perms_db(target)
+    if uid_db:
+        actor_db_id = sync_session_user_to_perms_db(actor) or uid_db
+        reset_user_to_role_defaults(uid_db, actor_id=actor_db_id)
+
+    cur_session_u = st.session_state.get("user") or {}
+    if str(cur_session_u.get("id")) == str(target.get("id")):
+        st.session_state.user = dict(target)
+        st.session_state.role = "member"
+
+    return True, f"تم إلغاء صفة الأدمن المساعد عن ({target.get('display_name') or target.get('username')}) وأصبح عضوًا عاديًا."
+
+def render_assistant_admin_management_section():
+    """واجهة مخصصة للأدمن 1 لتعيين وإدارة الأدمن المساعدين بالمسمى الوظيفي المخصص وكافة الصلاحيات."""
+    cur_user = st.session_state.get("user") or {}
+    if not is_primary_admin(cur_user):
+        if is_assistant_admin(cur_user):
+            st.info(f"أنت مسجل بصلاحيات الأدمن المساعد بالمسمى: **{get_assistant_admin_title(cur_user)}**. تعيين أو إزالة الأدمن المساعدين أو التعديل على عضوية الأدمن 1 مقتصر على الأدمن 1 فقط.")
+        return
+
+    st.markdown("---")
+    st.markdown("<h3 style='color:#D4AF37;text-align:center;'>👑 تعيين وإدارة الأدمن المساعدين (للأدمن 1 فقط)</h3>", unsafe_allow_html=True)
+    st.caption("يمكنك تعيين عضو أو أكثر كأدمن مساعد ومنحه كافة الصلاحيات مع إظهار عضويته بالمسمى الذي تحدده له، باستثناء حذف أو إيقاف أو تعديل عضوية الأدمن 1 أو غلق الموقع، مع احتفاظك بكافة الصلاحيات عليه.")
+
+    sync_all_json_users_to_perms_db()
+    users = load_users()
+    primary_admin = get_primary_admin_user()
+    primary_id = primary_admin.get("id") if primary_admin else None
+
+    eligible_members = [
+        u for u in users
+        if u.get("status") != "deleted" and str(u.get("id")) != str(primary_id) and not is_primary_admin(u)
+    ]
+
+    if not eligible_members:
+        st.info("لا يوجد أعضاء متاحون لتعيينهم كأدمن مساعد حاليًا.")
+        return
+
+    with st.form("assign_assistant_admin_form_v1"):
+        member_map = {
+            f"{u.get('display_name') or u.get('username')} — ({'أدمن مساعد: ' + get_assistant_admin_title(u) if is_assistant_admin(u) else (u.get('job_title') or role_label(u.get('role')))})": u
+            for u in eligible_members
+        }
+        chosen_label = st.selectbox("اختر العضو لتعيينه كأدمن مساعد أو تحديث مسماه", list(member_map.keys()), key="asst_admin_target_sel")
+        chosen_u = member_map[chosen_label]
+        default_title_val = get_assistant_admin_title(chosen_u) if is_assistant_admin(chosen_u) else ""
+        custom_title = st.text_input(
+            "المسمى المخصص لعضوية الأدمن المساعد (يظهر به في العضويات والرسائل)",
+            value=default_title_val,
+            placeholder="مثال: نائب مدير الشؤون القانونية / أدمن مساعد للشؤون القانونية",
+            key="asst_admin_title_inp",
+        )
+        col_a1, col_a2 = st.columns(2)
+        with col_a1:
+            submit_assign = st.form_submit_button("✅ تعيين / حفظ عضوية الأدمن المساعد", type="primary", use_container_width=True)
+        with col_a2:
+            submit_revoke = st.form_submit_button("⛔ إلغاء صفة الأدمن المساعد", use_container_width=True)
+
+    if submit_assign:
+        ok, msg = assign_assistant_admin(chosen_u.get("id"), custom_title, actor_user=cur_user)
+        if ok:
+            st.success(msg)
+            st.rerun()
+        else:
+            st.error(msg)
+
+    if submit_revoke:
+        ok, msg = revoke_assistant_admin(chosen_u.get("id"), actor_user=cur_user)
+        if ok:
+            st.success(msg)
+            st.rerun()
+        else:
+            st.error(msg)
+
+    assistants_list = [u for u in eligible_members if is_assistant_admin(u)]
+    st.markdown("#### 📋 قائمة الأدمن المساعدين الحاليين")
+    if not assistants_list:
+        st.caption("لا يوجد أدمن مساعدون معينون حاليًا.")
+    else:
+        for au in assistants_list:
+            au_id = au.get("id")
+            au_name = au.get("display_name") or au.get("username") or ""
+            au_title = get_assistant_admin_title(au)
+            au_status = au.get("status", "active")
+            with st.container(border=True):
+                c1, c2, c3, c4 = st.columns([3, 1.5, 1.5, 1.5])
+                with c1:
+                    st.markdown(f"**{html.escape(str(au_name))}** — المسمى: <span style='color:#00E676;font-weight:900;'>{html.escape(str(au_title))}</span>", unsafe_allow_html=True)
+                    st.caption(f"الحالة: {au_status} | المنطقة: {au.get('insurance_area') or 'غير محددة'}")
+                with c2:
+                    if st.button("🚫 إيقاف", key=f"stop_asst_{au_id}", use_container_width=True):
+                        all_u = load_users()
+                        for item in all_u:
+                            if str(item.get("id")) == str(au_id) and not is_primary_admin(item):
+                                item["status"] = "suspended_temp"
+                        save_users(all_u)
+                        st.success(f"تم إيقاف عضوية الأدمن المساعد: {au_name}")
+                        st.rerun()
+                with c3:
+                    if st.button("✅ تفعيل", key=f"act_asst_{au_id}", use_container_width=True):
+                        all_u = load_users()
+                        for item in all_u:
+                            if str(item.get("id")) == str(au_id) and not is_primary_admin(item):
+                                item["status"] = "active"
+                        save_users(all_u)
+                        st.success(f"تم تفعيل عضوية الأدمن المساعد: {au_name}")
+                        st.rerun()
+                with c4:
+                    if st.button("🗑️ حذف الصفة", key=f"rem_asst_{au_id}", use_container_width=True):
+                        ok_r, msg_r = revoke_assistant_admin(au_id, actor_user=cur_user)
+                        if ok_r:
+                            st.success(msg_r)
+                            st.rerun()
+                        else:
+                            st.error(msg_r)
+
+
 def render_integrated_admin_permissions_panel():
     cur_user = st.session_state.get("user") or {}
     if _normalize_perm_role(cur_user.get("role")) != "admin" and not current_user_has_permission("can_manage_permissions"):
@@ -1984,6 +2275,7 @@ def render_integrated_admin_permissions_panel():
         "is_active": 1,
     }
     render_admin_permissions_page(actor_record)
+    render_assistant_admin_management_section()
 
 
 def person_display(u, include_role=True):
@@ -2084,7 +2376,7 @@ def messaging_page():
             "sender_id": user.get("id"),
             "sender_name": user.get("display_name") or user.get("username"),
             "sender_role": sr,
-            "sender_job_title": user.get("job_title") or role_label(sr),
+            "sender_job_title": get_assistant_admin_title(user) if is_assistant_admin(user) else (user.get("job_title") or role_label(sr)),
             "sender_insurance_area": user.get("insurance_area") or "",
             "sender_photo": user.get("profile_photo") or "",
             "sender_photo_type": user.get("profile_photo_type") or "",
@@ -2265,13 +2557,14 @@ def show_member_directory():
         for i,u in enumerate(area_users):
             with cols[i % 6]:
                 name = html.escape(str(u.get("display_name") or u.get("username") or ""))
-                job_value = membership_job_title(u) or role_label(u.get("role"))
+                is_asst = is_assistant_admin(u)
+                job_value = get_assistant_admin_title(u) if is_asst else (membership_job_title(u) or role_label(u.get("role")))
                 job = html.escape(job_value)
                 photo = _photo_html(u.get("profile_photo"), u.get("profile_photo_type") or "image/png", 42)
-                is_admin = u.get("role") == "admin"
-                border = "#00E676" if is_admin else "#D4AF37"
-                name_color = "#00E676" if is_admin else "#fff"
-                admin_badge = "<div style='color:#00E676;font-size:10px;font-weight:900;'>ADMIN</div>" if is_admin else ""
+                is_admin = is_primary_admin(u) or (u.get("role") == "admin" and not is_asst)
+                border = "#00E676" if (is_admin or is_asst) else "#D4AF37"
+                name_color = "#00E676" if (is_admin or is_asst) else "#fff"
+                admin_badge = "<div style='color:#00E676;font-size:10px;font-weight:900;'>ADMIN</div>" if is_admin else ("<div style='color:#00E676;font-size:10px;font-weight:900;'>" + html.escape(job_value) + "</div>" if is_asst else "")
                 phone_txt = html.escape(get_member_phone(u))
                 phone_badge = f"<div style='color:#42d77d;font-size:10px;font-weight:800;line-height:1.2;margin-top:2px;'>📱 {phone_txt}</div>" if phone_txt else "<div style='color:#94a3b8;font-size:9px;line-height:1.2;margin-top:2px;'>📱 غير مسجل</div>"
                 card = f"<div style='background:#142038;border:2px solid {border};border-radius:12px;padding:6px;text-align:center;min-height:128px;margin-bottom:5px;'>{photo}<div style='color:{name_color};font-size:12px;font-weight:900;line-height:1.2;'>{name}</div>{admin_badge}<div style='color:#D4AF37;font-size:10px;font-weight:800;line-height:1.2;'>{job}</div><div style='color:#cbd5e1;font-size:9px;line-height:1.2;'>{html.escape(area)}</div>{phone_badge}</div>"
@@ -2297,9 +2590,12 @@ def global_people_search():
             st.info("لا توجد نتيجة بهذا الاسم")
 
 def admin_control_page():
-    if not st.session_state.user or st.session_state.user.get("role") != "admin":
+    cur_u = st.session_state.get("user") or {}
+    if cur_u.get("role") != "admin" and not is_assistant_admin(cur_u):
         st.error("هذه الصفحة متاحة للادمن فقط")
         return
+    if is_assistant_admin(cur_u):
+        st.info(f"🛡️ صلاحيات الأدمن المساعد — المسمى الوظيفي: **{html.escape(get_assistant_admin_title(cur_u))}** (تملك كافة الصلاحيات باستثناء المساس بعضوية الأدمن 1 أو غلق الموقع).")
 
     st.markdown("<h1 style='color:#D4AF37;text-align:center;'>⚖️ لوحة التحكم</h1>", unsafe_allow_html=True)
     st.markdown("<p style='color:white;text-align:center;'>جميع أدوات إدارة الموقع في مكان واحد</p>", unsafe_allow_html=True)
@@ -2578,8 +2874,8 @@ def admin_control_page():
                 login_name = st.text_input("اسم الدخول", value=admin_user.get("username") or "admin")
                 admin_photo = st.file_uploader("الصورة الشخصية", type=["jpg", "jpeg", "png"], key="admin_profile_photo_upload")
                 if st.form_submit_button("💾 حفظ بيانات الادمن", use_container_width=True, type="primary"):
-                    if (st.session_state.get("user") or {}).get("role") != "admin":
-                        st.error("غير مصرح بتعديل بيانات الادمن إلا لحساب الادمن فقط")
+                    if not is_primary_admin(st.session_state.get("user")):
+                        st.error("غير مصرح بتعديل أو إيقاف أو حذف عضوية الأدمن 1 إلا لحساب الأدمن 1 فقط")
                         st.stop()
                     login_name = login_name.strip() or "admin"
                     if login_name != admin_user.get("username") and any(u.get("username") == login_name and u.get("id") != admin_user.get("id") for u in users):
@@ -3741,7 +4037,7 @@ elif st.session_state.page == "extract_member":
 
 if st.session_state.page == "الرئيسية":
     user = st.session_state.get("user") or {}
-    is_admin = user.get("role") == "admin"
+    is_admin = (user.get("role") == "admin") or is_assistant_admin(user)
 
     st.markdown("<h2>الأقسام</h2>", unsafe_allow_html=True)
     def judicial_card(icon, title, page, key):
