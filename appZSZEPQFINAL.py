@@ -2762,6 +2762,62 @@ def render_return_home_button(label="⬅️ العودة للرئيسية", key=
             st.session_state.pop(k, None)
         st.rerun()
 
+def get_members_reaching_age_60():
+    """يعيد قائمة الأعضاء الذين بلغوا سن 60 سنة فأكثر ولم يتم مد عضويتهم أو إيقافهم لبلوغ السن."""
+    users = _cached_users_snapshot()
+    due_members = []
+    for u in users:
+        if not isinstance(u, dict):
+            continue
+        if u.get("role") == "admin" or u.get("status") in ("deleted", "suspended_age", "suspended_final"):
+            continue
+        age, extended_active = member_age_status(u)
+        if age is not None and age >= 60 and not extended_active:
+            due_members.append({
+                "user": u,
+                "age": age,
+                "birth_date_fmt": fmt_date_ar(u.get("birth_date"), "غير مسجل"),
+                "name": u.get("display_name") or u.get("username") or "عضو",
+                "area": u.get("insurance_area") or "غير محددة",
+                "job": u.get("job_title") or role_label(u.get("role")),
+            })
+    return due_members
+
+
+def show_admin_age_60_alert():
+    """إشعار واضح للأدمن (والأدمن المساعد) عند بلوغ أحد الأعضاء سن 60 سنة."""
+    cur_user = st.session_state.get("user") or {}
+    if cur_user.get("role") != "admin" and not is_assistant_admin(cur_user):
+        return
+    due_members = get_members_reaching_age_60()
+    if not due_members:
+        return
+
+    items_html = ""
+    for m in due_members:
+        items_html += (
+            f"<div style='background:#142038;border:1px solid #ff3b30;border-radius:12px;padding:10px 14px;margin-top:8px;text-align:right;direction:rtl;'>"
+            f"<span style='color:#ff5252;font-weight:900;font-size:16px;'>👤 {html.escape(str(m['name']))}</span> "
+            f"<span style='color:#ffd700;font-weight:900;'>— العمر: {m['age']} سنة</span> "
+            f"<span style='color:#fff;font-weight:700;'>(تاريخ الميلاد: {html.escape(str(m['birth_date_fmt']))} | الوظيفة: {html.escape(str(m['job']))} | المنطقة: {html.escape(str(m['area']))})</span>"
+            f"</div>"
+        )
+
+    st.markdown(
+        f"""
+        <div style='background:linear-gradient(135deg,#2c090c,#4a1016);border:2px solid #ff3b30;border-radius:18px;padding:16px;margin:10px 0 14px;box-shadow:0 10px 28px rgba(255,59,48,.28);text-align:center;'>
+            <div style='color:#ff5252;font-size:21px;font-weight:900;'>🚨 إشعار للأدمن: بلوغ سن الستين (60 سنة) لأحد الأعضاء</div>
+            <div style='color:#fff;font-size:15px;font-weight:800;margin-top:4px;'>يوجد {len(due_members)} عضو بلغ سن الستين فأكثر ويلزم مراجعة موقف عضويته:</div>
+            {items_html}
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    if st.button("⚖️ الانتقال لإدارة الأعضاء لاتخاذ إجراء بلوغ سن الستين", key="admin_age_60_goto_users_btn", use_container_width=True):
+        st.session_state.page = "لوحة التحكم"
+        st.rerun()
+
+
 def show_top_notices():
     user = st.session_state.get("user") or {}
     uid = user.get("id")
@@ -2770,13 +2826,22 @@ def show_top_notices():
     users = _cached_users_snapshot()
     by_id = {u.get("id"): u for u in users}
     notices = []
+    incoming_msg_count = 0
     for m in load_messages():
         if uid in m.get("recipient_ids", []):
+            incoming_msg_count += 1
             sender = by_id.get(m.get("sender_id"), {})
             notices.append({"kind":"message", "created_at":m.get("created_at", ""), "item":m, "sender":sender})
     for b in _visible_banners_for_user(user):
         sender = by_id.get(b.get("sender_id"), {})
         notices.append({"kind":"banner", "created_at":b.get("created_at", ""), "item":b, "sender":sender})
+
+    if incoming_msg_count > 0:
+        st.markdown(
+            f"<div style='background:linear-gradient(90deg,#991b1b,#dc2626,#991b1b);color:#ffffff;border:2px solid #ff6b6b;border-radius:14px;padding:10px 14px;margin:0 0 10px;text-align:center;font-weight:900;font-size:17px;box-shadow:0 6px 18px rgba(220,38,38,.35);'>🔴 إشعار رسائل واردة ({incoming_msg_count})</div>",
+            unsafe_allow_html=True,
+        )
+
     if not notices:
         return
     notices.sort(key=lambda x: str(x.get("created_at", "")), reverse=True)
@@ -2796,12 +2861,16 @@ def show_top_notices():
     text = item.get("text", "")
     image_data = item.get("image_data", "")
     image_type = item.get("image_type", "image/png")
-    title = "رسالة واردة" if n["kind"] == "message" else "بيان وارد"
+    is_incoming_msg = (n["kind"] == "message")
+    title = "رسالة واردة" if is_incoming_msg else "بيان وارد"
     created = html.escape(fmt_date_ar(item.get("created_at", ""), str(item.get("created_at", ""))))
-    sender_color = "#00E676" if sender_role == "admin" else "#D4AF37"
-    card = f"<div style='background:linear-gradient(135deg,#101b31,#203b63);border:2px solid {sender_color};border-radius:18px;padding:16px;margin:0 0 10px;box-shadow:0 10px 28px rgba(0,0,0,.3);text-align:center;'>"
+    sender_color = "#ff3b30" if is_incoming_msg else ("#00E676" if sender_role == "admin" else "#D4AF37")
+    card_border = "#ff3b30" if is_incoming_msg else sender_color
+    card_bg = "linear-gradient(135deg,#2b0b10,#46121a)" if is_incoming_msg else "linear-gradient(135deg,#101b31,#203b63)"
+    title_color = "#ff4d4d" if is_incoming_msg else "#D4AF37"
+    card = f"<div style='background:{card_bg};border:2px solid {card_border};border-radius:18px;padding:16px;margin:0 0 10px;box-shadow:0 10px 28px rgba(0,0,0,.35);text-align:center;'>"
     card += _photo_html(photo, photo_type, 70)
-    card += f"<div style='color:#D4AF37;font-size:22px;font-weight:900;'>📢 {title}</div>"
+    card += f"<div style='color:{title_color};font-size:22px;font-weight:900;'>{'🔴' if is_incoming_msg else '📢'} {title}</div>"
     admin_prefix = "<span style=\"color:#ff3b30;font-weight:1000;margin-left:8px;\">الادمن</span>" if sender_role == "admin" else ""
     card += f"<div style='color:{sender_color};font-size:20px;font-weight:900;margin-top:5px;'>المرسل: {admin_prefix} {html.escape(str(sender_name))}</div>"
     card += f"<div style='color:#fff;font-size:15px;font-weight:800;margin-top:4px;'>الوظيفة: {html.escape(str(sender_job))} — المنطقة التأمينية: {html.escape(str(sender_area))}</div>"
@@ -4344,8 +4413,9 @@ st.session_state.setdefault("top_notice_index", 0)
 user_header = st.session_state.get("user") or {}
 header_name = html.escape(str(user_header.get("display_name") or user_header.get("username") or ""))
 st.markdown(f"<div style='text-align:center;color:#fff;font-size:20px;font-weight:900;margin:8px 0 14px;'>أهلاً {header_name}</div>", unsafe_allow_html=True)
-st.markdown("<div style='color:#D4AF37;font-size:21px;font-weight:900;text-align:center;margin:8px 0;'>الرسائل والبيانات</div>", unsafe_allow_html=True)
+st.markdown("<div style='color:#ff4d4d;font-size:21px;font-weight:900;text-align:center;margin:8px 0;'>🔴 الرسائل الواردة والبيانات</div>", unsafe_allow_html=True)
 show_top_notices()
+show_admin_age_60_alert()
 
 def edit_membership_data_page():
     if st.button("⬅️ العودة للصفحة الرئيسية", key="back_from_membership_edit", use_container_width=True):
