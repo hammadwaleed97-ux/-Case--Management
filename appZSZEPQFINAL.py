@@ -217,6 +217,247 @@ DATA_DIR = Path(LOCAL_DATA_DIR)
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 BANNERS_FILE = DATA_DIR / "banners.json"
 TOP_BAR_FILE = DATA_DIR / "top_bar_config.json"
+
+SITE_AUDIO_FILE = DATA_DIR / "site_audio_config.json"
+
+DEFAULT_SITE_AUDIO_CONFIG = {
+    "enabled": False,          # True = يعمل، False = متوقف
+    "source_type": "none",     # "upload" | "url" | "none"
+    "title": "",
+    "file_name": "",
+    "mime_type": "audio/mpeg",
+    "audio_b64": "",
+    "audio_url": "",
+    "loop": True,
+    "volume": 0.7,
+    "updated_at": "",
+    "updated_by": "",
+}
+
+
+def _normalize_site_audio_config(raw):
+    cfg = dict(DEFAULT_SITE_AUDIO_CONFIG)
+    if isinstance(raw, dict):
+        for k in cfg:
+            if k in raw and raw[k] is not None:
+                cfg[k] = raw[k]
+    cfg["enabled"] = bool(cfg.get("enabled", False))
+    cfg["loop"] = bool(cfg.get("loop", True))
+    try:
+        cfg["volume"] = max(0.0, min(1.0, float(cfg.get("volume", 0.7))))
+    except Exception:
+        cfg["volume"] = 0.7
+    if cfg.get("source_type") not in ("upload", "url", "none"):
+        cfg["source_type"] = "none"
+    return cfg
+
+
+def load_site_audio_config():
+    try:
+        data = load_json_persistent("site_audio_config", SITE_AUDIO_FILE, dict(DEFAULT_SITE_AUDIO_CONFIG))
+        return _normalize_site_audio_config(data)
+    except Exception:
+        return dict(DEFAULT_SITE_AUDIO_CONFIG)
+
+
+def save_site_audio_config(cfg):
+    normalized = _normalize_site_audio_config(cfg)
+    normalized["updated_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    ok = save_json_persistent("site_audio_config", SITE_AUDIO_FILE, normalized)
+    st.session_state["site_audio_config_cache"] = normalized
+    return ok
+
+
+def get_site_audio_config(force_reload=False):
+    if force_reload or "site_audio_config_cache" not in st.session_state:
+        st.session_state["site_audio_config_cache"] = load_site_audio_config()
+    return _normalize_site_audio_config(st.session_state["site_audio_config_cache"])
+
+
+def _guess_site_audio_mime(filename, uploaded_type=""):
+    if uploaded_type and str(uploaded_type).startswith("audio/"):
+        return uploaded_type
+    ext = Path(filename or "").suffix.lower()
+    return {
+        ".mp3": "audio/mpeg",
+        ".wav": "audio/wav",
+        ".ogg": "audio/ogg",
+        ".m4a": "audio/mp4",
+        ".aac": "audio/aac",
+        ".webm": "audio/webm",
+    }.get(ext, "audio/mpeg")
+
+
+def _has_valid_site_audio(cfg):
+    stype = cfg.get("source_type")
+    if stype == "upload":
+        return bool(str(cfg.get("audio_b64") or "").strip())
+    if stype == "url":
+        return bool(str(cfg.get("audio_url") or "").strip())
+    return False
+
+
+def render_site_audio_player():
+    """تشغيل صوت الموقع بعد تسجيل الدخول فقط عندما يكون مفعّلاً من قِبل الأدمن."""
+    if not st.session_state.get("user"):
+        return
+    cfg = get_site_audio_config()
+    if not cfg.get("enabled") or not _has_valid_site_audio(cfg):
+        return
+
+    title = html.escape(str(cfg.get("title") or cfg.get("file_name") or "صوت الموقع"))
+    loop_flag = bool(cfg.get("loop", True))
+    vol = float(cfg.get("volume", 0.7))
+
+    if cfg.get("source_type") == "upload":
+        src = f"data:{cfg.get('mime_type', 'audio/mpeg')};base64,{cfg.get('audio_b64')}"
+    else:
+        src = str(cfg.get("audio_url") or "").strip()
+
+    if not src:
+        return
+
+    with st.sidebar:
+        st.markdown(f"🔊 **صوت الموقع:** {title}")
+        if cfg.get("source_type") == "upload":
+            try:
+                raw_bytes = base64.b64decode(cfg["audio_b64"])
+                st.audio(raw_bytes, format=cfg.get("mime_type", "audio/mpeg"), loop=loop_flag)
+            except Exception:
+                pass
+        else:
+            st.audio(src, loop=loop_flag)
+
+        st.components.v1.html(
+            f"""
+            <script>
+            (function() {{
+                const a = new Audio("{src}");
+                a.loop = {str(loop_flag).lower()};
+                a.volume = {vol};
+                a.play().catch(() => {{}});
+            }})();
+            </script>
+            """,
+            height=0,
+        )
+
+
+def render_admin_audio_manager(actor_username="admin"):
+    """لوحة تحكم الأدمن لإضافة الصوت، تغييره، إيقافه/تشغيله، أو إلغائه."""
+    st.markdown("---")
+    st.markdown("<h3 style='color:#D4AF37;text-align:center;'>🎵 إدارة صوت الموقع أثناء التشغيل</h3>", unsafe_allow_html=True)
+    cfg = get_site_audio_config(force_reload=True)
+
+    has_audio = _has_valid_site_audio(cfg)
+    is_running = bool(cfg.get("enabled")) and has_audio
+
+    if has_audio:
+        state_lbl = "🟢 يعمل الآن" if is_running else "⏸️ متوقف"
+        src_lbl = (
+            f"ملف مرفوع: {cfg.get('file_name') or 'ملف صوتي'}"
+            if cfg.get("source_type") == "upload"
+            else f"رابط صوتي: {cfg.get('audio_url')}"
+        )
+        st.info(
+            f"**الحالة:** {state_lbl}  \n"
+            f"**العنوان:** {cfg.get('title') or 'بدون عنوان'}  \n"
+            f"**المصدر:** {src_lbl}"
+        )
+    else:
+        st.warning("لا يوجد صوت مضاف للموقع حاليًا.")
+
+    c_stop, c_play, c_cancel = st.columns(3)
+    with c_stop:
+        if st.button("⏸️ إيقاف الصوت", key="admin_audio_stop_btn", use_container_width=True, disabled=not has_audio):
+            cfg["enabled"] = False
+            cfg["updated_by"] = actor_username
+            if save_site_audio_config(cfg):
+                st.success("تم إيقاف صوت الموقع.")
+                st.rerun()
+    with c_play:
+        if st.button("▶️ تشغيل الصوت", key="admin_audio_play_btn", type="primary", use_container_width=True, disabled=not has_audio):
+            cfg["enabled"] = True
+            cfg["updated_by"] = actor_username
+            if save_site_audio_config(cfg):
+                st.success("تم تشغيل صوت الموقع.")
+                st.rerun()
+    with c_cancel:
+        if st.button("🗑️ إلغاء وحذف الصوت", key="admin_audio_cancel_btn", use_container_width=True, disabled=not (has_audio or cfg.get("enabled"))):
+            reset_cfg = dict(DEFAULT_SITE_AUDIO_CONFIG)
+            reset_cfg["updated_by"] = actor_username
+            if save_site_audio_config(reset_cfg):
+                st.success("تم إلغاء وحذف صوت الموقع.")
+                st.rerun()
+
+    with st.form("admin_site_audio_form"):
+        form_heading = "🔄 تغيير الصوت الحالي" if has_audio else "➕ إضافة صوت للموقع"
+        st.markdown(f"#### {form_heading}")
+        audio_title = st.text_input("اسم أو وصف الصوت", value=str(cfg.get("title") or ""), key="admin_audio_title_inp")
+        source_mode = st.radio(
+            "مصدر الصوت",
+            ["ملف صوتي مرفوع", "رابط صوتي مباشر"],
+            index=0 if cfg.get("source_type") != "url" else 1,
+            horizontal=True,
+            key="admin_audio_src_mode",
+        )
+
+        uploaded_audio = None
+        audio_url_val = ""
+        if source_mode == "ملف صوتي مرفوع":
+            uploaded_audio = st.file_uploader(
+                "اختر ملف الصوت (MP3, WAV, OGG, M4A, AAC, WEBM)",
+                type=["mp3", "wav", "ogg", "m4a", "aac", "webm"],
+                key="admin_audio_file_uploader",
+            )
+        else:
+            audio_url_val = st.text_input(
+                "رابط الصوت المباشر",
+                value=str(cfg.get("audio_url") or ""),
+                key="admin_audio_url_inp",
+            )
+
+        f1, f2, f3 = st.columns(3)
+        with f1:
+            enable_audio = st.checkbox("تشغيل الصوت فور الحفظ", value=bool(cfg.get("enabled", True)), key="admin_audio_enable_chk")
+        with f2:
+            loop_audio = st.checkbox("تكرار الصوت تلقائيًا", value=bool(cfg.get("loop", True)), key="admin_audio_loop_chk")
+        with f3:
+            vol_audio = st.slider("مستوى الصوت", min_value=0.0, max_value=1.0, value=float(cfg.get("volume", 0.7)), step=0.05, key="admin_audio_vol_sld")
+
+        if st.form_submit_button("💾 حفظ إعدادات الصوت", type="primary", use_container_width=True):
+            updated_audio = dict(cfg)
+            updated_audio["title"] = audio_title.strip()
+            updated_audio["loop"] = bool(loop_audio)
+            updated_audio["volume"] = float(vol_audio)
+            updated_audio["updated_by"] = actor_username
+
+            if source_mode == "ملف صوتي مرفوع":
+                if uploaded_audio is not None:
+                    raw_bytes = uploaded_audio.getvalue()
+                    updated_audio["source_type"] = "upload"
+                    updated_audio["file_name"] = uploaded_audio.name
+                    updated_audio["mime_type"] = _guess_site_audio_mime(uploaded_audio.name, uploaded_audio.type or "")
+                    updated_audio["audio_b64"] = base64.b64encode(raw_bytes).decode("utf-8")
+                    updated_audio["audio_url"] = ""
+                elif cfg.get("source_type") != "upload" or not cfg.get("audio_b64"):
+                    st.error("يرجى رفع ملف صوتي أولًا.")
+                    st.stop()
+            else:
+                clean_u = audio_url_val.strip()
+                if clean_u:
+                    updated_audio["source_type"] = "url"
+                    updated_audio["audio_url"] = clean_u
+                    updated_audio["audio_b64"] = ""
+                    updated_audio["file_name"] = ""
+                elif cfg.get("source_type") != "url" or not cfg.get("audio_url"):
+                    st.error("يرجى إدخال رابط صوتي صحيح.")
+                    st.stop()
+
+            updated_audio["enabled"] = bool(enable_audio)
+            if save_site_audio_config(updated_audio):
+                st.success("✅ تم حفظ إعدادات صوت الموقع بنجاح.")
+                st.rerun()
 JOB_TITLES_FILE = DATA_DIR / "job_titles.json"
 
 DEFAULT_JOB_TITLES = [
@@ -2851,6 +3092,8 @@ def admin_control_page():
                     st.success("تم إلغاء نص الشريط وإيقافه.")
                     st.rerun()
 
+        render_admin_audio_manager(actor_username=str(cur_u.get("username") or "admin"))
+
     with tab_search:
         st.markdown("<h3 style='color:#D4AF37;'>🔎 البحث عن عضو أو مدير إدارة أو مدير عامأو قيادي</h3>", unsafe_allow_html=True)
         global_people_search()
@@ -3952,6 +4195,7 @@ if not st.session_state.get("user"):
     st.stop()
 
 render_top_bar()
+render_site_audio_player()
 st.markdown('<div class="main-title">⚖️ إدارة القضايا ⚖️</div>', unsafe_allow_html=True)
 
 st.session_state.setdefault("top_notice_index", 0)
