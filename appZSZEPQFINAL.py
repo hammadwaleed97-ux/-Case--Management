@@ -4413,11 +4413,23 @@ render_site_audio_player()
 st.markdown('<div class="main-title">⚖️ إدارة القضايا ⚖️</div>', unsafe_allow_html=True)
 
 st.session_state.setdefault("top_notice_index", 0)
+st.session_state.setdefault("show_incoming_notices_panel", True)
 user_header = st.session_state.get("user") or {}
 header_name = html.escape(str(user_header.get("display_name") or user_header.get("username") or ""))
 st.markdown(f"<div style='text-align:center;color:#fff;font-size:20px;font-weight:900;margin:8px 0 14px;'>أهلاً {header_name}</div>", unsafe_allow_html=True)
 st.markdown("<div style='color:#ff4d4d;font-size:21px;font-weight:900;text-align:center;margin:8px 0;'>🔴 الرسائل الواردة والبيانات</div>", unsafe_allow_html=True)
-show_top_notices()
+_col_toggle_notices, _ = st.columns([1.4, 3.6])
+with _col_toggle_notices:
+    if st.session_state.get("show_incoming_notices_panel", True):
+        if st.button("🙈 إخفاء الرسائل الواردة", key="btn_hide_incoming_notices_all", use_container_width=True):
+            st.session_state["show_incoming_notices_panel"] = False
+            st.rerun()
+    else:
+        if st.button("👁️ إظهار الرسائل الواردة", key="btn_show_incoming_notices_all", use_container_width=True):
+            st.session_state["show_incoming_notices_panel"] = True
+            st.rerun()
+if st.session_state.get("show_incoming_notices_panel", True):
+    show_top_notices()
 show_admin_age_60_alert()
 
 def edit_membership_data_page():
