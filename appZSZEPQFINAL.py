@@ -18,13 +18,12 @@ from docx.oxml.ns import qn
 import arabic_reshaper
 from bidi.algorithm import get_display
 from openpyxl.styles import Font, Alignment, PatternFill
+st.set_page_config(page_title="إدارة القضايا", layout="wide", page_icon="⚖️")
 
 st.markdown(
     '\n<style id="visible-controls-v4">\nbutton,.stButton button,.stDownloadButton button,\ndiv[data-testid="stFileUploader"] button,\ndiv[data-testid="stTabs"] button,\ndiv[data-testid="stExpander"] button {\n    opacity:1!important;\n    visibility:visible!important;\n}\nbutton p,button span,.stButton button p,.stButton button span,\n.stDownloadButton button p,.stDownloadButton button span {\n    opacity:1!important;\n    visibility:visible!important;\n    color:#fff!important;\n}\n</style>\n',
     unsafe_allow_html=True,
 )
-st.set_page_config(page_title="إدارة القضايا", layout="wide", page_icon="⚖️")
-
 
 # ===== دوال الأسرار والربط السحابي (Supabase + الحفظ المحلي) =====
 def _secret(name, default=""):
@@ -5093,7 +5092,7 @@ elif st.session_state.page == "تقارير":
                 نوع = c.get("نوع", "").lower()
                 طرف1 = f"{'المستأنف' if 'استئناف' in نوع else 'الطاعن' if 'طعن' in نوع else 'المدعي'}: {c.get('مدعي')}"
                 طرف2 = f"{'المستأنف ضده' if 'استئناف' in نوع else 'المطعون ضده' if 'طعن' in نوع else 'المدعى عليه'}: {c.get('مدعي_عليه')}"
-                محكمة = f"{c.get('محكمة_اسم')} {f'- مأمورية {c.get(\"مأمورية\")}' if c.get('مأمورية') else ''}"
+                محكمة = f"{c.get('محكمة_اسم')} {'- مأمورية ' + str(c.get('مأمورية')) if c.get('مأمورية') else ''}"
                 rows.append({"م": i, "رقم": c.get("رقم"), "سنة": c.get("سنة"), "نوع": c.get("نوع"), "محكمة": محكمة, "دائرة": c.get("دائرة"), "الخصوم": f"{طرف1} ضد {طرف2}", "تاريخ الحكم": fmt_date_ar(c.get("تاريخ_الحكم")), "مسندة لـ": c.get("مسندة_ل_الحكم"), "منطوق الحكم": c.get("منطوق_الحكم")})
 
         elif rep_type == "جلسات":
@@ -5129,7 +5128,7 @@ elif st.session_state.page == "تقارير":
                 نوع = c.get("نوع", "").lower()
                 طرف1 = f"{'المستأنف' if 'استئناف' in نوع else 'الطاعن' if 'طعن' in نوع else 'المدعي'}: {c.get('مدعي')}"
                 طرف2 = f"{'المستأنف ضده' if 'استئناف' in نوع else 'المطعون ضده' if 'طعن' in نوع else 'المدعى عليه'}: {c.get('مدعي_عليه')}"
-                محكمة = f"{c.get('محكمة_اسم')} {f'- مأمورية {c.get(\"مأمورية\")}' if c.get('مأمورية') else ''}"
+                محكمة = f"{c.get('محكمة_اسم')} {'- مأمورية ' + str(c.get('مأمورية')) if c.get('مأمورية') else ''}"
                 rows.append({"م": i, "رقم": c.get("رقم"), "سنة": c.get("سنة"), "نوع": c.get("نوع"), "محكمة": محكمة, "الخصوم": f"{طرف1} ضد {طرف2}", "تاريخ الأرشفة": fmt_date_ar(c.get("تاريخ_أرشفة"))})
 
         if rows:
@@ -5192,7 +5191,7 @@ elif st.session_state.page == "الأرشيف":
             نوع = c.get("نوع", "").lower()
             طرف1_عنوان = "المستأنف" if "استئناف" in نوع else "الطاعن" if "طعن" in نوع else "المدعي"
             طرف2_عنوان = "المستأنف ضده" if "استئناف" in نوع else "المطعون ضده" if "طعن" in نوع else "المدعى عليه"
-            محكمة_نص = f"{c.get('محكمة_اسم')} {f'- مأمورية {c.get(\"مأمورية\")}' if c.get('مأمورية') else ''}"
+            محكمة_نص = f"{c.get('محكمة_اسم')} {'- مأمورية ' + str(c.get('مأمورية')) if c.get('مأمورية') else ''}"
 
             st.markdown(f"""
             <div class="table-scroll-wrap">
@@ -5374,7 +5373,7 @@ elif st.session_state.page == "تفاصيل_قضية":
 
         st.markdown("<div style='background:#1E2A47; padding:15px; border-radius:15px; border:2px solid #D4AF37; margin:15px 0'>", unsafe_allow_html=True)
         st.write(f"**النوع:** {case.get('نوع')}")
-        st.write(f"**المحكمة:** {case.get('محكمة_اسم')} {f'- مأمورية {case.get(\"مأمورية\")}' if case.get('مأمورية') else ''}")
+        st.write(f"**المحكمة:** {case.get('محكمة_اسم')} {'- مأمورية ' + str(case.get('مأمورية')) if case.get('مأمورية') else ''}")
         st.write(f"**الدائرة:** {case.get('دائرة')}")
         st.write(f"**الخصوم:** {case.get('مدعي')} ضد {case.get('مدعي_عليه')}")
         st.write(f"**الحالة:** {case.get('حالة')}")
