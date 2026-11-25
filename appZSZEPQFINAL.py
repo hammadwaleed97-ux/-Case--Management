@@ -2639,7 +2639,7 @@ def _recipient_groups(candidates, key_prefix, preselected=None):
 def messaging_page():
     user = st.session_state.get("user") or {}
     sr = user.get("role")
-    if sr not in ("admin", "member", "manager", "general_manager", "leader1", "leader2", "leader3"):
+    if sr not in ("admin", "assistant_admin", "member", "manager", "general_manager", "leader1", "leader2", "leader3") and not is_assistant_admin(user):
         render_return_home_button("⬅️ العودة للرئيسية", key=f"msg_no_role_home_{sr}")
         return
 
@@ -2653,18 +2653,21 @@ def messaging_page():
         ("مدير عام", "general_manager"), ("قيادي مركز رئيسى 1", "leader1"),
         ("قيادي مركز رئيسى 2", "leader2"), ("قيادي مركز رئيسى 3", "leader3")
     ]
-    allowed_roles = [r for _, r in target_options if can_message(sr, r)]
-    preselected = st.session_state.pop("message_target_ids", [])
-    candidates = [u for u in users if u.get("status") == "active" and u.get("id") != user.get("id") and can_message(sr, u.get("role"))]
+    preselected = list(st.session_state.get("message_target_ids") or [])
+    candidates = [u for u in users if u.get("status") == "active" and u.get("id") != user.get("id") and can_message(user, u)]
+    allowed_roles = [r for _, r in target_options if any(u.get("role") == r for u in candidates)]
 
     if not candidates:
         st.info("لا يوجد مستلمون متاحون وفق صلاحيات الحساب")
         render_return_home_button("⬅️ العودة للرئيسية", key=f"msg_nocand_home_{sr}")
         return
 
+    kind_choices = ["الجميع"] + [label for label, role in target_options if role in allowed_roles] + ["محددون"]
+    default_kind_idx = len(kind_choices) - 1 if preselected else 0
     target_kind = st.selectbox(
         "نوع المستلمين",
-        ["الجميع"] + [label for label, role in target_options if role in allowed_roles] + ["محددون"],
+        kind_choices,
+        index=default_kind_idx,
         key=f"msg_target_kind_{sr}"
     )
     text = st.text_area("نص الرسالة أو البيان", height=130, key=f"msg_text_{sr}")
@@ -2997,7 +3000,7 @@ def show_member_directory():
                 phone_badge = f"<div style='color:#42d77d;font-size:10px;font-weight:800;line-height:1.2;margin-top:2px;'>📱 {phone_txt}</div>" if phone_txt else "<div style='color:#94a3b8;font-size:9px;line-height:1.2;margin-top:2px;'>📱 غير مسجل</div>"
                 card = f"<div style='background:#142038;border:2px solid {border};border-radius:12px;padding:6px;text-align:center;min-height:134px;margin-bottom:5px;'>{photo}<div style='color:{name_color};font-size:12px;font-weight:900;line-height:1.2;'>{name}</div>{admin_badge}<div style='color:#D4AF37;font-size:10px;font-weight:800;line-height:1.2;'>{job}</div><div style='color:#cbd5e1;font-size:9px;line-height:1.2;'>{html.escape(area)}</div>{phone_badge}</div>"
                 st.markdown(card, unsafe_allow_html=True)
-                if u.get("id") != current.get("id") and can_message(current.get("role"), u.get("role")):
+                if u.get("id") != current.get("id") and can_message(current, u):
                     if st.button("✉️ إرسال", key=f"dir_msg_v5_{current.get('id')}_{u.get('id')}", use_container_width=True):
                         st.session_state.message_target_ids = [u.get("id")]
                         st.session_state.page = "الرسائل"
@@ -4484,6 +4487,8 @@ def edit_membership_data_page():
 
 if st.session_state.page == "تعديل_بيانات_العضويات":
     edit_membership_data_page()
+elif st.session_state.page == "الرسائل":
+    messaging_page()
 elif st.session_state.page == "لوحة التحكم":
     admin_control_page()
 elif st.session_state.page == "لوحة تحكمى":
@@ -4509,6 +4514,7 @@ if st.session_state.page == "الرئيسية":
         ("🗂️", "الأرشيف", "الأرشيف", "card_archive_v2"),
         ("📚", "المكتبة القانونية", "مكتبة", "card_library_v2"),
         ("🔎", "البحث عن دعوى", "بحث", "card_search_v2"),
+        ("📢", "الرسائل والبيانات", "الرسائل", "card_messages_v2"),
     ]
     for row_start in range(0, len(section_specs), 3):
         cols = st.columns(3)
