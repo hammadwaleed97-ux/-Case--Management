@@ -3582,6 +3582,28 @@ from fpdf import FPDF
 
 st.markdown('\n<style id="visible-controls-v4">\nbutton,.stButton button,.stDownloadButton button,\ndiv[data-testid="stFileUploader"] button,\ndiv[data-testid="stTabs"] button,\ndiv[data-testid="stExpander"] button {\n    opacity:1!important;\n    visibility:visible!important;\n}\nbutton p,button span,.stButton button p,.stButton button span,\n.stDownloadButton button p,.stDownloadButton button span {\n    opacity:1!important;\n    visibility:visible!important;\n    color:#fff!important;\n}\n</style>\n', unsafe_allow_html=True)
 st.set_page_config(page_title="إدارة القضايا", layout="wide", page_icon="⚖️")
+st.markdown(
+    """
+    <style>
+        /* إخفاء شريط الأدوات العلوي لـ Streamlit */
+        [data-testid="stHeader"] {
+            display: none !important;
+        }
+        [data-testid="stToolbar"] {
+            display: none !important;
+        }
+        [data-testid="stDecoration"] {
+            display: none !important;
+        }
+        /* تقليل المسافة العلوية بعد إخفاء الهيدر */
+        .block-container {
+            padding-top: 1rem !important;
+        }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 
 # ===== تثبيت ظهور أسماء الأزرار والأيقونات بوضوح ومنع تداخل الجداول =====
 st.markdown("""
