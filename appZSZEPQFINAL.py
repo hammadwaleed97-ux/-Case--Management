@@ -356,180 +356,361 @@ def render_admin_audio_manager(actor_username="admin"):
         state_lbl = "🟢 يعمل الآن" if is_running else "⏸️ متوقف"
         src_lbl = (
             f"ملف مرفوع: {cfg.get('file_name') or 'ملف صوتي'}"
-            if cfg.get("source_type") == "upload"
-            else f"رابط صوتي: {cfg.get('audio_url')}"
-        )
-        st.info(
-            f"**الحالة:** {state_lbl}  \n"
-            f"**العنوان:** {cfg.get('title') or 'بدون عنوان'}  \n"
-            f"**المصدر:** {src_lbl}"
-        )
-    else:
-        st.warning("لا يوجد صوت مضاف للموقع حاليًا.")
-
-    c_stop, c_play, c_cancel = st.columns(3)
-    with c_stop:
-        if st.button("⏸️ إيقاف الصوت", key="admin_audio_stop_btn", use_container_width=True, disabled=not has_audio):
-            cfg["enabled"] = False
-            cfg["updated_by"] = actor_username
-            if save_site_audio_config(cfg):
-                st.success("تم إيقاف صوت الموقع.")
-                st.rerun()
-    with c_play:
-        if st.button("▶️ تشغيل الصوت", key="admin_audio_play_btn", type="primary", use_container_width=True, disabled=not has_audio):
-            cfg["enabled"] = True
-            cfg["updated_by"] = actor_username
-            if save_site_audio_config(cfg):
-                st.success("تم تشغيل صوت الموقع.")
-                st.rerun()
-    with c_cancel:
-        if st.button("🗑️ إلغاء وحذف الصوت", key="admin_audio_cancel_btn", use_container_width=True, disabled=not (has_audio or cfg.get("enabled"))):
-            reset_cfg = dict(DEFAULT_SITE_AUDIO_CONFIG)
-            reset_cfg["updated_by"] = actor_username
-            if save_site_audio_config(reset_cfg):
-                st.success("تم إلغاء وحذف صوت الموقع.")
-                st.rerun()
-
-    with st.form("admin_site_audio_form"):
-        form_heading = "🔄 تغيير الصوت الحالي" if has_audio else "➕ إضافة صوت للموقع"
-        st.markdown(f"#### {form_heading}")
-        audio_title = st.text_input("اسم أو وصف الصوت", value=str(cfg.get("title") or ""), key="admin_audio_title_inp")
-        source_mode = st.radio(
-            "مصدر الصوت",
-            ["ملف صوتي مرفوع", "رابط صوتي مباشر"],
-            index=0 if cfg.get("source_type") != "url" else 1,
-            horizontal=True,
-            key="admin_audio_src_mode",
-        )
-
-        uploaded_audio = None
-        audio_url_val = ""
-        if source_mode == "ملف صوتي مرفوع":
-            uploaded_audio = st.file_uploader(
-                "اختر ملف الصوت (MP3, WAV, OGG, M4A, AAC, WEBM)",
-                type=["mp3", "wav", "ogg", "m4a", "aac", "webm"],
-                key="admin_audio_file_uploader",
-            )
-        else:
-            audio_url_val = st.text_input(
-                "رابط الصوت المباشر",
-                value=str(cfg.get("audio_url") or ""),
-                key="admin_audio_url_inp",
-            )
-
-        f1, f2, f3 = st.columns(3)
-        with f1:
-            enable_audio = st.checkbox("تشغيل الصوت فور الحفظ", value=bool(cfg.get("enabled", True)), key="admin_audio_enable_chk")
-        with f2:
-            loop_audio = st.checkbox("تكرار الصوت تلقائيًا", value=bool(cfg.get("loop", True)), key="admin_audio_loop_chk")
-        with f3:
-            vol_audio = st.slider("مستوى الصوت", min_value=0.0, max_value=1.0, value=float(cfg.get("volume", 0.7)), step=0.05, key="admin_audio_vol_sld")
-
-        if st.form_submit_button("💾 حفظ إعدادات الصوت", type="primary", use_container_width=True):
-            updated_audio = dict(cfg)
-            updated_audio["title"] = audio_title.strip()
-            updated_audio["loop"] = bool(loop_audio)
-            updated_audio["volume"] = float(vol_audio)
-            updated_audio["updated_by"] = actor_username
-
-            if source_mode == "ملف صوتي مرفوع":
-                if uploaded_audio is not None:
-                    raw_bytes = uploaded_audio.getvalue()
-                    updated_audio["source_type"] = "upload"
-                    updated_audio["file_name"] = uploaded_audio.name
-                    updated_audio["mime_type"] = _guess_site_audio_mime(uploaded_audio.name, uploaded_audio.type or "")
-                    updated_audio["audio_b64"] = base64.b64encode(raw_bytes).decode("utf-8")
-                    updated_audio["audio_url"] = ""
-                elif cfg.get("source_type") != "upload" or not cfg.get("audio_b64"):
-                    st.error("يرجى رفع ملف صوتي أولًا.")
-                    st.stop()
-            else:
-                clean_u = audio_url_val.strip()
-                if clean_u:
-                    updated_audio["source_type"] = "url"
-                    updated_audio["audio_url"] = clean_u
-                    updated_audio["audio_b64"] = ""
-                    updated_audio["file_name"] = ""
-                elif cfg.get("source_type") != "url" or not cfg.get("audio_url"):
-                    st.error("يرجى إدخال رابط صوتي صحيح.")
-                    st.stop()
-
-            updated_audio["enabled"] = bool(enable_audio)
-            if save_site_audio_config(updated_audio):
-                st.success("✅ تم حفظ إعدادات صوت الموقع بنجاح.")
-                st.rerun()
-JOB_TITLES_FILE = DATA_DIR / "job_titles.json"
-
-DEFAULT_JOB_TITLES = [
-    "عضو قانونى",
-    "مدير إدارة",
-    "مدير عام",
-    "قيادي مركز رئيسى 1",
-    "قيادي مركز رئيسى 2",
-    "قيادي مركز رئيسى 3",
-]
-
-def load_job_titles():
-    raw = load_json_persistent("job_titles", JOB_TITLES_FILE, list(DEFAULT_JOB_TITLES))
-    if not isinstance(raw, list):
-        raw = list(DEFAULT_JOB_TITLES)
-    seen = set()
-    out = []
-    for item in DEFAULT_JOB_TITLES + [str(x or "").strip() for x in raw]:
-        s = str(item or "").strip()
-        if s and s not in seen:
-            seen.add(s)
-            out.append(s)
-    return out
-
-def save_job_titles(titles):
-    seen = set()
-    cleaned = []
-    for item in (titles or []):
-        s = str(item or "").strip()
-        if s and s not in seen:
-            seen.add(s)
-            cleaned.append(s)
-    for d in DEFAULT_JOB_TITLES:
-        if d not in seen:
-            seen.add(d)
-            cleaned.append(d)
-    ok = save_json_persistent("job_titles", JOB_TITLES_FILE, cleaned)
+            def _secret(name, default=""):
     try:
-        _cached_job_titles_snapshot.clear()
+        value = st.secrets.get(name, default)
+        if value is not None and str(value).strip() != "":
+            return str(value).strip()
     except Exception:
         pass
-    return ok
+    env_val = os.getenv(name, default)
+    return str(env_val).strip() if env_val is not None else str(default)
 
-@st.cache_data(ttl=15, show_spinner=False)
-def _cached_job_titles_snapshot():
-    return load_job_titles()
 
-def get_all_job_titles(include_users=True):
-    titles = list(_cached_job_titles_snapshot())
-    seen = set(titles)
-    if include_users:
+SUPABASE_URL = _secret("SUPABASE_URL").rstrip("/")
+SUPABASE_KEY = _secret("SUPABASE_KEY")
+SUPABASE_STORAGE_BUCKET = _secret("SUPABASE_STORAGE_BUCKET", "legal-files")
+SUPABASE_DB_TABLE = _secret("SUPABASE_DB_TABLE", "app_state")
+
+ADMIN_USERNAME = _secret("ADMIN_USERNAME", "admin")
+ADMIN_DEFAULT_PASS = _secret("ADMIN_DEFAULT_PASS", "admin123")
+
+SENDER_EMAIL = _secret("SENDER_EMAIL", "")
+SENDER_PASSWORD = _secret("SENDER_PASSWORD", "")
+APP_URL = _secret("APP_URL", "https://qpyqpsmkqcvdou4imbfunp.streamlit.app/")
+
+CLOUD_ENABLED = bool(SUPABASE_URL and SUPABASE_KEY)
+_CLOUD_LAST_ERROR = ""
+
+
+def _init_supabase_client():
+    if not CLOUD_ENABLED:
+        return None
+    try:
+        from supabase import create_client  # type: ignore
+        return create_client(SUPABASE_URL, SUPABASE_KEY)
+    except Exception:
+        return None
+
+
+supabase = _init_supabase_client()
+
+
+def cloud_status():
+    try:
+        return bool(SUPABASE_URL and SUPABASE_KEY)
+    except Exception:
+        return False
+
+
+def cloud_success_message(action, section=""):
+    target = f" في {section}" if section else ""
+    return f"تم {action}{target} والسحابة بنجاح ✓"
+
+
+def cloud_error_message(action, error):
+    return f"تم {action} محليًا، ولكن تعذر إتمام العملية في السحابة: {error}"
+
+
+def _cloud_headers(prefer="resolution=merge-duplicates,return=minimal"):
+    headers = {
+        "apikey": SUPABASE_KEY,
+        "Authorization": f"Bearer {SUPABASE_KEY}",
+        "Content-Type": "application/json",
+    }
+    if prefer:
+        headers["Prefer"] = prefer
+    return headers
+
+
+def _storage_headers(content_type="application/json"):
+    return {
+        "apikey": SUPABASE_KEY,
+        "Authorization": f"Bearer {SUPABASE_KEY}",
+        "Content-Type": content_type,
+        "x-upsert": "true",
+    }
+
+
+def _cloud_put_db(key, payload):
+    global _CLOUD_LAST_ERROR
+    if not CLOUD_ENABLED:
+        _CLOUD_LAST_ERROR = "SUPABASE_URL أو SUPABASE_KEY غير مضبوط في Secrets."
+        return False
+    try:
+        r = requests.post(
+            f"{SUPABASE_URL}/rest/v1/{SUPABASE_DB_TABLE}",
+            params={"on_conflict": "key"},
+            headers=_cloud_headers(),
+            json={
+                "key": key,
+                "payload": payload,
+                "updated_at": datetime.now().astimezone().isoformat(),
+            },
+            timeout=15,
+        )
+        if r.ok:
+            _CLOUD_LAST_ERROR = ""
+            return True
+        _CLOUD_LAST_ERROR = f"Database HTTP {r.status_code}: {r.text[:500]}"
+    except Exception as exc:
+        _CLOUD_LAST_ERROR = f"Database: {exc}"
+    return False
+
+
+def _cloud_get_db(key):
+    global _CLOUD_LAST_ERROR
+    if not CLOUD_ENABLED:
+        _CLOUD_LAST_ERROR = "SUPABASE_URL أو SUPABASE_KEY غير مضبوط في Secrets."
+        return None
+    try:
+        r = requests.get(
+            f"{SUPABASE_URL}/rest/v1/{SUPABASE_DB_TABLE}",
+            params={"key": f"eq.{key}", "select": "key,payload,updated_at"},
+            headers=_cloud_headers(prefer=""),
+            timeout=12,
+        )
+        if r.ok:
+            rows = r.json()
+            if isinstance(rows, list) and rows:
+                _CLOUD_LAST_ERROR = ""
+                return rows[0]
+            return None
+        _CLOUD_LAST_ERROR = f"Database HTTP {r.status_code}: {r.text[:500]}"
+    except Exception as exc:
+        _CLOUD_LAST_ERROR = f"Database: {exc}"
+    return None
+
+
+def _cloud_put_storage(key, payload):
+    global _CLOUD_LAST_ERROR
+    if not CLOUD_ENABLED:
+        _CLOUD_LAST_ERROR = "SUPABASE_URL أو SUPABASE_KEY غير مضبوط في Secrets."
+        return False
+    try:
+        storage_key = f"app_state/{key}.json"
+        raw = json.dumps(payload, ensure_ascii=False, default=str).encode("utf-8")
+        r = requests.post(
+            f"{SUPABASE_URL}/storage/v1/object/{SUPABASE_STORAGE_BUCKET}/{storage_key}",
+            headers=_storage_headers("application/json"),
+            data=raw,
+            timeout=20,
+        )
+        if r.ok:
+            _CLOUD_LAST_ERROR = ""
+            return True
+        _CLOUD_LAST_ERROR = f"Storage HTTP {r.status_code}: {r.text[:500]}"
+    except Exception as exc:
+        _CLOUD_LAST_ERROR = f"Storage: {exc}"
+    return False
+
+
+def _cloud_get_storage(key):
+    global _CLOUD_LAST_ERROR
+    if not CLOUD_ENABLED:
+        _CLOUD_LAST_ERROR = "SUPABASE_URL أو SUPABASE_KEY غير مضبوط في Secrets."
+        return None
+    try:
+        storage_key = f"app_state/{key}.json"
+        r = requests.get(
+            f"{SUPABASE_URL}/storage/v1/object/{SUPABASE_STORAGE_BUCKET}/{storage_key}",
+            headers={
+                "apikey": SUPABASE_KEY,
+                "Authorization": f"Bearer {SUPABASE_KEY}",
+            },
+            timeout=15,
+        )
+        if r.ok:
+            _CLOUD_LAST_ERROR = ""
+            return {"key": key, "payload": r.json()}
+        if r.status_code != 404:
+            _CLOUD_LAST_ERROR = f"Storage HTTP {r.status_code}: {r.text[:500]}"
+    except Exception as exc:
+        _CLOUD_LAST_ERROR = f"Storage: {exc}"
+    return None
+
+
+def _cloud_put(key, payload):
+    global _CLOUD_LAST_ERROR
+    if not CLOUD_ENABLED:
+        _CLOUD_LAST_ERROR = "SUPABASE_URL أو SUPABASE_KEY غير مضبوط في Secrets."
+        return False
+    if _cloud_put_db(key, payload):
+        return True
+    return _cloud_put_storage(key, payload)
+
+
+def _cloud_get(key):
+    global _CLOUD_LAST_ERROR
+    if not CLOUD_ENABLED:
+        _CLOUD_LAST_ERROR = "SUPABASE_URL أو SUPABASE_KEY غير مضبوط في Secrets."
+        return None
+    row = _cloud_get_db(key)
+    if row is not None:
+        return row
+    return _cloud_get_storage(key)
+
+
+def cloud_delete_record(table_name, record_id):
+    try:
+        if not cloud_status() or not record_id:
+            return False, "اتصال السحابة غير متاح"
+        if supabase is not None:
+            supabase.table(table_name).delete().eq("id", record_id).execute()
+            return True, ""
+        r = requests.delete(
+            f"{SUPABASE_URL}/rest/v1/{table_name}",
+            params={"id": f"eq.{record_id}"},
+            headers=_cloud_headers(prefer="return=minimal"),
+            timeout=15,
+        )
+        if r.ok:
+            return True, ""
+        return False, f"HTTP {r.status_code}: {r.text[:300]}"
+    except Exception as exc:
+        return False, str(exc)
+
+
+def cloud_upload_file(file_bytes, file_name, content_type="application/octet-stream"):
+    try:
+        if not cloud_status():
+            return None, "اتصال السحابة غير متاح"
+        safe_name = re.sub(r"[^A-Za-z0-9._/-]+", "_", str(file_name))
+        storage_path = f"{datetime.now().strftime('%Y/%m')}/{safe_name}"
+        if supabase is not None:
+            supabase.storage.from_(SUPABASE_STORAGE_BUCKET).upload(
+                storage_path,
+                file_bytes,
+                {"content-type": content_type, "upsert": "true"},
+            )
+            return storage_path, ""
+        r = requests.post(
+            f"{SUPABASE_URL}/storage/v1/object/{SUPABASE_STORAGE_BUCKET}/{storage_path}",
+            headers=_storage_headers(content_type),
+            data=file_bytes,
+            timeout=25,
+        )
+        if r.ok:
+            return storage_path, ""
+        return None, f"HTTP {r.status_code}: {r.text[:300]}"
+    except Exception as exc:
+        return None, str(exc)
+
+
+def cloud_delete_file(storage_path):
+    try:
+        if not cloud_status() or not storage_path:
+            return False, "مسار الملف السحابي غير موجود"
+        if supabase is not None:
+            supabase.storage.from_(SUPABASE_STORAGE_BUCKET).remove([storage_path])
+            return True, ""
+        r = requests.delete(
+            f"{SUPABASE_URL}/storage/v1/object/{SUPABASE_STORAGE_BUCKET}/{storage_path.lstrip('/')}",
+            headers={
+                "apikey": SUPABASE_KEY,
+                "Authorization": f"Bearer {SUPABASE_KEY}",
+            },
+            timeout=15,
+        )
+        if r.ok:
+            return True, ""
+        return False, f"HTTP {r.status_code}: {r.text[:300]}"
+    except Exception as exc:
+        return False, str(exc)
+
+
+def _write_local_json_atomic(file_path, data):
+    """كتابة آمنة محليًا عبر ملف مؤقت ثم استبدال ذري + نسخة احتياطية محلية."""
+    path = Path(file_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    serialized = json.dumps(data, ensure_ascii=False, indent=2, default=str)
+    tmp_path = path.with_name(f".{path.name}.{secrets.token_hex(4)}.tmp")
+    tmp_path.write_text(serialized, encoding="utf-8")
+    os.replace(str(tmp_path), str(path))
+
+    backup_dir = LOCAL_BACKUP_DIR / path.stem
+    backup_dir.mkdir(parents=True, exist_ok=True)
+    latest_backup = backup_dir / f"{path.name}.bak"
+    latest_backup.write_text(serialized, encoding="utf-8")
+    return True
+
+
+def _read_local_json_safe(file_path):
+    """قراءة آمنة من الملف المحلي مع الرجوع للنسخة الاحتياطية المحلية عند الحاجة."""
+    path = Path(file_path)
+    for candidate in (path, LOCAL_BACKUP_DIR / path.stem / f"{path.name}.bak"):
         try:
-            for u in _cached_users_snapshot():
-                for key_name in ("job_title", "job", "وظيفة", "role_name"):
-                    val = str(u.get(key_name) or "").strip()
-                    if val and val not in seen:
-                        seen.add(val)
-                        titles.append(val)
+            if candidate.exists():
+                return json.loads(candidate.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+    return None
+
+
+def load_json_persistent(key, local_path, default):
+    local_obj = _read_local_json_safe(local_path)
+    cloud = _cloud_get(key)
+    if cloud and cloud.get("payload") is not None:
+        try:
+            cloud_obj = cloud["payload"]
+            if local_obj is None:
+                local_obj = cloud_obj
+                _write_local_json_atomic(local_path, local_obj)
         except Exception:
             pass
-    return titles
+    if local_obj is None:
+        local_obj = default
+        try:
+            _write_local_json_atomic(local_path, local_obj)
+        except Exception:
+            pass
+        if CLOUD_ENABLED:
+            _cloud_put(key, local_obj)
+    return local_obj
 
-def register_job_title(title_text):
-    clean = str(title_text or "").strip()
-    if not clean:
-        return False, "أدخل اسم الوظيفة أولاً"
-    current = get_all_job_titles(include_users=True)
-    if clean in current:
-        return True, "الوظيفة موجودة بالفعل ومتاحة للجميع"
-    current.append(clean)
-    if save_job_titles(current):
-        return True, f"تمت إضافة الوظيفة ({clean}) وأصبحت متاحة للأدمن ولكل الأعضاء"
+
+def save_json_persistent(key, file_path, data):
+    """
+    حفظ محلي آمن أولًا مع نسخة احتياطية، ثم محاولة المزامنة مع السحابة
+    دون إفساد أو إبطال الحفظ المحلي إذا تعذرت السحابة.
+    """
+    try:
+        local_ok = _write_local_json_atomic(file_path, data)
+    except Exception as exc:
+        st.error(f"❌ تعذر الحفظ المحلي: {exc}")
+        return False
+
+    for cache_fn in ("_cached_users_snapshot", "_cached_banners_snapshot", "_cached_job_titles_snapshot", "_cached_top_bar_snapshot"):
+        try:
+            fn_obj = globals().get(cache_fn)
+            if callable(fn_obj) and hasattr(fn_obj, "clear"):
+                fn_obj.clear()
+        except Exception:
+            pass
+
+    if not CLOUD_ENABLED:
+        return bool(local_ok)
+
+    try:
+        cloud_ok = bool(_cloud_put(key, data))
+    except Exception as exc:
+        st.info(f"💾 تم الحفظ محليًا بنجاح (تعذرت مزامنة السحابة مؤقتًا: {exc})")
+        return bool(local_ok)
+
+    if not cloud_ok:
+        st.info(f'💾 تم الحفظ محليًا بنجاح (لم تتم مزامنة السحابة: {_CLOUD_LAST_ERROR or "غير متاحة حاليًا"})')
+        return bool(local_ok)
+
+    return True
+
+
+def load_banners():
+    return load_json_persistent("banners", BANNERS_FILE, [])
+
+
+def save_banners(banners):
+    return save_json_persistent("banners", BANNERS_FILE, banners)
+
     return False, "تعذر حفظ الوظيفة"
 
 DEFAULT_TOP_BAR_CONFIG = {
