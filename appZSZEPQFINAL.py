@@ -4780,7 +4780,8 @@ elif st.session_state.page=="تفاصيل_قضية":
                 st.write(f"**النوع:** {case.get('نوع') or 'غير محدد'}")
                 st.write(f"**الرقم / السنة:** {case.get('رقم') or ''} لسنة {case.get('سنة') or ''}")
                 st.write(f"**نوع المحكمة:** {case.get('محكمة_نوع') or 'غير محدد'}")
-                st.write(f"**المحكمة / المأمورية:** {case.get('محكمة_اسم') or ''} {f'- مأمورية {case.get(\"مأمورية\")}' if case.get('مأمورية') else ''}")
+                maamoriya_txt = f" - مأمورية {case.get('مأمورية')}" if case.get("مأمورية") else ""
+                st.write(f"**المحكمة / المأمورية:** {case.get('محكمة_اسم') or ''}{maamoriya_txt}")
                 st.write(f"**الدائرة:** {case.get('دائرة') or 'غير محددة'}")
             with d2:
                 st.write(f"**الحالة:** {case.get('حالة') or 'غير محددة'}")
