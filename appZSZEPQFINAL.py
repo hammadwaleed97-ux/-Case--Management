@@ -905,6 +905,68 @@ def save_json_persistent(key, file_path, data):
 
     return True
 
+def test_supabase_save_now():
+    url = (SUPABASE_URL or "").strip().rstrip("/")
+    key = (SUPABASE_KEY or "").strip()
+    report = {
+        "has_url": bool(url),
+        "has_key": bool(key),
+        "url_host": url.replace("https://", "").split("/")[0] if url else "",
+        "key_prefix": key[:12] + "..." if key else "",
+        "db_status": None,
+        "db_response": "",
+        "storage_status": None,
+        "storage_response": "",
+    }
+    if not url or not key:
+        report["db_response"] = "SUPABASE_URL أو SUPABASE_KEY فاضي في الإعدادات/Secrets"
+        return report
+
+    headers = {
+        "apikey": key,
+        "Authorization": f"Bearer {key}",
+        "Content-Type": "application/json",
+        "Prefer": "resolution=merge-duplicates,return=representation",
+    }
+    payload = {
+        "key": "test_save_check",
+        "payload": {"ok": True, "ts": datetime.now().isoformat()},
+        "updated_at": datetime.now().astimezone().isoformat(),
+    }
+
+    try:
+        r = requests.post(
+            f"{url}/rest/v1/app_state",
+            params={"on_conflict": "key"},
+            headers=headers,
+            json=payload,
+            timeout=15,
+        )
+        report["db_status"] = r.status_code
+        report["db_response"] = r.text[:400]
+    except Exception as e:
+        report["db_response"] = f"Exception: {e}"
+
+    try:
+        st_headers = {
+            "apikey": key,
+            "Authorization": f"Bearer {key}",
+            "Content-Type": "application/json",
+            "x-upsert": "true",
+        }
+        r_st = requests.post(
+            f"{url}/storage/v1/object/{SUPABASE_STORAGE_BUCKET}/app_state/test_save_check.json",
+            headers=st_headers,
+            data=json.dumps({"ok": True}).encode("utf-8"),
+            timeout=15,
+        )
+        report["storage_status"] = r_st.status_code
+        report["storage_response"] = r_st.text[:400]
+    except Exception as e:
+        report["storage_response"] = f"Exception: {e}"
+
+    return report
+
 def load_banners():
     return load_json_persistent("banners", BANNERS_FILE, [])
 
@@ -4524,6 +4586,9 @@ elif st.session_state.page == "لوحة تحكمى":
     personal_control_page()
 elif st.session_state.page == "extract_member":
     extract_member_page()
+
+if st.button("فحص الحفظ السحابي"):
+    st.json(test_supabase_save_now())
 
 if st.session_state.page == "الرئيسية":
     user = st.session_state.get("user") or {}
