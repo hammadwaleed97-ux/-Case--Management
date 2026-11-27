@@ -5815,10 +5815,16 @@ if st.session_state.page == "تقارير":
         with colB: مدير_عام1 = st.text_input("اسم مدير عام الإدارات القانونية", key="modir1")
         with colC: مدير_ادارة1 = st.text_input("اسم مدير إدارة القضايا", key="modir_idara1")
         عضو_قانوني1 = st.text_input("اسم العضو القانوني", key="odo1")
-        col1, col2, col3 = st.columns(3)
-        with col1: from_date = st.date_input("من الفترة", format="DD/MM/YYYY", key="from1")
-        with col2: to_date = st.date_input("حتى الفترة", format="DD/MM/YYYY", key="to1")
-        with col3: lawyer = st.text_input("طرف الاستاذ/ المحامي", key="lawyer1")
+        filter_by_period1 = st.checkbox("تحديد مدة زمنية (من / إلى)", value=False, key="filter_period1")
+        if filter_by_period1:
+            col1, col2, col3 = st.columns(3)
+            with col1: from_date = st.date_input("من الفترة", format="DD/MM/YYYY", key="from1")
+            with col2: to_date = st.date_input("حتى الفترة", format="DD/MM/YYYY", key="to1")
+            with col3: lawyer = st.text_input("طرف الاستاذ/ المحامي", key="lawyer1")
+        else:
+            from_date = None
+            to_date = None
+            lawyer = st.text_input("طرف الاستاذ/ المحامي", key="lawyer1")
         topic = ""
         if "حسب موضوع" in نوع_تقرير_متداولة:
             topic = st.text_input("موضوع الدعوى للفلترة", key="topic1")
@@ -5826,21 +5832,25 @@ if st.session_state.page == "تقارير":
 
         if st.button("🔍 عرض بيان الدعاوى المتداولة", use_container_width=True, type="primary", key="show1"):
             cases = [c for c in my_cases if str(c.get('حالة', '')).strip() == 'متداولة']
-            فلترة_بالمدة = []
-            for c in cases:
-                ت_جلسة = _parse_date_safe(c.get('تاريخ_جلسة'))
-                if ت_جلسة and from_date <= ت_جلسة <= to_date:
-                    فلترة_بالمدة.append(c)
-            cases = فلترة_بالمدة
+            if filter_by_period1 and from_date and to_date:
+                فلترة_بالمدة = []
+                for c in cases:
+                    ت_جلسة = _parse_date_safe(c.get('تاريخ_جلسة'))
+                    if ت_جلسة and from_date <= ت_جلسة <= to_date:
+                        فلترة_بالمدة.append(c)
+                cases = فلترة_بالمدة
             if "حسب موضوع" in نوع_تقرير_متداولة and topic.strip():
                 t_norm = _norm_ar(topic)
                 cases = [c for c in cases if t_norm in _norm_ar(c.get('موضوع', ''))]
-            cases = sorted(cases, key=lambda x: str(x.get("تاريخ_جلسة", "0000-00-00")), reverse=True)
-            title = f"{نوع_تقرير_متداولة} خلال الفترة من {from_date.strftime('%d/%m/%Y')} إلى {to_date.strftime('%d/%m/%Y')} طرف الاستاذ/ {lawyer} المحامي"
+            cases = sorted(cases, key=lambda x: date_sort_key(x.get("تاريخ_جلسة", "")), reverse=True)
+            if filter_by_period1 and from_date and to_date:
+                title = f"{نوع_تقرير_متداولة} خلال الفترة من {from_date.strftime('%d/%m/%Y')} إلى {to_date.strftime('%d/%m/%Y')} طرف الاستاذ/ {lawyer} المحامي"
+            else:
+                title = f"{نوع_تقرير_متداولة} حتى الآن طرف الاستاذ/ {lawyer} المحامي"
             header_html = report_header(region, title, مدير_عام1, مدير_ادارة1, عضو_قانوني1)
             if not cases:
                 st.session_state.tab_reports_cache.pop("tab1", None)
-                st.warning("⚠️ لا توجد دعاوى متداولة في الفترة المحددة")
+                st.warning("⚠️ لا توجد دعاوى متداولة في الفترة المحددة" if filter_by_period1 else "⚠️ لا توجد دعاوى متداولة")
             else:
                 table_html = "<table class='case-table'><tr><th>م</th><th>رقم</th><th>سنة</th><th>المحكمة والدائرة</th><th>الخصوم</th><th>الموضوع</th><th>اخر جلسة</th><th>الاجراء</th><th>ملاحظات</th></tr>"
                 df_data = []
