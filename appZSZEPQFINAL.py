@@ -5583,12 +5583,33 @@ elif st.session_state.page == "مكتبة":
                         st.rerun()
 
             if st.session_state.get("open_lib_doc_id") == doc["id"] and doc.get("content"):
-                ftype = str(doc.get("file_type") or "").lower().strip()
+                ftype = str(doc.get("file_type") or "").lower().lstrip(".").strip()
                 raw_b64 = doc["content"]
-                if ftype in ("jpg", "jpeg", "png"):
-                    st.image(base64.b64decode(raw_b64), caption=doc.get("name"), use_container_width=True)
+                raw_bytes = base64.b64decode(raw_b64)
+                if ftype in ("jpg", "jpeg", "png", "gif", "webp"):
+                    st.image(raw_bytes, caption=doc.get("name"), use_container_width=True)
                 elif ftype == "pdf":
-                    st.components.v1.iframe(f"data:application/pdf;base64,{raw_b64}", height=600, scrolling=True)
+                    st.components.v1.iframe(f"data:application/pdf;base64,{raw_b64}", height=650, scrolling=True)
+                elif ftype in ("txt", "md", "csv", "json", "xml", "log"):
+                    try:
+                        text_preview = raw_bytes.decode("utf-8")
+                    except UnicodeDecodeError:
+                        text_preview = raw_bytes.decode("cp1256", errors="replace")
+                    st.text_area("محتوى المادة القانونية", value=text_preview, height=400, key=f"txt_prev_{doc['id']}")
+                elif ftype == "docx":
+                    try:
+                        from docx import Document as _DocxDoc
+                        import io as _io
+                        _d = _DocxDoc(_io.BytesIO(raw_bytes))
+                        _paras = [p.text for p in _d.paragraphs if p.text.strip()]
+                        for _t in _d.tables:
+                            for _r in _t.rows:
+                                _row_txt = " | ".join(c.text.strip() for c in _r.cells if c.text.strip())
+                                if _row_txt:
+                                    _paras.append(_row_txt)
+                        st.text_area("محتوى المستند", value="\n".join(_paras) if _paras else "المستند فارغ.", height=420, key=f"docx_prev_{doc['id']}")
+                    except Exception:
+                        st.info("يمكنك تحميل الملف لفتحه على جهازك.")
                 else:
                     st.info("يمكنك تحميل الملف لفتحه على جهازك.")
             st.markdown('</div>', unsafe_allow_html=True)
