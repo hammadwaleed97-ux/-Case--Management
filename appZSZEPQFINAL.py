@@ -740,14 +740,18 @@ def _cloud_put_db(key, payload):
         _CLOUD_LAST_ERROR = f"Database: {exc}"
     return False
 
+@st.cache_resource
+def _get_http_session():
+    return requests.Session()
+
 def _cloud_get_db(key):
     global _CLOUD_LAST_ERROR
     try:
-        r = requests.get(
+        r = _get_http_session().get(
             f"{SUPABASE_URL}/rest/v1/app_state",
             params={"key": f"eq.{key}", "select": "key,payload,updated_at"},
             headers=_cloud_headers(),
-            timeout=12,
+            timeout=10,
         )
         if r.ok:
             rows = r.json()
@@ -770,7 +774,7 @@ def _cloud_put_storage(key, payload):
     try:
         storage_key = f"app_state/{key}.json"
         raw = json.dumps(payload, ensure_ascii=False, default=str).encode("utf-8")
-        r = requests.post(
+        r = _get_http_session().post(
             f"{SUPABASE_URL}/storage/v1/object/{SUPABASE_STORAGE_BUCKET}/{storage_key}",
             headers=_storage_headers(),
             data=raw,
@@ -787,13 +791,13 @@ def _cloud_get_storage(key):
     global _CLOUD_LAST_ERROR
     try:
         storage_key = f"app_state/{key}.json"
-        r = requests.get(
+        r = _get_http_session().get(
             f"{SUPABASE_URL}/storage/v1/object/{SUPABASE_STORAGE_BUCKET}/{storage_key}",
             headers={
                 "apikey": SUPABASE_KEY,
                 "Authorization": f"Bearer {SUPABASE_KEY}",
             },
-            timeout=15,
+            timeout=12,
         )
         if r.ok:
             return {"key": key, "payload": r.json()}
@@ -812,15 +816,34 @@ def _cloud_put(key, payload):
         return True
     return _cloud_put_storage(key, payload)
 
-def _cloud_get(key):
-    global _CLOUD_LAST_ERROR
+@st.cache_data(ttl=120, show_spinner=False)
+def _cloud_get_cached(key):
     if not CLOUD_ENABLED:
-        _CLOUD_LAST_ERROR = "SUPABASE_URL أو SUPABASE_KEY غير موجود في Secrets."
         return None
     row = _cloud_get_db(key)
     if row is not None:
         return row
     return _cloud_get_storage(key)
+
+def _cloud_get(key):
+    global _CLOUD_LAST_ERROR
+    if not CLOUD_ENABLED:
+        _CLOUD_LAST_ERROR = "SUPABASE_URL أو SUPABASE_KEY غير موجود في Secrets."
+        return None
+    return _cloud_get_cached(key)
+
+def clear_cloud_and_memory_cache(key=None):
+    try:
+        _cloud_get_cached.clear()
+        _cached_users_snapshot.clear()
+        _cached_banners_snapshot.clear()
+    except Exception:
+        pass
+    if key:
+        st.session_state.pop(f"_mem_store_{key}", None)
+    else:
+        for k in [k for k in list(st.session_state.keys()) if str(k).startswith("_mem_store_")]:
+            st.session_state.pop(k, None)
 
 def _write_local_json_atomic(file_path, data):
     """كتابة آمنة محلياً عبر ملف مؤقت ثم استبدال ذري + نسخة احتياطية محلية."""
@@ -849,6 +872,10 @@ def _read_local_json_safe(file_path):
     return None
 
 def load_json_persistent(key, local_path, default):
+    mem_key = f"_mem_store_{key}"
+    if mem_key in st.session_state:
+        return st.session_state[mem_key]
+
     local_obj = _read_local_json_safe(local_path)
     cloud = _cloud_get(key)
     if cloud and cloud.get("payload") is not None:
@@ -867,6 +894,8 @@ def load_json_persistent(key, local_path, default):
             pass
         if CLOUD_ENABLED:
             _cloud_put(key, local_obj)
+
+    st.session_state[mem_key] = local_obj
     return local_obj
 
 def save_json_persistent(key, file_path, data):
@@ -881,11 +910,10 @@ def save_json_persistent(key, file_path, data):
         st.error(f"❌ تعذر الحفظ المحلي: {exc}")
         return False
 
+    st.session_state[f"_mem_store_{key}"] = data
     try:
+        _cloud_get_cached.clear()
         _cached_users_snapshot.clear()
-    except Exception:
-        pass
-    try:
         _cached_banners_snapshot.clear()
     except Exception:
         pass
@@ -2185,7 +2213,9 @@ def sync_session_user_to_perms_db(u):
     conn.close()
     return perm_user_id
 
-def sync_all_json_users_to_perms_db():
+def sync_all_json_users_to_perms_db(force=False):
+    if not force and st.session_state.get("_perms_db_synced_once"):
+        return
     _ensure_perms_db_ready()
     try:
         json_users = load_users()
@@ -2194,7 +2224,7 @@ def sync_all_json_users_to_perms_db():
     for u in json_users:
         if isinstance(u, dict) and u.get("status") != "deleted":
             sync_session_user_to_perms_db(u)
-
+    st.session_state["_perms_db_synced_once"] = True
 def _resolve_perm_user_id_from_session_or_dict(user_or_role):
     _ensure_perms_db_ready()
     if isinstance(user_or_role, dict):
@@ -4670,27 +4700,41 @@ elif st.session_state.page == "الحصر":
     if not data["cases"]:
         st.info("لا توجد قضايا مسجلة")
     else:
+        dirty = False
         for i, case in enumerate(data["cases"]):
             if "id" not in case:
                 case["id"] = i + 1
+                dirty = True
             if "مستندات" not in case:
                 case["مستندات"] = []
+                dirty = True
 
-        save_data(data)
-
-        for case in data["cases"]:
             for ج in case.get("جلسات") or []:
                 if ج.get("تاريخ"):
-                    ج["تاريخ"] = fmt_date_ar(ج.get("تاريخ"))
+                    fmt_d = fmt_date_ar(ج.get("تاريخ"))
+                    if ج["تاريخ"] != fmt_d:
+                        ج["تاريخ"] = fmt_d
+                        dirty = True
+
             if "جلسات" in case and case["جلسات"]:
                 جلسات_مرتبة = sorted(case["جلسات"], key=lambda x: date_sort_key(x.get("تاريخ","")), reverse=True)
                 اخر_جلسة = جلسات_مرتبة[0]
-                case["تاريخ_جلسة"] = fmt_date_ar(اخر_جلسة.get("تاريخ",""))
-                case["الاجراء"] = اخر_جلسة.get("الاجراء","")
-                case["الحالة"] = اخر_جلسة.get("الحالة", case.get("الحالة","متداولة"))
+                new_t = fmt_date_ar(اخر_جلسة.get("تاريخ",""))
+                new_a = اخر_جلسة.get("الاجراء","")
+                new_h = اخر_جلسة.get("الحالة", case.get("الحالة","متداولة"))
+                if case.get("تاريخ_جلسة") != new_t or case.get("الاجراء") != new_a or case.get("الحالة") != new_h:
+                    case["تاريخ_جلسة"] = new_t
+                    case["الاجراء"] = new_a
+                    case["الحالة"] = new_h
+                    dirty = True
             elif case.get("تاريخ_جلسة"):
-                case["تاريخ_جلسة"] = fmt_date_ar(case.get("تاريخ_جلسة"))
-        save_data(data)
+                fmt_main = fmt_date_ar(case.get("تاريخ_جلسة"))
+                if case["تاريخ_جلسة"] != fmt_main:
+                    case["تاريخ_جلسة"] = fmt_main
+                    dirty = True
+
+        if dirty:
+            save_data(data)
 
         active_cases = [c for c in get_my_cases(data) if c.get('حالة') == 'متداولة']
         sorted_cases = sorted(active_cases, key=lambda x: date_sort_key(x.get("تاريخ_جلسة","")))
@@ -4899,7 +4943,6 @@ elif st.session_state.page == "تفاصيل":
             with col3:
                 if st.button("🗑️ حذف", key=f"del_{i}", use_container_width=True):
                     case['مستندات'].pop(i); save_data(data); st.rerun()
-        case['مستندات'] = مستندات_جديدة; save_data(data)
         st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown("<div style='background:#1E2A47; padding:15px; border-radius:15px; border:2px solid #FF5252; margin-bottom:15px'>", unsafe_allow_html=True)
