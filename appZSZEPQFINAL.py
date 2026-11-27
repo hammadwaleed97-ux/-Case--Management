@@ -5554,7 +5554,14 @@ elif st.session_state.page == "مكتبة":
             st.markdown(f"**{doc.get('name')}**")
             st.caption(f"رقم: {doc.get('number','-')} | سنة: {doc.get('year','-')}")
             
-            col1, col2 = st.columns([3,1])
+            col_open, col1, col2 = st.columns([2,2,1])
+            with col_open:
+                if st.button("📂 فتح", key=f"open_lib_{doc['id']}", use_container_width=True):
+                    if st.session_state.get("open_lib_doc_id") == doc["id"]:
+                        st.session_state.pop("open_lib_doc_id", None)
+                    else:
+                        st.session_state["open_lib_doc_id"] = doc["id"]
+                    st.rerun()
             with col1:
                 if doc.get("content"):
                     file_data = base64.b64decode(doc["content"])
@@ -5574,6 +5581,16 @@ elif st.session_state.page == "مكتبة":
                         data["library"] = [d for d in data["library"] if d["id"] != doc["id"]]
                         save_data(data)
                         st.rerun()
+
+            if st.session_state.get("open_lib_doc_id") == doc["id"] and doc.get("content"):
+                ftype = str(doc.get("file_type") or "").lower().strip()
+                raw_b64 = doc["content"]
+                if ftype in ("jpg", "jpeg", "png"):
+                    st.image(base64.b64decode(raw_b64), caption=doc.get("name"), use_container_width=True)
+                elif ftype == "pdf":
+                    st.components.v1.iframe(f"data:application/pdf;base64,{raw_b64}", height=600, scrolling=True)
+                else:
+                    st.info("يمكنك تحميل الملف لفتحه على جهازك.")
             st.markdown('</div>', unsafe_allow_html=True)
     
     elif "selected_section" in st.session_state:
