@@ -5522,7 +5522,7 @@ elif st.session_state.page == "مكتبة":
             col1, col2 = st.columns(2)
             with col1: doc_number = st.text_input("3- الرقم", placeholder="148", key="inp_num")
             with col2: doc_year = st.text_input("4- السنة", placeholder="2019", key="inp_year")
-            uploaded_file = st.file_uploader("5- ارفع الملف", type=['pdf', 'doc', 'docx', 'jpg', 'png'], key="upl_file")
+            uploaded_file = st.file_uploader("5- ارفع الملف (جميع الصيغ مسموحة: PDF, Word, Excel, صور, وغيرها)", type=None, key="upl_file")
             
             if st.form_submit_button("💾 حفظ في القسم", use_container_width=True):
                 if uploaded_file and doc_name.strip() and section_select:
@@ -5582,37 +5582,89 @@ elif st.session_state.page == "مكتبة":
                         save_data(data)
                         st.rerun()
 
-            if st.session_state.get("open_lib_doc_id") == doc["id"] and doc.get("content"):
-                ftype = str(doc.get("file_type") or "").lower().lstrip(".").strip()
-                raw_b64 = doc["content"]
-                raw_bytes = base64.b64decode(raw_b64)
-                if ftype in ("jpg", "jpeg", "png", "gif", "webp"):
-                    st.image(raw_bytes, caption=doc.get("name"), use_container_width=True)
-                elif ftype == "pdf":
-                    st.components.v1.iframe(f"data:application/pdf;base64,{raw_b64}", height=650, scrolling=True)
-                elif ftype in ("txt", "md", "csv", "json", "xml", "log"):
-                    try:
-                        text_preview = raw_bytes.decode("utf-8")
-                    except UnicodeDecodeError:
-                        text_preview = raw_bytes.decode("cp1256", errors="replace")
-                    st.text_area("محتوى المادة القانونية", value=text_preview, height=400, key=f"txt_prev_{doc['id']}")
-                elif ftype == "docx":
-                    try:
-                        from docx import Document as _DocxDoc
-                        import io as _io
-                        _d = _DocxDoc(_io.BytesIO(raw_bytes))
-                        _paras = [p.text for p in _d.paragraphs if p.text.strip()]
-                        for _t in _d.tables:
-                            for _r in _t.rows:
-                                _row_txt = " | ".join(c.text.strip() for c in _r.cells if c.text.strip())
-                                if _row_txt:
-                                    _paras.append(_row_txt)
-                        st.text_area("محتوى المستند", value="\n".join(_paras) if _paras else "المستند فارغ.", height=420, key=f"docx_prev_{doc['id']}")
-                    except Exception:
-                        st.info("يمكنك تحميل الملف لفتحه على جهازك.")
-                else:
-                    st.info("يمكنك تحميل الملف لفتحه على جهازك.")
             st.markdown('</div>', unsafe_allow_html=True)
+            if st.session_state.get("open_lib_doc_id") == doc["id"] and doc.get("content"):
+                @st.dialog(f"📖 {doc.get('name', 'عرض المستند')}", width="large")
+                def _show_lib_doc_dialog(_doc=doc):
+                    _ftype = str(_doc.get("file_type") or "").lower().lstrip(".").strip()
+                    _raw_b64 = _doc["content"]
+                    _raw_bytes = base64.b64decode(_raw_b64)
+                    _dl_name = f"{_doc.get('name', 'document')}.{_ftype}" if _ftype else _doc.get('name', 'document')
+                    _mime = {
+                        "pdf": "application/pdf",
+                        "doc": "application/msword",
+                        "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                        "xls": "application/vnd.ms-excel",
+                        "xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        "jpg": "image/jpeg",
+                        "jpeg": "image/jpeg",
+                        "png": "image/png",
+                        "txt": "text/plain"
+                    }.get(_ftype, "application/octet-stream")
+
+                    if _ftype in ("jpg", "jpeg", "png", "gif", "webp", "bmp"):
+                        st.image(_raw_bytes, caption=_doc.get("name"), use_container_width=True)
+                    elif _ftype == "pdf":
+                        _pdf_html = f'''
+                        <div style="width:100%; height:620px; border:1px solid #444; border-radius:8px; overflow:hidden; background:#2b2b2b;">
+                            <object data="data:application/pdf;base64,{_raw_b64}#toolbar=1&navpanes=0" type="application/pdf" width="100%" height="100%">
+                                <embed src="data:application/pdf;base64,{_raw_b64}#toolbar=1" type="application/pdf" width="100%" height="100%" />
+                            </object>
+                        </div>
+                        '''
+                        st.components.v1.html(_pdf_html, height=635, scrolling=True)
+                    elif _ftype in ("txt", "md", "csv", "json", "xml", "log", "html", "htm", "py"):
+                        try:
+                            _text_preview = _raw_bytes.decode("utf-8")
+                        except UnicodeDecodeError:
+                            _text_preview = _raw_bytes.decode("cp1256", errors="replace")
+                        st.text_area("محتوى المادة القانونية", value=_text_preview, height=450, key=f"txt_prev_{_doc['id']}")
+                    elif _ftype == "docx":
+                        try:
+                            from docx import Document as _DocxDoc
+                            import io as _io
+                            _d = _DocxDoc(_io.BytesIO(_raw_bytes))
+                            _paras = [p.text for p in _d.paragraphs if p.text.strip()]
+                            for _t in _d.tables:
+                                for _r in _t.rows:
+                                    _row_txt = " | ".join(c.text.strip() for c in _r.cells if c.text.strip())
+                                    if _row_txt:
+                                        _paras.append(_row_txt)
+                            st.text_area("محتوى المستند", value="\n".join(_paras) if _paras else "المستند فارغ.", height=450, key=f"docx_prev_{_doc['id']}")
+                        except Exception:
+                            st.info("تعذر عرض معاينة النص مباشرة. يمكنك تحميل الملف لفتحه على جهازك.")
+                    elif _ftype == "doc":
+                        try:
+                            import re as _re
+                            _decoded = _raw_bytes.decode("utf-16-le", errors="ignore")
+                            _clean = _re.sub(r'[^\u0600-\u06FFa-zA-Z0-9\s.,،؛:؟!()\-/\n]', '', _decoded)
+                            _clean = "\n".join([ln.strip() for ln in _clean.splitlines() if len(ln.strip()) > 2])
+                            if len(_clean.strip()) > 20:
+                                st.text_area("محتوى مستند Word (.doc)", value=_clean, height=450, key=f"doc_prev_{_doc['id']}")
+                            else:
+                                st.info("صيغة (.doc) القديمة لا تدعم العرض المباشر بالكامل. اضغط تحميل بالأسفل لفتحه.")
+                        except Exception:
+                            st.info("صيغة (.doc) القديمة لا تدعم العرض المباشر بالكامل. اضغط تحميل بالأسفل لفتحه.")
+                    elif _ftype in ("xlsx", "xls"):
+                        try:
+                            import pandas as _pd
+                            import io as _io
+                            _df = _pd.read_excel(_io.BytesIO(_raw_bytes))
+                            st.dataframe(_df, use_container_width=True, height=420)
+                        except Exception:
+                            st.info("يمكنك تحميل ملف Excel لفتحه على جهازك.")
+                    else:
+                        st.info(f"معاينة صيغة ({_ftype.upper()}) غير مدعومة مباشرة في المتصفح. يمكنك تحميل الملف أدناه.")
+
+                    _c_dl, _c_close = st.columns(2)
+                    with _c_dl:
+                        st.download_button("⬇️ تحميل الملف", data=_raw_bytes, file_name=_dl_name, mime=_mime, key=f"dlg_dl_{_doc['id']}", use_container_width=True)
+                    with _c_close:
+                        if st.button("❌ إغلاق", key=f"dlg_close_{_doc['id']}", use_container_width=True):
+                            st.session_state.pop("open_lib_doc_id", None)
+                            st.rerun()
+
+                _show_lib_doc_dialog()
     
     elif "selected_section" in st.session_state:
         st.warning(f"القسم '{st.session_state.selected_section}' فاضي. ارفع اول ملف من الزرار اللي فوق")
