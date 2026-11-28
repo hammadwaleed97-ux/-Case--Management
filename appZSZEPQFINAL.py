@@ -6180,6 +6180,7 @@ if st.session_state.page == "تقارير":
     with tab2:
         st.markdown("<div style='background:#1E2A47; padding:12px; border-radius:8px; border:2px solid #B8860B; margin-bottom:12px'>", unsafe_allow_html=True)
         نوع_التقرير = st.selectbox("نوع البيان", ["بيان بجميع الاحكام الصادرة للصالح والضد", "بيان بالاحكام الصادرة للصالح", "بيان بالاحكام الصادرة للضد", "بيان بالاحكام الصادرة حسب موضوع الدعوى"], key="no3_tقرير")
+        include_final_saved2 = st.checkbox("تضمين القضايا المحفوظة نهائيًا (مع إظهار سبب الحفظ)", value=True, key="include_final_saved_tab2")
         colA, colB, colC = st.columns(3)
         with colA: region2 = st.text_input("ديوان عام منطقة", key="region2")
         with colB: مدير_عام2 = st.text_input("اسم مدير عام الإدارات القانونية", key="modir2")
@@ -6195,7 +6196,11 @@ if st.session_state.page == "تقارير":
         st.markdown("</div>", unsafe_allow_html=True)
 
         if st.button("🔍 عرض بيان الاحكام", use_container_width=True, type="primary", key="show2"):
-            archive = [c for c in my_cases if str(c.get("حالة", "")).strip() == "منتهية" and not c.get("تم_الحفظ_النهائي")]
+            archive = [
+                c for c in my_cases
+                if str(c.get("حالة", "")).strip() == "منتهية"
+                and (include_final_saved2 or not c.get("تم_الحفظ_النهائي"))
+            ]
             cases = []
             for c in archive:
                 ت_حكم = _parse_date_safe(c.get('تاريخ_الحكم'))
@@ -6208,14 +6213,14 @@ if st.session_state.page == "تقارير":
             elif "حسب موضوع" in نوع_التقرير and topic2.strip():
                 t2_norm = _norm_ar(topic2)
                 cases = [c for c in cases if t2_norm in _norm_ar(c.get('موضوع', ''))]
-            cases = sorted(cases, key=lambda x: str(x.get("تاريخ_الحكم", "0000-00-00")), reverse=True)
+            cases = sorted(cases, key=lambda x: date_sort_key(x.get("تاريخ_الحكم", ""), "0000-00-00"), reverse=True)
             title = f"{نوع_التقرير} خلال الفترة من {from_date2.strftime('%d/%m/%Y')} إلى {to_date2.strftime('%d/%m/%Y')} طرف الاستاذ/ {lawyer2} المحامي"
             header_html = report_header(region2, title, مدير_عام2, مدير_ادارة2, عضو_قانوني2)
             if not cases:
                 st.session_state.tab_reports_cache.pop("tab2", None)
                 st.warning("⚠️ لا توجد احكام في الفترة المحددة")
             else:
-                table_html = "<table class='case-table'><tr><th>م</th><th>رقم</th><th>سنة</th><th>المحكمة والدائرة</th><th>الخصوم</th><th>الموضوع</th><th>تاريخ الحكم</th><th>منطوق الحكم</th><th>مسندة ل</th><th>ملاحظات</th></tr>"
+                table_html = "<table class='case-table'><tr><th>م</th><th>رقم</th><th>سنة</th><th>المحكمة والدائرة</th><th>الخصوم</th><th>الموضوع</th><th>تاريخ الحكم</th><th>منطوق الحكم</th><th>مسندة ل</th><th>موقف الحفظ وسببه</th><th>ملاحظات</th></tr>"
                 df_data = []
                 for idx, c in enumerate(cases, 1):
                     محكمة = f"{c.get('نوع','')} {c.get('محكمة_اسم','')}"
@@ -6228,6 +6233,13 @@ if st.session_state.page == "تقارير":
                     مسندة = str(c.get('مسندة_ل_الحكم', '') or '')
                     لون_مسندة = "#28a745" if مسندة.strip() == 'الصالح' else "#dc3545"
                     حكم_عرض = _fmt_result_date(c.get('تاريخ_الحكم', ''))
+                    if c.get("تم_الحفظ_النهائي"):
+                        سبب = str(c.get("سبب_الحفظ") or "").strip()
+                        ت_حفظ = _fmt_result_date(c.get("تاريخ_الحفظ", ""))
+                        حفظ_نص = f"محفوظ نهائي ({ت_حفظ})" + (f" - سبب الحفظ: {سبب}" if سبب else "")
+                    else:
+                        حفظ_نص = "متداول بالأرشيف (غير محفوظ نهائيًا)"
+
                     table_html += (
                         f"<tr><td>{idx}</td>"
                         f"<td>{_html.escape(str(c.get('رقم','')))}</td>"
@@ -6238,13 +6250,14 @@ if st.session_state.page == "تقارير":
                         f"<td><b style='color:#B8860B'>{_html.escape(حكم_عرض)}</b></td>"
                         f"<td>{_html.escape(str(c.get('منطوق_الحكم','')))}</td>"
                         f"<td><b style='color:{لون_مسندة}'>{_html.escape(مسندة)}</b></td>"
+                        f"<td>{_html.escape(حفظ_نص)}</td>"
                         f"<td>{_html.escape(str(c.get('ملاحظات','')))}</td></tr>"
                     )
                     df_data.append({
                         'م': idx, 'رقم': c.get('رقم', ''), 'سنة': c.get('سنة', ''), 'المحكمة': محكمة,
                         'الخصوم': f"{مدعي} ضد {مدعي_عليه}", 'الموضوع': c.get('موضوع', ''),
                         'تاريخ الحكم': حكم_عرض, 'منطوق الحكم': c.get('منطوق_الحكم', ''),
-                        'مسندة ل': مسندة, 'ملاحظات': c.get('ملاحظات', '')
+                        'مسندة ل': مسندة, 'موقف الحفظ وسببه': حفظ_نص, 'ملاحظات': c.get('ملاحظات', '')
                     })
                 table_html += "</table>"
                 footer = _build_footer(عضو_قانوني2, مدير_ادارة2, مدير_عام2)
@@ -6293,6 +6306,9 @@ if st.session_state.page == "تقارير":
             ],
             key="no4_عددي"
         )
+        include_final_saved_stat = True
+        if "الاحكام" in نوع_البيان_العددي:
+            include_final_saved_stat = st.checkbox("تضمين القضايا المحفوظة نهائيًا في إحصاء الأحكام", value=True, key="include_final_saved_tab4")
         colA, colB, colC = st.columns(3)
         with colA: region_stat = st.text_input("ديوان عام منطقة", key="region_stat")
         with colB: مدير_عام_stat = st.text_input("اسم مدير عام الإدارات القانونية", key="modir_stat")
@@ -6324,7 +6340,7 @@ if st.session_state.page == "تقارير":
                     filtered = [
                         c for c in all_cases
                         if str(c.get("حالة", "")).strip() == "منتهية"
-                        and not c.get("تم_الحفظ_النهائي")
+                        and (include_final_saved_stat or not c.get("تم_الحفظ_النهائي"))
                         and (_parse_date_safe(c.get('تاريخ_الحكم')) is not None)
                         and stat_from2 <= _parse_date_safe(c.get('تاريخ_الحكم')) <= stat_to2
                     ]
@@ -6351,7 +6367,11 @@ if st.session_state.page == "تقارير":
                             elif "جميع" in نوع_البيان_العددي:
                                 العدد_الاجمالي += 1
                 elif "الاحكام" in نوع_البيان_العددي:
-                    archive = [c for c in all_cases if str(c.get("حالة", "")).strip() == "منتهية" and not c.get("تم_الحفظ_النهائي")]
+                    archive = [
+                        c for c in all_cases
+                        if str(c.get("حالة", "")).strip() == "منتهية"
+                        and (include_final_saved_stat or not c.get("تم_الحفظ_النهائي"))
+                    ]
                     t_norm = _norm_ar(topic_stat)
                     for c in archive:
                         ت_حكم = _parse_date_safe(c.get('تاريخ_الحكم'))
