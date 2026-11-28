@@ -8,16 +8,7 @@ from email.mime.multipart import MIMEMultipart
 import streamlit as st
 import pandas as pd
 
-from fpdf import FPDF
-from docx import Document
-from docx.shared import Pt, Inches
-from docx.enum.text import WD_ALIGN_PARAGRAPH
-from docx.enum.table import WD_TABLE_ALIGNMENT, WD_ALIGN_VERTICAL
-from docx.oxml import OxmlElement
-from docx.oxml.ns import qn
-import arabic_reshaper
-from bidi.algorithm import get_display
-from openpyxl.styles import Font, Alignment, PatternFill
+# المكتبات الثقيلة تُحمّل عند الحاجة فقط لتسريع بدء التشغيل والدخول الفوري
 
 
 # ==== دوال توحيد وتنسيق التواريخ (يوم / شهر / سنة) بقائمة منسدلة =====
@@ -501,7 +492,7 @@ def save_job_titles(titles):
         pass
     return ok
 
-@st.cache_data(ttl=15, show_spinner=False)
+@st.cache_data(ttl=120, show_spinner=False)
 def _cached_job_titles_snapshot():
     return load_job_titles()
 
@@ -589,7 +580,7 @@ def save_top_bar_config(cfg):
         pass
     return ok
 
-@st.cache_data(ttl=15, show_spinner=False)
+@st.cache_data(ttl=120, show_spinner=False)
 def _cached_top_bar_snapshot():
     return load_top_bar_config()
 
@@ -637,7 +628,7 @@ def cloud_delete_record(table_name, record_id):
             f"{SUPABASE_URL}/rest/v1/{table_name}",
             params={"id": f"eq.{record_id}"},
             headers=_cloud_headers(),
-            timeout=15,
+            timeout=6,
         )
         if r.ok:
             return True, ""
@@ -655,7 +646,7 @@ def cloud_upload_file(file_bytes, file_name, content_type="application/octet-str
             f"{SUPABASE_URL}/storage/v1/object/{SUPABASE_STORAGE_BUCKET}/{storage_path}",
             headers=_storage_headers(content_type),
             data=file_bytes,
-            timeout=20,
+            timeout=8,
         )
         if r.ok:
             return storage_path, ""
@@ -673,7 +664,7 @@ def cloud_delete_file(storage_path):
                 "apikey": SUPABASE_KEY,
                 "Authorization": f"Bearer {SUPABASE_KEY}",
             },
-            timeout=15,
+            timeout=6,
         )
         if r.ok:
             return True, ""
@@ -685,6 +676,8 @@ def fix_arabic(text):
     """ بتظبط العربي عشان ميطلعش متقطع """
     if not text:
         return ""
+    import arabic_reshaper
+    from bidi.algorithm import get_display
     reshaped_text = arabic_reshaper.reshape(str(text))
     bidi_text = get_display(reshaped_text)
     return bidi_text
@@ -731,7 +724,7 @@ def _cloud_put_db(key, payload):
                 "payload": payload,
                 "updated_at": datetime.now().astimezone().isoformat(),
             },
-            timeout=15,
+            timeout=6,
         )
         if r.ok:
             return True
@@ -751,7 +744,7 @@ def _cloud_get_db(key):
             f"{SUPABASE_URL}/rest/v1/app_state",
             params={"key": f"eq.{key}", "select": "key,payload,updated_at"},
             headers=_cloud_headers(),
-            timeout=10,
+            timeout=4,
         )
         if r.ok:
             rows = r.json()
@@ -778,7 +771,7 @@ def _cloud_put_storage(key, payload):
             f"{SUPABASE_URL}/storage/v1/object/{SUPABASE_STORAGE_BUCKET}/{storage_key}",
             headers=_storage_headers(),
             data=raw,
-            timeout=20,
+            timeout=8,
         )
         if r.ok:
             return True
@@ -797,7 +790,7 @@ def _cloud_get_storage(key):
                 "apikey": SUPABASE_KEY,
                 "Authorization": f"Bearer {SUPABASE_KEY}",
             },
-            timeout=12,
+            timeout=4,
         )
         if r.ok:
             return {"key": key, "payload": r.json()}
@@ -816,7 +809,7 @@ def _cloud_put(key, payload):
         return True
     return _cloud_put_storage(key, payload)
 
-@st.cache_data(ttl=120, show_spinner=False)
+@st.cache_data(ttl=300, show_spinner=False)
 def _cloud_get_cached(key):
     if not CLOUD_ENABLED:
         return None
@@ -961,35 +954,45 @@ def send_email(to_email, subject, body):
 
 USERS_FILE = os.path.join(LOCAL_DATA_DIR, "users.json")
 
+@st.cache_data(show_spinner=False)
+def _default_admin_hash(raw_pw):
+    return bcrypt.hashpw(raw_pw.encode(), bcrypt.gensalt()).decode()
+
 def load_users():
-    admin_pass = bcrypt.hashpw(ADMIN_DEFAULT_PASS.encode(), bcrypt.gensalt()).decode()
+    if "users" in st.session_state.get("_mem_store_keys", ()) or "_mem_store_users" in st.session_state:
+        return st.session_state["_mem_store_users"]
+    local_obj = _read_local_json_safe(USERS_FILE)
+    if local_obj is not None and not CLOUD_ENABLED:
+        st.session_state["_mem_store_users"] = local_obj
+        return local_obj
+    admin_pass = _default_admin_hash(ADMIN_DEFAULT_PASS)
     default_users = [{"id":1,"username":ADMIN_USERNAME,"display_name":ADMIN_USERNAME,"password":admin_pass,"email":SENDER_EMAIL,"recovery_email":"","role":"admin","status":"active","password_set":True,"job_title":"","insurance_area":""}]
     return load_json_persistent("users", USERS_FILE, default_users)
 
 def save_users(users):
-    return save_json_persistent("users", USERS_FILE, users)
+    ok = save_json_persistent("users", USERS_FILE, users)
+    try:
+        _cached_users_snapshot.clear()
+    except Exception:
+        pass
+    return ok
 
-@st.cache_data(ttl=20, show_spinner=False)
+@st.cache_data(ttl=120, show_spinner=False)
 def _cached_users_snapshot():
     return load_users()
 
-@st.cache_data(ttl=20, show_spinner=False)
+@st.cache_data(ttl=120, show_spinner=False)
 def _cached_banners_snapshot():
     return load_banners()
 
 def check_login(username, password):
+    typed = str(username or "").strip().casefold()
+    if not typed or not password:
+        return None
     users = _cached_users_snapshot()
-    changed = False
-    for u in users:
-        if not u.get("display_name"):
-            u["display_name"] = u.get("username", "")
-            changed = True
-    if changed:
-        save_users(users)
     for user in users:
-        typed = str(username or "").strip().casefold()
         login_username = str(user.get("username", "")).strip().casefold()
-        display_name = str(user.get("display_name", "")).strip().casefold()
+        display_name = str(user.get("display_name") or user.get("username") or "").strip().casefold()
         if typed not in (login_username, display_name):
             continue
         if user.get("status", "active") != "active":
@@ -999,6 +1002,8 @@ def check_login(username, password):
             return None
         try:
             if bcrypt.checkpw(password.encode(), stored.encode()):
+                if not user.get("display_name"):
+                    user["display_name"] = user.get("username", "")
                 return user
         except Exception:
             return None
@@ -1039,79 +1044,116 @@ def membership_job_title(user):
 def login_page():
     st.markdown("""
     <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@600;800;900&display=swap');
+    html, body, .stApp {
+        background: #0B1324 !important;
+        direction: rtl !important;
+        font-family: 'Cairo', sans-serif !important;
+    }
+    [data-testid="stHeader"], [data-testid="stToolbar"], [data-testid="stDecoration"] {
+        display: none !important;
+    }
+    .block-container {
+        max-width: 540px !important;
+        padding-top: 1.4rem !important;
+        padding-bottom: 2rem !important;
+    }
     .login-hero-box {
-        max-width: 760px;
-        margin: 14px auto 22px auto;
-        padding: 34px 24px;
-        background: linear-gradient(145deg, #16243d, #1f3356);
-        border: 2.5px solid #D4AF37;
+        background: linear-gradient(180deg, #17243D 0%, #131F36 100%);
+        border: 2px solid #D4AF37;
         border-radius: 26px;
-        box-shadow: 0 18px 45px rgba(0, 0, 0, 0.45);
+        padding: 28px 20px;
+        margin: 0 auto 22px auto;
+        box-shadow: 0 14px 36px rgba(0, 0, 0, 0.45);
         text-align: center;
     }
     .login-hero-title {
         color: #FFFFFF !important;
-        font-size: 36px !important;
+        font-size: 38px !important;
         font-weight: 900 !important;
         line-height: 1.45 !important;
         margin: 0 !important;
-        text-shadow: 0 2px 10px rgba(0,0,0,0.35);
-    }
-    .login-form-card {
-        max-width: 760px;
-        margin: 10px auto 24px auto;
-        padding: 22px 20px;
-        background: linear-gradient(145deg, #132038, #1c2e4f);
-        border: 2px solid #D4AF37;
-        border-radius: 22px;
-        box-shadow: 0 14px 36px rgba(0, 0, 0, 0.35);
+        text-align: center !important;
     }
     div[data-testid="stTabs"] {
-        max-width: 760px;
-        margin: 0 auto !important;
-        direction: rtl;
+        direction: rtl !important;
     }
     div[data-testid="stTabs"] [role="tablist"] {
-        justify-content: center;
-        gap: 18px;
-        border-bottom: 1px solid rgba(212, 175, 55, 0.35);
-        padding-bottom: 4px;
+        justify-content: center !important;
+        gap: 18px !important;
+        border-bottom: 1px solid rgba(255,255,255,0.18) !important;
+        margin-bottom: 14px !important;
     }
-    div[data-testid="stTabs"] button[role="tab"] {
-        color: #94a3b8 !important;
+    div[data-testid="stTabs"] button {
+        color: #94A3B8 !important;
         font-weight: 900 !important;
-        font-size: 18px !important;
+        font-size: 17px !important;
         background: transparent !important;
         border: none !important;
-        min-height: 44px !important;
+        padding: 8px 10px !important;
     }
-    div[data-testid="stTabs"] button[role="tab"] p {
-        color: inherit !important;
-        font-size: 18px !important;
-        font-weight: 900 !important;
-    }
-    div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] {
+    div[data-testid="stTabs"] button[aria-selected="true"] {
         color: #D4AF37 !important;
-        border-bottom: 3px solid #D4AF37 !important;
+        border-bottom: 3px solid #FF4B4B !important;
     }
-    div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] p {
-        color: #D4AF37 !important;
+    .login-pill-bar {
+        background: linear-gradient(180deg, #18253E 0%, #131E34 100%);
+        border: 2px solid #D4AF37;
+        border-radius: 24px;
+        height: 62px;
+        margin: 6px 0 22px 0;
+        box-shadow: 0 8px 22px rgba(0,0,0,0.32);
     }
-    .login-field-label {
+    .login-field-lbl {
         color: #FFFFFF !important;
-        font-size: 18px !important;
+        font-size: 20px !important;
         font-weight: 900 !important;
-        margin: 10px 0 6px 0 !important;
         text-align: right !important;
+        margin: 10px 4px 8px 0 !important;
+        display: block !important;
     }
     div[data-testid="stTextInput"] input {
-        background-color: #FFFFFF !important;
-        color: #111111 !important;
-        border: 2px solid #D4AF37 !important;
+        background: #FFFFFF !important;
+        color: #0F172A !important;
         border-radius: 14px !important;
-        min-height: 48px !important;
-        font-size: 16px !important;
+        border: 2px solid #CBD5E1 !important;
+        min-height: 52px !important;
+        font-size: 17px !important;
         font-weight: 700 !important;
+        padding: 10px 14px !important;
+        text-align: right !important;
+    }
+    div[data-testid="stTextInput"] input:focus {
+        border-color: #D4AF37 !important;
+        box-shadow: 0 0 0 2px rgba(212,175,55,0.35) !important;
+    }
+    div[data-testid="stFormSubmitButton"] button,
+    div[data-testid="stButton"] button {
+        background: linear-gradient(135deg, #1B2B4B 0%, #273F6B 100%) !important;
+        color: #FFFFFF !important;
+        border: 2px solid #D4AF37 !important;
+        border-radius: 16px !important;
+        min-height: 54px !important;
+        font-size: 18px !important;
+        font-weight: 900 !important;
+        margin-top: 8px !important;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.3) !important;
+    }
+    div[data-testid="stFormSubmitButton"] button:hover,
+    div[data-testid="stButton"] button:hover {
+        border-color: #FFD700 !important;
+        background: linear-gradient(135deg, #22365E 0%, #314E84 100%) !important;
+    }
+    [data-testid="stExpander"] {
+        background: #142038 !important;
+        border: 1.5px solid #D4AF37 !important;
+        border-radius: 16px !important;
+        margin-top: 14px !important;
+    }
+    [data-testid="stExpander"] summary p {
+        color: #D4AF37 !important;
+        font-weight: 900 !important;
+        font-size: 16px !important;
     }
     </style>
     <div class="login-hero-box">
@@ -1122,13 +1164,15 @@ def login_page():
     tab1, tab2 = st.tabs(["🔐 تسجيل الدخول", "🪪 تفعيل حساب جديد"])
 
     with tab1:
-        st.markdown("<div class='login-field-label'>اسم المستخدم</div>", unsafe_allow_html=True)
-        username = st.text_input("اسم المستخدم", key="login_user", label_visibility="collapsed", placeholder="ادخل اسم المستخدم")
-        st.markdown("<div class='login-field-label'>كلمة السر</div>", unsafe_allow_html=True)
-        password = st.text_input("كلمة المرور", type="password", key="login_pass", label_visibility="collapsed", placeholder="ادخل كلمة السر")
+        st.markdown('<div class="login-pill-bar"></div>', unsafe_allow_html=True)
+        with st.form("direct_login_form", clear_on_submit=False):
+            st.markdown("<div class='login-field-lbl'>اسم المستخدم</div>", unsafe_allow_html=True)
+            username = st.text_input("اسم المستخدم", key="login_user", label_visibility="collapsed", placeholder="أدخل اسم المستخدم")
+            st.markdown("<div class='login-field-lbl'>كلمة السر</div>", unsafe_allow_html=True)
+            password = st.text_input("كلمة المرور", type="password", key="login_pass", label_visibility="collapsed", placeholder="أدخل كلمة السر")
+            submitted = st.form_submit_button("دخول", type="primary", use_container_width=True)
 
-        st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
-        if st.button("دخول", type="primary", use_container_width=True, key="login_btn"):
+        if submitted:
             user = check_login(username.strip(), password)
             if user:
                 st.session_state.user = user
@@ -1173,9 +1217,9 @@ def login_page():
 
             if st.session_state.get("show_reset_admin") or st.session_state.get("show_reset_member"):
                 email_to_reset = admin_recover_email if st.session_state.get("show_reset_admin") else member_recover_email
-                code_input = st.text_input("ادخل الكود")
-                new_pass = st.text_input("كلمة السر الجديدة", type="password")
-                if st.button("تأكيد وتغيير كلمة السر", key="confirm_reset"):
+                code_input = st.text_input("ادخل الكود", key="reset_code_inp")
+                new_pass = st.text_input("كلمة السر الجديدة", type="password", key="reset_new_pass_inp")
+                if st.button("تأكيد وتغيير كلمة السر", key="confirm_reset", use_container_width=True):
                     saved = st.session_state.RESET_CODES.get(email_to_reset, {})
                     if saved.get("code") == code_input:
                         users = _cached_users_snapshot()
@@ -1211,8 +1255,8 @@ def login_page():
                         st.error("الكود غلط")
 
     with tab2:
-        st.markdown("<h3 style='color:#D4AF37!important;text-align:center;margin-top:8px;'>تفعيل حساب جديد</h3>", unsafe_allow_html=True)
-        st.markdown("<div class='login-field-label'>اكتب الاسم الذي استخرجه لك الادمن</div>", unsafe_allow_html=True)
+        st.markdown('<div class="login-pill-bar"></div>', unsafe_allow_html=True)
+        st.markdown("<div class='login-field-lbl'>اكتب الاسم الذي استخرجه لك الادمن</div>", unsafe_allow_html=True)
         member_name = st.text_input("اكتب الاسم الذي استخرجه لك الادمن", key="new_user", label_visibility="collapsed", placeholder="الاسم كما سجله الادمن")
         if st.button("🪪 تفعيل الحساب", use_container_width=True, type="primary", key="activate_account_v2"):
             users = _cached_users_snapshot()
@@ -1279,6 +1323,10 @@ def login_page():
                 st.session_state.show_activation_password = False
                 st.session_state.pop("activation_user_id", None)
                 st.error("تعذر العثور على العضوية، اكتب الاسم مرة أخرى.")
+if not st.session_state.get("user") and st.session_state.get("page") != "set_password":
+    st.session_state.page = "login"
+    login_page()
+    st.stop()
 
 def calculate_age(birth_date, on_date=None):
     """حساب العمر بدقة بالسنوات الكاملة."""
@@ -1635,10 +1683,15 @@ def manage_users_page():
 MESSAGES_FILE = os.path.join(LOCAL_DATA_DIR, "messages_v1.json")
 
 def load_messages():
+    if "_cached_messages_list" in st.session_state:
+        return st.session_state["_cached_messages_list"]
     data = load_json_persistent("messages", MESSAGES_FILE, [])
-    return data if isinstance(data, list) else []
+    res = data if isinstance(data, list) else []
+    st.session_state["_cached_messages_list"] = res
+    return res
 
 def save_messages(items):
+    st.session_state["_cached_messages_list"] = items
     return save_json_persistent("messages", MESSAGES_FILE, items)
 
 def role_label(role):
@@ -3084,7 +3137,7 @@ def role_order(role):
 
 def show_member_directory():
     sync_all_json_users_to_perms_db()
-    users = [u for u in load_users() if u.get("status") != "deleted"]
+    users = [u for u in _cached_users_snapshot() if u.get("status") != "deleted"]
     users.sort(key=lambda u: (role_order(u.get("role")), str(u.get("insurance_area") or "").casefold(), str(u.get("display_name") or u.get("username") or "").casefold()))
     current = st.session_state.get("user") or {}
     st.markdown("<div style='color:#D4AF37;font-size:21px;font-weight:900;text-align:center;margin:14px 0 8px;'>العضويات</div>", unsafe_allow_html=True)
@@ -3674,13 +3727,7 @@ def show_banners():
         )
 # ======= الجزء الاول: الاساسيات ============
 # ============================================
-import arabic_reshaper
-from bidi.algorithm import get_display
-from docx import Document
-from docx.shared import Pt, Inches
-from docx.enum.text import WD_ALIGN_PARAGRAPH
-from docx.oxml import OxmlElement
-from fpdf import FPDF
+
 
 st.markdown('\n<style id="visible-controls-v4">\nbutton,.stButton button,.stDownloadButton button,\ndiv[data-testid="stFileUploader"] button,\ndiv[data-testid="stTabs"] button,\ndiv[data-testid="stExpander"] button {\n    opacity:1!important;\n    visibility:visible!important;\n}\nbutton p,button span,.stButton button p,.stButton button span,\n.stDownloadButton button p,.stDownloadButton button span {\n    opacity:1!important;\n    visibility:visible!important;\n    color:#fff!important;\n}\n</style>\n', unsafe_allow_html=True)
 st.set_page_config(page_title="إدارة القضايا", layout="wide", page_icon="⚖️")
@@ -3806,6 +3853,8 @@ div[data-testid="stTextArea"] label {
 def fix_arabic(text):
     if not text:
         return ""
+    import arabic_reshaper
+    from bidi.algorithm import get_display
     text = str(text)
     reshaped_text = arabic_reshaper.reshape(text)
     bidi_text = get_display(reshaped_text)
@@ -3832,6 +3881,8 @@ def report_download_name(prefix, member_name="", specialization="", region="", e
     return name + (f".{ext}" if ext else "")
 
 def _set_cell_margins(cell, top=60, bottom=60, left=80, right=80):
+    from docx.oxml import OxmlElement
+    from docx.oxml.ns import qn
     tcPr = cell._tc.get_or_add_tcPr()
     tcMar = OxmlElement('w:tcMar')
     for m, val in [('top', top), ('bottom', bottom), ('left', left), ('right', right)]:
@@ -3842,14 +3893,19 @@ def _set_cell_margins(cell, top=60, bottom=60, left=80, right=80):
     tcPr.append(tcMar)
 
 def _set_row_cant_split(row):
+    from docx.oxml import OxmlElement
     trPr = row._tr.get_or_add_trPr()
     trPr.append(OxmlElement('w:cantSplit'))
 
 def _set_row_header(row):
+    from docx.oxml import OxmlElement
     trPr = row._tr.get_or_add_trPr()
     trPr.append(OxmlElement('w:tblHeader'))
 
 def _set_table_fixed_layout(table, total_width_inches=6.5):
+    from docx.enum.table import WD_TABLE_ALIGNMENT
+    from docx.oxml import OxmlElement
+    from docx.oxml.ns import qn
     table.autofit = False
     table.alignment = WD_TABLE_ALIGNMENT.RIGHT
     tblPr = table._tbl.tblPr
@@ -3896,6 +3952,7 @@ def _report_signatures_html(عضو_قانوني, مدير_ادارة, مدير_�
     """
 
 def to_excel(df, title="التقرير"):
+    from openpyxl.styles import Font, Alignment, PatternFill
     if df is None or df.empty:
         df = pd.DataFrame([{"البيان": "لا توجد بيانات"}])
     df = df.fillna("").astype(str).copy()
@@ -3922,6 +3979,12 @@ def to_excel(df, title="التقرير"):
     return output.getvalue()
 
 def to_word(df, title, region, member_name="", specialization="", manager_name="", general_manager=""):
+    from docx import Document
+    from docx.shared import Pt, Inches
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
+    from docx.enum.table import WD_TABLE_ALIGNMENT, WD_ALIGN_VERTICAL
+    from docx.oxml import OxmlElement
+    from docx.oxml.ns import qn
     if df is None or df.empty:
         df = pd.DataFrame([{"البيان": "لا توجد بيانات"}])
     doc = Document()
@@ -4134,6 +4197,7 @@ def _protect_pdf_dates(text):
     return re.sub(r'(\d{1,2})\s*/\s*(\d{1,2})\s*/\s*(\d{4})', r'\1 / \2 / \3', s)
 
 def to_pdf(df, title, region, member_name="", specialization="", manager_name="", general_manager=""):
+    from fpdf import FPDF
     if df is None or df.empty:
         df = pd.DataFrame([{"البيان": "لا توجد بيانات"}])
     pdf = FPDF(orientation="L", unit="mm", format="A4")
@@ -4245,6 +4309,7 @@ def to_pdf(df, title, region, member_name="", specialization="", manager_name=""
     return raw.encode("latin-1", errors="replace") if isinstance(raw, str) else bytes(raw)
 
 def create_paper_pdf(case_data):
+    from fpdf import FPDF
     papers_dir = BASE_DIR / "papers"
     papers_dir.mkdir(parents=True, exist_ok=True)
     pdf = FPDF(orientation='P', unit='mm', format='A4')
@@ -4376,17 +4441,22 @@ def get_my_cases(data):
     return [c for c in data.get("cases", []) if _case_belongs_to_current_user(c)]
 
 def load_data():
-    data=load_json_persistent("data", DATA_FILE, {"cases":[],"library":[]})
-    if not isinstance(data,dict):
-        data={}
-    data.setdefault("cases",[]); data.setdefault("library",[])
+    if "_cached_app_data" in st.session_state:
+        return st.session_state["_cached_app_data"]
+    data = load_json_persistent("data", DATA_FILE, {"cases": [], "library": []})
+    if not isinstance(data, dict):
+        data = {}
+    data.setdefault("cases", [])
+    data.setdefault("library", [])
     changed = False
-    admin = next((u for u in load_users() if u.get("role") == "admin"), None)
+    users_list = _cached_users_snapshot()
+    users_by_name = {u.get("username"): u for u in users_list if u.get("username")}
+    admin = next((u for u in users_list if u.get("role") == "admin"), None)
     admin_id = admin.get("id") if admin else None
     admin_username = admin.get("username") if admin else ""
     for case in data["cases"]:
         if "owner_user_id" not in case and case.get("assigned_to"):
-            owner = next((u for u in load_users() if u.get("username") == case.get("assigned_to")), None)
+            owner = users_by_name.get(case.get("assigned_to"))
             if owner:
                 case["owner_user_id"] = owner.get("id")
                 changed = True
@@ -4396,10 +4466,13 @@ def load_data():
             changed = True
     if changed:
         save_json_persistent("data", DATA_FILE, data)
+    st.session_state["_cached_app_data"] = data
     return data
 
 def save_data(data):
-    data.setdefault("cases",[]); data.setdefault("library",[])
+    data.setdefault("cases", [])
+    data.setdefault("library", [])
+    st.session_state["_cached_app_data"] = data
     return save_json_persistent("data", DATA_FILE, data)
 
 def load_tokens():
@@ -4549,8 +4622,6 @@ if not st.session_state.get("user"):
     st.session_state.page = "login"
     login_page()
     st.stop()
-elif st.session_state.get("page") == "login":
-    st.session_state.page = "الرئيسية"
 
 render_top_bar()
 render_site_audio_player()
