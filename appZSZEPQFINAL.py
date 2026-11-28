@@ -1038,20 +1038,96 @@ def membership_job_title(user):
 
 def login_page():
     st.markdown("""
-    <div class="login-shell">
-      <h1 style="text-align:center;color:#D4AF37!important;">⚖️ إدارة القضايا دخول السادة الأعضاء ⚖️</h1>
+    <style>
+    .login-hero-box {
+        max-width: 760px;
+        margin: 14px auto 22px auto;
+        padding: 34px 24px;
+        background: linear-gradient(145deg, #16243d, #1f3356);
+        border: 2.5px solid #D4AF37;
+        border-radius: 26px;
+        box-shadow: 0 18px 45px rgba(0, 0, 0, 0.45);
+        text-align: center;
+    }
+    .login-hero-title {
+        color: #FFFFFF !important;
+        font-size: 36px !important;
+        font-weight: 900 !important;
+        line-height: 1.45 !important;
+        margin: 0 !important;
+        text-shadow: 0 2px 10px rgba(0,0,0,0.35);
+    }
+    .login-form-card {
+        max-width: 760px;
+        margin: 10px auto 24px auto;
+        padding: 22px 20px;
+        background: linear-gradient(145deg, #132038, #1c2e4f);
+        border: 2px solid #D4AF37;
+        border-radius: 22px;
+        box-shadow: 0 14px 36px rgba(0, 0, 0, 0.35);
+    }
+    div[data-testid="stTabs"] {
+        max-width: 760px;
+        margin: 0 auto !important;
+        direction: rtl;
+    }
+    div[data-testid="stTabs"] [role="tablist"] {
+        justify-content: center;
+        gap: 18px;
+        border-bottom: 1px solid rgba(212, 175, 55, 0.35);
+        padding-bottom: 4px;
+    }
+    div[data-testid="stTabs"] button[role="tab"] {
+        color: #94a3b8 !important;
+        font-weight: 900 !important;
+        font-size: 18px !important;
+        background: transparent !important;
+        border: none !important;
+        min-height: 44px !important;
+    }
+    div[data-testid="stTabs"] button[role="tab"] p {
+        color: inherit !important;
+        font-size: 18px !important;
+        font-weight: 900 !important;
+    }
+    div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] {
+        color: #D4AF37 !important;
+        border-bottom: 3px solid #D4AF37 !important;
+    }
+    div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] p {
+        color: #D4AF37 !important;
+    }
+    .login-field-label {
+        color: #FFFFFF !important;
+        font-size: 18px !important;
+        font-weight: 900 !important;
+        margin: 10px 0 6px 0 !important;
+        text-align: right !important;
+    }
+    div[data-testid="stTextInput"] input {
+        background-color: #FFFFFF !important;
+        color: #111111 !important;
+        border: 2px solid #D4AF37 !important;
+        border-radius: 14px !important;
+        min-height: 48px !important;
+        font-size: 16px !important;
+        font-weight: 700 !important;
+    }
+    </style>
+    <div class="login-hero-box">
+      <div class="login-hero-title">⚖️ إدارة<br>القضايا دخول<br>السادة<br>الأعضاء ⚖️</div>
     </div>
     """, unsafe_allow_html=True)
 
     tab1, tab2 = st.tabs(["🔐 تسجيل الدخول", "🪪 تفعيل حساب جديد"])
 
     with tab1:
-        st.markdown("<div class='login-shell' style='margin-top:0;'>", unsafe_allow_html=True)
-        st.markdown("<p style='color:white!important;font-weight:900;'>اسم المستخدم</p>", unsafe_allow_html=True)
-        username = st.text_input("اسم المستخدم", key="login_user", label_visibility="collapsed")
-        st.markdown("<p style='color:white!important;font-weight:900;'>كلمة السر</p>", unsafe_allow_html=True)
-        password = st.text_input("كلمة المرور", type="password", key="login_pass", label_visibility="collapsed")
+        st.markdown("<div class='login-field-label'>اسم المستخدم</div>", unsafe_allow_html=True)
+        username = st.text_input("اسم المستخدم", key="login_user", label_visibility="collapsed", placeholder="ادخل اسم المستخدم")
+        st.markdown("<div class='login-field-label'>كلمة السر</div>", unsafe_allow_html=True)
+        password = st.text_input("كلمة المرور", type="password", key="login_pass", label_visibility="collapsed", placeholder="ادخل كلمة السر")
 
+        st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
         if st.button("دخول", type="primary", use_container_width=True, key="login_btn"):
             user = check_login(username.strip(), password)
             if user:
@@ -1067,80 +1143,77 @@ def login_page():
             else:
                 st.error("اسم المستخدم أو كلمة السر غير صحيحة أو العضوية موقوفة")
 
-        st.markdown("<hr>", unsafe_allow_html=True)
-        st.markdown("<p style='color:white!important;font-weight:900;'>نسيت بياناتك؟ استرجعها بالإيميل</p>", unsafe_allow_html=True)
-
-        admin_recover_email = st.text_input("إيميل الادمن", key="admin_recover")
-        if st.button("إرسال كود للادمن", key="admin_send", use_container_width=True):
-            if is_admin_email(admin_recover_email):
-                code = str(random.randint(100000, 999999))
-                st.session_state.RESET_CODES[admin_recover_email] = {"code": code, "role": "admin"}
-                body = f"كود إعادة تعيين كلمة سر الادمن: {code}"
-                if send_email(admin_recover_email, "كود استرجاع الادمن", body):
-                    st.success("تم إرسال الكود على الإيميل")
-                    st.session_state.show_reset_admin = True
-            else:
-                st.error("هذا الإيميل غير مسجل كادمن")
-
-        member_recover_email = st.text_input("إيميل العضو", key="member_recover")
-        if st.button("إرسال كود للعضو", key="member_send", use_container_width=True):
-            users = _cached_users_snapshot()
-            found = [u for u in users if u.get("email") == member_recover_email]
-            if found:
-                user = found[0]
-                code = str(random.randint(100000, 999999))
-                st.session_state.RESET_CODES[member_recover_email] = {"code": code, "user_id": user["id"]}
-                body = f"مرحبا {user['username']}\nاسم المستخدم: {user['username']}\nكود إعادة التعيين: {code}"
-                if send_email(member_recover_email, "استرجاع بيانات الدخول", body):
-                    st.success("تم إرسال الكود على إيميلك")
-                    st.session_state.show_reset_member = True
-            else:
-                st.error("الإيميل ده مش متسجل")
-
-        if st.session_state.get("show_reset_admin") or st.session_state.get("show_reset_member"):
-            email_to_reset = admin_recover_email if st.session_state.get("show_reset_admin") else member_recover_email
-            code_input = st.text_input("ادخل الكود")
-            new_pass = st.text_input("كلمة السر الجديدة", type="password")
-            if st.button("تأكيد وتغيير كلمة السر", key="confirm_reset"):
-                saved = st.session_state.RESET_CODES.get(email_to_reset, {})
-                if saved.get("code") == code_input:
-                    users = _cached_users_snapshot()
-                    logged_user = None
-                    if saved.get("role") == "admin":
-                        admin = next((u for u in users if u["role"] == "admin"), None)
-                        if admin:
-                            hashed = bcrypt.hashpw(new_pass.encode(), bcrypt.gensalt()).decode()
-                            admin["password"] = hashed
-                            save_users(users)
-                            logged_user = admin
-                    else:
-                        uid = saved.get("user_id")
-                        for u in users:
-                            if u["id"] == uid:
-                                u["password"] = bcrypt.hashpw(new_pass.encode(), bcrypt.gensalt()).decode()
-                                u["status"] = "active"
-                                u["password_set"] = True
-                                logged_user = u
-                                break
-                        save_users(users)
-
-                    if logged_user:
-                        st.session_state.RESET_CODES.clear()
-                        st.session_state.show_reset_admin = False
-                        st.session_state.show_reset_member = False
-                        st.session_state.user = logged_user
-                        st.session_state.role = logged_user["role"]
-                        st.session_state.page = "الرئيسية"
-                        st.success("تم تسجيل الدخول بنجاح")
-                        st.rerun()
+        with st.expander("🔑 نسيت بياناتك؟ استرجعها بالإيميل"):
+            admin_recover_email = st.text_input("إيميل الادمن", key="admin_recover")
+            if st.button("إرسال كود للادمن", key="admin_send", use_container_width=True):
+                if is_admin_email(admin_recover_email):
+                    code = str(random.randint(100000, 999999))
+                    st.session_state.RESET_CODES[admin_recover_email] = {"code": code, "role": "admin"}
+                    body = f"كود إعادة تعيين كلمة سر الادمن: {code}"
+                    if send_email(admin_recover_email, "كود استرجاع الادمن", body):
+                        st.success("تم إرسال الكود على الإيميل")
+                        st.session_state.show_reset_admin = True
                 else:
-                    st.error("الكود غلط")
-        st.markdown("</div>", unsafe_allow_html=True)
+                    st.error("هذا الإيميل غير مسجل كادمن")
+
+            member_recover_email = st.text_input("إيميل العضو", key="member_recover")
+            if st.button("إرسال كود للعضو", key="member_send", use_container_width=True):
+                users = _cached_users_snapshot()
+                found = [u for u in users if u.get("email") == member_recover_email]
+                if found:
+                    user = found[0]
+                    code = str(random.randint(100000, 999999))
+                    st.session_state.RESET_CODES[member_recover_email] = {"code": code, "user_id": user["id"]}
+                    body = f"مرحبا {user['username']}\nاسم المستخدم: {user['username']}\nكود إعادة التعيين: {code}"
+                    if send_email(member_recover_email, "استرجاع بيانات الدخول", body):
+                        st.success("تم إرسال الكود على إيميلك")
+                        st.session_state.show_reset_member = True
+                else:
+                    st.error("الإيميل ده مش متسجل")
+
+            if st.session_state.get("show_reset_admin") or st.session_state.get("show_reset_member"):
+                email_to_reset = admin_recover_email if st.session_state.get("show_reset_admin") else member_recover_email
+                code_input = st.text_input("ادخل الكود")
+                new_pass = st.text_input("كلمة السر الجديدة", type="password")
+                if st.button("تأكيد وتغيير كلمة السر", key="confirm_reset"):
+                    saved = st.session_state.RESET_CODES.get(email_to_reset, {})
+                    if saved.get("code") == code_input:
+                        users = _cached_users_snapshot()
+                        logged_user = None
+                        if saved.get("role") == "admin":
+                            admin = next((u for u in users if u["role"] == "admin"), None)
+                            if admin:
+                                hashed = bcrypt.hashpw(new_pass.encode(), bcrypt.gensalt()).decode()
+                                admin["password"] = hashed
+                                save_users(users)
+                                logged_user = admin
+                        else:
+                            uid = saved.get("user_id")
+                            for u in users:
+                                if u["id"] == uid:
+                                    u["password"] = bcrypt.hashpw(new_pass.encode(), bcrypt.gensalt()).decode()
+                                    u["status"] = "active"
+                                    u["password_set"] = True
+                                    logged_user = u
+                                    break
+                            save_users(users)
+
+                        if logged_user:
+                            st.session_state.RESET_CODES.clear()
+                            st.session_state.show_reset_admin = False
+                            st.session_state.show_reset_member = False
+                            st.session_state.user = logged_user
+                            st.session_state.role = logged_user["role"]
+                            st.session_state.page = "الرئيسية"
+                            st.success("تم تسجيل الدخول بنجاح")
+                            st.rerun()
+                    else:
+                        st.error("الكود غلط")
 
     with tab2:
-        st.markdown("<div class='login-shell' style='margin-top:0;'>", unsafe_allow_html=True)
-        st.markdown("<h3 style='color:#D4AF37!important;text-align:center;'>تفعيل حساب جديد</h3>", unsafe_allow_html=True)
-        member_name = st.text_input("اكتب الاسم الذي استخرجه لك الادمن", key="new_user")
+        st.markdown("<h3 style='color:#D4AF37!important;text-align:center;margin-top:8px;'>تفعيل حساب جديد</h3>", unsafe_allow_html=True)
+        st.markdown("<div class='login-field-label'>اكتب الاسم الذي استخرجه لك الادمن</div>", unsafe_allow_html=True)
+        member_name = st.text_input("اكتب الاسم الذي استخرجه لك الادمن", key="new_user", label_visibility="collapsed", placeholder="الاسم كما سجله الادمن")
         if st.button("🪪 تفعيل الحساب", use_container_width=True, type="primary", key="activate_account_v2"):
             users = _cached_users_snapshot()
             found_user = find_user_for_activation(users, member_name)
@@ -1207,7 +1280,6 @@ def login_page():
                 st.session_state.pop("activation_user_id", None)
                 st.error("تعذر العثور على العضوية، اكتب الاسم مرة أخرى.")
 
-        st.markdown("</div>", unsafe_allow_html=True)
 def calculate_age(birth_date, on_date=None):
     """حساب العمر بدقة بالسنوات الكاملة."""
     parsed_b = parse_date_safe(birth_date)
@@ -4477,6 +4549,8 @@ if not st.session_state.get("user"):
     st.session_state.page = "login"
     login_page()
     st.stop()
+elif st.session_state.get("page") == "login":
+    st.session_state.page = "الرئيسية"
 
 render_top_bar()
 render_site_audio_player()
