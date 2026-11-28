@@ -4485,24 +4485,53 @@ def save_tokens(tokens_data):
 def get_alert_cases():
     data = load_data()
     today = datetime.now().date()
-    username = (st.session_state.user or {}).get("username", "")
-    all_cases = [c for c in data.get("cases", []) if c.get("assigned_to") == username]
+    user = st.session_state.get("user") or {}
+    uid = user.get("id")
+    username = str(user.get("username") or "").strip()
+    display_name = str(user.get("display_name") or "").strip()
+
+    all_cases = []
+    for c in data.get("cases", []):
+        if not isinstance(c, dict):
+            continue
+        assigned = str(c.get("assigned_to") or "").strip()
+        owner_id = c.get("owner_user_id")
+        belongs = (
+            (uid is not None and owner_id == uid)
+            or (username and assigned == username)
+            or (display_name and assigned == display_name)
+        )
+        if belongs:
+            all_cases.append(c)
+
     alerts = {"sessions": [], "appeals": []}
-    
+
     for case in all_cases:
-        if case.get("حالة") == "متداولة" and case.get("تاريخ_جلسة"):
-            session_date = parse_date_safe(case["تاريخ_جلسة"])
-            if session_date is not None:
-                days_left = (session_date - today).days
-                if 0 <= days_left <= 7:
-                    case_copy = case.copy()
-                    case_copy["days_left"] = days_left
-                    alerts["sessions"].append(case_copy)
-                
-        if case.get("حالة") == "منتهية" and case.get("مسندة_ل_الحكم") == "الضد" and case.get("تاريخ_الحكم"):
-            judgment_date = parse_date_safe(case["تاريخ_الحكم"])
+        status = str(case.get("حالة") or "").strip()
+        if status == "متداولة":
+            session_dates = []
+            if case.get("تاريخ_جلسة"):
+                d_main = parse_date_safe(case.get("تاريخ_جلسة"))
+                if d_main is not None:
+                    session_dates.append(d_main)
+            for g in case.get("جلسات") or []:
+                if isinstance(g, dict) and g.get("تاريخ"):
+                    d_g = parse_date_safe(g.get("تاريخ"))
+                    if d_g is not None:
+                        session_dates.append(d_g)
+            upcoming = [d for d in session_dates if 0 <= (d - today).days <= 7]
+            if upcoming:
+                chosen_date = min(upcoming, key=lambda d: (d - today).days)
+                days_left = (chosen_date - today).days
+                case_copy = case.copy()
+                case_copy["تاريخ_جلسة"] = fmt_date_ar(chosen_date)
+                case_copy["days_left"] = days_left
+                alerts["sessions"].append(case_copy)
+
+        if status == "منتهية" and not case.get("تم_الحفظ_النهائي") and str(case.get("مسندة_ل_الحكم") or "").strip() == "الضد" and case.get("تاريخ_الحكم"):
+            judgment_date = parse_date_safe(case.get("تاريخ_الحكم"))
             if judgment_date is not None:
-                appeal_days = 40 if case.get("نوع") == "دعوى" else 60
+                appeal_days = 40 if str(case.get("نوع") or "").strip() == "دعوى" else 60
                 last_appeal_day = judgment_date + timedelta(days=appeal_days)
                 notify_start = last_appeal_day - timedelta(days=15)
                 days_left_appeal = (last_appeal_day - today).days
@@ -4511,7 +4540,9 @@ def get_alert_cases():
                     case_copy["days_left_appeal"] = days_left_appeal
                     case_copy["deadline"] = fmt_date_ar(last_appeal_day)
                     alerts["appeals"].append(case_copy)
-                
+
+    alerts["sessions"].sort(key=lambda x: x.get("days_left", 999))
+    alerts["appeals"].sort(key=lambda x: x.get("days_left_appeal", 999))
     return alerts
 
 def send_alert_email(to_email, alerts):
@@ -5505,7 +5536,11 @@ elif st.session_state.page == "التنبيهات":
     with st.container(border=True):
         st.markdown("<h2 style='text-align:center; color:#C9A961;'>ارسال التنبيهات بالايميل</h2>", unsafe_allow_html=True)
         
-        user_email = st.text_input("سجل ايميلك عشان يجيلك التنبيهات", key="alert_email_input")
+        if not st.session_state.get("saved_email"):
+            _u_email = str((st.session_state.get("user") or {}).get("email") or "").strip()
+            if _u_email:
+                st.session_state["saved_email"] = _u_email
+        user_email = st.text_input("سجل ايميلك عشان يجيلك التنبيهات", value=st.session_state.get("saved_email", ""), key="alert_email_input")
 
         col1, col2 = st.columns(2)
         with col1:
